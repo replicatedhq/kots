@@ -3,6 +3,7 @@ package kotsadm
 import (
 	_ "embed"
 	"fmt"
+	"strings"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -11,6 +12,15 @@ import (
 )
 
 func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
+	additionalAnnotationsArray := []string{}
+	for key, value := range deployOptions.AdditionalAnnotations {
+		additionalAnnotationsArray = append(additionalAnnotationsArray, fmt.Sprintf("%s=%s", key, value))
+	}
+	additionalLabelsArray := []string{}
+	for key, value := range deployOptions.AdditionalLabels {
+		additionalLabelsArray = append(additionalLabelsArray, fmt.Sprintf("%s=%s", key, value))
+	}
+
 	data := map[string]string{
 		"kots-install-id":           fmt.Sprintf("%v", deployOptions.InstallID),
 		"initial-app-images-pushed": fmt.Sprintf("%v", deployOptions.AppImagesPushed),
@@ -26,6 +36,8 @@ func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 		"with-minio":                fmt.Sprintf("%v", deployOptions.IncludeMinio),
 		"app-version-label":         deployOptions.AppVersionLabel,
 		"requested-channel-slug":    deployOptions.RequestedChannelSlug,
+		"additional-annotations":    strings.Join(additionalAnnotationsArray, ","),
+		"additional-labels":         strings.Join(additionalLabelsArray, ","),
 	}
 
 	if kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig) != nil {

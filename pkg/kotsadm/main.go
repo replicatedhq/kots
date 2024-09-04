@@ -791,6 +791,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	}
 	for _, pod := range pods.Items {
 		if _, ok := pod.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			// TODO add additional labels/annotations
 			pod.ObjectMeta.Labels = types.GetKotsadmLabels(pod.ObjectMeta.Labels)
 
 			// remove existing velero exclude label/annotation (if exists)
@@ -812,6 +813,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	for _, deployment := range deployments.Items {
 		if _, ok := deployment.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			// ensure labels
+			// TODO add additional labels/annotations
 			deployment.ObjectMeta.Labels = types.GetKotsadmLabels(deployment.ObjectMeta.Labels)
 			deployment.Spec.Template.ObjectMeta.Labels = types.GetKotsadmLabels(deployment.Spec.Template.ObjectMeta.Labels)
 
@@ -837,6 +839,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	for _, statefulSet := range statefulSets.Items {
 		if _, ok := statefulSet.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			// ensure labels
+			// TODO add additional labels/annotations
 			statefulSet.ObjectMeta.Labels = types.GetKotsadmLabels(statefulSet.ObjectMeta.Labels)
 			statefulSet.Spec.Template.ObjectMeta.Labels = types.GetKotsadmLabels(statefulSet.Spec.Template.ObjectMeta.Labels)
 

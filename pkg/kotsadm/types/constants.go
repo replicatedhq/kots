@@ -28,6 +28,7 @@ const DefaultSupportBundleSpecKey = "default"
 const ClusterSpecificSupportBundleSpecKey = "cluster-specific"
 const VendorSpecificSupportBundleSpecKey = "vendor"
 
+// TODO: additional labels in many places
 func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	labels := map[string]string{
 		KotsadmKey:  KotsadmLabelValue,

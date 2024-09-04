@@ -57,6 +57,8 @@ type DeployOptions struct {
 	AdditionalNamespaces   []string
 	IsGKEAutopilot         bool
 	RequestedChannelSlug   string
+	AdditionalAnnotations  map[string]string
+	AdditionalLabels       map[string]string
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig
