@@ -117,33 +117,17 @@ dev:
 	docker build -t kurl-proxy-dev -f ./kurl_proxy/skaffold.Dockerfile ./kurl_proxy
 	kubectl apply -k ./kustomize/overlays/dev
 
-## The /host_mnt directory on Docker Desktop for macOS is a virtualized path that represents
-## the mounted directories from the macOS host filesystem into the Docker Desktop VM.
-## This is required for using HostPath volumes in Kubernetes.
 .PHONY: %-up
 %-up:
-	@if [ -f ./dev/patches/$*-down.yaml.tmp ]; then \
-		echo "Error: deployment $* is already up"; \
-		exit 1; \
-	fi
-	# TODO NOW: move this to a script
-	@kubectl get deployment $* -oyaml > ./dev/patches/$*-down.yaml.tmp
-	@sed "s|__PROJECT_DIR__|/host_mnt$(shell pwd)|g" ./dev/patches/$*-up.yaml > ./dev/patches/$*-up.yaml.tmp
-	@kubectl patch deployment $* --patch-file ./dev/patches/$*-up.yaml.tmp
-	@rm ./dev/patches/$*-up.yaml.tmp
-	@kubectl rollout status deployment/$*
-	@kubectl exec -it deployment/$* -- bash
-
-## The embedded-cluster container mounts the KOTS project at /replicatedhq/kots.
-.PHONY: %-up-ec
-%-up-ec:
-	@dev/scripts/up-ec.sh $*
+	@dev/scripts/up.sh $*
 
 .PHONY: %-down
 %-down:
-	# TODO NOW: check if upped
-	@kubectl replace -f ./dev/patches/$*-down.yaml.tmp --force
-	@rm ./dev/patches/$*-down.yaml.tmp
+	@dev/scripts/down.sh $*
+
+.PHONY: %-up-ec
+%-up-ec:
+	@dev/scripts/up-ec.sh $*
 
 .PHONY: %-down-ec
 %-down-ec:

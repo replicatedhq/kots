@@ -2,56 +2,58 @@
 
 set -e
 
-DEPLOYMENT=$1
+component=$1
 
-# Check if a deployment name was provided
-if [ -z "$DEPLOYMENT" ]; then
-	echo "Error: No deployment name provided."
+# Check if a component name was provided
+if [ -z "$component" ]; then
+	echo "Error: No component name provided."
 	exit 1
 fi
 
 # Check if already up
-if [ -f "./dev/patches/$DEPLOYMENT-down.yaml.tmp" ]; then
-  echo "Error: already up, run 'make $DEPLOYMENT-down-ec' first."
+if [ -f "./dev/patches/$component-down-ec.yaml.tmp" ]; then
+  echo "Error: already up, run 'make $component-down-ec' first."
   exit 1
 fi
 
-# TODO NOW: get image from deployment name
-if docker images | grep -q kotsadm-api-dev; then
-  echo "kotsadm-api-dev image already exists, skipping build..."
+# Get component metadata
+image=$(cat ./dev/metadata.json | jq -r ".$component.image")
+dockerFile=$(cat ./dev/metadata.json | jq -r ".$component.dockerFile")
+dockerContext=$(cat ./dev/metadata.json | jq -r ".$component.dockerContext")
+deployment=$(cat ./dev/metadata.json | jq -r ".$component.deploymentName")
+
+# Build the image
+if docker images | grep -q "$image"; then
+  echo "$image image already exists, skipping build..."
 else
-  docker build -t kotsadm-api-dev -f ./hack/dev/skaffold.Dockerfile .
+  docker build -t "$image" -f "$dockerFile" "$dockerContext"
 fi
 
-docker exec node0 k0s ctr images ls | grep kotsadm-api-dev
-echo $?
-
-# TODO NOW: get image from deployment name
-if docker exec node0 k0s ctr images ls | grep -q kotsadm-api-dev; then
-  echo "kotsadm-api-dev image already loaded in embedded cluster, skipping import..."
+# Load the image into the embedded cluster
+if docker exec node0 k0s ctr images ls | grep -q "$image"; then
+  echo "$image image already loaded in embedded cluster, skipping import..."
 else
   echo "Loading image into embedded cluster..."
-  docker save kotsadm-api-dev | docker exec -i node0 k0s ctr images import -
+  docker save "$image" | docker exec -i node0 k0s ctr images import -
 fi
 
 echo "Patching deployment in embedded cluster..."
 
 function docker_exec() {
-    docker exec -it -w /replicatedhq/kots node0 $@
+  docker exec -it -w /replicatedhq/kots node0 $@
 }
 
 # Save current deployment state
-docker_exec k0s kubectl get deployment $DEPLOYMENT -n kotsadm -oyaml > ./dev/patches/$DEPLOYMENT-down.yaml.tmp
+docker_exec k0s kubectl get deployment $deployment -n kotsadm -oyaml > ./dev/patches/$component-down-ec.yaml.tmp
 
 # Prepare and apply the patch
-docker_exec sed 's|__PROJECT_DIR__|/replicatedhq/kots|g' ./dev/patches/$DEPLOYMENT-up.yaml > ./dev/patches/$DEPLOYMENT-up.yaml.tmp
-docker_exec k0s kubectl patch deployment $DEPLOYMENT -n kotsadm --patch-file ./dev/patches/$DEPLOYMENT-up.yaml.tmp
-
-# Clean up temporary file
-docker_exec rm ./dev/patches/$DEPLOYMENT-up.yaml.tmp
+# The embedded-cluster container mounts the KOTS project at /replicatedhq/kots
+docker_exec sed 's|__PROJECT_DIR__|/replicatedhq/kots|g' ./dev/patches/$component-up.yaml > ./dev/patches/$component-up-ec.yaml.tmp
+docker_exec k0s kubectl patch deployment $deployment -n kotsadm --patch-file ./dev/patches/$component-up-ec.yaml.tmp
+docker_exec rm ./dev/patches/$component-up-ec.yaml.tmp
 
 # Wait for rollout to complete
-docker_exec k0s kubectl rollout status deployment/$DEPLOYMENT -n kotsadm
+docker_exec k0s kubectl rollout status deployment/$deployment -n kotsadm
 
 # Exec into the updated deployment
-docker_exec k0s kubectl exec -it deployment/$DEPLOYMENT -n kotsadm -- bash
+docker_exec k0s kubectl exec -it deployment/$deployment -n kotsadm -- bash

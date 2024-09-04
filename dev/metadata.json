@@ -1,0 +1,20 @@
+{
+  "kotsadm": {
+    "image": "kotsadm-api-dev",
+    "dockerFile": "./hack/dev/skaffold.Dockerfile",
+    "dockerContext": "./",
+    "deploymentName": "kotsadm"
+  },
+  "kurl-proxy": {
+    "image": "kurl-proxy-dev",
+    "dockerFile": "./kurl_proxy/skaffold.Dockerfile",
+    "dockerContext": "./kurl_proxy",
+    "deploymentName": "kurl-proxy-kotsadm"
+  },
+  "kotsadm-web": {
+    "image": "kotsadm-web-dev",
+    "dockerFile": "./web/skaffold.Dockerfile",
+    "dockerContext": "./web",
+    "deploymentName": "kotsadm-web"
+  }
+}
