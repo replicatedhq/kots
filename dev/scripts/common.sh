@@ -35,23 +35,28 @@ function render() {
 }
 
 # The embedded-cluster container mounts the KOTS project at /replicatedhq/kots
-function render_ec() {
+function ec_render() {
   sed "s|__PROJECT_DIR__|/replicatedhq/kots|g" "$1"
 }
 
+# Get the embedded cluster node name
+function ec_node() {
+  echo "${EC_NODE:-node0}"
+}
+
 # Executes a command in the embedded cluster container
-function exec_ec() {
-  docker exec -it -w /replicatedhq/kots node0 $@
+function ec_exec() {
+  docker exec -it -w /replicatedhq/kots $(ec_node) $@
 }
 
 # Patches a component deployment in the embedded cluster
-function patch_ec() {
-  render_ec dev/patches/$1-up.yaml > dev/patches/$1-up-ec.yaml.tmp
-  exec_ec k0s kubectl patch deployment $(deployment $1) -n kotsadm --patch-file dev/patches/$1-up-ec.yaml.tmp
+function ec_patch() {
+  ec_render dev/patches/$1-up.yaml > dev/patches/$1-up-ec.yaml.tmp
+  ec_exec k0s kubectl patch deployment $(deployment $1) -n kotsadm --patch-file dev/patches/$1-up-ec.yaml.tmp
   rm dev/patches/$1-up-ec.yaml.tmp
 }
 
-function build_and_load_ec() {
+function ec_build_and_load() {
   # Build the image
   if docker images | grep -q "$(image $1)"; then
     echo "$(image $1) image already exists, skipping build..."
@@ -61,11 +66,11 @@ function build_and_load_ec() {
   fi
 
   # Load the image into the embedded cluster
-  if docker exec node0 k0s ctr images ls | grep -q "$(image $1)"; then
+  if docker exec $(ec_node) k0s ctr images ls | grep -q "$(image $1)"; then
     echo "$(image $1) image already loaded in embedded cluster, skipping import..."
   else
     echo "Loading "$(image $1)" image into embedded cluster..."
-    docker save "$(image $1)" | docker exec -i node0 k0s ctr images import -
+    docker save "$(image $1)" | docker exec -i $(ec_node) k0s ctr images import -
   fi
 }
 
@@ -80,6 +85,6 @@ function up() {
   fi
 }
 
-function up_ec() {
-  exec_ec k0s kubectl exec -it deployment/$(deployment $1) -n kotsadm -- bash
+function ec_up() {
+  ec_exec k0s kubectl exec -it deployment/$(deployment $1) -n kotsadm -- bash
 }

@@ -21,8 +21,8 @@ fi
 echo "Reverting..."
 
 if [ "$component" == "kotsadm" ] || [ "$component" == "kotsadm-web" ]; then
-  exec_ec k0s kubectl delete -f dev/manifests/kotsadm-web -n kotsadm
+  ec_exec k0s kubectl delete -f dev/manifests/kotsadm-web -n kotsadm
 fi
 
-exec_ec k0s kubectl replace -f dev/patches/$component-down-ec.yaml.tmp --force
-exec_ec rm dev/patches/$component-down-ec.yaml.tmp
+ec_exec k0s kubectl replace -f dev/patches/$component-down-ec.yaml.tmp --force
+ec_exec rm dev/patches/$component-down-ec.yaml.tmp
