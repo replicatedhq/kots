@@ -14,8 +14,8 @@ fi
 
 # Check if already up
 if [ -f "dev/patches/$component-down-ec.yaml.tmp" ]; then
-  echo "Error: already up, run 'make $component-down-ec' first."
-  exit 1
+  up_ec $component
+  exit 0
 fi
 
 # Build and load the image into the embedded cluster
@@ -39,5 +39,5 @@ patch_ec $component
 # Wait for rollout to complete
 exec_ec k0s kubectl rollout status deployment/$(deployment $component) -n kotsadm
 
-# Exec into the updated deployment
-exec_ec k0s kubectl exec -it deployment/$(deployment $component) -n kotsadm -- bash
+# Up into the updated deployment
+up_ec $component

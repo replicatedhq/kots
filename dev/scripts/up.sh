@@ -14,7 +14,7 @@ fi
 
 # Check if already up
 if [ -f "dev/patches/$component-down.yaml.tmp" ]; then
-  up $(deployment $component)
+  up $component
   exit 0
 fi
 
@@ -28,4 +28,4 @@ render dev/patches/$component-up.yaml | kubectl patch deployment $(deployment $c
 kubectl rollout status deployment/$(deployment $component)
 
 # Up into the updated deployment
-up $(deployment $component)
+up $component

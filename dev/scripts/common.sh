@@ -76,6 +76,10 @@ function up() {
     kubectl logs -f $newpod --tail=100
   else
     # Exec into the deployment
-    kubectl exec -it deployment/$1 -- bash
+    kubectl exec -it deployment/$(deployment $1) -- bash
   fi
+}
+
+function up_ec() {
+  exec_ec k0s kubectl exec -it deployment/$(deployment $1) -n kotsadm -- bash
 }
