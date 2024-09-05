@@ -2,6 +2,8 @@
 
 set -e
 
+. dev/scripts/common.sh
+
 component=$1
 
 # Check if a deployment name was provided
@@ -18,13 +20,9 @@ fi
 
 echo "Reverting..."
 
-function docker_exec() {
-  docker exec -it -w /replicatedhq/kots node0 $@
-}
-
 if [ "$component" == "kotsadm" ] || [ "$component" == "kotsadm-web" ]; then
-  docker_exec k0s kubectl delete -f dev/manifests/kotsadm-web -n kotsadm
+  exec_ec k0s kubectl delete -f dev/manifests/kotsadm-web -n kotsadm
 fi
 
-docker_exec k0s kubectl replace -f dev/patches/$component-down-ec.yaml.tmp --force
-docker_exec rm dev/patches/$component-down-ec.yaml.tmp
+exec_ec k0s kubectl replace -f dev/patches/$component-down-ec.yaml.tmp --force
+exec_ec rm dev/patches/$component-down-ec.yaml.tmp

@@ -2,6 +2,8 @@
 
 set -e
 
+. dev/scripts/common.sh
+
 component=$1
 
 # Check if a deployment name was provided
