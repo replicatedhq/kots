@@ -6,9 +6,13 @@ metadata:
     kots.io/kotsadm: 'true'
     kots.io/backup: velero
 spec:
+  selector:
+    matchLabels:
+      app: kotsadm
   template:
     metadata:
       labels:
+        app: kotsadm
         kots.io/kotsadm: 'true'
         kots.io/backup: velero
       annotations:
@@ -16,9 +20,17 @@ spec:
         pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "curl -f http://kotsadm:password@kotsadm-rqlite:4001/db/backup -o /backup/kotsadm-rqlite.sql"]'
         pre.hook.backup.velero.io/timeout: 3m
     spec:
+      restartPolicy: Always
       serviceAccountName: kotsadm
       containers:
         - name: kotsadm
+          image: kotsadm-api-dev
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 3000
+            - name: dlv
+              containerPort: 30001
           resources:
             limits:
               cpu: 1

@@ -44,4 +44,4 @@ build kotsadm-web
 build kotsadm-migrations
 build kurl-proxy
 
-kubectl apply -k ./kustomize/overlays/dev
+kubectl apply -R -f ./dev/manifests

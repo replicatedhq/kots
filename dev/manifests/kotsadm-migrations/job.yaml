@@ -24,7 +24,7 @@ spec:
           value: /migrations/plan.yaml              
         image: kotsadm-migrations-dev
         name: migrations-plan
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Never
         args: ["plan"]
         volumeMounts:
           - name: migrations
@@ -42,7 +42,7 @@ spec:
               name: kotsadm-rqlite
         image: kotsadm-migrations-dev
         name: kotsadm-migrations
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Never
         args: ["apply"]
         volumeMounts:
           - name: migrations

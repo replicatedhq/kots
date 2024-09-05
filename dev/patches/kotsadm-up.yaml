@@ -14,6 +14,9 @@ spec:
         volumeMounts:
         - name: dev
           mountPath: /go/src/github.com/replicatedhq/kots # workdir in the container
+        env:
+        - name: DISABLE_SPA_SERVING # in order to serve from kotsadm-web in embedded cluster
+          value: "1"
         readinessProbe: ~
         resources: ~
         securityContext:

@@ -80,3 +80,34 @@ spec:
       resources:
         requests:
           storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    kots.io/kotsadm: 'true'
+    kots.io/backup: velero
+    app: kotsadm-minio
+  name: kotsadm-minio
+spec:
+  ports:
+  - name: service
+    port: 4569
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app: kotsadm-minio
+  type: ClusterIP
+---
+apiVersion: v1
+data:
+  accesskey: bm90LWEta2V5
+  secretkey: bm90LWEtc2VjcmV0
+kind: Secret
+metadata:
+  labels:
+    kots.io/kotsadm: 'true'
+    kots.io/backup: velero
+    app: kotsadm-minio
+  name: kotsadm-minio
+type: Opaque

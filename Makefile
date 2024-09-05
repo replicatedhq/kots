@@ -119,7 +119,7 @@ dev:
 
 .PHONY: reset
 reset:
-	kubectl delete -k ./kustomize/overlays/dev
+	kubectl delete -R -f ./dev/manifests --ignore-not-found
 
 # Debugging
 .PHONY: debug-build

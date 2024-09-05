@@ -14,4 +14,7 @@ spec:
       containers:
         - name: kotsadm-web
           image: kotsadm-web-dev
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
