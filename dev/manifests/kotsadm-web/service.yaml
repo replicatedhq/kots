@@ -4,8 +4,6 @@ metadata:
   name: kotsadm-web
   labels:
     app: kotsadm-web
-  annotations:
-    dev.okteto.com/auto-ingress: "true"
 spec:
   type: ClusterIP
   ports:

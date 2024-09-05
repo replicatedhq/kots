@@ -119,7 +119,7 @@ dev:
 
 .PHONY: reset
 reset:
-	kubectl delete -R -f ./dev/manifests --ignore-not-found
+	kubectl delete -R -f dev/manifests --ignore-not-found
 
 # Debugging
 .PHONY: debug-build

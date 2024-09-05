@@ -15,7 +15,10 @@ spec:
         - name: dev
           mountPath: /go/src/github.com/replicatedhq/kots # workdir in the container
         env:
-        - name: DISABLE_SPA_SERVING # in order to serve from kotsadm-web in embedded cluster
+        # in order to serve from kotsadm-web even in embedded cluster
+        - name: DISABLE_SPA_SERVING
+          value: "1"
+        - name: ENABLE_WEB_PROXY
           value: "1"
         readinessProbe: ~
         resources: ~

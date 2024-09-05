@@ -37,20 +37,22 @@ else
   docker save "$image" | docker exec -i node0 k0s ctr images import -
 fi
 
-echo "Patching deployment in embedded cluster..."
-
 function docker_exec() {
   docker exec -it -w /replicatedhq/kots node0 $@
 }
+
+# The kotsadm dev image does not have a web component, and kotsadm-web service does not exist in embedded cluster.
+# Deploy kotsadm-web service instead of shipping a web component in the kotsadm dev image so
+# we can achieve a faster dev experience with hot reloading.
+if [ "$component" == "kotsadm" || "$component" == "kotsadm-web" ]; then
+  docker_exec k0s kubectl apply -f dev/manifests/kotsadm-web -n kotsadm
+fi
 
 # Save current deployment state
 docker_exec k0s kubectl get deployment $deployment -n kotsadm -oyaml > ./dev/patches/$component-down-ec.yaml.tmp
 
 # Prepare and apply the patch
-# The embedded-cluster container mounts the KOTS project at /replicatedhq/kots
-docker_exec sed 's|__PROJECT_DIR__|/replicatedhq/kots|g' ./dev/patches/$component-up.yaml > ./dev/patches/$component-up-ec.yaml.tmp
-docker_exec k0s kubectl patch deployment $deployment -n kotsadm --patch-file ./dev/patches/$component-up-ec.yaml.tmp
-docker_exec rm ./dev/patches/$component-up-ec.yaml.tmp
+render_ec dev/patches/$component-up.yaml | docker_exec k0s kubectl patch deployment $deployment -n kotsadm --patch-file=/dev/stdin
 
 # Wait for rollout to complete
 docker_exec k0s kubectl rollout status deployment/$deployment -n kotsadm

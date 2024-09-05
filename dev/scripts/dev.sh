@@ -9,19 +9,19 @@ if [ $(kubectl config current-context) != "docker-desktop" ]; then
 fi
 
 function image() {
-  jq -r ".\"$1\".image" ./dev/metadata.json
+  jq -r ".\"$1\".image" dev/metadata.json
 }
 
 function dockerfile() {
-  jq -r ".\"$1\".dockerfile" ./dev/metadata.json
+  jq -r ".\"$1\".dockerfile" dev/metadata.json
 }
 
 function dockercontext() {
-  jq -r ".\"$1\".dockercontext" ./dev/metadata.json
+  jq -r ".\"$1\".dockercontext" dev/metadata.json
 }
 
 function deployment() {
-  jq -r ".\"$1\".deployment" ./dev/metadata.json
+  jq -r ".\"$1\".deployment" dev/metadata.json
 }
 
 function restart() {
@@ -44,4 +44,4 @@ build kotsadm-web
 build kotsadm-migrations
 build kurl-proxy
 
-kubectl apply -R -f ./dev/manifests
+kubectl apply -R -f dev/manifests

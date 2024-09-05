@@ -19,8 +19,6 @@ web
 CODE_OF_CONDUCT.md
 CODEOWNERS
 CONTRIBUTING.md
-skaffold.yaml
-okteto.yml
 
 web
 !web/webcontent.go

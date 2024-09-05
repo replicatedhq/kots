@@ -6,8 +6,6 @@ metadata:
     kots.io/kotsadm: "true"
     kots.io/backup: velero
     app: kotsadm
-  annotations:
-    dev.okteto.com/auto-ingress: "true"
 spec:
   type: NodePort
   ports:
