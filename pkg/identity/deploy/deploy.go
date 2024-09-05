@@ -371,7 +371,6 @@ var (
 	dexMemoryResource = resource.MustParse("50Mi")
 )
 
-// TODO: add labels/annotations
 func deploymentResource(issuerURL, configChecksum string, options Options) (*appsv1.Deployment, error) {
 	// TODO: use GetAdminConsoleImage function
 	dexVersion, err := imageutil.GetTag(image.Dex)
@@ -418,8 +417,7 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      types.DeploymentName(options.NamePrefix),
 			Namespace: options.Namespace,
-			// TODO add additional labels/annotations
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
+			Labels:    kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: pointer.Int32Ptr(2),
