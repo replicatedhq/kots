@@ -691,9 +691,9 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --additional-labels testlabel1=testvalue1 \
+            --additional-labels testlabel1=testvalue2 \
             --additional-labels test.label/two=test.value.two \
-            --additional-annotations testannotation1=testannotationvalue1 \
+            --additional-annotations testannotation1=testannotationvalue2 \
             --additional-annotations test.annotation/two=testannotation.value.two \
             --kotsadm-tag 24h | tee output.txt
 
