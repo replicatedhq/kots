@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -23,6 +24,8 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
 
@@ -1252,6 +1255,125 @@ func TestFindChannelInLicense(t *testing.T) {
 				require.NotNil(t, channel)
 				require.Equal(t, tt.expectedChannel, channel)
 			}
+		})
+	}
+}
+
+func TestGetInstallationParamsWithClientset(t *testing.T) {
+	type args struct {
+		configMapName string
+		namespace     string
+		clientSet     kubernetes.Interface
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    kotsutil.InstallationParams
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "basic test",
+			args: args{
+				configMapName: "kotsadm",
+				namespace:     "test-namespace",
+				clientSet: fake.NewClientset(&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm",
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						"additional-annotations":    "abc/xyz=test-annotation1,test.annotation/two=test.value/two/test",
+						"additional-labels":         "xyz=label2,abc=123",
+						"app-version-label":         "",
+						"ensure-rbac":               "true",
+						"initial-app-images-pushed": "false",
+						"kots-install-id":           "2liAJUuyAi3Gnyhvi5Arv5BJRZ4",
+						"minio-enabled-snapshots":   "true",
+						"registry-is-read-only":     "false",
+						"requested-channel-slug":    "stable",
+						"skip-compatibility-check":  "false",
+						"skip-preflights":           "false",
+						"skip-rbac-check":           "false",
+						"strict-security-context":   "false",
+						"use-minimal-rbac":          "false",
+						"wait-duration":             "2m0s",
+						"with-minio":                "true",
+					},
+				}),
+			},
+			want: kotsutil.InstallationParams{
+				AdditionalAnnotations:  map[string]string{"abc/xyz": "test-annotation1", "test.annotation/two": "test.value/two/test"},
+				AdditionalLabels:       map[string]string{"abc": "123", "xyz": "label2"},
+				AppVersionLabel:        "",
+				EnsureRBAC:             true,
+				KotsadmRegistry:        "",
+				SkipImagePush:          false,
+				SkipPreflights:         false,
+				SkipCompatibilityCheck: false,
+				RegistryIsReadOnly:     false,
+				EnableImageDeletion:    false,
+				SkipRBACCheck:          false,
+				UseMinimalRBAC:         false,
+				StrictSecurityContext:  false,
+				WaitDuration:           time.Minute * 2,
+				WithMinio:              true,
+				RequestedChannelSlug:   "stable",
+			},
+		},
+		{
+			name: "no labels or annotations",
+			args: args{
+				configMapName: "kotsadm",
+				namespace:     "test-namespace",
+				clientSet: fake.NewClientset(&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm",
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						"app-version-label":         "",
+						"ensure-rbac":               "true",
+						"initial-app-images-pushed": "false",
+						"kots-install-id":           "2liAJUuyAi3Gnyhvi5Arv5BJRZ4",
+						"minio-enabled-snapshots":   "true",
+						"registry-is-read-only":     "false",
+						"requested-channel-slug":    "stable",
+						"skip-compatibility-check":  "false",
+						"skip-preflights":           "false",
+						"skip-rbac-check":           "false",
+						"strict-security-context":   "false",
+						"use-minimal-rbac":          "false",
+						"wait-duration":             "2m0s",
+						"with-minio":                "true",
+					},
+				}),
+			},
+			want: kotsutil.InstallationParams{
+				AdditionalAnnotations:  map[string]string{},
+				AdditionalLabels:       map[string]string{},
+				AppVersionLabel:        "",
+				EnsureRBAC:             true,
+				KotsadmRegistry:        "",
+				SkipImagePush:          false,
+				SkipPreflights:         false,
+				SkipCompatibilityCheck: false,
+				RegistryIsReadOnly:     false,
+				EnableImageDeletion:    false,
+				SkipRBACCheck:          false,
+				UseMinimalRBAC:         false,
+				StrictSecurityContext:  false,
+				WaitDuration:           time.Minute * 2,
+				WithMinio:              true,
+				RequestedChannelSlug:   "stable",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			got, err := kotsutil.GetInstallationParamsWithClientset(tt.args.clientSet, tt.args.configMapName, tt.args.namespace)
+			req.NoError(err)
+			req.Equal(tt.want, got)
 		})
 	}
 }
