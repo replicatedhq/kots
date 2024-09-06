@@ -21,6 +21,9 @@ func Test_configureChart(t *testing.T) {
 	type Test struct {
 		name         string
 		isAirgap     bool
+		httpProxy    string
+		httpsProxy   string
+		noProxy      string
 		chartContent map[string]string
 		want         map[string]string
 		wantErr      bool
@@ -288,8 +291,11 @@ another: value
 	// Generate dynamic tests using the supported replicated chart names
 	for _, chartName := range testReplicatedChartNames {
 		tests = append(tests, Test{
-			name:     "online - a standalone replicated chart",
-			isAirgap: false,
+			name:       "online - a standalone replicated chart",
+			isAirgap:   false,
+			httpProxy:  "http://10.1.0.1:3128",
+			httpsProxy: "https://10.1.0.1:3129",
+			noProxy:    "localhost,127.0.0.1",
 			chartContent: map[string]string{
 				"replicated/Chart.yaml": fmt.Sprintf(`apiVersion: v1
 name: %s
@@ -376,6 +382,13 @@ some: value
 # and this comment as well
 
 appID: app-id
+extraEnv:
+  - name: HTTP_PROXY
+    value: http://10.1.0.1:3128
+  - name: HTTPS_PROXY
+    value: https://10.1.0.1:3129
+  - name: NO_PROXY
+    value: localhost,127.0.0.1
 isAirgap: false
 replicatedID: kotsadm-id
 `,
@@ -459,6 +472,13 @@ some: value
 # and this comment as well
 
 appID: app-id
+extraEnv:
+  - name: HTTP_PROXY
+    value: ""
+  - name: HTTPS_PROXY
+    value: ""
+  - name: NO_PROXY
+    value: ""
 isAirgap: true
 replicatedID: kotsadm-id
 global:
@@ -482,8 +502,11 @@ global:
 		})
 
 		tests = append(tests, Test{
-			name:     "online - a guestbook chart with the replicated subchart",
-			isAirgap: false,
+			name:       "online - a guestbook chart with the replicated subchart",
+			isAirgap:   false,
+			httpProxy:  "http://10.1.0.1:3128",
+			httpsProxy: "https://10.1.0.1:3129",
+			noProxy:    "localhost,127.0.0.1",
 			chartContent: map[string]string{
 				"guestbook/Chart.yaml": `apiVersion: v2
 name: guestbook
@@ -569,6 +592,13 @@ image:
     - service/replicated
   versionLabel: 1.0.0
   appID: app-id
+  extraEnv:
+    - name: HTTP_PROXY
+      value: http://10.1.0.1:3128
+    - name: HTTPS_PROXY
+      value: https://10.1.0.1:3129
+    - name: NO_PROXY
+      value: localhost,127.0.0.1
   isAirgap: false
   replicatedID: kotsadm-id
 global:
@@ -675,6 +705,13 @@ image:
     - service/replicated
   versionLabel: 1.0.0
   appID: app-id
+  extraEnv:
+    - name: HTTP_PROXY
+      value: ""
+    - name: HTTPS_PROXY
+      value: ""
+    - name: NO_PROXY
+      value: ""
   isAirgap: true
   license: |
     apiVersion: kots.io/v1beta1
@@ -733,8 +770,11 @@ some: value
 		})
 
 		tests = append(tests, Test{
-			name:     "online - a redis chart with the replicated subchart and predefined replicated and global values",
-			isAirgap: false,
+			name:       "online - a redis chart with the replicated subchart and predefined replicated and global values",
+			isAirgap:   false,
+			httpProxy:  "http://10.1.0.1:3128",
+			httpsProxy: "https://10.1.0.1:3129",
+			noProxy:    "localhost,127.0.0.1",
 			chartContent: map[string]string{
 				"redis/Chart.yaml": `apiVersion: v1
 name: redis
@@ -848,6 +888,13 @@ global:
     - service/replicated
   versionLabel: 1.0.0
   appID: app-id
+  extraEnv:
+    - name: HTTP_PROXY
+      value: http://10.1.0.1:3128
+    - name: HTTPS_PROXY
+      value: https://10.1.0.1:3129
+    - name: NO_PROXY
+      value: localhost,127.0.0.1
   isAirgap: false
   replicatedID: kotsadm-id
 `, chartName),
@@ -965,6 +1012,13 @@ global:
     - service/replicated
   versionLabel: 1.0.0
   appID: app-id
+  extraEnv:
+    - name: HTTP_PROXY
+      value: ""
+    - name: HTTPS_PROXY
+      value: ""
+    - name: NO_PROXY
+      value: ""
   isAirgap: true
   license: |
     apiVersion: kots.io/v1beta1
@@ -1244,9 +1298,12 @@ some: value
 			}
 
 			writeOptions := types.WriteOptions{
-				KotsadmID: "kotsadm-id",
-				AppID:     "app-id",
-				IsAirgap:  tt.isAirgap,
+				KotsadmID:          "kotsadm-id",
+				AppID:              "app-id",
+				IsAirgap:           tt.isAirgap,
+				HTTPProxyEnvValue:  tt.httpProxy,
+				HTTPSProxyEnvValue: tt.httpsProxy,
+				NoProxyEnvValue:    tt.noProxy,
 			}
 
 			got, err := configureChart(chartBytes, upstream, writeOptions)

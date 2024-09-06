@@ -101,13 +101,14 @@ func PullCmd() *cobra.Command {
 			}
 
 			upstream := pull.RewriteUpstream(args[0])
-			preferredChannelSlug, err := extractPreferredChannelSlug(upstream)
-			if err != nil {
-				return errors.Wrap(err, "failed to extract preferred channel slug")
-			}
 
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Initialize()
+
+			preferredChannelSlug, err := extractPreferredChannelSlug(log, upstream)
+			if err != nil {
+				return errors.Wrap(err, "failed to extract preferred channel slug")
+			}
 
 			// If we are passed a multi-channel license, verify that the requested channel is in the license
 			// so that we can warn the user immediately if it is not.
