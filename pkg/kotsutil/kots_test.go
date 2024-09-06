@@ -3,7 +3,6 @@ package kotsutil_test
 import (
 	"encoding/base64"
 	"io/ioutil"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,6 +24,7 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )

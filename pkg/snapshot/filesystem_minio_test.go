@@ -2,6 +2,8 @@ package snapshot
 
 import (
 	"context"
+	"testing"
+
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotssnapshottypes "github.com/replicatedhq/kots/pkg/snapshot/types"
@@ -10,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
-	"testing"
 )
 
 func Test_ensureFileSystemMinioDeployment(t *testing.T) {
