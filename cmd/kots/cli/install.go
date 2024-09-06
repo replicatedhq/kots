@@ -260,6 +260,23 @@ func InstallCmd() *cobra.Command {
 
 			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
 
+			additionalLabels := map[string]string{}
+			additionalAnnotations := map[string]string{}
+			for _, label := range v.GetStringSlice("additional-labels") {
+				parts := strings.Split(label, "=")
+				if len(parts) != 2 {
+					return errors.Errorf("additional-labels flag is not in the correct format.  Must be key=value")
+				}
+				additionalLabels[parts[0]] = parts[1]
+			}
+			for _, annotation := range v.GetStringSlice("additional-annotations") {
+				parts := strings.Split(annotation, "=")
+				if len(parts) != 2 {
+					return errors.Errorf("additional-annotations flag is not in the correct format.  Must be key=value")
+				}
+				additionalAnnotations[parts[0]] = parts[1]
+			}
+
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:              namespace,
 				Context:                v.GetString("context"),
@@ -289,6 +306,8 @@ func InstallCmd() *cobra.Command {
 				IncludeMinioSnapshots:  v.GetBool("with-minio"),
 				StrictSecurityContext:  v.GetBool("strict-security-context"),
 				RequestedChannelSlug:   preferredChannelSlug,
+				AdditionalLabels:       additionalLabels,
+				AdditionalAnnotations:  additionalAnnotations,
 
 				RegistryConfig: *registryConfig,
 
@@ -530,6 +549,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
 	cmd.Flags().String("app-version-label", "", "the application version label to install. if not specified, the latest version will be installed")
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console and only install the application")
+	cmd.Flags().StringArray("additional-annotations", []string{}, "additional annotations to add to kotsadm pods")
+	cmd.Flags().StringArray("additional-labels", []string{}, "additional labels to add to kotsadm pods")
 
 	registryFlags(cmd.Flags())
 

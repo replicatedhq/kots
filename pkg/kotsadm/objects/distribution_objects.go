@@ -84,15 +84,23 @@ func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Qu
 		securityContext = k8sutil.SecurePodContext(1000, 1000, deployOptions.StrictSecurityContext)
 	}
 
+	podLabels := map[string]string{
+		"app": "kotsadm-storage-registry",
+	}
+	for k, v := range deployOptions.AdditionalLabels {
+		podLabels[k] = v
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-storage-registry",
-			Namespace: deployOptions.Namespace,
-			Labels:    types.GetKotsadmLabels(),
+			Name:        "kotsadm-storage-registry",
+			Namespace:   deployOptions.Namespace,
+			Annotations: deployOptions.AdditionalAnnotations,
+			Labels:      types.GetKotsadmLabels(deployOptions.AdditionalLabels),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -124,9 +132,8 @@ func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Qu
 			ServiceName: "kotsadm-storage-registry",
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm-storage-registry",
-					}),
+					Annotations: deployOptions.AdditionalAnnotations,
+					Labels:      types.GetKotsadmLabels(podLabels),
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext: securityContext,

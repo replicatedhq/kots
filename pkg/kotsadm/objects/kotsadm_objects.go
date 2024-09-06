@@ -344,15 +344,31 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 		})
 	}
 
+	podAnnotations := map[string]string{
+		"backup.velero.io/backup-volumes":   "backup",
+		"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
+		"pre.hook.backup.velero.io/timeout": "10m",
+	}
+	for k, v := range deployOptions.AdditionalAnnotations {
+		podAnnotations[k] = v
+	}
+	podLabels := map[string]string{
+		"app": "kotsadm",
+	}
+	for k, v := range deployOptions.AdditionalLabels {
+		podLabels[k] = v
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm",
-			Namespace: deployOptions.Namespace,
-			Labels:    types.GetKotsadmLabels(),
+			Name:        "kotsadm",
+			Namespace:   deployOptions.Namespace,
+			Annotations: deployOptions.AdditionalAnnotations,
+			Labels:      types.GetKotsadmLabels(deployOptions.AdditionalLabels),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -362,14 +378,8 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm",
-					}),
-					Annotations: map[string]string{
-						"backup.velero.io/backup-volumes":   "backup",
-						"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
-						"pre.hook.backup.velero.io/timeout": "10m",
-					},
+					Labels:      types.GetKotsadmLabels(podLabels),
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{
@@ -841,15 +851,31 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 		storageClassName = &deployOptions.StorageClassName
 	}
 
+	podAnnotations := map[string]string{
+		"backup.velero.io/backup-volumes":   "backup",
+		"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
+		"pre.hook.backup.velero.io/timeout": "10m",
+	}
+	for k, v := range deployOptions.AdditionalAnnotations {
+		podAnnotations[k] = v
+	}
+	podLabels := map[string]string{
+		"app": "kotsadm",
+	}
+	for k, v := range deployOptions.AdditionalLabels {
+		podLabels[k] = v
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm",
-			Namespace: deployOptions.Namespace,
-			Labels:    types.GetKotsadmLabels(),
+			Name:        "kotsadm",
+			Namespace:   deployOptions.Namespace,
+			Annotations: deployOptions.AdditionalAnnotations,
+			Labels:      types.GetKotsadmLabels(deployOptions.AdditionalLabels),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: "kotsadm",
@@ -860,14 +886,8 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm",
-					}),
-					Annotations: map[string]string{
-						"backup.velero.io/backup-volumes":   "backup",
-						"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
-						"pre.hook.backup.velero.io/timeout": "10m",
-					},
+					Labels:      types.GetKotsadmLabels(podLabels),
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{
