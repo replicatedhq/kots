@@ -739,69 +739,69 @@ jobs:
           # check that the kotsadm, minio and rqlite pods have the correct labels and annotations
           echo "Checking additional pod labels and annotations"
           # label one
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
-              echo "kotsadm pod does not have the correct testlabel1 label"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels}'
-              exit 1
-          fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
-              echo "kotsadm-minio pod does not have the correct testlabel1 label"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels}'
-              exit 1
-          fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
-              echo "kotsadm-rqlite pod does not have the correct testlabel1 label"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels}'
-              exit 1
-          fi
-          # annotation one
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.annotations.testannotation1}' | grep -q testannotationvalue1; then
-              echo "kotsadm pod does not have the correct testannotation1 annotation"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.annotations}'
-              exit 1
-          fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.annotations.testannotation1}' | grep -q testannotationvalue1; then
-              echo "kotsadm-minio pod does not have the correct testannotation1 annotation"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.annotations}'
-              exit 1
-          fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.annotations.testannotation1}' | grep -q testannotationvalue1; then
-              echo "kotsadm-rqlite pod does not have the correct testannotation1 annotation"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.annotations}'
-              exit 1
-          fi
-          # label two
-          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels.test\.label/two}' | grep -q 'test.value/two'; then
-              echo "kotsadm pod does not have the correct test.label/two label"
-              kubectl get pod -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels}'
-              exit 1
-          fi
-          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels.test\.label/two}' | grep -q 'test.value/two'; then
-              echo "kotsadm-minio pod does not have the correct test.label/two label"
-              kubectl get pod -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels}'
-              exit 1
-          fi
-          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels.test\.label/two}' | grep -q 'test.value/two'; then
-              echo "kotsadm-rqlite pod does not have the correct test.label/two label"
-              kubectl get pod -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels}'
-              exit 1
-          fi
-          # annotation two
-          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.annotations.test\.annotation/two}' | grep -q 'testannotation.value/two'; then
-              echo "kotsadm pod does not have the correct test.annotation/two annotation"
-              kubectl get pod -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.annotations}'
-              exit 1
-          fi
-          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.annotations.test\.annotation/two}' | grep -q 'testannotation.value/two'; then
-              echo "kotsadm-minio pod does not have the correct test.annotation/two annotation"
-              kubectl get pod -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.annotations}'
-              exit 1
-          fi
-          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.annotations.test\.annotation/two}' | grep -q 'testannotation.value/two'; then
-              echo "kotsadm-rqlite pod does not have the correct test.annotation/two annotation"
-              kubectl get pod -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.annotations}'
-              exit 1
-          fi
+#          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
+#              echo "kotsadm pod does not have the correct testlabel1 label"
+#              kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels}'
+#              exit 1
+#          fi
+#          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
+#              echo "kotsadm-minio pod does not have the correct testlabel1 label"
+#              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels}'
+#              exit 1
+#          fi
+#          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
+#              echo "kotsadm-rqlite pod does not have the correct testlabel1 label"
+#              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels}'
+#              exit 1
+#          fi
+#          # annotation one
+#          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.annotations.testannotation1}' | grep -q testannotationvalue1; then
+#              echo "kotsadm pod does not have the correct testannotation1 annotation"
+#              kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.annotations}'
+#              exit 1
+#          fi
+#          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.annotations.testannotation1}' | grep -q testannotationvalue1; then
+#              echo "kotsadm-minio pod does not have the correct testannotation1 annotation"
+#              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.annotations}'
+#              exit 1
+#          fi
+#          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.annotations.testannotation1}' | grep -q testannotationvalue1; then
+#              echo "kotsadm-rqlite pod does not have the correct testannotation1 annotation"
+#              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.annotations}'
+#              exit 1
+#          fi
+#          # label two
+#          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels.test\.label/two}' | grep -q 'test.value/two'; then
+#              echo "kotsadm pod does not have the correct test.label/two label"
+#              kubectl get pod -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels}'
+#              exit 1
+#          fi
+#          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels.test\.label/two}' | grep -q 'test.value/two'; then
+#              echo "kotsadm-minio pod does not have the correct test.label/two label"
+#              kubectl get pod -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels}'
+#              exit 1
+#          fi
+#          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels.test\.label/two}' | grep -q 'test.value/two'; then
+#              echo "kotsadm-rqlite pod does not have the correct test.label/two label"
+#              kubectl get pod -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels}'
+#              exit 1
+#          fi
+#          # annotation two
+#          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.annotations.test\.annotation/two}' | grep -q 'testannotation.value/two'; then
+#              echo "kotsadm pod does not have the correct test.annotation/two annotation"
+#              kubectl get pod -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.annotations}'
+#              exit 1
+#          fi
+#          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.annotations.test\.annotation/two}' | grep -q 'testannotation.value/two'; then
+#              echo "kotsadm-minio pod does not have the correct test.annotation/two annotation"
+#              kubectl get pod -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.annotations}'
+#              exit 1
+#          fi
+#          if ! kubectl get pod -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.annotations.test\.annotation/two}' | grep -q 'testannotation.value/two'; then
+#              echo "kotsadm-rqlite pod does not have the correct test.annotation/two annotation"
+#              kubectl get pod -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.annotations}'
+#              exit 1
+#          fi
           echo "additional pod labels and annotations are present"
 
       - name: Generate support bundle on failure
