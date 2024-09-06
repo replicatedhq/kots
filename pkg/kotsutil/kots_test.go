@@ -1320,6 +1320,53 @@ func TestGetInstallationParamsWithClientset(t *testing.T) {
 				RequestedChannelSlug:   "stable",
 			},
 		},
+		{
+			name: "no labels or annotations",
+			args: args{
+				configMapName: "kotsadm",
+				namespace:     "test-namespace",
+				clientSet: fake.NewClientset(&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm",
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						"app-version-label":         "",
+						"ensure-rbac":               "true",
+						"initial-app-images-pushed": "false",
+						"kots-install-id":           "2liAJUuyAi3Gnyhvi5Arv5BJRZ4",
+						"minio-enabled-snapshots":   "true",
+						"registry-is-read-only":     "false",
+						"requested-channel-slug":    "stable",
+						"skip-compatibility-check":  "false",
+						"skip-preflights":           "false",
+						"skip-rbac-check":           "false",
+						"strict-security-context":   "false",
+						"use-minimal-rbac":          "false",
+						"wait-duration":             "2m0s",
+						"with-minio":                "true",
+					},
+				}),
+			},
+			want: kotsutil.InstallationParams{
+				AdditionalAnnotations:  map[string]string{},
+				AdditionalLabels:       map[string]string{},
+				AppVersionLabel:        "",
+				EnsureRBAC:             true,
+				KotsadmRegistry:        "",
+				SkipImagePush:          false,
+				SkipPreflights:         false,
+				SkipCompatibilityCheck: false,
+				RegistryIsReadOnly:     false,
+				EnableImageDeletion:    false,
+				SkipRBACCheck:          false,
+				UseMinimalRBAC:         false,
+				StrictSecurityContext:  false,
+				WaitDuration:           time.Minute * 2,
+				WithMinio:              true,
+				RequestedChannelSlug:   "stable",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
