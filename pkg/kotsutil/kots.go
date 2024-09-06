@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"path"
 	"path/filepath"
@@ -1140,6 +1141,8 @@ type InstallationParams struct {
 	WithMinio              bool
 	AppVersionLabel        string
 	RequestedChannelSlug   string
+	AdditionalAnnotations  map[string]string
+	AdditionalLabels       map[string]string
 }
 
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
@@ -1149,6 +1152,12 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	if err != nil {
 		return autoConfig, errors.Wrap(err, "failed to get k8s clientset")
 	}
+
+	return GetInstallationParamsWithClientset(clientset, configMapName)
+}
+
+func GetInstallationParamsWithClientset(clientset kubernetes.Interface, configMapName string) (InstallationParams, error) {
+	autoConfig := InstallationParams{}
 
 	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
@@ -1181,6 +1190,31 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)
 	} else {
 		autoConfig.EnableImageDeletion = isKurl
+	}
+
+	autoConfig.AdditionalAnnotations = make(map[string]string)
+	allAnnotations := strings.Split(kotsadmConfigMap.Data["additional-annotations"], ",")
+	for _, annotation := range allAnnotations {
+		if annotation == "" {
+			continue
+		}
+		parts := strings.Split(annotation, "=")
+		if len(parts) != 2 {
+			return autoConfig, errors.Errorf("invalid additional annotation %q", annotation)
+		}
+		autoConfig.AdditionalAnnotations[parts[0]] = parts[1]
+	}
+	autoConfig.AdditionalLabels = make(map[string]string)
+	allLabels := strings.Split(kotsadmConfigMap.Data["additional-labels"], ",")
+	for _, label := range allLabels {
+		if label == "" {
+			continue
+		}
+		parts := strings.Split(label, "=")
+		if len(parts) != 2 {
+			return autoConfig, errors.Errorf("invalid additional label %q", label)
+		}
+		autoConfig.AdditionalLabels[parts[0]] = parts[1]
 	}
 
 	return autoConfig, nil
