@@ -735,7 +735,7 @@ jobs:
             kubectl get clusterrolebinding
             exit 1
           fi
-          
+
           # check that the kotsadm, minio and rqlite pods have the correct labels and annotations
           echo "Checking additional pod labels and annotations"
           # label one
