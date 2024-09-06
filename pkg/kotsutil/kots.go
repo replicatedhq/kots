@@ -1153,10 +1153,10 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	return GetInstallationParamsWithClientset(clientset, configMapName)
+	return GetInstallationParamsWithClientset(clientset, configMapName, util.PodNamespace)
 }
 
-func GetInstallationParamsWithClientset(clientset kubernetes.Interface, configMapName string) (InstallationParams, error) {
+func GetInstallationParamsWithClientset(clientset kubernetes.Interface, configMapName string, namespace string) (InstallationParams, error) {
 	autoConfig := InstallationParams{}
 
 	isKurl, err := kurl.IsKurl(clientset)
@@ -1164,7 +1164,7 @@ func GetInstallationParamsWithClientset(clientset kubernetes.Interface, configMa
 		return autoConfig, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 
-	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return autoConfig, nil

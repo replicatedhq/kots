@@ -301,7 +301,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 		}
 	}
 
-	globalOptions, err := kotsutil.GetInstallationParamsWithClientset(clientset, kotsadmtypes.KotsadmConfigMap)
+	globalOptions, err := kotsutil.GetInstallationParamsWithClientset(clientset, kotsadmtypes.KotsadmConfigMap, deployOptions.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get global options")
 	}
@@ -854,7 +854,7 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 		}
 	}
 
-	globalOptions, err := kotsutil.GetInstallationParamsWithClientset(clientset, kotsadmtypes.KotsadmConfigMap)
+	globalOptions, err := kotsutil.GetInstallationParamsWithClientset(clientset, kotsadmtypes.KotsadmConfigMap, deployOptions.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get global options")
 	}
