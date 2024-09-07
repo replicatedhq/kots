@@ -80,7 +80,7 @@ require (
 	k8s.io/apimachinery v0.31.0
 	k8s.io/cli-runtime v0.30.3
 	k8s.io/client-go v0.31.0
-	k8s.io/cluster-bootstrap v0.30.3
+	k8s.io/cluster-bootstrap v0.31.0
 	k8s.io/helm v2.17.0+incompatible
 	k8s.io/kubelet v0.30.3
 	k8s.io/metrics v0.30.3
