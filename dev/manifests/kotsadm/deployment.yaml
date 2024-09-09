@@ -87,7 +87,7 @@ spec:
             - name: API_ENDPOINT
               value: http://kotsadm:3000
             - name: API_ADVERTISE_ENDPOINT
-              value: http://127.0.0.1:30000
+              value: http://127.0.0.1:30808
             - name: KOTSADM_ENV
               value: "dev"
             - name: ENABLE_WEB_PROXY

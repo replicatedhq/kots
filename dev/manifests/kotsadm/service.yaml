@@ -12,7 +12,7 @@ spec:
     - name: http
       port: 3000
       targetPort: http
-      nodePort: 30000
+      nodePort: 30808
     - name: dlv
       port: 30001
       targetPort: dlv
