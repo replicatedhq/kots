@@ -20,7 +20,7 @@ fi
 
 echo "Reverting..."
 
-if [ "$component" == "kotsadm" ] || [ "$component" == "kotsadm-web" ]; then
+if [ "$component" == "kotsadm" ]; then
   ec_exec k0s kubectl delete -f dev/manifests/kotsadm-web -n kotsadm
 fi
 

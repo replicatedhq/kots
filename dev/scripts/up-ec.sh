@@ -24,7 +24,7 @@ ec_build_and_load "$component"
 # The kotsadm dev image does not have a web component, and kotsadm-web service does not exist in embedded cluster.
 # Deploy kotsadm-web service instead of shipping a web component in the kotsadm dev image so
 # we can achieve a faster dev experience with hot reloading.
-if [ "$component" == "kotsadm" ] || [ "$component" == "kotsadm-web" ]; then
+if [ "$component" == "kotsadm" ]; then
   ec_build_and_load "kotsadm-web"
   ec_exec k0s kubectl apply -f dev/manifests/kotsadm-web -n kotsadm
   ec_patch "kotsadm-web"

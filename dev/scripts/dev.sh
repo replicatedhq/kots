@@ -24,5 +24,5 @@ build_dev kurl-proxy
 
 kubectl apply -R -f dev/manifests
 
-# patch kotsadm-web to enable hot reloading
+# Patch kotsadm-web to enable hot reloading by default
 render dev/patches/kotsadm-web-up.yaml | kubectl patch deployment kotsadm-web --patch-file=/dev/stdin
