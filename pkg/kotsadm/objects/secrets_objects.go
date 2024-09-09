@@ -49,7 +49,7 @@ func RqliteSecret(namespace string, password string) *corev1.Secret {
 			Labels:    types.GetKotsadmLabels(),
 		},
 		Data: map[string][]byte{
-			"uri":             []byte(fmt.Sprintf("http://kotsadm:%s@kotsadm-rqlite:4001?timeout=60&disableClusterDiscovery=true", password)),
+			"uri":             []byte(fmt.Sprintf("http://kotsadm:%s@kotsadm-rqlite.%s.svc.cluster.local:4001?timeout=60&disableClusterDiscovery=true", password, namespace)),
 			"password":        []byte(password),
 			"authconfig.json": []byte(fmt.Sprintf(`[{"username": "kotsadm", "password": "%s", "perms": ["all"]}, {"username": "*", "perms": ["status", "ready"]}]`, password)),
 		},
