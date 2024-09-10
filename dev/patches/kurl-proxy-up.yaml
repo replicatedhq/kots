@@ -20,5 +20,6 @@ spec:
           mountPath: /go/src/github.com/replicatedhq/kots/kurl_proxy  # workdir in the container
         - name: assets
           mountPath: /assets
+        livenessProbe: ~
         readinessProbe: ~
         resources: ~

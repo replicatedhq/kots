@@ -20,8 +20,10 @@ spec:
           value: "1"
         - name: ENABLE_WEB_PROXY
           value: "1"
+        livenessProbe: ~
         readinessProbe: ~
         resources: ~
         securityContext:
           runAsUser: 0
           runAsGroup: 0
+          runAsNonRoot: false
