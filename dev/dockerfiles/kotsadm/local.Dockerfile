@@ -55,5 +55,5 @@ RUN mv ./bin/kots /kots
 ARG DEBUG_KOTSADM=0
 ENV DEBUG_KOTSADM=${DEBUG_KOTSADM}
 
-ADD hack/dev/entrypoint.sh .
+ADD dev/dockerfiles/kotsadm/entrypoint.sh .
 ENTRYPOINT [ "./entrypoint.sh"]
