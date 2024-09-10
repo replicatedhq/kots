@@ -1,7 +1,7 @@
 node_modules
 .vscode/
 
-Dockerfile.local
+local.Dockerfile
 kustomize
 .buildkite
 dist

@@ -1,24 +1,24 @@
 {
   "kotsadm": {
     "image": "kotsadm-api-dev",
-    "dockerfile": "dev/dockerfiles/kotsadm/Dockerfile.local",
+    "dockerfile": "dev/dockerfiles/kotsadm/local.Dockerfile",
     "dockercontext": ".",
     "deployment": "kotsadm"
   },
   "kotsadm-migrations": {
     "image": "kotsadm-migrations-dev",
-    "dockerfile": "dev/dockerfiles/kotsadm-migrations/Dockerfile.local",
+    "dockerfile": "dev/dockerfiles/kotsadm-migrations/local.Dockerfile",
     "dockercontext": "./migrations"
   },
   "kotsadm-web": {
     "image": "kotsadm-web-dev",
-    "dockerfile": "dev/dockerfiles/kotsadm-web/Dockerfile.local",
+    "dockerfile": "dev/dockerfiles/kotsadm-web/local.Dockerfile",
     "dockercontext": "./web",
     "deployment": "kotsadm-web"
   },
   "kurl-proxy": {
     "image": "kurl-proxy-dev",
-    "dockerfile": "dev/dockerfiles/kurl-proxy/Dockerfile.local",
+    "dockerfile": "dev/dockerfiles/kurl-proxy/local.Dockerfile",
     "dockercontext": "./kurl_proxy",
     "deployment": "kurl-proxy-kotsadm"
   }

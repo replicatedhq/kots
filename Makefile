@@ -138,7 +138,7 @@ web:
 build-ttl.sh: export GOOS ?= linux
 build-ttl.sh: export GOARCH ?= amd64
 build-ttl.sh: web kots build
-	docker build --platform $(GOOS)/$(GOARCH) -f dev/dockerfiles/kotsadm/Dockerfile.ttlsh -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
+	docker build --platform $(GOOS)/$(GOARCH) -f dev/dockerfiles/kotsadm/ttlsh.Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 
 .PHONY: all-ttl.sh
