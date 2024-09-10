@@ -19,6 +19,5 @@ COPY --chown=kotsadm:kotsadm ./assets /assets
 WORKDIR /
 
 EXPOSE 8800
-# ARG version=unknown
-# ENV VERSION=${version}
+
 CMD ["/kurl_proxy"]

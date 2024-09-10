@@ -1,25 +1,25 @@
 {
   "kotsadm": {
     "image": "kotsadm-api-dev",
-    "dockerfile": "./hack/dev/skaffold.Dockerfile",
-    "dockercontext": "./",
+    "dockerfile": "dev/dockerfiles/kotsadm/Dockerfile.local",
+    "dockercontext": ".",
     "deployment": "kotsadm"
-  },
-  "kurl-proxy": {
-    "image": "kurl-proxy-dev",
-    "dockerfile": "./kurl_proxy/skaffold.Dockerfile",
-    "dockercontext": "./kurl_proxy",
-    "deployment": "kurl-proxy-kotsadm"
-  },
-  "kotsadm-web": {
-    "image": "kotsadm-web-dev",
-    "dockerfile": "./web/skaffold.Dockerfile",
-    "dockercontext": "./web",
-    "deployment": "kotsadm-web"
   },
   "kotsadm-migrations": {
     "image": "kotsadm-migrations-dev",
-    "dockerfile": "./migrations/skaffold.Dockerfile",
+    "dockerfile": "dev/dockerfiles/kotsadm-migrations/Dockerfile.local",
     "dockercontext": "./migrations"
+  },
+  "kotsadm-web": {
+    "image": "kotsadm-web-dev",
+    "dockerfile": "dev/dockerfiles/kotsadm-web/Dockerfile.local",
+    "dockercontext": "./web",
+    "deployment": "kotsadm-web"
+  },
+  "kurl-proxy": {
+    "image": "kurl-proxy-dev",
+    "dockerfile": "dev/dockerfiles/kurl-proxy/Dockerfile.local",
+    "dockercontext": "./kurl_proxy",
+    "deployment": "kurl-proxy-kotsadm"
   }
 }

@@ -1,5 +1,5 @@
 include Makefile.build.mk
-CURRENT_USER := $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
+CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= 0.20240817.012454-r0
 RQLITE_TAG ?= 8.28.1-r0
 DEX_TAG ?= 2.41.1-r0
@@ -138,7 +138,7 @@ web:
 build-ttl.sh: export GOOS ?= linux
 build-ttl.sh: export GOARCH ?= amd64
 build-ttl.sh: web kots build
-	docker build --platform $(GOOS)/$(GOARCH) -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
+	docker build --platform $(GOOS)/$(GOARCH) -f dev/dockerfiles/kotsadm/Dockerfile.ttlsh -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 
 .PHONY: all-ttl.sh
@@ -178,10 +178,6 @@ kotsadm-bundle-nominio:
 	skopeo copy --all --dest-tls-verify=false docker://replicated/local-volume-provider:${LVP_TAG} docker://${BUNDLE_REGISTRY}/local-volume-provider:${LVP_TAG}
 
 	go run ./scripts/create-airgap-file.go false
-
-.PHONY: cache
-cache:
-	docker build -f hack/dev/skaffoldcache.Dockerfile . -t kotsadm:cache
 
 .PHONY: init-sbom
 init-sbom:

@@ -2037,7 +2037,7 @@ jobs:
       - name: run kots admin-console push-images
         run: |
           set +e
-          ./bin/kots admin-console push-images ./hack/tests/small.airgap ttl.sh/automated-${{ github.run_id }}
+          ./bin/kots admin-console push-images ./e2e/artifacts/small.airgap ttl.sh/automated-${{ github.run_id }}
 
 
   validate-kots-admin-console-generate-manifests:
