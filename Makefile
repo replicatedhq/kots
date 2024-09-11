@@ -4,6 +4,7 @@ MINIO_TAG ?= 0.20240909.165928-r0
 RQLITE_TAG ?= 8.30.2-r0
 DEX_TAG ?= 2.41.1-r0
 LVP_TAG ?= v0.6.7
+PACT_PUBLISH_CONTRACT ?= false
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -31,6 +32,16 @@ test:
 		go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out -run $(RUN); \
 	else \
 		go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out; \
+	fi
+
+.PHONY: pact-consumer
+pact-consumer:
+	mkdir -p pacts/consumer && ( rm -rf pacts/consumer/* || : )
+	go test $(TEST_BUILDFLAGS) -v ./contracts/... || true
+	if [ "${PACT_PUBLISH_CONTRACT}" = "true" ]; then \
+		pact-broker publish ./pacts/consumer \
+			--auto-detect-version-properties \
+			--consumer-app-version ${GIT_TAG} || true; \
 	fi
 
 .PHONY: e2e
