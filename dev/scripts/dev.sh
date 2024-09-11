@@ -25,5 +25,6 @@ build_dev kurl-proxy
 
 kubectl apply -R -f dev/manifests
 
-# Patch kotsadm-web to enable hot reloading by default
+# kotsadm-web relies on host files to minimize the image size and
+# to enable hot reloading by default, so it should always be "up".
 render dev/patches/kotsadm-web-up.yaml | kubectl patch deployment kotsadm-web --patch-file=/dev/stdin
