@@ -35,7 +35,7 @@ function populate() {
       ;;
     "kurl-proxy")
       docker run --rm \
-        -v "$(pwd)/kurl_proxy:/replicatedhq/kots/kurl_proxy" \
+        -v "$(pwd):/replicatedhq/kots" \
         -v "$(pwd)/dev/.gomodcache:/go/pkg/mod" \
         -v "$(pwd)/dev/.gocache:/root/.cache/go-build" \
         -w /replicatedhq/kots/kurl_proxy \
