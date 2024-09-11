@@ -1029,8 +1029,8 @@ github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHm
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
-github.com/k0sproject/k0s v1.29.7-0.20240618090010-edbb703218fd h1:pkByvcnH+qalVSjViBxr+eewQ/BilsSOamvzdYUErtM=
-github.com/k0sproject/k0s v1.29.7-0.20240618090010-edbb703218fd/go.mod h1:/KnUpfHy5N58YOZ+PUGiGraJM2bbJqZuZpOGi5468Sg=
+github.com/k0sproject/k0s v1.29.9-0.20240821114611-d76eb6bb05a7 h1:pxtk/512ibsry6nNx8EfBhFOeeJ/gad1Igjr+7Th6A0=
+github.com/k0sproject/k0s v1.29.9-0.20240821114611-d76eb6bb05a7/go.mod h1:eAO/EjCQxfHGnfxOUs061GdLYISLLYbXdexOPMn048g=
 github.com/karrick/godirwalk v1.8.0/go.mod h1:H5KPZjojv4lE+QYImBI8xVtrBRgYrIVsaRPx4tDPEn4=
 github.com/karrick/godirwalk v1.10.3/go.mod h1:RoGL9dQei4vP9ilrpETWE8CLOZ1kiN0LhBygSwrAsHA=
 github.com/karrick/godirwalk v1.16.1 h1:DynhcF+bztK8gooS0+NDJFrdNZjJ3gzVzC545UNA9iw=
@@ -1328,8 +1328,8 @@ github.com/redis/go-redis/v9 v9.0.5/go.mod h1:WqMKv5vnQbRuZstUwxQI195wHy+t4PuXDO
 github.com/redis/go-redis/v9 v9.5.1 h1:H1X4D3yHPaYrkL5X06Wh6xNVM/pX0Ft4RV0vMGvLBh8=
 github.com/redis/go-redis/v9 v9.5.1/go.mod h1:hdY0cQFCN4fnSYT6TkisLufl/4W5UIXyv0b/CLO2V2M=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
-github.com/replicatedhq/embedded-cluster/kinds v1.11.1 h1:VuXMwXIupdbGeFkF8m2O5oYOq4DmymP6AzM2Qn7H9ck=
-github.com/replicatedhq/embedded-cluster/kinds v1.11.1/go.mod h1:i9L1S45numg5giWKuzwI6+Ag9tH9+/RQ5B3SsX/fPgE=
+github.com/replicatedhq/embedded-cluster/kinds v0.0.0-20240911124703-aaa8c0236e21 h1:WV2ISkxxamW596PMm+YnKEQJ+e+GDaUq5jxbQ1YPcBw=
+github.com/replicatedhq/embedded-cluster/kinds v0.0.0-20240911124703-aaa8c0236e21/go.mod h1:W2AQug7u0e9afPL0oUZyHcmn1+5ur6Y0TRcdnI5te2g=
 github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95 h1:JhwPz4Bgbz5iYl3UV2EB+HnF9oW/eCRi+hASAz+J6XI=
 github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=

@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots
 
-go 1.22.4
+go 1.23.0
 
 require (
 	cloud.google.com/go/storage v1.40.0
@@ -48,7 +48,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/replicatedhq/embedded-cluster/kinds v1.11.1
+	github.com/replicatedhq/embedded-cluster/kinds v0.0.0-20240911124703-aaa8c0236e21
 	github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.99.0
@@ -248,7 +248,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/k0sproject/k0s v1.29.7-0.20240618090010-edbb703218fd // indirect
+	github.com/k0sproject/k0s v1.29.9-0.20240821114611-d76eb6bb05a7 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
