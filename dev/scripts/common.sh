@@ -27,11 +27,15 @@ function populate() {
         -v "$(pwd)/dev/.gomodcache:/go/pkg/mod" \
         -v "$(pwd)/dev/.gocache:/root/.cache/go-build" \
         -w /replicatedhq/kots \
-        golang:1.22-bookworm \
-        make kots build
+        golang:1.22-alpine \
+        /bin/sh -c "apk add make bash git && make kots build"
       ;;
     "kotsadm-web")
-      make -C web deps
+      docker run --rm \
+        -v "$(pwd):/replicatedhq/kots" \
+        -w /replicatedhq/kots/web \
+        node:18-alpine \
+        /bin/sh -c "apk add make bash git && make deps"
       ;;
     "kurl-proxy")
       docker run --rm \
@@ -39,8 +43,8 @@ function populate() {
         -v "$(pwd)/dev/.gomodcache:/go/pkg/mod" \
         -v "$(pwd)/dev/.gocache:/root/.cache/go-build" \
         -w /replicatedhq/kots/kurl_proxy \
-        golang:1.22-bookworm \
-        make build
+        golang:1.22-alpine \
+        /bin/sh -c "apk add make bash git && make build"
       ;;
   esac
 }
