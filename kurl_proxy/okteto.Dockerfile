@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3
-FROM golang:1.22-bookworm
+FROM golang:1.23-bookworm
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kurl_proxy
 WORKDIR $PROJECTPATH
