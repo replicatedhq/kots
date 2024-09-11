@@ -75,8 +75,8 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 			// if we can't find config map in cluster, it's not an error,  we still want to return a stripped down response
 			if kuberneteserrors.IsNotFound(err) {
 				metadataResponse.AdminConsoleMetadata.IsAirgap = kotsadmMetadata.IsAirgap
-				metadataResponse.AdminConsoleMetadata.IsKurl = false
-				metadataResponse.AdminConsoleMetadata.IsEmbeddedCluster = true
+				metadataResponse.AdminConsoleMetadata.IsKurl = kotsadmMetadata.IsKurl
+				metadataResponse.AdminConsoleMetadata.IsEmbeddedCluster = kotsadmMetadata.IsEmbeddedCluster
 
 				logger.Info(fmt.Sprintf("config map %q not found", metadataConfigMapName))
 				JSON(w, http.StatusOK, &metadataResponse)
