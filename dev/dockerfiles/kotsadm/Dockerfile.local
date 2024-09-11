@@ -46,4 +46,5 @@ COPY ./bin/kots /kots
 ARG DEBUG_KOTSADM=0
 ENV DEBUG_KOTSADM=${DEBUG_KOTSADM}
 
+COPY ./dev/dockerfiles/kotsadm/entrypoint.sh ./
 ENTRYPOINT [ "./entrypoint.sh"]
