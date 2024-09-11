@@ -127,6 +127,7 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 		}
 		options := WriteOptions{
 			BaseDir:          filepath.Join(options.BaseDir, b.Path),
+			Overwrite:        options.Overwrite,
 			ExcludeKotsKinds: options.ExcludeKotsKinds,
 		}
 		baseResources, basePatches, err := base.writeBase(options, false)
