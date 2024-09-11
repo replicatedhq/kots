@@ -1,0 +1,9 @@
+FROM golang:1.22-alpine
+
+WORKDIR /replicatedhq/kots/kurl_proxy
+
+COPY ./bin/kurl_proxy /kurl_proxy
+
+ADD ./assets /assets
+
+ENTRYPOINT ["/kurl_proxy"]

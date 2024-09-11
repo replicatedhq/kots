@@ -11,5 +11,5 @@ spec:
         image: kotsadm-web-dev
         volumeMounts:
         - name: dev
-          mountPath: /src # workdir in the container
+          mountPath: /replicatedhq/kots/web # workdir in the container
         resources: ~

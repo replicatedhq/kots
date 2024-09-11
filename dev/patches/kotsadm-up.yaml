@@ -6,6 +6,14 @@ spec:
         hostPath:
           path: __PROJECT_DIR__
           type: Directory
+      - name: gocache
+        hostPath:
+          path: __PROJECT_DIR__/dev/.gocache
+          type: Directory
+      - name: gomodcache
+        hostPath:
+          path: __PROJECT_DIR__/dev/.gomodcache
+          type: Directory
       containers:
       - name: kotsadm
         image: kotsadm-api-dev
@@ -13,7 +21,11 @@ spec:
         args: ["-c", "while true; do sleep 30; done;"]
         volumeMounts:
         - name: dev
-          mountPath: /go/src/github.com/replicatedhq/kots # workdir in the container
+          mountPath: /replicatedhq/kots # workdir in the container
+        - name: gocache
+          mountPath: /root/.cache/go-build
+        - name: gomodcache
+          mountPath: /go/pkg/mod
         env:
         # in order to serve from kotsadm-web even in embedded cluster
         - name: DISABLE_SPA_SERVING

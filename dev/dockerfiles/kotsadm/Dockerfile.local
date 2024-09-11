@@ -1,11 +1,10 @@
-FROM golang:1.22
+FROM golang:1.22-alpine AS dlv-builder
 
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.22.1
 
-ENV GO111MODULE=on
-ENV PATH="/usr/local/bin:$PATH"
+FROM golang:1.22-alpine
 
-RUN apt-get update && apt-get install -y --no-install-recommends s3cmd
+RUN apk add --no-cache ca-certificates s3cmd curl git make bash
 
 # Install Kubectl 1.29
 ENV KUBECTL_1_29_VERSION=v1.29.0
@@ -14,7 +13,7 @@ ENV KUBECTL_1_29_SHA256SUM=0e03ab096163f61ab610b33f37f55709d3af8e16e4dcc1eb68288
 RUN curl -fsSLO "${KUBECTL_1_29_URL}" \
   && echo "${KUBECTL_1_29_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
-  && mv kubectl /usr/local/bin/kubectl
+  && mv kubectl /usr/local/bin//kubectl
 
 # Install kustomize 5
 ENV KUSTOMIZE5_VERSION=5.1.1
@@ -38,22 +37,13 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && mv linux-amd64/helm /usr/local/bin/helm \
   && rm -rf helm.tar.gz linux-amd64
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
-WORKDIR $PROJECTPATH
-COPY Makefile ./
-COPY Makefile.build.mk ./
-COPY go.mod go.sum ./
-COPY cmd ./cmd
-COPY pkg ./pkg
-COPY web/webcontent.go ./web/webcontent.go
+WORKDIR /replicatedhq/kots
 
-RUN make build kots
-
-RUN mv ./bin/kotsadm /kotsadm
-RUN mv ./bin/kots /kots
+COPY --from=dlv-builder /go/bin/dlv /dlv
+COPY ./bin/kotsadm /kotsadm
+COPY ./bin/kots /kots
 
 ARG DEBUG_KOTSADM=0
 ENV DEBUG_KOTSADM=${DEBUG_KOTSADM}
 
-ADD dev/dockerfiles/kotsadm/entrypoint.sh .
 ENTRYPOINT [ "./entrypoint.sh"]

@@ -5,25 +5,8 @@ RQLITE_TAG ?= 8.28.1-r0
 DEX_TAG ?= 2.41.1-r0
 LVP_TAG ?= v0.6.7
 
-define sendMetrics
-@if [ -z "${PROJECT_NAME}" ]; then \
-    echo "PROJECT_NAME not defined"; \
-    exit 1; \
-fi
-@curl -X POST "https://api.datadoghq.com/api/v1/series" \
--H "Content-Type: text/json" \
--H "DD-API-KEY: ${DD_API_KEY}" \
--d "{\"series\": [{\"metric\": \"build.time\",\"points\": [[$$(date +%s), $$(expr $$(date +%s) - $$(cat start-time))]],\"tags\": [\"service:${PROJECT_NAME}\"]}]}"
-endef
-
-.PHONY: capture-start-time
-capture-start-time:
-	@echo $$(date +%s) > start-time
-
-.PHONY: report-metric
-report-metric:
-	@$(if ${DD_API_KEY}, $(call sendMetrics))
-	@rm start-time
+OS ?= linux
+ARCH ?= $(shell go env GOARCH)
 
 .PHONY: test
 test:
@@ -50,14 +33,20 @@ ci-test:
 	go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... ./integration/... -coverprofile cover.out
 
 .PHONY: kots
-kots: PROJECT_NAME = kots
-kots: capture-start-time kots-real report-metric
-
-.PHONY: kots-real
-kots-real:
+kots:
 	mkdir -p web/dist
 	touch web/dist/README.md
 	go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
+
+.PHONY: build
+build:
+	mkdir -p web/dist
+	touch web/dist/README.md
+	go build ${LDFLAGS} ${GCFLAGS} -v -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
+
+.PHONY: run
+run:
+	./bin/kotsadm api
 
 .PHONY: fmt
 fmt:
@@ -78,24 +67,6 @@ mock:
 	mockgen -source=pkg/store/store_interface.go -destination=pkg/store/mock/mock.go
 	mockgen -source=pkg/handlers/interface.go -destination=pkg/handlers/mock/mock.go
 	mockgen -source=pkg/operator/client/client_interface.go -destination=pkg/operator/client/mock/mock.go
-
-.PHONY: build
-build: PROJECT_NAME = kotsadm
-build: capture-start-time build-real report-metric
-
-.PHONY: build-real
-build-real:
-	mkdir -p web/dist
-	touch web/dist/README.md
-	go build ${LDFLAGS} ${GCFLAGS} -v -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
-
-.PHONY: tidy
-tidy:
-	go mod tidy
-
-.PHONY: run
-run:
-	./bin/kotsadm api
 
 .PHONY: dev
 dev:
@@ -135,26 +106,22 @@ web:
 	source .image.env && ${MAKE} -C web build-kotsadm
 
 .PHONY: build-ttl.sh
-build-ttl.sh: export GOOS ?= linux
-build-ttl.sh: export GOARCH ?= amd64
 build-ttl.sh: web kots build
-	docker build --platform $(GOOS)/$(GOARCH) -f dev/dockerfiles/kotsadm/ttlsh.Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
+	docker build --platform $(OS)/$(ARCH) -f dev/dockerfiles/kotsadm/Dockerfile.ttlsh -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 
 .PHONY: all-ttl.sh
-all-ttl.sh: export GOOS ?= linux
-all-ttl.sh: export GOARCH ?= amd64
 all-ttl.sh: build-ttl.sh
 	source .image.env && \
 		IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h \
-		DOCKER_BUILD_ARGS="--platform $(GOOS)/$(GOARCH)" \
+		DOCKER_BUILD_ARGS="--platform $(OS)/$(ARCH)" \
 		make -C migrations build_schema
 
-	docker pull --platform $(GOOS)/$(GOARCH) kotsadm/minio:${MINIO_TAG}
+	docker pull --platform $(OS)/$(ARCH) kotsadm/minio:${MINIO_TAG}
 	docker tag kotsadm/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
-	docker pull --platform $(GOOS)/$(GOARCH) kotsadm/rqlite:${RQLITE_TAG}
+	docker pull --platform $(OS)/$(ARCH) kotsadm/rqlite:${RQLITE_TAG}
 	docker tag kotsadm/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 

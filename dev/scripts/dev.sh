@@ -12,7 +12,8 @@ fi
 
 function build_dev() {
   echo "Building $1..."
-  docker build -t $(image $1) -f $(dockerfile $1) $(dockercontext $1)
+  populate $1
+  build $1
   restart $1
   echo ""
 }

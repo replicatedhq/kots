@@ -45,3 +45,7 @@ packages/*
 
 # tmp files
 *.tmp
+
+# dev
+.gocache
+.gomodcache

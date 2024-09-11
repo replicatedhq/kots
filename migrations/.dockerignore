@@ -3,6 +3,5 @@
 .gitignore
 .dockerignore
 
-local.Dockerfile
 kustomize
 .buildkite

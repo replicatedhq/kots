@@ -18,6 +18,38 @@ function deployment() {
   jq -r ".\"$1\".deployment" dev/metadata.json
 }
 
+# Populates local caches and binaries for faster (re)builds
+function populate() {
+  case "$1" in
+    "kotsadm")
+      docker run --rm \
+        -v "$(pwd):/replicatedhq/kots" \
+        -v "$(pwd)/dev/.gomodcache:/go/pkg/mod" \
+        -v "$(pwd)/dev/.gocache:/root/.cache/go-build" \
+        -w /replicatedhq/kots \
+        golang:1.22-bookworm \
+        make kots build
+      ;;
+    "kotsadm-web")
+      make -C web deps
+      ;;
+    "kurl-proxy")
+      docker run --rm \
+        -v "$(pwd)/kurl_proxy:/replicatedhq/kots/kurl_proxy" \
+        -v "$(pwd)/dev/.gomodcache:/go/pkg/mod" \
+        -v "$(pwd)/dev/.gocache:/root/.cache/go-build" \
+        -w /replicatedhq/kots/kurl_proxy \
+        golang:1.22-bookworm \
+        make build
+      ;;
+  esac
+}
+
+# Builds a component's image
+function build() {
+  docker build -t $(image $1) -f $(dockerfile $1) $(dockercontext $1)
+}
+
 # Restarts a component
 function restart() {
   if [ "$1" == "kotsadm-migrations" ]; then
@@ -62,7 +94,8 @@ function ec_build_and_load() {
     echo "$(image $1) image already exists, skipping build..."
   else
     echo "Building $1..."
-    docker build -t $(image $1) -f $(dockerfile $1) $(dockercontext $1)
+    populate $1
+    build $1
   fi
 
   # Load the image into the embedded cluster

@@ -2,9 +2,7 @@ FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates git gnupg2 s3cmd \
-  && for i in 1 2 3 4 5 6 7 8; do mkdir -p "/usr/share/man/man$i"; done \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -rf /usr/share/man/man*
+  && rm -rf /var/lib/apt/lists/*
 
 # Install Kubectl 1.29
 ENV KUBECTL_1_29_VERSION=v1.29.0
