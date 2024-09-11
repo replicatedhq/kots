@@ -4,11 +4,19 @@ spec:
       volumes:
       - name: dev
         hostPath:
-          path: __PROJECT_DIR__/kurl_proxy
+          path: __PROJECT_DIR__
           type: Directory
       - name: assets
         hostPath:
           path: __PROJECT_DIR__/kurl_proxy/assets
+          type: Directory
+      - name: gocache
+        hostPath:
+          path: __PROJECT_DIR__/dev/.gocache
+          type: Directory
+      - name: gomodcache
+        hostPath:
+          path: __PROJECT_DIR__/dev/.gomodcache
           type: Directory
       containers:
       - name: proxy
@@ -17,9 +25,17 @@ spec:
         args: ["-c", "while true; do sleep 30; done;"]
         volumeMounts:
         - name: dev
-          mountPath: /replicatedhq/kots/kurl_proxy  # workdir in the container
+          mountPath: /replicatedhq/kots # parent of workdir in the container
         - name: assets
           mountPath: /assets
+        - name: gocache
+          mountPath: /root/.cache/go-build
+        - name: gomodcache
+          mountPath: /go/pkg/mod
         livenessProbe: ~
         readinessProbe: ~
         resources: ~
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
