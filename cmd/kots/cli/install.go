@@ -277,16 +277,6 @@ func InstallCmd() *cobra.Command {
 				additionalAnnotations[parts[0]] = parts[1]
 			}
 
-			caFiles := []string{}
-			for _, caFile := range v.GetStringSlice("private-ca") {
-				// read CA file contents
-				caData, err := os.ReadFile(caFile)
-				if err != nil {
-					return fmt.Errorf("failed to read CA file %s: %w", caFile, err)
-				}
-				caFiles = append(caFiles, string(caData))
-			}
-
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:              namespace,
 				Context:                v.GetString("context"),
@@ -318,7 +308,8 @@ func InstallCmd() *cobra.Command {
 				RequestedChannelSlug:   preferredChannelSlug,
 				AdditionalLabels:       additionalLabels,
 				AdditionalAnnotations:  additionalAnnotations,
-				AdditionalTrustedCAs:   caFiles,
+				TrustedCAsConfigmap:    v.GetString("private-ca-configmap"),
+				TrustedCAsConfigmapNS:  v.GetString("private-ca-configmap-namespace"),
 
 				RegistryConfig: *registryConfig,
 
@@ -562,7 +553,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console and only install the application")
 	cmd.Flags().StringArray("additional-annotations", []string{}, "additional annotations to add to kotsadm pods")
 	cmd.Flags().StringArray("additional-labels", []string{}, "additional labels to add to kotsadm pods")
-	cmd.Flags().StringArray("private-ca", []string{}, "Path to a trusted private CA certificate file")
+	cmd.Flags().String("private-ca-configmap", "", "the name of a configmap containing private CAs to add to the kotsadm deployment")
+	cmd.Flags().String("private-ca-configmap-namespace", "", "the namespace of a configmap containing private CAs to add to the kotsadm deployment")
 
 	registryFlags(cmd.Flags())
 
