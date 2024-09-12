@@ -111,6 +111,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["Lookup"] = ctx.lookup
 
 	funcMap["PrivateCACert"] = ctx.privateCACert
+	funcMap["PrivateCACertNamespace"] = ctx.privateCACertNamespace
 
 	return funcMap
 }
@@ -682,4 +683,12 @@ func (ctx StaticCtx) lookup(apiversion string, resource string, namespace string
 func (ctx StaticCtx) privateCACert() string {
 	// return the name of a configmap holding additional CA certificates provided by the end user at install time
 	return os.Getenv("SSL_CERT_CONFIGMAP")
+}
+
+func (ctx StaticCtx) privateCACertNamespace() string {
+	// return the namespace of a configmap holding additional CA certificates provided by the end user at install time
+	if os.Getenv("SSL_CERT_CONFIGMAP_NAMESPACE") != "" {
+		return os.Getenv("SSL_CERT_CONFIGMAP_NAMESPACE")
+	}
+	return ctx.namespace()
 }
