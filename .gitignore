@@ -15,6 +15,9 @@ bin/
 vendor
 .idea/
 .vscode/
+pact_logs/
+pacts/
+
 
 # goreleaser
 /dist
