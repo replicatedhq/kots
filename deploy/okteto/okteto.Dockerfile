@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3
-FROM golang:1.22-bookworm as builder
+FROM golang:1.23-bookworm as builder
 
 EXPOSE 2345
 
