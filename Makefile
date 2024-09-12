@@ -31,10 +31,6 @@ pact-consumer:
 e2e:
 	${MAKE} -C e2e
 
-.PHONY: cluster
-cluster:
-	./cluster.sh
-
 .PHONY: integration-cli
 integration-cli:
 	go build ${LDFLAGS} -o bin/kots-integration ./integration
