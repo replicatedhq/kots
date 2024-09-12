@@ -4218,6 +4218,8 @@ jobs:
         cluster: [
           {distribution: kind, version: v1.28.0}
         ]
+    env:
+      APP_SLUG: get-set-config
     steps:
       - name: Checkout
         uses: actions/checkout@v4
