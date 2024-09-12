@@ -4260,6 +4260,7 @@ jobs:
           echo ${{ secrets.GET_SET_CONFIG_LICENSE }} | base64 -d > license.yaml
 
           echo "test value" > ./ca.crt
+          kubectl create ns automated-${{ github.run_id }}
           kubectl create configmap -n automated-${{ github.run_id }} custom-cas --from-file=ca.crt=./ca.crt
 
           ./bin/kots \
