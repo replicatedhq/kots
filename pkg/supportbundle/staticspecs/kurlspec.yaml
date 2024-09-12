@@ -121,7 +121,7 @@ spec:
             - name: rqlite-status
               image: busybox:1
               command: ["wget"]
-              args: ["-q", "-T", "5", "http://kotsadm-rqlite:4001/status?pretty", "-O-"]
+              args: ["-q", "-T", "5", "http://kotsadm-rqlite.default.svc.cluster.local:4001/status?pretty", "-O-"]
     - runPod:
         collectorName: "rqlite-nodes"
         name: rqlite-nodes
@@ -131,7 +131,7 @@ spec:
             - name: rqlite-nodes
               image: busybox:1
               command: ["wget"]
-              args: ["-q", "-T", "5", "http://kotsadm-rqlite:4001/nodes?pretty&ver=2", "-O-"]
+              args: ["-q", "-T", "5", "http://kotsadm-rqlite.default.svc.cluster.local:4001/nodes?pretty&ver=2", "-O-"]
     - copyFromHost:
         collectorName: kurl-host-preflights
         name: kots/kurl/host-preflights

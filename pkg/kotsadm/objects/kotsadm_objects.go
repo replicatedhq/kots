@@ -290,7 +290,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 		},
 		{
 			Name:  "S3_ENDPOINT",
-			Value: "http://kotsadm-minio:9000",
+			Value: fmt.Sprintf("http://kotsadm-minio.%s.svc.cluster.local:9000", deployOptions.Namespace),
 		},
 		{
 			Name:  "S3_BUCKET_NAME",
@@ -562,7 +562,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							Env: []corev1.EnvVar{
 								{
 									Name:  "S3_ENDPOINT",
-									Value: "http://kotsadm-minio:9000",
+									Value: fmt.Sprintf("http://kotsadm-minio.%s.svc.cluster.local:9000", deployOptions.Namespace),
 								},
 								{
 									Name:  "S3_BUCKET_NAME",
@@ -1082,7 +1082,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							Env: []corev1.EnvVar{
 								{
 									Name:  "S3_ENDPOINT",
-									Value: "http://kotsadm-minio:9000",
+									Value: fmt.Sprintf("http://kotsadm-minio.%s.svc.cluster.local:9000", deployOptions.Namespace),
 								},
 								{
 									Name:  "S3_BUCKET_NAME",
