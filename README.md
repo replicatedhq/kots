@@ -72,37 +72,51 @@ cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/ko
     cd kots
     ```
 
-2. From the root directory, run:
+1. From the root directory, run:
     ```bash
     make dev
     ```
 
-### Testing Changes to kotsadm web
+1. Once the development environment is running, you can access the admin console:
+   - Directly at http://localhost:30808
+   - Via kURL proxy at http://localhost:30880
+
+### Developing kotsadm web
 
 Changes to the kotsadm web component are reflected in real-time, no manual steps required.
 
-### Testing Changes to kotsadm API
+### Developing kotsadm API
 
-1. Run the following commands:
+1. To apply your current changes, run the following commands:
     ```bash
     make kotsadm-up
     make build run
     ```
 
-2. To test additional changes, stop the current process with Ctrl+C, then run the following command:
+1. To apply additional changes, stop the current process with Ctrl+C, then run the following command:
     ```bash
     make build run
     ```
 
-### Testing Changes to kurl-proxy web / API
+1. When finished developing, run the following command to revert back to the original state:
+    ```bash
+    make kotsadm-down
+    ```
 
-1. Run the following commands:
+### Developing kurl-proxy web / API
+
+1. To apply your current changes, run the following commands:
     ```bash
     make kurl-proxy-up
     make build run
     ```
 
-2. To test additional changes, stop the current process with Ctrl+C, then run the following command:
+1. To apply additional changes, stop the current process with Ctrl+C, then run the following command:
     ```bash
     make build run
+    ```
+
+1. When finished developing, run the following command to revert back to the original state:
+    ```bash
+    make kurl-proxy-down
     ```
