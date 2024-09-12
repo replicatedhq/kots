@@ -31,8 +31,10 @@ type State = {
 
 const EmbeddedClusterManagement = ({
   fromLicenseFlow = false,
+  setCurrentStep,
 }: {
   fromLicenseFlow?: boolean;
+  setCurrentStep: (step: string) => void;
 }) => {
   const [state, setState] = useReducer(
     (prevState: State, newState: Partial<State>) => ({
@@ -245,6 +247,10 @@ const EmbeddedClusterManagement = ({
       setSelectedNodeTypes([nodeTypes[0]]);
     }
   }, [rolesData]);
+
+  useEffect(() => {
+    setCurrentStep("configure-cluster");
+  }, []);
 
   const determineDisabledState = () => {
     return false;

@@ -244,7 +244,7 @@ func responseAppFromApp(ctx context.Context, a *apptypes.App) (*types.ResponseAp
 		allowSnapshots = s && license.Spec.IsSnapshotSupported
 	}
 
-	isGitopsSupported := license.Spec.IsGitOpsSupported && !util.IsEmbeddedCluster() // gitops is not allowed in embedded cluster installations today
+	isGitopsSupported := false // gitops is not allowed in embedded cluster installations today
 
 	links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
 	if err != nil {

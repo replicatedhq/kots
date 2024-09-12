@@ -29,6 +29,7 @@ type Props = {
   refreshAppData: () => void;
   refetchApps: () => void;
   navigate: ReturnType<typeof useNavigate>;
+  setCurrentStep: (step: string) => void;
 };
 
 // This was typed from the implementation of the component so it might be wrong
@@ -126,6 +127,7 @@ class AppConfig extends Component<Props, State> {
   }
 
   componentDidMount() {
+    this.props.setCurrentStep("configure-app");
     const { app, navigate } = this.props;
     if (app && !app.isConfigurable) {
       // app not configurable - redirect

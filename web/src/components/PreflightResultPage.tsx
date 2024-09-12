@@ -28,6 +28,7 @@ interface Props {
   fromLicenseFlow?: boolean;
   logo: string;
   refetchAppsList?: () => void;
+  setCurrentStep: (step: string) => void;
 }
 
 function PreflightResultPage(props: Props) {
@@ -60,6 +61,8 @@ function PreflightResultPage(props: Props) {
         props.refetchAppsList();
       }
     };
+
+    props.setCurrentStep("validate");
   }, []);
 
   if (!preflightCheck?.showPreflightCheckPending) {

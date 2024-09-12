@@ -1,4 +1,4 @@
-import { createContext, useEffect, useReducer } from "react";
+import { createContext, useEffect, useReducer, useState } from "react";
 import { createBrowserHistory } from "history";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -56,6 +56,8 @@ import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
 import EmbeddedClusterViewNode from "@components/apps/EmbeddedClusterViewNode";
 import UpgradeStatusModal from "@components/modals/UpgradeStatusModal";
 import AppLoading from "@components/apps/AppLoading";
+import { GuidedInstallProvider } from "./context/GuidedInstallContext";
+import Icon from "@components/Icon";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -450,6 +452,13 @@ const Root = () => {
   };
   const navigate = useNavigate();
 
+  const [currentStep, setCurrentStep] = useState("secure");
+  // step 0: secure admin console
+  // step 1: configure cluster
+  // step 2: configure app
+  // step 3: valdiate/preflights
+  // step 4: install
+
   return (
     <QueryClientProvider client={queryClient}>
       <Helmet>
@@ -493,6 +502,7 @@ const Root = () => {
         <ToastProvider>
           {/* eslint-disable-next-line */}
           {/* @ts-ignore */}
+
           <NavBar
             logo={state.themeState.navbarLogo || state.appLogo}
             refetchAppsList={getAppsList}
@@ -508,427 +518,529 @@ const Root = () => {
             isSnapshotsSupported={isSnapshotsSupported()}
             errLoggingOut={state.errLoggingOut}
           />
-          <div className="flex1 flex-column u-overflow--auto tw-relative">
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <Navigate
-                    to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"}
-                  />
-                }
-              />
-              <Route path="/crashz" element={<Crashz />} />{" "}
-              <Route path="*" element={<NotFound />} />
-              <Route
-                path="/secure-console"
-                element={
-                  <SecureAdminConsole
-                    logo={state.appLogo}
-                    appName={state.selectedAppName}
-                    pendingApp={getPendingApp}
-                    onLoginSuccess={getAppsList}
-                    fetchingMetadata={state.fetchingMetadata}
-                    navigate={navigate}
-                    isEmbeddedClusterWaitingForNodes={
-                      state.isEmbeddedClusterWaitingForNodes
-                    }
-                  />
-                }
-              />
-              <Route
-                path="/:slug/preflight"
-                element={
-                  <PreflightResultPage
-                    logo={state.appLogo || ""}
-                    fromLicenseFlow={true}
-                    refetchAppsList={getAppsList}
-                  />
-                }
-              />
-              <Route
-                path="/:slug/config"
-                element={
-                  <AppConfig
-                    fromLicenseFlow={true}
-                    refetchAppsList={getAppsList}
-                    isEmbeddedCluster={
-                      state.adminConsoleMetadata?.isEmbeddedCluster
-                    }
-                  />
-                }
-              />
-              <Route
-                path="/upload-license"
-                element={
-                  <UploadLicenseFile
-                    logo={state.appLogo}
-                    appsListLength={state.appsList?.length}
-                    appName={state.selectedAppName || ""}
-                    appSlugFromMetadata={state.appSlugFromMetadata || ""}
-                    fetchingMetadata={state.fetchingMetadata}
-                    onUploadSuccess={getAppsList}
-                    isEmbeddedCluster={Boolean(
-                      state.adminConsoleMetadata?.isEmbeddedCluster
-                    )}
-                  />
-                }
-              />
-              <Route path="/cluster/loading" element={<AppLoading />} />
-              <Route path="/install-with-helm" element={<InstallWithHelm />} />
-              <Route
-                path="/restore"
-                element={
-                  <BackupRestore
-                    logo={state.appLogo}
-                    appName={state.selectedAppName}
-                    appsListLength={state.appsList?.length}
-                    fetchingMetadata={state.fetchingMetadata}
-                  />
-                }
-              />
-              <Route
-                path="/:slug/airgap"
-                element={
-                  <UploadAirgapBundle
-                    showRegistry={true}
-                    logo={state.appLogo}
-                    appsListLength={state.appsList?.length}
-                    appName={state.selectedAppName}
-                    onUploadSuccess={getAppsList}
-                    fetchingMetadata={state.fetchingMetadata}
-                  />
-                }
-              />
-              <Route
-                path="/:slug/airgap-bundle"
-                element={
-                  <UploadAirgapBundle
-                    showRegistry={false}
-                    logo={state.appLogo}
-                    appsListLength={state.appsList?.length}
-                    appName={state.selectedAppName}
-                    onUploadSuccess={getAppsList}
-                    fetchingMetadata={state.fetchingMetadata}
-                  />
-                }
-              />
-              <Route path="/unsupported" element={<UnsupportedBrowser />} />
-              {state.adminConsoleMetadata?.isEmbeddedCluster && (
-                <>
-                  <Route
-                    path="/:slug/cluster/manage"
-                    element={
-                      <EmbeddedClusterManagement fromLicenseFlow={true} />
-                    }
-                  />
-                  <Route
-                    path="/:slug/cluster/:nodeName"
-                    element={<EmbeddedClusterViewNode />}
-                  />
-                </>
-              )}
-              {(state.adminConsoleMetadata?.isKurl ||
-                state.adminConsoleMetadata?.isEmbeddedCluster) && (
-                <Route
-                  path="/cluster/manage"
-                  element={
-                    state.adminConsoleMetadata?.isKurl ? (
-                      <KurlClusterManagement />
-                    ) : (
-                      <EmbeddedClusterManagement />
-                    )
-                  }
-                />
-              )}
-              {state.adminConsoleMetadata?.isEmbeddedCluster && (
-                <Route
-                  path="/cluster/:nodeName"
-                  element={<EmbeddedClusterViewNode />}
-                />
-              )}
-              <Route
-                path="/gitops"
-                element={<GitOps appName={state.selectedAppName || ""} />}
-              />
-              <Route
-                path="/access/:tab?"
-                element={
-                  <Access
-                    isKurlEnabled={state.adminConsoleMetadata?.isKurl || false}
-                    isGeoaxisSupported={isGeoaxisSupported()}
-                  />
-                }
-              />
-              {/* :tab?  */}
-              <Route
-                path="/snapshots/*"
-                element={
-                  <SnapshotsWrapper
-                    appName={state.selectedAppName}
-                    isKurlEnabled={state.adminConsoleMetadata?.isKurl}
-                    isEmbeddedCluster={
-                      state.adminConsoleMetadata?.isEmbeddedCluster
-                    }
-                    appsList={state.appsList}
-                  />
-                }
-              >
-                <Route
-                  index
-                  element={
-                    <Snapshots
-                      isKurlEnabled={state.adminConsoleMetadata?.isKurl}
-                      isEmbeddedCluster={
-                        state.adminConsoleMetadata?.isEmbeddedCluster
+          <div className="tw-flex flex1">
+            {Utilities.isInitialAppInstall(state.appsList[0]) &&
+              Utilities.isLoggedIn() && (
+                <div className="tw-max-w-[350px]  tw-bg-[#F9FBFC]">
+                  <div className="tw-pt-8 tw-pl-8">
+                    <span className="tw-text-lg tw-font-semibold  !tw-color-tw-gray-800">
+                      Let's get you started!
+                    </span>
+                  </div>
+                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium tw-flex">
+                    <Icon
+                      icon={"check-gray-filled"}
+                      size={16}
+                      className="tw-mr-2"
+                    />
+                    <span
+                      className={
+                        currentStep === "secure" && "tw-color-gray-800"
                       }
-                      appsList={state.appsList}
+                    >
+                      Secure the Admin Console
+                    </span>
+                  </div>
+                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
+                    <Icon
+                      icon="check-gray-filled"
+                      size={16}
+                      className="tw-mr-2"
                     />
-                  }
-                />
-                <Route
-                  path="settings"
-                  element={
-                    // eslint-disable-next-line
-                    // @ts-ignore
-                    <SnapshotSettings
-                      isKurlEnabled={state.adminConsoleMetadata?.isKurl}
-                      isEmbeddedCluster={
-                        state.adminConsoleMetadata?.isEmbeddedCluster
+                    <span
+                      className={
+                        currentStep === "configure-cluster" &&
+                        "!tw-color-gray-800"
                       }
-                      appsList={state.appsList}
+                    >
+                      Configure the cluster (optional)
+                    </span>
+                  </div>
+                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
+                    <Icon
+                      icon="check-gray-filled"
+                      size={16}
+                      className="tw-mr-2"
                     />
-                  }
-                />
-                <Route
-                  path="details/:id"
-                  element={
-                    <SnapshotDetails
-                      isKurlEnabled={state.adminConsoleMetadata?.isKurl}
-                      isEmbeddedCluster={
-                        state.adminConsoleMetadata?.isEmbeddedCluster
+                    <span
+                      className={
+                        currentStep === "configure-app" && "tw-color-gray-800"
                       }
-                      appsList={state.appsList}
+                    >
+                      Configure {state.selectedAppName || ""}
+                    </span>
+                  </div>
+                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
+                    <Icon
+                      icon="check-gray-filled"
+                      size={16}
+                      className="tw-mr-2"
                     />
-                  }
-                />
-                <Route path=":slug/:id/restore" element={<SnapshotRestore />} />
-                <Route
-                  path="partial/:slug"
-                  element={
-                    <AppSnapshots
-                      appsList={state.appsList}
-                      appName={state.selectedAppName}
+                    <span
+                      className={
+                        currentStep === "validate" && "tw-color-gray-800"
+                      }
+                    >
+                      Validate the environment
+                    </span>
+                  </div>
+                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
+                    <Icon
+                      icon="check-gray-filled"
+                      size={16}
+                      className="tw-mr-2"
                     />
-                  }
-                />
-                <Route
-                  path="partial/:slug/:id"
-                  element={
-                    <SnapshotDetails
-                      appsList={state.appsList}
-                      appName={state.selectedAppName}
-                    />
-                  }
-                />
-                <Route
-                  path="partial/:slug/:id/restore"
-                  element={<AppSnapshotRestore appsList={state.appsList} />}
-                />
-              </Route>
-              <Route
-                path="/apps"
-                element={
-                  <AppDetailPage
-                    refetchAppMetadata={fetchKotsAppMetadata}
-                    onActiveInitSession={handleActiveInitSession}
-                    appNameSpace={state.appNameSpace}
-                    appName={state.selectedAppName}
-                    refetchAppsList={getAppsList}
-                    refetchUpgradeStatus={fetchUpgradeStatus}
-                    snapshotInProgressApps={state.snapshotInProgressApps}
-                    ping={ping}
-                    isEmbeddedCluster={Boolean(
-                      state.adminConsoleMetadata?.isEmbeddedCluster
-                    )}
-                    showUpgradeStatusModal={state.showUpgradeStatusModal}
-                  />
-                }
-              />
-              <Route
-                path="/app/*"
-                element={
-                  <AppDetailPage
-                    refetchAppMetadata={fetchKotsAppMetadata}
-                    onActiveInitSession={handleActiveInitSession}
-                    appNameSpace={state.appNameSpace}
-                    appName={state.selectedAppName}
-                    refetchAppsList={getAppsList}
-                    refetchUpgradeStatus={fetchUpgradeStatus}
-                    snapshotInProgressApps={state.snapshotInProgressApps}
-                    ping={ping}
-                    isEmbeddedCluster={Boolean(
-                      state.adminConsoleMetadata?.isEmbeddedCluster
-                    )}
-                    showUpgradeStatusModal={state.showUpgradeStatusModal}
-                  />
-                }
-              >
-                <Route
-                  path=":slug"
-                  element={
-                    <Dashboard
-                      adminConsoleMetadata={state.adminConsoleMetadata}
-                    />
-                  }
-                />
-                <Route
-                  path=":slug/tree/:sequence?"
-                  element={
-                    <DownstreamTree
-                      isEmbeddedCluster={Boolean(
-                        state.adminConsoleMetadata?.isEmbeddedCluster
-                      )}
-                    />
-                  }
-                />
+                    <span
+                      className={
+                        currentStep === "install" && "tw-color-gray-800"
+                      }
+                    >
+                      Install {state.selectedAppName || ""}
+                    </span>
+                  </div>
+                </div>
+              )}
 
+            <div className="flex1 flex-column u-overflow--auto tw-relative">
+              <Routes>
                 <Route
-                  path={":slug/version-history"}
-                  // eslint-disable-next-line
-                  // @ts-ignore
-                  element={<AppVersionHistory />}
-                />
-                <Route
-                  path={
-                    ":slug/version-history/diff/:firstSequence/:secondSequence"
+                  path="/"
+                  element={
+                    <Navigate
+                      to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"}
+                    />
                   }
-                  // eslint-disable-next-line
-                  // @ts-ignore
-                  element={<AppVersionHistory />}
+                />
+                <Route path="/crashz" element={<Crashz />} />{" "}
+                <Route path="*" element={<NotFound />} />
+                <Route
+                  path="/secure-console"
+                  element={
+                    <SecureAdminConsole
+                      logo={state.appLogo}
+                      appName={state.selectedAppName}
+                      pendingApp={getPendingApp}
+                      onLoginSuccess={getAppsList}
+                      fetchingMetadata={state.fetchingMetadata}
+                      navigate={navigate}
+                      isEmbeddedClusterWaitingForNodes={
+                        state.isEmbeddedClusterWaitingForNodes
+                      }
+                    />
+                  }
                 />
                 <Route
-                  path=":slug/downstreams/:downstreamSlug/version-history/preflight/:sequence"
+                  path="/:slug/preflight"
                   element={
                     <PreflightResultPage
                       logo={state.appLogo || ""}
                       fromLicenseFlow={true}
                       refetchAppsList={getAppsList}
+                      setCurrentStep={setCurrentStep}
                     />
                   }
                 />
                 <Route
-                  path=":slug/config/:sequence"
+                  path="/:slug/config"
                   element={
                     <AppConfig
-                      fromLicenseFlow={false}
+                      fromLicenseFlow={true}
                       refetchAppsList={getAppsList}
                       isEmbeddedCluster={
                         state.adminConsoleMetadata?.isEmbeddedCluster
                       }
+                      setCurrentStep={setCurrentStep}
                     />
                   }
                 />
                 <Route
-                  path=":slug/troubleshoot"
+                  path="/upload-license"
                   element={
-                    //@ts-ignore
-                    <TroubleshootContainer />
-                  }
-                >
-                  <Route
-                    index
-                    element={
-                      <SupportBundleList
-                        isEmbeddedClusterEnabled={Boolean(
-                          state.adminConsoleMetadata?.isEmbeddedCluster
-                        )}
-                      />
-                    }
-                  />
-                  <Route
-                    path="generate"
-                    element={
-                      <GenerateSupportBundle
-                        isEmbeddedClusterEnabled={Boolean(
-                          state.adminConsoleMetadata?.isEmbeddedCluster
-                        )}
-                      />
-                    }
-                  />
-                  <Route
-                    path="analyze/:bundleSlug"
-                    element={<SupportBundleAnalysis />}
-                  >
-                    <Route index element={<AnalyzerInsights />} />
-                    <Route path={"contents/*"} element={<AnalyzerFileTree />} />
-                    <Route
-                      path={"redactor/report"}
-                      element={<AnalyzerRedactorReport />}
-                    />
-                  </Route>
-                  <Route path="redactors" element={<Redactors />} />
-                  <Route path="redactors/new" element={<EditRedactor />} />
-                  <Route
-                    path="redactors/:redactorSlug"
-                    element={<EditRedactor />}
-                  />
-                  <Route element={<NotFound />} />
-                </Route>
-                <Route
-                  path=":slug/license"
-                  element={
-                    <AppLicense
-                      //@ts-ignore
+                    <UploadLicenseFile
+                      logo={state.appLogo}
+                      appsListLength={state.appsList?.length}
+                      appName={state.selectedAppName || ""}
+                      appSlugFromMetadata={state.appSlugFromMetadata || ""}
+                      fetchingMetadata={state.fetchingMetadata}
+                      onUploadSuccess={getAppsList}
                       isEmbeddedCluster={Boolean(
                         state.adminConsoleMetadata?.isEmbeddedCluster
                       )}
                     />
                   }
                 />
+                <Route path="/cluster/loading" element={<AppLoading />} />
                 <Route
-                  path=":slug/registry-settings"
-                  element={<AppRegistrySettings />}
-                />
-                {/* WHERE IS SELECTEDAPP */}
-                {state.app?.isAppIdentityServiceSupported && (
-                  <Route
-                    path=":slug/access"
-                    element={<AppIdentityServiceSettings />}
-                  />
-                )}
-                {/* snapshots redirects */}
-                <Route
-                  path=":slug/snapshots"
-                  element={<Navigate to="/snapshots/partial/:slug" />}
+                  path="/install-with-helm"
+                  element={<InstallWithHelm />}
                 />
                 <Route
-                  path=":slug/snapshots/schedule"
-                  element={<Navigate to="/snapshots/settings?:slug" />}
-                />
-                <Route
-                  path=":slug/snapshots/:id"
-                  element={<Navigate to="/snapshots/partial/:slug/:id" />}
-                />
-                <Route
-                  path=":slug/snapshots/:id/restore"
+                  path="/restore"
                   element={
-                    <Navigate to="/snapshots/partial/:slug/:id/restore" />
+                    <BackupRestore
+                      logo={state.appLogo}
+                      appName={state.selectedAppName}
+                      appsListLength={state.appsList?.length}
+                      fetchingMetadata={state.fetchingMetadata}
+                    />
                   }
                 />
-
-                <Route element={<NotFound />} />
-              </Route>
-              <Route
-                path="/restore-completed"
-                element={
-                  <RestoreCompleted
-                    logo={state.appLogo}
-                    fetchingMetadata={state.fetchingMetadata}
+                <Route
+                  path="/:slug/airgap"
+                  element={
+                    <UploadAirgapBundle
+                      showRegistry={true}
+                      logo={state.appLogo}
+                      appsListLength={state.appsList?.length}
+                      appName={state.selectedAppName}
+                      onUploadSuccess={getAppsList}
+                      fetchingMetadata={state.fetchingMetadata}
+                    />
+                  }
+                />
+                <Route
+                  path="/:slug/airgap-bundle"
+                  element={
+                    <UploadAirgapBundle
+                      showRegistry={false}
+                      logo={state.appLogo}
+                      appsListLength={state.appsList?.length}
+                      appName={state.selectedAppName}
+                      onUploadSuccess={getAppsList}
+                      fetchingMetadata={state.fetchingMetadata}
+                    />
+                  }
+                />
+                <Route path="/unsupported" element={<UnsupportedBrowser />} />
+                {state.adminConsoleMetadata?.isEmbeddedCluster && (
+                  <>
+                    <Route
+                      path="/:slug/cluster/manage"
+                      element={
+                        <EmbeddedClusterManagement
+                          fromLicenseFlow={true}
+                          setCurrentStep={setCurrentStep}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/:slug/cluster/:nodeName"
+                      element={<EmbeddedClusterViewNode />}
+                    />
+                  </>
+                )}
+                {(state.adminConsoleMetadata?.isKurl ||
+                  state.adminConsoleMetadata?.isEmbeddedCluster) && (
+                  <Route
+                    path="/cluster/manage"
+                    element={
+                      state.adminConsoleMetadata?.isKurl ? (
+                        <KurlClusterManagement />
+                      ) : (
+                        <EmbeddedClusterManagement
+                          setCurrentStep={setCurrentStep}
+                        />
+                      )
+                    }
                   />
-                }
-              />
-            </Routes>
+                )}
+                {state.adminConsoleMetadata?.isEmbeddedCluster && (
+                  <Route
+                    path="/cluster/:nodeName"
+                    element={<EmbeddedClusterViewNode />}
+                  />
+                )}
+                <Route
+                  path="/gitops"
+                  element={<GitOps appName={state.selectedAppName || ""} />}
+                />
+                <Route
+                  path="/access/:tab?"
+                  element={
+                    <Access
+                      isKurlEnabled={
+                        state.adminConsoleMetadata?.isKurl || false
+                      }
+                      isGeoaxisSupported={isGeoaxisSupported()}
+                    />
+                  }
+                />
+                {/* :tab?  */}
+                <Route
+                  path="/snapshots/*"
+                  element={
+                    <SnapshotsWrapper
+                      appName={state.selectedAppName}
+                      isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                      isEmbeddedCluster={
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      }
+                      appsList={state.appsList}
+                    />
+                  }
+                >
+                  <Route
+                    index
+                    element={
+                      <Snapshots
+                        isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                        isEmbeddedCluster={
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        }
+                        appsList={state.appsList}
+                      />
+                    }
+                  />
+                  <Route
+                    path="settings"
+                    element={
+                      // eslint-disable-next-line
+                      // @ts-ignore
+                      <SnapshotSettings
+                        isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                        isEmbeddedCluster={
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        }
+                        appsList={state.appsList}
+                      />
+                    }
+                  />
+                  <Route
+                    path="details/:id"
+                    element={
+                      <SnapshotDetails
+                        isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                        isEmbeddedCluster={
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        }
+                        appsList={state.appsList}
+                      />
+                    }
+                  />
+                  <Route
+                    path=":slug/:id/restore"
+                    element={<SnapshotRestore />}
+                  />
+                  <Route
+                    path="partial/:slug"
+                    element={
+                      <AppSnapshots
+                        appsList={state.appsList}
+                        appName={state.selectedAppName}
+                      />
+                    }
+                  />
+                  <Route
+                    path="partial/:slug/:id"
+                    element={
+                      <SnapshotDetails
+                        appsList={state.appsList}
+                        appName={state.selectedAppName}
+                      />
+                    }
+                  />
+                  <Route
+                    path="partial/:slug/:id/restore"
+                    element={<AppSnapshotRestore appsList={state.appsList} />}
+                  />
+                </Route>
+                <Route
+                  path="/apps"
+                  element={
+                    <AppDetailPage
+                      refetchAppMetadata={fetchKotsAppMetadata}
+                      onActiveInitSession={handleActiveInitSession}
+                      appNameSpace={state.appNameSpace}
+                      appName={state.selectedAppName}
+                      refetchAppsList={getAppsList}
+                      refetchUpgradeStatus={fetchUpgradeStatus}
+                      snapshotInProgressApps={state.snapshotInProgressApps}
+                      ping={ping}
+                      isEmbeddedCluster={Boolean(
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      )}
+                      showUpgradeStatusModal={state.showUpgradeStatusModal}
+                    />
+                  }
+                />
+                <Route
+                  path="/app/*"
+                  element={
+                    <AppDetailPage
+                      refetchAppMetadata={fetchKotsAppMetadata}
+                      onActiveInitSession={handleActiveInitSession}
+                      appNameSpace={state.appNameSpace}
+                      appName={state.selectedAppName}
+                      refetchAppsList={getAppsList}
+                      refetchUpgradeStatus={fetchUpgradeStatus}
+                      snapshotInProgressApps={state.snapshotInProgressApps}
+                      ping={ping}
+                      isEmbeddedCluster={Boolean(
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      )}
+                      showUpgradeStatusModal={state.showUpgradeStatusModal}
+                    />
+                  }
+                >
+                  <Route
+                    path=":slug"
+                    element={
+                      <Dashboard
+                        adminConsoleMetadata={state.adminConsoleMetadata}
+                      />
+                    }
+                  />
+                  <Route
+                    path=":slug/tree/:sequence?"
+                    element={
+                      <DownstreamTree
+                        isEmbeddedCluster={Boolean(
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        )}
+                      />
+                    }
+                  />
+
+                  <Route
+                    path={":slug/version-history"}
+                    // eslint-disable-next-line
+                    // @ts-ignore
+                    element={<AppVersionHistory />}
+                  />
+                  <Route
+                    path={
+                      ":slug/version-history/diff/:firstSequence/:secondSequence"
+                    }
+                    // eslint-disable-next-line
+                    // @ts-ignore
+                    element={<AppVersionHistory />}
+                  />
+                  <Route
+                    path=":slug/downstreams/:downstreamSlug/version-history/preflight/:sequence"
+                    element={
+                      <PreflightResultPage
+                        logo={state.appLogo || ""}
+                        fromLicenseFlow={true}
+                        refetchAppsList={getAppsList}
+                      />
+                    }
+                  />
+                  <Route
+                    path=":slug/config/:sequence"
+                    element={
+                      <AppConfig
+                        fromLicenseFlow={false}
+                        refetchAppsList={getAppsList}
+                        isEmbeddedCluster={
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        }
+                      />
+                    }
+                  />
+                  <Route
+                    path=":slug/troubleshoot"
+                    element={
+                      //@ts-ignore
+                      <TroubleshootContainer />
+                    }
+                  >
+                    <Route
+                      index
+                      element={
+                        <SupportBundleList
+                          isEmbeddedClusterEnabled={Boolean(
+                            state.adminConsoleMetadata?.isEmbeddedCluster
+                          )}
+                        />
+                      }
+                    />
+                    <Route
+                      path="generate"
+                      element={
+                        <GenerateSupportBundle
+                          isEmbeddedClusterEnabled={Boolean(
+                            state.adminConsoleMetadata?.isEmbeddedCluster
+                          )}
+                        />
+                      }
+                    />
+                    <Route
+                      path="analyze/:bundleSlug"
+                      element={<SupportBundleAnalysis />}
+                    >
+                      <Route index element={<AnalyzerInsights />} />
+                      <Route
+                        path={"contents/*"}
+                        element={<AnalyzerFileTree />}
+                      />
+                      <Route
+                        path={"redactor/report"}
+                        element={<AnalyzerRedactorReport />}
+                      />
+                    </Route>
+                    <Route path="redactors" element={<Redactors />} />
+                    <Route path="redactors/new" element={<EditRedactor />} />
+                    <Route
+                      path="redactors/:redactorSlug"
+                      element={<EditRedactor />}
+                    />
+                    <Route element={<NotFound />} />
+                  </Route>
+                  <Route
+                    path=":slug/license"
+                    element={
+                      <AppLicense
+                        //@ts-ignore
+                        isEmbeddedCluster={Boolean(
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        )}
+                      />
+                    }
+                  />
+                  <Route
+                    path=":slug/registry-settings"
+                    element={<AppRegistrySettings />}
+                  />
+                  {/* WHERE IS SELECTEDAPP */}
+                  {state.app?.isAppIdentityServiceSupported && (
+                    <Route
+                      path=":slug/access"
+                      element={<AppIdentityServiceSettings />}
+                    />
+                  )}
+                  {/* snapshots redirects */}
+                  <Route
+                    path=":slug/snapshots"
+                    element={<Navigate to="/snapshots/partial/:slug" />}
+                  />
+                  <Route
+                    path=":slug/snapshots/schedule"
+                    element={<Navigate to="/snapshots/settings?:slug" />}
+                  />
+                  <Route
+                    path=":slug/snapshots/:id"
+                    element={<Navigate to="/snapshots/partial/:slug/:id" />}
+                  />
+                  <Route
+                    path=":slug/snapshots/:id/restore"
+                    element={
+                      <Navigate to="/snapshots/partial/:slug/:id/restore" />
+                    }
+                  />
+
+                  <Route element={<NotFound />} />
+                </Route>
+                <Route
+                  path="/restore-completed"
+                  element={
+                    <RestoreCompleted
+                      logo={state.appLogo}
+                      fetchingMetadata={state.fetchingMetadata}
+                    />
+                  }
+                />
+              </Routes>
+            </div>
           </div>
           <div className="flex-auto Footer-wrapper u-width--full">
             <Footer appsList={state.appsList} />
