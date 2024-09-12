@@ -4260,8 +4260,7 @@ jobs:
           echo ${{ secrets.GET_SET_CONFIG_LICENSE }} | base64 -d > license.yaml
 
           echo "test value" > ./ca.crt
-          kubectl create ns automated-${{ github.run_id }}
-          kubectl create configmap -n automated-${{ github.run_id }} custom-cas --from-file=ca.crt=./ca.crt
+          kubectl create configmap -n "$APP_SLUG" custom-cas --from-file=ca.crt=./ca.crt
 
           ./bin/kots \
             install "$APP_SLUG/automated" \
@@ -4275,7 +4274,7 @@ jobs:
             --kotsadm-tag 24h
 
           echo "check if the kotsadm deployment is using the configmap"
-          kubectl get deployment kotsadm -n automated-${{ github.run_id }}
+          kubectl get deployment kotsadm -n "$APP_SLUG" -o yaml
 
       - name: Generate support bundle on failure
         if: failure()
