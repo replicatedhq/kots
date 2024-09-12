@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 
 	pact = dsl.Pact{
 		Consumer: "kots",
-		Provider: "replicated-app",
+		Provider: "market-api",
 		LogDir:   logDir,
 		PactDir:  pactDir,
 		LogLevel: "debug",
