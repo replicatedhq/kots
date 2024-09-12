@@ -684,11 +684,3 @@ func (ctx StaticCtx) privateCACert() string {
 	// return the name of a configmap holding additional CA certificates provided by the end user at install time
 	return os.Getenv("SSL_CERT_CONFIGMAP")
 }
-
-func (ctx StaticCtx) privateCACertNamespace() string {
-	// return the namespace of a configmap holding additional CA certificates provided by the end user at install time
-	if os.Getenv("SSL_CERT_CONFIGMAP_NAMESPACE") != "" {
-		return os.Getenv("SSL_CERT_CONFIGMAP_NAMESPACE")
-	}
-	return ctx.namespace()
-}

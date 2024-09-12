@@ -309,7 +309,6 @@ func InstallCmd() *cobra.Command {
 				AdditionalLabels:       additionalLabels,
 				AdditionalAnnotations:  additionalAnnotations,
 				TrustedCAsConfigmap:    v.GetString("private-ca-configmap"),
-				TrustedCAsConfigmapNS:  v.GetString("private-ca-configmap-namespace"),
 
 				RegistryConfig: *registryConfig,
 
@@ -554,7 +553,6 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().StringArray("additional-annotations", []string{}, "additional annotations to add to kotsadm pods")
 	cmd.Flags().StringArray("additional-labels", []string{}, "additional labels to add to kotsadm pods")
 	cmd.Flags().String("private-ca-configmap", "", "the name of a configmap containing private CAs to add to the kotsadm deployment")
-	cmd.Flags().String("private-ca-configmap-namespace", "", "the namespace of a configmap containing private CAs to add to the kotsadm deployment")
 
 	registryFlags(cmd.Flags())
 

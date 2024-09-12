@@ -60,7 +60,6 @@ type DeployOptions struct {
 	AdditionalAnnotations  map[string]string
 	AdditionalLabels       map[string]string
 	TrustedCAsConfigmap    string
-	TrustedCAsConfigmapNS  string
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig
