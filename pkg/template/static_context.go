@@ -111,7 +111,6 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["Lookup"] = ctx.lookup
 
 	funcMap["PrivateCACert"] = ctx.privateCACert
-	funcMap["PrivateCACertNamespace"] = ctx.privateCACertNamespace
 
 	return funcMap
 }
