@@ -110,7 +110,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 
 	funcMap["Lookup"] = ctx.lookup
 
-	funcMap["AdditionalTLSCACert"] = ctx.additionalTLSCACert
+	funcMap["PrivateCACert"] = ctx.additionalTLSCACert
 
 	return funcMap
 }
