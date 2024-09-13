@@ -2,6 +2,7 @@ package preflight
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -157,7 +158,16 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		uploadPreflightResults.Errors = rbacErrors
 	} else {
 		logger.Info("preflight analyze phase")
-		analyzeResults := collectResults.Analyze()
+		var analyzeResults []*troubleshootanalyze.AnalyzeResult
+		if bundlePath == "" {
+			analyzeResults = collectResults.Analyze()
+		} else {
+			ctx := context.Background()
+			analyzeResults, err = troubleshootanalyze.AnalyzeLocal(ctx, bundlePath, preflightSpec.Spec.Analyzers, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to analyze preflights from local bundle")
+			}
+		}
 
 		// the typescript api added some flair to this result
 		// so let's keep it for compatibility
