@@ -308,6 +308,7 @@ func InstallCmd() *cobra.Command {
 				RequestedChannelSlug:   preferredChannelSlug,
 				AdditionalLabels:       additionalLabels,
 				AdditionalAnnotations:  additionalAnnotations,
+				PrivateCAsConfigmap:    v.GetString("private-ca-configmap"),
 
 				RegistryConfig: *registryConfig,
 
@@ -551,6 +552,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console and only install the application")
 	cmd.Flags().StringArray("additional-annotations", []string{}, "additional annotations to add to kotsadm pods")
 	cmd.Flags().StringArray("additional-labels", []string{}, "additional labels to add to kotsadm pods")
+	cmd.Flags().String("private-ca-configmap", "", "the name of a configmap containing private CAs to add to the kotsadm deployment")
 
 	registryFlags(cmd.Flags())
 

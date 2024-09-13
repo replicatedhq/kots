@@ -59,6 +59,7 @@ type DeployOptions struct {
 	RequestedChannelSlug   string
 	AdditionalAnnotations  map[string]string
 	AdditionalLabels       map[string]string
+	PrivateCAsConfigmap    string
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

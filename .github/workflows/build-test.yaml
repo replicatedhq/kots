@@ -4209,6 +4209,120 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
+  validate-custom-cas:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0}
+        ]
+    env:
+      APP_SLUG: get-set-config
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Cluster
+        id: create-cluster
+        uses: replicatedhq/replicated-actions/create-cluster@v1
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
+      - name: download kots binary
+        uses: actions/download-artifact@v4
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
+      - name: install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+
+      - name: run the test
+        run: |
+          set -e
+          echo ${{ secrets.GET_SET_CONFIG_LICENSE }} | base64 -d > license.yaml
+
+          echo "test value" > ./ca.crt
+          kubectl create configmap -n "$APP_SLUG" custom-cas --from-file=ca.crt=./ca.crt
+
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --private-ca-configmap custom-cas \
+            --kotsadm-tag 24h
+
+          echo "exec into the deployment and check for the file and its contents"
+          if ! kubectl exec -n "$APP_SLUG" deployment/kotsadm -- cat /certs/ca.crt | grep "test value"; then
+            echo "expected /certs/ca.crt to contain 'test value'"
+            kubectl exec -n "$APP_SLUG" deployment/kotsadm -- cat /certs/ca.crt
+            exit 1
+          fi
+
+          echo "check that the deployment has an environment variable pointing to the file"
+          if ! kubectl exec -n "$APP_SLUG" deployment/kotsadm -- env | grep "SSL_CERT_DIR" | grep "/certs"; then
+            echo "expected env output to contain SSL_CERT_DIR=/certs"
+            kubectl exec -n "$APP_SLUG" deployment/kotsadm -- env
+            exit 1
+          fi
+
+          echo "check that the deployment has an environment variable with the configmap name"
+          if ! kubectl exec -n "$APP_SLUG" deployment/kotsadm -- env | grep "SSL_CERT_CONFIGMAP" | grep "custom-cas"; then
+            echo "expected env output to contain SSL_CERT_CONFIGMAP=custom-cas"
+            kubectl exec -n "$APP_SLUG" deployment/kotsadm -- env
+            exit 1
+          fi
+
+          ./bin/kots admin-console generate-manifests -n "$APP_SLUG" --shared-password password --private-ca-configmap generated-custom-cas 
+          ls ./admin-console
+          if !  grep SSL_CERT_CONFIGMAP < ./admin-console/kotsadm-deployment.yaml; then
+            echo "expected generated kotsadm-deployment.yaml to contain SSL_CERT_CONFIGMAP"
+            cat ./admin-console/kotsadm-deployment.yaml
+            exit 1
+          fi
+          if ! grep generated-custom-cas < ./admin-console/kotsadm-deployment.yaml; then
+            echo "expected generated kotsadm-deployment.yaml to contain generated-custom-cas"
+            cat ./admin-console/kotsadm-deployment.yaml
+            exit 1
+          fi
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-pr-tests:
     runs-on: ubuntu-20.04
@@ -4254,6 +4368,7 @@ jobs:
       - validate-replicated-sdk
       - validate-strict-preflight-checks
       - validate-get-set-config
+      - validate-custom-cas
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
