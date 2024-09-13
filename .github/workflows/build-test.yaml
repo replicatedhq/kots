@@ -4294,7 +4294,7 @@ jobs:
             exit 1
           fi
 
-          ./bin/kots admin-console generate-manifests -n "$NAMESPACE" --shared-password password --private-ca-configmap generated-custom-cas 
+          ./bin/kots admin-console generate-manifests -n "$APP_SLUG" --shared-password password --private-ca-configmap generated-custom-cas 
           ls ./admin-console
           if !cat ./admin-console/kotsadm-deployment.yaml | grep SSL_CERT_CONFIGMAP; then
             echo "expected generated kotsadm-deployment.yaml to contain SSL_CERT_CONFIGMAP"
