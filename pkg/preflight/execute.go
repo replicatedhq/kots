@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
+	troubleshootversion "github.com/replicatedhq/troubleshoot/pkg/version"
 )
 
 // Execute will Execute the preflights using spec in preflightSpec.
@@ -211,15 +212,15 @@ func saveAnalysisResultsToBundle(
 }
 
 func saveTSVersionToBundle(results collect.CollectorResult, bundlePath string) error {
-	// version, err := troubleshootpreflight.GetVersionFile()
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to get version file")
-	// }
+	version, err := troubleshootversion.GetVersionFile()
+	if err != nil {
+		return errors.Wrap(err, "failed to get version file")
+	}
 
-	// err = results.SaveResult(bundlePath, "version.json", bytes.NewBuffer([]byte(version)))
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to save version file")
-	// }
+	err = results.SaveResult(bundlePath, "version.yaml", bytes.NewBuffer([]byte(version)))
+	if err != nil {
+		return errors.Wrap(err, "failed to save version file")
+	}
 
 	return nil
 }
