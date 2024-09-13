@@ -4296,12 +4296,12 @@ jobs:
 
           ./bin/kots admin-console generate-manifests -n "$APP_SLUG" --shared-password password --private-ca-configmap generated-custom-cas 
           ls ./admin-console
-          if ! cat ./admin-console/kotsadm-deployment.yaml | grep SSL_CERT_CONFIGMAP; then
+          if !  grep SSL_CERT_CONFIGMAP < ./admin-console/kotsadm-deployment.yaml; then
             echo "expected generated kotsadm-deployment.yaml to contain SSL_CERT_CONFIGMAP"
             cat ./admin-console/kotsadm-deployment.yaml
             exit 1
           fi
-          if ! cat ./admin-console/kotsadm-deployment.yaml | grep generated-custom-cas; then
+          if ! grep generated-custom-cas < ./admin-console/kotsadm-deployment.yaml; then
             echo "expected generated kotsadm-deployment.yaml to contain generated-custom-cas"
             cat ./admin-console/kotsadm-deployment.yaml
             exit 1
