@@ -73,6 +73,7 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 				IsOpenShift:          isOpenShift,
 				IsGKEAutopilot:       isGKEAutopilot,
 				RegistryConfig:       registryConfig,
+				TrustedCAsConfigmap:  v.GetString("private-ca-configmap"),
 			}
 			adminConsoleFiles, err := upstream.GenerateAdminConsoleFiles(renderDir, options)
 			if err != nil {
@@ -104,6 +105,7 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("shared-password", "", "shared password to use when deploying the admin console")
+	cmd.Flags().String("private-ca-configmap", "", "the name of a configmap containing private CAs to add to the kotsadm deployment")
 	cmd.Flags().Bool("with-minio", true, "set to true to include a local minio instance to be used for storage")
 	cmd.Flags().Bool("minimal-rbac", false, "set to true to use the namespaced role and bindings instead of cluster-level permissions")
 	cmd.Flags().StringSlice("additional-namespaces", []string{}, "Comma separate list to specify additional namespace(s) managed by KOTS outside where it is to be deployed. Ignored without with '--minimal-rbac=true'")
