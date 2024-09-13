@@ -1,6 +1,10 @@
 package preflight
 
 import (
+	"bytes"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -11,7 +15,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight/types"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
+	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
@@ -98,11 +104,23 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 	preflightSpec.Spec.Collectors = troubleshootcollect.DedupCollectors(preflightSpec.Spec.Collectors)
 	preflightSpec.Spec.Analyzers = troubleshootanalyze.DedupAnalyzers(preflightSpec.Spec.Analyzers)
 
+	// Store collected data in a temp directory
+	bundlePath := filepath.Join(os.TempDir(), "last-preflight-result")
+
+	// Clean up the directory if it already exists. If the path does not exist nothing will happen.
+	_ = os.RemoveAll(bundlePath)
+	err = os.MkdirAll(bundlePath, 0755)
+	if err != nil {
+		logger.Warnf("failed to create preflight results directory. Proceed without storing the bundle to /tmp dir: %v", err)
+		bundlePath = "" // if we can't write to /tmp, don't try to store the bundle
+	}
+
 	collectOpts := troubleshootpreflight.CollectOpts{
 		Namespace:              "",
 		IgnorePermissionErrors: ignorePermissionErrors,
 		ProgressChan:           progressChan,
 		KubernetesRestConfig:   restConfig,
+		// BundlePath: bundlePath
 	}
 
 	logger.Info("preflight collect phase")
@@ -116,6 +134,12 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 	if !ok {
 		preflightRunError = errors.Errorf("unexpected result type: %T", collectResults)
 		return nil, preflightRunError
+	}
+
+	collectorResults := collect.CollectorResult(clusterCollectResult.AllCollectedData)
+	err = saveTSVersionToBundle(collectorResults, bundlePath)
+	if err != nil {
+		logger.Warnf("Ignore storing preflight version file: %v", err)
 	}
 
 	if isPermissionsError(err) {
@@ -152,6 +176,10 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 			results = append(results, uploadPreflightResult)
 		}
 		uploadPreflightResults.Results = results
+		err = saveAnalysisResultsToBundle(collectorResults, analyzeResults, bundlePath)
+		if err != nil {
+			logger.Warnf("Ignore storing preflight analysis file: %v", err)
+		}
 	}
 
 	return uploadPreflightResults, nil
@@ -163,4 +191,35 @@ func isPermissionsError(err error) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), "insufficient permissions to run all collectors")
+}
+
+func saveAnalysisResultsToBundle(
+	results collect.CollectorResult, analyzeResults []*troubleshootanalyze.AnalyzeResult, bundlePath string,
+) error {
+	data := convert.FromAnalyzerResult(analyzeResults)
+	analysis, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal analysis")
+	}
+
+	err = results.SaveResult(bundlePath, "analysis.json", bytes.NewBuffer(analysis))
+	if err != nil {
+		return errors.Wrap(err, "failed to save analysis")
+	}
+
+	return nil
+}
+
+func saveTSVersionToBundle(results collect.CollectorResult, bundlePath string) error {
+	// version, err := troubleshootpreflight.GetVersionFile()
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to get version file")
+	// }
+
+	// err = results.SaveResult(bundlePath, "version.json", bytes.NewBuffer([]byte(version)))
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to save version file")
+	// }
+
+	return nil
 }
