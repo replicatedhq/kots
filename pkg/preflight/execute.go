@@ -18,6 +18,7 @@ import (
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
+	"github.com/replicatedhq/troubleshoot/pkg/constants"
 	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -140,10 +141,6 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 	}
 
 	collectorResults := collect.CollectorResult(clusterCollectResult.AllCollectedData)
-	err = saveTSVersionToBundle(collectorResults, bundlePath)
-	if err != nil {
-		logger.Warnf("Ignore storing troubleshoot version file to preflight bundle: %v", err)
-	}
 
 	if isRBACErr {
 		logger.Warnf("skipping analyze due to RBAC errors")
@@ -163,6 +160,11 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		if bundlePath == "" {
 			analyzeResults = collectResults.Analyze()
 		} else {
+			// Its not a bundle if there is no version file in the root directory
+			err = saveTSVersionToBundle(collectorResults, bundlePath)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to save version file to preflight bundle")
+			}
 			ctx := context.Background()
 			analyzeResults, err = troubleshootanalyze.AnalyzeLocal(ctx, bundlePath, preflightSpec.Spec.Analyzers, nil)
 			if err != nil {
@@ -218,7 +220,7 @@ func saveAnalysisResultsToBundle(
 		return errors.Wrap(err, "failed to marshal analysis")
 	}
 
-	err = results.SaveResult(bundlePath, "analysis.json", bytes.NewBuffer(analysis))
+	err = results.SaveResult(bundlePath, constants.ANALYSIS_FILENAME, bytes.NewBuffer(analysis))
 	if err != nil {
 		return errors.Wrap(err, "failed to save analysis")
 	}
@@ -236,7 +238,7 @@ func saveTSVersionToBundle(results collect.CollectorResult, bundlePath string) e
 		return errors.Wrap(err, "failed to get version file")
 	}
 
-	err = results.SaveResult(bundlePath, "version.yaml", bytes.NewBuffer([]byte(version)))
+	err = results.SaveResult(bundlePath, constants.VERSION_FILENAME, bytes.NewBuffer([]byte(version)))
 	if err != nil {
 		return errors.Wrap(err, "failed to save version file")
 	}
