@@ -73,7 +73,7 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 				IsOpenShift:          isOpenShift,
 				IsGKEAutopilot:       isGKEAutopilot,
 				RegistryConfig:       registryConfig,
-				TrustedCAsConfigmap:  v.GetString("private-ca-configmap"),
+				PrivateCAsConfigmap:  v.GetString("private-ca-configmap"),
 			}
 			adminConsoleFiles, err := upstream.GenerateAdminConsoleFiles(renderDir, options)
 			if err != nil {

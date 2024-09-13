@@ -344,14 +344,14 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 		})
 	}
 
-	if deployOptions.TrustedCAsConfigmap != "" {
+	if deployOptions.PrivateCAsConfigmap != "" {
 		env = append(env, corev1.EnvVar{
 			Name:  "SSL_CERT_DIR",
 			Value: "/certs",
 		})
 		env = append(env, corev1.EnvVar{
 			Name:  "SSL_CERT_CONFIGMAP",
-			Value: deployOptions.TrustedCAsConfigmap,
+			Value: deployOptions.PrivateCAsConfigmap,
 		})
 	}
 
@@ -393,13 +393,13 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 		},
 	}
 
-	if deployOptions.TrustedCAsConfigmap != "" {
+	if deployOptions.PrivateCAsConfigmap != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: "kotsadm-private-cas",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: deployOptions.TrustedCAsConfigmap,
+						Name: deployOptions.PrivateCAsConfigmap,
 					},
 				},
 			},
@@ -417,7 +417,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 		},
 	}
 
-	if deployOptions.TrustedCAsConfigmap != "" {
+	if deployOptions.PrivateCAsConfigmap != "" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      "kotsadm-private-cas",
 			MountPath: "/certs",
@@ -882,14 +882,14 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 		})
 	}
 
-	if deployOptions.TrustedCAsConfigmap != "" {
+	if deployOptions.PrivateCAsConfigmap != "" {
 		env = append(env, corev1.EnvVar{
 			Name:  "SSL_CERT_DIR",
 			Value: "/certs",
 		})
 		env = append(env, corev1.EnvVar{
 			Name:  "SSL_CERT_CONFIGMAP",
-			Value: deployOptions.TrustedCAsConfigmap,
+			Value: deployOptions.PrivateCAsConfigmap,
 		})
 	}
 
@@ -944,13 +944,13 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 		},
 	}
 
-	if deployOptions.TrustedCAsConfigmap != "" {
+	if deployOptions.PrivateCAsConfigmap != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: "kotsadm-private-cas",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: deployOptions.TrustedCAsConfigmap,
+						Name: deployOptions.PrivateCAsConfigmap,
 					},
 				},
 			},
@@ -972,7 +972,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 		},
 	}
 
-	if deployOptions.TrustedCAsConfigmap != "" {
+	if deployOptions.PrivateCAsConfigmap != "" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      "kotsadm-private-cas",
 			MountPath: "/certs",

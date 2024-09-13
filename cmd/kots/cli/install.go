@@ -308,7 +308,7 @@ func InstallCmd() *cobra.Command {
 				RequestedChannelSlug:   preferredChannelSlug,
 				AdditionalLabels:       additionalLabels,
 				AdditionalAnnotations:  additionalAnnotations,
-				TrustedCAsConfigmap:    v.GetString("private-ca-configmap"),
+				PrivateCAsConfigmap:    v.GetString("private-ca-configmap"),
 
 				RegistryConfig: *registryConfig,
 

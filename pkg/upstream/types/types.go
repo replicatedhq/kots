@@ -83,7 +83,7 @@ type WriteOptions struct {
 	SharedPassword      string
 	IsOpenShift         bool
 	IsGKEAutopilot      bool
-	TrustedCAsConfigmap string
+	PrivateCAsConfigmap string
 
 	RegistryConfig kotsadmtypes.RegistryConfig
 }
