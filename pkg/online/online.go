@@ -160,6 +160,19 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		SkipCompatibilityCheck: opts.SkipCompatibilityCheck,
 	}
 
+	pullOptions.HTTPProxyEnvValue = os.Getenv("HTTP_PROXY")
+	if pullOptions.HTTPProxyEnvValue == "" {
+		pullOptions.HTTPProxyEnvValue = os.Getenv("http_proxy")
+	}
+	pullOptions.HTTPSProxyEnvValue = os.Getenv("HTTPS_PROXY")
+	if pullOptions.HTTPSProxyEnvValue == "" {
+		pullOptions.HTTPSProxyEnvValue = os.Getenv("https_proxy")
+	}
+	pullOptions.NoProxyEnvValue = os.Getenv("NO_PROXY")
+	if pullOptions.NoProxyEnvValue == "" {
+		pullOptions.NoProxyEnvValue = os.Getenv("no_proxy")
+	}
+
 	if _, err := pull.Pull(opts.UpstreamURI, pullOptions); err != nil {
 		if errors.Cause(err) != pull.ErrConfigNeeded {
 			return nil, errors.Wrap(err, "failed to pull")

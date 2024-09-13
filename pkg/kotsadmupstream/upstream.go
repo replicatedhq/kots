@@ -234,6 +234,19 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		AppSelectedChannelID:   a.SelectedChannelID,
 	}
 
+	pullOptions.HTTPProxyEnvValue = os.Getenv("HTTP_PROXY")
+	if pullOptions.HTTPProxyEnvValue == "" {
+		pullOptions.HTTPProxyEnvValue = os.Getenv("http_proxy")
+	}
+	pullOptions.HTTPSProxyEnvValue = os.Getenv("HTTPS_PROXY")
+	if pullOptions.HTTPSProxyEnvValue == "" {
+		pullOptions.HTTPSProxyEnvValue = os.Getenv("https_proxy")
+	}
+	pullOptions.NoProxyEnvValue = os.Getenv("NO_PROXY")
+	if pullOptions.NoProxyEnvValue == "" {
+		pullOptions.NoProxyEnvValue = os.Getenv("no_proxy")
+	}
+
 	_, err = pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions)
 	if err != nil {
 		if errors.Cause(err) != pull.ErrConfigNeeded {
