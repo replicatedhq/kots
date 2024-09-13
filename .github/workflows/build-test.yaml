@@ -4276,6 +4276,30 @@ jobs:
           echo "check if the kotsadm deployment is using the configmap"
           kubectl get deployment kotsadm -n "$APP_SLUG" -o yaml
 
+          echo "exec into the deployment and check for the file and its contents"
+          if ! kubectl exec -n "$APP_SLUG" deployment/kotsadm -- cat /certs/ca.crt | grep "test value"; then
+            echo "expected /certs/ca.crt to contain 'test value'"
+            kubectl exec -n "$APP_SLUG" deployment/kotsadm -- cat /certs/ca.crt
+            exit 1
+          fi
+
+          echo "check that the deployment has an environment variable pointing to the file"
+          if ! kubectl exec -n "$APP_SLUG" deployment/kotsadm -- env | grep "SSL_CERT_DIR" | grep "/certs"; then
+            echo "expected env output to contain SSL_CERT_DIR=/certs"
+            kubectl exec -n "$APP_SLUG" deployment/kotsadm -- env
+            exit 1
+          fi
+
+          echo "check that the deployment has an environment variable with the configmap name"
+          if ! kubectl exec -n "$APP_SLUG" deployment/kotsadm -- env | grep "SSL_CERT_CONFIGMAP" | grep "custom-cas"; then
+            echo "expected env output to contain SSL_CERT_CONFIGMAP=custom-cas"
+            kubectl exec -n "$APP_SLUG" deployment/kotsadm -- env
+            exit 1
+          fi
+
+          ./bin/kots admin-console generate-manifests -n "$NAMESPACE" --shared-password password --private-ca-configmap generated-custom-cas > generated-manifests.yaml
+          cat generated-manifests.yaml
+
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
