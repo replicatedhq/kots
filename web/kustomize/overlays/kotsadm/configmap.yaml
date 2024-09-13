@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kotsadm-web-scripts
-data:
-  start-kotsadm-web.sh: |
-    #!/bin/bash
-    nginx -g "daemon off;"

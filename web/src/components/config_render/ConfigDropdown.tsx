@@ -23,13 +23,14 @@ const ConfigDropdown = (props) => {
     setSelectedValue(val);
     props.handleOnChange(props.name, val);
   };
+  var hidden = props.hidden || props.when === "false";
 
   return (
     <ConfigWrapper
       id={`${props.name}-group`}
       className={`field-type-dropdown`}
-      marginTop={props.hidden || props.affix ? "0" : "15px"}
-      hidden={props.hidden}
+      marginTop={hidden || props.affix ? "0" : "15px"}
+      hidden={hidden}
     >
       {props.title !== "" ? (
         <ConfigItemTitle

@@ -1,0 +1,33 @@
+spec:
+  template:
+    spec:
+      volumes:
+      - name: dev
+        hostPath:
+          path: __PROJECT_DIR__
+          type: Directory
+      containers:
+      - name: kotsadm
+        image: kotsadm-api-dev
+        command: ["/bin/bash"]
+        args: ["-c", "while true; do sleep 30; done;"]
+        volumeMounts:
+        - name: dev
+          mountPath: /replicatedhq/kots # workdir in the container
+        env:
+        # in order to serve from kotsadm-web even in embedded cluster
+        - name: DISABLE_SPA_SERVING
+          value: "1"
+        - name: ENABLE_WEB_PROXY
+          value: "1"
+        - name: GOCACHE
+          value: /replicatedhq/kots/dev/.gocache # from dev volume mount
+        - name: GOMODCACHE
+          value: /replicatedhq/kots/dev/.gomodcache # from dev volume mount
+        livenessProbe: ~
+        readinessProbe: ~
+        resources: ~
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
