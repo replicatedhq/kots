@@ -145,7 +145,7 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 	}
 
 	if isPermissionsError(err) {
-		logger.Debug("skipping analyze due to RBAC errors")
+		logger.Warnf("skipping analyze due to RBAC errors")
 		rbacErrors := []*types.PreflightError{}
 		for _, collector := range clusterCollectResult.Collectors {
 			for _, e := range collector.GetRBACErrors() {
