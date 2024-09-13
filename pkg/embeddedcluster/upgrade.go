@@ -71,6 +71,7 @@ func startClusterUpgrade(
 			HighAvailability:          current.Spec.HighAvailability,
 			AirGap:                    current.Spec.AirGap,
 			Network:                   current.Spec.Network,
+			Proxy:                     current.Spec.Proxy,
 			Artifacts:                 artifacts,
 			Config:                    &newcfg,
 			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
