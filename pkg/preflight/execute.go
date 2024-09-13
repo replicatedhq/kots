@@ -208,6 +208,10 @@ func isPermissionsError(err error) bool {
 func saveAnalysisResultsToBundle(
 	results collect.CollectorResult, analyzeResults []*troubleshootanalyze.AnalyzeResult, bundlePath string,
 ) error {
+	if results == nil {
+		return nil
+	}
+
 	data := convert.FromAnalyzerResult(analyzeResults)
 	analysis, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
@@ -223,6 +227,10 @@ func saveAnalysisResultsToBundle(
 }
 
 func saveTSVersionToBundle(results collect.CollectorResult, bundlePath string) error {
+	if results == nil {
+		return nil
+	}
+
 	version, err := troubleshootversion.GetVersionFile()
 	if err != nil {
 		return errors.Wrap(err, "failed to get version file")
