@@ -131,6 +131,7 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		preflightRunError = err
 		return nil, errors.Wrap(err, "failed to collect")
 	}
+	isRBACErr := isPermissionsError(err)
 
 	clusterCollectResult, ok := collectResults.(troubleshootpreflight.ClusterCollectResult)
 	if !ok {
@@ -144,7 +145,7 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		logger.Warnf("Ignore storing troubleshoot version file to preflight bundle: %v", err)
 	}
 
-	if isPermissionsError(err) {
+	if isRBACErr {
 		logger.Warnf("skipping analyze due to RBAC errors")
 		rbacErrors := []*types.PreflightError{}
 		for _, collector := range clusterCollectResult.Collectors {
