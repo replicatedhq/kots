@@ -121,7 +121,7 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		IgnorePermissionErrors: ignorePermissionErrors,
 		ProgressChan:           progressChan,
 		KubernetesRestConfig:   restConfig,
-		// BundlePath: bundlePath
+		BundlePath:             bundlePath,
 	}
 
 	logger.Info("preflight collect phase")
@@ -140,7 +140,7 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 	collectorResults := collect.CollectorResult(clusterCollectResult.AllCollectedData)
 	err = saveTSVersionToBundle(collectorResults, bundlePath)
 	if err != nil {
-		logger.Warnf("Ignore storing preflight version file: %v", err)
+		logger.Warnf("Ignore storing troubleshoot version file to preflight bundle: %v", err)
 	}
 
 	if isPermissionsError(err) {
@@ -179,7 +179,7 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		uploadPreflightResults.Results = results
 		err = saveAnalysisResultsToBundle(collectorResults, analyzeResults, bundlePath)
 		if err != nil {
-			logger.Warnf("Ignore storing preflight analysis file: %v", err)
+			logger.Warnf("Ignore storing preflight analysis file to preflight bundle: %v", err)
 		}
 	}
 
