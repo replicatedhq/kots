@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kurl-proxy-kotsadm
+  labels:
+    app: kurl-proxy-kotsadm
+spec:
+  selector:
+    matchLabels:
+      app: kurl-proxy-kotsadm
+  template:
+    metadata:
+      labels:
+        app: kurl-proxy-kotsadm
+    spec:
+      containers:
+      - name: proxy
+        image: kurl-proxy-dev
+        imagePullPolicy: Never
+        env:
+        - name: NODE_PORT
+          value: "30880"
+        - name: UPSTREAM_ORIGIN
+          value: http://kotsadm:3000
+        - name: DEX_UPSTREAM_ORIGIN
+          value: http://kotsadm-dex:5556
+        - name: TLS_SECRET_NAME
+          value: kotsadm-tls
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: kotsadm-config
+          mountPath: /etc/kotsadm
+      serviceAccount: kurl-proxy
+      volumes:
+      - name: kotsadm-config
+        configMap:
+          name: kotsadm-application-metadata
+          optional: true

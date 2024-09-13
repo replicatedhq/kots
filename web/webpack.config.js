@@ -11,10 +11,8 @@ const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 function mapEnvironment(env) {
   if (env.enterprise) {
     return "enterprise";
-  } else if (process.env.OKTETO_NAMESPACE) {
-    return "okteto";
   }
-  return "skaffold";
+  return "dev";
 }
 
 // TODO: refactor this to use proper env varibles from webpack https://webpack.js.org/guides/environment-variables/

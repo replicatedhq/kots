@@ -1,0 +1,15 @@
+spec:
+  template:
+    spec:
+      volumes:
+      - name: dev
+        hostPath:
+          path: __PROJECT_DIR__/web
+          type: Directory
+      containers:
+      - name: kotsadm-web
+        image: kotsadm-web-dev
+        volumeMounts:
+        - name: dev
+          mountPath: /replicatedhq/kots/web # workdir in the container
+        resources: ~

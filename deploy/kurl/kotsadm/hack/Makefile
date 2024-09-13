@@ -37,7 +37,7 @@ generate:
 	DEX_TAG=$(shell source ../../../../.image.env && echo "$$DEX_TAG") \
 		${MAKE} _generate
 	
-_generate: CURRENT_USER = $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
+_generate: CURRENT_USER = $(shell id -u -n)
 _generate: generate-tag
 	@cd ../template && ./generate.sh $(KOTS_VERSION) ttl.sh $(CURRENT_USER) 24h $(shell realpath ../../../../bin/kots)
 	@rm -rf kurl/addons/kotsadm/$(KOTS_VERSION)
