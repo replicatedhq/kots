@@ -77,14 +77,14 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.15.4
-	k8s.io/api v0.31.0
-	k8s.io/apimachinery v0.31.0
+	k8s.io/api v0.31.1
+	k8s.io/apimachinery v0.31.1
 	k8s.io/cli-runtime v0.30.3
-	k8s.io/client-go v0.31.0
-	k8s.io/cluster-bootstrap v0.31.0
+	k8s.io/client-go v0.31.1
+	k8s.io/cluster-bootstrap v0.31.1
 	k8s.io/helm v2.17.0+incompatible
 	k8s.io/kubelet v0.30.3
-	k8s.io/metrics v0.31.0
+	k8s.io/metrics v0.31.1
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/application v0.8.3
