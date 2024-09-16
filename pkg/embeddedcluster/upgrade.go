@@ -54,35 +54,22 @@ func startClusterUpgrade(
 	if err != nil {
 		return fmt.Errorf("failed to get current installation: %w", err)
 	}
-	newins := &embeddedclusterv1beta1.Installation{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: embeddedclusterv1beta1.GroupVersion.String(),
-			Kind:       "Installation",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: time.Now().Format("20060102150405"),
-			Labels: map[string]string{
-				"replicated.com/disaster-recovery": "ec-install",
-			},
-		},
-		Spec: embeddedclusterv1beta1.InstallationSpec{
-			ClusterID:                 current.Spec.ClusterID,
-			MetricsBaseURL:            current.Spec.MetricsBaseURL,
-			HighAvailability:          current.Spec.HighAvailability,
-			AirGap:                    current.Spec.AirGap,
-			Network:                   current.Spec.Network,
-			Proxy:                     current.Spec.Proxy,
-			Artifacts:                 artifacts,
-			Config:                    &newcfg,
-			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
-			BinaryName:                current.Spec.BinaryName,
-			LicenseInfo:               &embeddedclusterv1beta1.LicenseInfo{IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported},
+
+	newInstall := current
+	newInstall.ObjectMeta = metav1.ObjectMeta{
+		Name: time.Now().Format("20060102150405"),
+		Labels: map[string]string{
+			"replicated.com/disaster-recovery": "ec-install",
 		},
 	}
+	newInstall.Spec.Artifacts = artifacts
+	newInstall.Spec.Config = &newcfg
+	newInstall.Spec.LicenseInfo = &embeddedclusterv1beta1.LicenseInfo{IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported}
+	newInstall.Status = embeddedclusterv1beta1.InstallationStatus{}
 
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 
-	err = runClusterUpgrade(ctx, k8sClient, newins, registrySettings, license, versionLabel)
+	err = runClusterUpgrade(ctx, k8sClient, newInstall, registrySettings, license, versionLabel)
 	if err != nil {
 		return fmt.Errorf("run cluster upgrade: %w", err)
 	}
