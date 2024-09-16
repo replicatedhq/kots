@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -219,7 +220,7 @@ func downloadUpgradeBinary(ctx context.Context, license kotsv1beta1.License, ver
 }
 
 func newDownloadUpgradeBinaryRequest(ctx context.Context, license kotsv1beta1.License, versionLabel string) (*http.Request, error) {
-	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", license.Spec.Endpoint, versionLabel)
+	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", license.Spec.Endpoint, url.QueryEscape(versionLabel))
 	req, err := util.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
