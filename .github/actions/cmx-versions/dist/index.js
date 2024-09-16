@@ -138,7 +138,7 @@ async function getClusterVersions() {
             versions: new Set(["4.14.0-okd"])
         },
         oke: {
-            latest_minor_versions: true,
+            versions: new Set(["1.30.1"])
         },
     }
 
