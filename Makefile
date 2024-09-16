@@ -25,6 +25,12 @@ pact-consumer:
 		pact-broker publish ./pacts/consumer \
 			--auto-detect-version-properties \
 			--consumer-app-version ${GIT_TAG} || true; \
+
+		pact-broker record-release \
+			--pacticipant kots \
+			--version ${PACT_VERSION} \
+			--environment production \
+			--verbose
 	fi
 
 .PHONY: e2e

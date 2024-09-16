@@ -298,6 +298,7 @@ jobs:
         PACT_BROKER_BASE_URL: ${{ vars.PACT_BROKER_BASE_URL }}
         PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
         PACT_PUBLISH_CONTRACT: true
+        PACT_VERSION: ${{ github.sha }}
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
       run: |
         set -x
