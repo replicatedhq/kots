@@ -55,17 +55,22 @@ func startClusterUpgrade(
 		return fmt.Errorf("failed to get current installation: %w", err)
 	}
 
-	newInstall := current
-	newInstall.ObjectMeta = metav1.ObjectMeta{
-		Name: time.Now().Format("20060102150405"),
-		Labels: map[string]string{
-			"replicated.com/disaster-recovery": "ec-install",
+	newInstall := &embeddedclusterv1beta1.Installation{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: embeddedclusterv1beta1.GroupVersion.String(),
+			Kind:       "Installation",
 		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: time.Now().Format("20060102150405"),
+			Labels: map[string]string{
+				"replicated.com/disaster-recovery": "ec-install",
+			},
+		},
+		Spec: current.Spec,
 	}
 	newInstall.Spec.Artifacts = artifacts
 	newInstall.Spec.Config = &newcfg
 	newInstall.Spec.LicenseInfo = &embeddedclusterv1beta1.LicenseInfo{IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported}
-	newInstall.Status = embeddedclusterv1beta1.InstallationStatus{}
 
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 
