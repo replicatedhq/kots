@@ -473,7 +473,7 @@ const EmbeddedClusterManagement = ({
               >
                 <label
                   htmlFor={`${nodeType}NodeType`}
-                  className=" u-userSelect--none tw-text-gray-600 u-fontSize--normal u-fontWeight--medium tw-text-center tw-flex tw-items-center"
+                  className="u-userSelect--none tw-text-gray-600 u-fontSize--normal u-fontWeight--medium tw-text-center tw-flex tw-items-center"
                 >
                   {selectedNodeTypes.includes(nodeType) && (
                     <Icon icon="check" size={12} className="tw-mr-2" />
@@ -524,8 +524,13 @@ const EmbeddedClusterManagement = ({
   };
 
   return (
-    <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
+    <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto tw-font-sans">
       <KotsPageTitle pageName="Cluster Management" />
+
+      <p className="tls-header tw-my-8 tw-font-bold">
+        Secure the Admin Console
+      </p>
+      <hr />
       <div className="flex1 tw-mb-10 tw-flex tw-flex-col tw-gap-4 card-bg">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
           Nodes

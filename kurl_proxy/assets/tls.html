@@ -1,47 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="description" content="Form to upload TLS certificate and key">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Configure TLS | Admin Console</title>
-  <link rel="stylesheet" href="/tls/assets/tls-custom.css" />
-  {{if .AppIcon }}
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="description" content="Form to upload TLS certificate and key" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Configure TLS | Admin Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/tls/assets/tls-custom.css" />
+    {{if .AppIcon }}
     <link rel="icon" type="image/png" href="{{ .AppIcon }}" />
-  {{end}}
-  <script src="/tls/assets/tls.js"></script>
-</head>
+    {{end}}
+    <script src="/tls/assets/tls.js"></script>
+  </head>
 
-<body>
-  <div class="u-minHeight--full u-width--full flex-column flex1">
-    <div class="flex-1-auto flex u-width--full justifyContent--center alignItems--center">
-      <div class="flex flex-column justifyContent--center alignItems--center">
-        <div class="borderWrapper flex-column flex">
-          <div class="flex u-marginBottom--8">
-            {{if .AppIcon }}<span class="appIcon flex flex-auto" style="background-image: url('{{ .AppIcon }}')"></span>{{end}}
-            <div class="flex-column flex1 justifyContent--center">
-              <p class="tls-header">HTTPS for the {{ .AppTitle }} admin console</p>
-            </div>
+  <body>
+    <div class="min-h-full w-full flex flex-1">
+      <div class="w-[350px] bg-[#F9FBFC] pt-6">
+        <div class="flex flex1 pl-6">
+          {{if .AppIcon }}<span
+            class="appIcon flex"
+            style="background-image: url('{{ .AppIcon }}')"
+          ></span
+          >{{end}}
+          <p class="text-lg font-bold pb-4">{{ .AppTitle }} Admin Console</p>
+          <p>{{.App.title}}</p>
+        </div>
+        <div class="py-8 pl-8 shadow-[0_1px_0_#c4c8ca]">
+          <span class="text-lg font-semibold !color-gray-[#323232]">
+            Let's get you started!
+          </span>
+        </div>
+        <div
+          class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c]"
+        >
+          <img src="/tls/assets/images/check.svg" alt="check" />
+          <span class="font-bold ml-2"> Secure the Admin Console </span>
+        </div>
+        <div
+          class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c]"
+        >
+          <img src="/tls/assets/images/check.svg" alt="check" />
+          <span class="font-normal ml-2">
+            Configure the cluster (optional)
+          </span>
+        </div>
+        <div
+          class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c]"
+        >
+          <img src="/tls/assets/images/check.svg" alt="check" />
+          <span class="font-normal ml-2"> Configure {{.AppTitle}} </span>
+        </div>
+        <div
+          class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c]"
+        >
+          <img src="/tls/assets/images/check.svg" alt="check" />
+          <span class="font-normal ml-2">
+            Validate the environment & Install {{.AppTitle}}
+          </span>
+        </div>
+      </div>
+      <div class="tlsContent--wrapper px-8 w-[1000px]">
+        <p class="tls-header my-8">Secure the Admin Console</p>
+        <hr />
+        <div class="mt-8 p-8 bg-[#F9FBFC] flex-column flex">
+          <div class="flex-column flex1 justifyContent--center">
+            <p class="tls-header mb-8">
+              HTTPS for the {{ .AppTitle }} admin console
+            </p>
           </div>
-          <form id="upload-form" class="flex-column" action="" method="post" enctype="multipart/form-data">
 
-            <div>
-              <p class="tls-section-header2">Certificate type</p>
-              <input type="radio" name="type" id="self-signed" value="self-signed" checked autocomplete="off">
-              <label for="self-signed">Self-signed</label>
-              <input type="radio" name="type" id="custom-cert" value="custom-cert" autocomplete="off">
-              <label for="custom-cert">Upload your own</label>
+          <form
+            id="upload-form"
+            class="flex-column"
+            action=""
+            method="post"
+            enctype="multipart/form-data"
+          >
+            <p class="tls-section-header2">Certificate type</p>
+
+            <div class="flex gap-4 mb-2">
+              <label for="self-signed">
+                <div class="cert-type-box checked-background">
+                  <input
+                    type="radio"
+                    name="type"
+                    id="self-signed"
+                    value="self-signed"
+                    checked
+                    autocomplete="off"
+                    class="hidden-input"
+                  />
+                  <span>Self-signed</span>
+                </div>
+              </label>
+
+              <label for="custom-cert">
+                <div class="cert-type-box">
+                  <input
+                    type="radio"
+                    name="type"
+                    id="custom-cert"
+                    value="custom-cert"
+                    autocomplete="off"
+                    class="hidden-input"
+                  /><span>Upload your own</span>
+                </div>
+              </label>
             </div>
             <p class="tls-header-sub self-signed-visible">
-              A self-signed TLS certificate is currently used to secure communication
-              between your browser and the admin console. You will see a warning in your browser
-              every time you access the admin console unless you upload your own TLS certificate.
+              A self-signed TLS certificate is currently used to secure
+              communication between your browser and the admin console. You will
+              see a warning in your browser every time you access the admin
+              console unless you upload your own TLS certificate.
             </p>
             <p class="tls-header-sub custom-cert-visible hidden">
-              A trusted certificate that you upload will be used to secure communication between
-              your browser and the admin console.
+              Upload a trusted certificate to secure communication between your
+              browser and the Admin Console.
             </p>
             <div>
               <p class="tls-section-header2">
@@ -49,31 +124,50 @@
                 <span class="self-signed-visible">(optional)</span>
               </p>
               <p id="hostname-hint" class="hostname-hint"></p>
-              <p class="tls-section-sub-sub">Ensure this domain is routable on your network.</p>
-              <input id="hostname" class="form-input larger" type="text" name="hostname"
-                placeholder="app.yourdomain.com" style="width: 250px; margin-bottom: 20px;" />
+              <p class="tls-section-sub-sub">
+                Ensure this domain is routable on your network.
+              </p>
+              <input
+                id="hostname"
+                class="form-input larger"
+                type="text"
+                name="hostname"
+                placeholder="app.yourdomain.com"
+                style="width: 250px; margin-bottom: 20px"
+              />
             </div>
             <div class="custom-cert-visible hidden">
-              <p class="tls-section-header">Private key and certificate</p>
-              <p class="tls-section-sub">Files will be stored in the cluster.
+              <p class="tls-section-header2">Private key and certificate</p>
+              <p class="tls-section-sub">
+                Files will be stored in the cluster.
               </p>
             </div>
-            <div class="flex upload-form hidden custom-cert-visible" id="upload-files">
-              <div class="u-position--relative flex-column flex-auto upload">
-                <div>
-                  <label class="tls-section-header2">Upload private key</label>
-                  <input type="file" name="key" id="key" class="inputkey" />
-                  <label for="key" class="btn secondary u-marginTop--8">Choose private key</label>
-                  <p id="key-label" class="tls-header-sub">No file chosen.</p>
-                </div>
+            <div
+              class="flex upload-form hidden custom-cert-visible"
+              id="upload-files"
+            >
+              <div class="u-position--relative flex-column upload">
+                <label class="tls-section-header2">Upload private key</label>
+
+                <input type="file" name="key" id="key" class="inputkey" />
+                <label for="key" class="btn secondary u-marginTop--8 w-fit"
+                  >Choose private key</label
+                >
+                <p id="key-label" class="tls-header-sub">No file chosen.</p>
               </div>
-              <div class="u-position--relative flex-column flex-auto u-marginRight--15 upload">
-                <div>
-                  <label class="tls-section-header2">Upload SSL certificate</label>
-                  <input type="file" name="cert" id="cert" class="inputcert" />
-                  <label for="cert" class="btn secondary u-marginTop--8">Choose SSL certificate</label>
-                  <p id="cert-label" class="tls-header-sub">No file chosen.</p>
-                </div>
+
+              <div
+                class="u-position--relative flex-column flex-auto u-marginRight--15 upload"
+              >
+                <label class="tls-section-header2"
+                  >Upload SSL certificate</label
+                >
+
+                <input type="file" name="cert" id="cert" class="inputcert" />
+                <label for="cert" class="btn secondary u-marginTop--8 w-fit"
+                  >Choose SSL certificate</label
+                >
+                <p id="cert-label" class="tls-header-sub">No file chosen.</p>
               </div>
             </div>
 
@@ -86,14 +180,12 @@
             <div class="button-wrapper flex alignItems--center">
               <button class="btn primary" type="submit">
                 <span class="self-signed-visible">Continue</span>
-                <span class="custom-cert-visible hidden">Upload &amp; continue</span>
+                <span class="custom-cert-visible hidden">Continue</span>
               </button>
             </div>
           </form>
         </div>
       </div>
     </div>
-  </div>
-</body>
-
+  </body>
 </html>

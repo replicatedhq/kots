@@ -294,6 +294,7 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 		}
 
 		app, err := kotsadmApplication()
+		log.Printf("app: %+v", app)
 
 		if err != nil {
 			log.Printf("No kotsadm application metadata: %v", err) // continue
@@ -335,6 +336,7 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 		}
 
 		app, err := kotsadmApplication()
+		log.Printf("app: %+v", app)
 
 		if err != nil {
 			log.Printf("No kotsadm application metadata: %v", err) // continue
@@ -344,6 +346,7 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 			"Secret":   tlsSecretName,
 			"AppIcon":  appIcon,
 			"AppTitle": app.Spec.Title,
+			"App":      app.Spec,
 		})
 	})
 

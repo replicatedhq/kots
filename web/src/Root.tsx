@@ -56,7 +56,6 @@ import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
 import EmbeddedClusterViewNode from "@components/apps/EmbeddedClusterViewNode";
 import UpgradeStatusModal from "@components/modals/UpgradeStatusModal";
 import AppLoading from "@components/apps/AppLoading";
-import { GuidedInstallProvider } from "./context/GuidedInstallContext";
 import Icon from "@components/Icon";
 
 // react-query client
@@ -453,11 +452,20 @@ const Root = () => {
   const navigate = useNavigate();
 
   const [currentStep, setCurrentStep] = useState("secure");
-  // step 0: secure admin console
-  // step 1: configure cluster
-  // step 2: configure app
-  // step 3: valdiate/preflights
-  // step 4: install
+
+  const handleActiveStepLabel = (step: string) => {
+    if (currentStep === step) {
+      return "Secure";
+    } else if (currentStep === "configure") {
+      return "Configure";
+    } else if (currentStep === "deploy") {
+      return "Deploy";
+    } else if (currentStep === "finish") {
+      return "Finish";
+    } else {
+      return "Secure";
+    }
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -522,8 +530,8 @@ const Root = () => {
             {Utilities.isInitialAppInstall(state.appsList[0]) &&
               Utilities.isLoggedIn() && (
                 <div className="tw-max-w-[350px]  tw-bg-[#F9FBFC]">
-                  <div className="tw-pt-8 tw-pl-8">
-                    <span className="tw-text-lg tw-font-semibold  !tw-color-tw-gray-800">
+                  <div className="tw-py-8 tw-pl-8 tw-shadow-[0_1px_0_#c4c8ca]">
+                    <span className="tw-text-lg tw-font-semibold  tw-text-gray-800">
                       Let's get you started!
                     </span>
                   </div>
@@ -570,7 +578,7 @@ const Root = () => {
                       Configure {state.selectedAppName || ""}
                     </span>
                   </div>
-                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
+                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium tw-leading-6">
                     <Icon
                       icon="check-gray-filled"
                       size={16}
@@ -581,21 +589,8 @@ const Root = () => {
                         currentStep === "validate" && "tw-color-gray-800"
                       }
                     >
-                      Validate the environment
-                    </span>
-                  </div>
-                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
-                    <Icon
-                      icon="check-gray-filled"
-                      size={16}
-                      className="tw-mr-2"
-                    />
-                    <span
-                      className={
-                        currentStep === "install" && "tw-color-gray-800"
-                      }
-                    >
-                      Install {state.selectedAppName || ""}
+                      Validate the environment & Install{" "}
+                      {state.selectedAppName || ""}
                     </span>
                   </div>
                 </div>
@@ -922,6 +917,7 @@ const Root = () => {
                         logo={state.appLogo || ""}
                         fromLicenseFlow={true}
                         refetchAppsList={getAppsList}
+                        setCurrentStep={setCurrentStep}
                       />
                     }
                   />
@@ -934,6 +930,7 @@ const Root = () => {
                         isEmbeddedCluster={
                           state.adminConsoleMetadata?.isEmbeddedCluster
                         }
+                        setCurrentStep={setCurrentStep}
                       />
                     }
                   />
