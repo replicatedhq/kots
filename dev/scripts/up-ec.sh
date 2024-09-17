@@ -12,12 +12,6 @@ if [ -z "$component" ]; then
 	exit 1
 fi
 
-# Check if already up
-if [ -f "dev/patches/$component-down-ec.yaml.tmp" ]; then
-  ec_up $component
-  exit 0
-fi
-
 # Build and load the image into the embedded cluster
 ec_build_and_load "$component"
 
@@ -30,8 +24,10 @@ if [ "$component" == "kotsadm" ]; then
   ec_patch "kotsadm-web"
 fi
 
-# Save current deployment state
-ec_exec k0s kubectl get deployment $(deployment $component) -n kotsadm -oyaml > dev/patches/$component-down-ec.yaml.tmp
+# Save original state
+if [ ! -f "dev/patches/$component-down-ec.yaml.tmp" ]; then
+  ec_exec k0s kubectl get deployment $(deployment $component) -n kotsadm -oyaml > dev/patches/$component-down-ec.yaml.tmp
+fi
 
 # Patch the deployment
 ec_patch $component
