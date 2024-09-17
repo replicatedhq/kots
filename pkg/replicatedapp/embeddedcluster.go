@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ import (
 )
 
 func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (string, error) {
-	url := fmt.Sprintf("%s/clusterconfig/version/Installer?versionLabel=%s", license.Spec.Endpoint, versionLabel)
+	url := fmt.Sprintf("%s/clusterconfig/version/Installer?versionLabel=%s", license.Spec.Endpoint, url.QueryEscape(versionLabel))
 	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
@@ -49,7 +50,7 @@ func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (
 }
 
 func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (string, error) {
-	url := fmt.Sprintf("%s/clusterconfig/artifact/kots?versionLabel=%s", license.Spec.Endpoint, versionLabel)
+	url := fmt.Sprintf("%s/clusterconfig/artifact/kots?versionLabel=%s", license.Spec.Endpoint, url.QueryEscape(versionLabel))
 	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
