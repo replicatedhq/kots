@@ -2398,8 +2398,8 @@ k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f h1:2sXuKesAYbRHxL3aE2PN6z
 k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f/go.mod h1:UxDHUPsUwTOOxSU+oXURfFBcAS6JwiRXTYqYwfuGowc=
 k8s.io/kubectl v0.31.0 h1:kANwAAPVY02r4U4jARP/C+Q1sssCcN/1p9Nk+7BQKVg=
 k8s.io/kubectl v0.31.0/go.mod h1:pB47hhFypGsaHAPjlwrNbvhXgmuAr01ZBvAIIUaI8d4=
-k8s.io/kubelet v0.30.3 h1:KvGWDdhzD0vEyDyGTCjsDc8D+0+lwRMw3fJbfQgF7ys=
-k8s.io/kubelet v0.30.3/go.mod h1:D9or45Vkzcqg55CEiqZ8dVbwP3Ksj7DruEVRS9oq3Ys=
+k8s.io/kubelet v0.31.0 h1:IlfkBy7QTojGEm97GuVGhtli0HL/Pgu4AdayiF76yWo=
+k8s.io/kubelet v0.31.0/go.mod h1:s+OnqnfdIh14PFpUb7NgzM53WSYXcczA3w/1qSzsRc8=
 k8s.io/metrics v0.31.1 h1:h4I4dakgh/zKflWYAOQhwf0EXaqy8LxAIyE/GBvxqRc=
 k8s.io/metrics v0.31.1/go.mod h1:JuH1S9tJiH9q1VCY0yzSCawi7kzNLsDzlWDJN4xR+iA=
 k8s.io/utils v0.0.0-20190801114015-581e00157fb1/go.mod h1:sZAwmy6armz5eXlNoLmJcl4F1QuKu7sr+mFQ0byX7Ew=

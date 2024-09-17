@@ -83,7 +83,7 @@ require (
 	k8s.io/client-go v0.31.1
 	k8s.io/cluster-bootstrap v0.31.1
 	k8s.io/helm v2.17.0+incompatible
-	k8s.io/kubelet v0.30.3
+	k8s.io/kubelet v0.31.0
 	k8s.io/metrics v0.31.1
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	oras.land/oras-go/v2 v2.5.0
