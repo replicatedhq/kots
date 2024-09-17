@@ -90,6 +90,8 @@ Changes to the kotsadm web component are reflected in real-time, no manual steps
 1. To apply your current changes, run the following commands:
     ```bash
     make kotsadm-up
+    ```
+    ```bash
     make build run
     ```
 
@@ -99,6 +101,9 @@ Changes to the kotsadm web component are reflected in real-time, no manual steps
     ```
 
 1. When finished developing, run the following command to revert back to the original state:
+    ```bash
+    exit
+    ```
     ```bash
     make kotsadm-down
     ```
@@ -108,6 +113,8 @@ Changes to the kotsadm web component are reflected in real-time, no manual steps
 1. To apply your current changes, run the following commands:
     ```bash
     make kurl-proxy-up
+    ```
+    ```bash
     make build run
     ```
 
@@ -117,6 +124,9 @@ Changes to the kotsadm web component are reflected in real-time, no manual steps
     ```
 
 1. When finished developing, run the following command to revert back to the original state:
+    ```bash
+    exit
+    ```
     ```bash
     make kurl-proxy-down
     ```
