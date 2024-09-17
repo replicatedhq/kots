@@ -12,14 +12,10 @@ if [ -z "$component" ]; then
 	exit 1
 fi
 
-# Check if already up
-if [ -f "dev/patches/$component-down.yaml.tmp" ]; then
-  up $component
-  exit 0
+# Save original state
+if [ ! -f "dev/patches/$component-down.yaml.tmp" ]; then
+  kubectl get deployment $(deployment $component) -oyaml > dev/patches/$component-down.yaml.tmp
 fi
-
-# Save current state
-kubectl get deployment $(deployment $component) -oyaml > dev/patches/$component-down.yaml.tmp
 
 # Prepare and apply the patch
 render dev/patches/$component-up.yaml | kubectl patch deployment $(deployment $component) --patch-file=/dev/stdin
