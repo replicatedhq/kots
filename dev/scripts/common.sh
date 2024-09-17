@@ -33,6 +33,7 @@ function populate() {
     "kotsadm-web")
       docker run --rm \
         -v "$(pwd):/replicatedhq/kots" \
+        -e YARN_CACHE_FOLDER=/replicatedhq/kots/dev/.yarncache \
         -w /replicatedhq/kots/web \
         node:18-alpine \
         /bin/sh -c "apk add make bash git && make deps"
