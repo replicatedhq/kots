@@ -11,12 +11,12 @@
     {{if .AppIcon }}
     <link rel="icon" type="image/png" href="{{ .AppIcon }}" />
     {{end}}
-    <script src="/tls/assets/tls.js"></script>
+    <!-- <script src="/tls/assets/tls.js"></script> -->
   </head>
 
   <body>
     <div class="min-h-full w-full flex flex-1">
-      <div class="w-[350px] bg-[#F9FBFC] pt-6">
+      <div class="max-w-[350px] bg-[#F9FBFC] pt-6">
         <div class="flex flex1 pl-6">
           {{if .AppIcon }}<span
             class="appIcon flex"
@@ -24,7 +24,6 @@
           ></span
           >{{end}}
           <p class="text-lg font-bold pb-4">{{ .AppTitle }} Admin Console</p>
-          <p>{{.App.title}}</p>
         </div>
         <div class="py-8 pl-8 shadow-[0_1px_0_#c4c8ca]">
           <span class="text-lg font-semibold !color-gray-[#323232]">
@@ -32,7 +31,7 @@
           </span>
         </div>
         <div
-          class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c]"
+          class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#323232]"
         >
           <img src="/tls/assets/images/check.svg" alt="check" />
           <span class="font-bold ml-2"> Secure the Admin Console </span>

@@ -34,7 +34,7 @@ const EmbeddedClusterManagement = ({
   setCurrentStep,
 }: {
   fromLicenseFlow?: boolean;
-  setCurrentStep: (step: string) => void;
+  setCurrentStep: (step: number) => void;
 }) => {
   const [state, setState] = useReducer(
     (prevState: State, newState: Partial<State>) => ({
@@ -249,7 +249,7 @@ const EmbeddedClusterManagement = ({
   }, [rolesData]);
 
   useEffect(() => {
-    setCurrentStep("configure-cluster");
+    setCurrentStep(1);
   }, []);
 
   const determineDisabledState = () => {
@@ -524,14 +524,13 @@ const EmbeddedClusterManagement = ({
   };
 
   return (
-    <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto tw-font-sans">
+    <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto tw-font-sans tw-max-w-[1024px] tw-mx-auto">
       <KotsPageTitle pageName="Cluster Management" />
-
-      <p className="tls-header tw-my-8 tw-font-bold">
-        Secure the Admin Console
+      <p className="tls-header tw-my-8 tw-font-bold u-textColor--primary">
+        Configure the cluster
       </p>
       <hr />
-      <div className="flex1 tw-mb-10 tw-flex tw-flex-col tw-gap-4 card-bg">
+      <div className="flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-4 card-bg">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
           Nodes
         </p>

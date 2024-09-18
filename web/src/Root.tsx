@@ -58,6 +58,8 @@ import UpgradeStatusModal from "@components/modals/UpgradeStatusModal";
 import AppLoading from "@components/apps/AppLoading";
 import Icon from "@components/Icon";
 
+import "./scss/components/watches/WatchConfig.scss";
+
 // react-query client
 const queryClient = new QueryClient();
 
@@ -104,6 +106,7 @@ type State = {
   snapshotInProgressApps: string[];
   isEmbeddedClusterWaitingForNodes: boolean;
   themeState: ThemeState;
+  activeGroups: string[];
 };
 
 let interval: ReturnType<typeof setInterval> | undefined;
@@ -121,6 +124,7 @@ const Root = () => {
       appSlugFromMetadata: null,
       appNameSpace: null,
       adminConsoleMetadata: null,
+      activeGroups: null,
       connectionTerminated: false,
       showUpgradeStatusModal: false,
       upgradeStatus: "",
@@ -451,19 +455,44 @@ const Root = () => {
   };
   const navigate = useNavigate();
 
-  const [currentStep, setCurrentStep] = useState("secure");
+  const [currentStep, setCurrentStep] = useState(0);
+  const [navbarConfigGroups, setNavbarConfigGroups] = useState<any>([]);
+  const [activeGroups, setActiveGroups] = useState<any>([]);
 
-  const handleActiveStepLabel = (step: string) => {
-    if (currentStep === step) {
-      return "Secure";
-    } else if (currentStep === "configure") {
-      return "Configure";
-    } else if (currentStep === "deploy") {
-      return "Deploy";
-    } else if (currentStep === "finish") {
-      return "Finish";
+  const getStepProps = (step: number) => {
+    if (step < currentStep) {
+      return {
+        icon: "check-circle-filled",
+        textColor: "tw-text-gray-400",
+        fontClass: "",
+      };
+    } else if (step === currentStep) {
+      return {
+        icon: "check-gray-filled",
+        textColor: "tw-text-gray-800",
+        fontClass: "tw-font-bold",
+      };
     } else {
-      return "Secure";
+      return {
+        icon: "check-gray-filled",
+        textColor: "",
+        fontClass: "",
+      };
+    }
+  };
+
+  const toggleActiveGroups = (name: string) => {
+    console.log("click");
+    let groupsArr = activeGroups;
+
+    if (groupsArr.includes(name)) {
+      let updatedGroupsArr = groupsArr.filter((n) => n !== name);
+      console.log("ncludes", updatedGroupsArr);
+      setActiveGroups(updatedGroupsArr);
+    } else {
+      groupsArr.push(name);
+      console.log("add to it ", groupsArr);
+      setActiveGroups(groupsArr);
     }
   };
 
@@ -537,57 +566,134 @@ const Root = () => {
                   </div>
                   <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium tw-flex">
                     <Icon
-                      icon={"check-gray-filled"}
+                      icon={getStepProps(0).icon}
                       size={16}
                       className="tw-mr-2"
                     />
                     <span
-                      className={
-                        currentStep === "secure" && "tw-color-gray-800"
-                      }
+                      className={`${getStepProps(0).fontClass} ${
+                        getStepProps(0).textColor
+                      }`}
                     >
                       Secure the Admin Console
                     </span>
                   </div>
                   <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
                     <Icon
-                      icon="check-gray-filled"
+                      icon={getStepProps(1).icon}
                       size={16}
                       className="tw-mr-2"
                     />
                     <span
-                      className={
-                        currentStep === "configure-cluster" &&
-                        "!tw-color-gray-800"
-                      }
+                      className={`${getStepProps(1).fontClass} ${
+                        getStepProps(1).textColor
+                      }`}
                     >
                       Configure the cluster (optional)
                     </span>
                   </div>
                   <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
                     <Icon
-                      icon="check-gray-filled"
+                      icon={getStepProps(2).icon}
                       size={16}
                       className="tw-mr-2"
                     />
                     <span
-                      className={
-                        currentStep === "configure-app" && "tw-color-gray-800"
-                      }
+                      className={`${getStepProps(2).fontClass} ${
+                        getStepProps(2).textColor
+                      }`}
                     >
                       Configure {state.selectedAppName || ""}
                     </span>
+                    <div
+                      id="configSidebarWrapper"
+                      className="config-sidebar-wrapper card-bg clickable"
+                    >
+                      {navbarConfigGroups?.map((group, i) => {
+                        if (
+                          group.title === "" ||
+                          group.title.length === 0 ||
+                          group.hidden ||
+                          group.when === "false"
+                        ) {
+                          return;
+                        }
+                        return (
+                          <div
+                            key={`${i}-${group.name}-${group.title}`}
+                            className={`side-nav-group ${
+                              activeGroups.includes(group.name) ||
+                              group.hasError
+                                ? "group-open"
+                                : ""
+                            }
+                          `}
+                            id={`config-group-nav-${group.name}`}
+                          >
+                            <div
+                              className="flex alignItems--center"
+                              onClick={() => toggleActiveGroups(group.name)}
+                            >
+                              <div className="u-lineHeight--normal group-title u-fontSize--normal">
+                                {group.title}
+                              </div>
+                              {/* adding the arrow-down classes, will rotate the icon when clicked */}
+                              <Icon
+                                icon="down-arrow"
+                                className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
+                                size={12}
+                                style={{}}
+                                color={""}
+                                disableFill={false}
+                                removeInlineStyle={false}
+                              />
+                            </div>
+                            {group.items ? (
+                              <div className="side-nav-items">
+                                {group.items
+                                  ?.filter((item) => item.type !== "label")
+                                  ?.map((item, j) => {
+                                    const hash = location.hash.slice(1);
+                                    if (item.hidden || item.when === "false") {
+                                      return;
+                                    }
+                                    return (
+                                      <a
+                                        className={`u-fontSize--normal u-lineHeight--normal
+                                ${
+                                  item.validationError || item.error
+                                    ? "has-error"
+                                    : ""
+                                }
+                                ${
+                                  hash === `${item.name}-group`
+                                    ? "active-item"
+                                    : ""
+                                }`}
+                                        href={`#${item.name}-group`}
+                                        key={`${j}-${item.name}-${item.title}`}
+                                      >
+                                        {item.title}
+                                      </a>
+                                    );
+                                  })}
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                   <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium tw-leading-6">
                     <Icon
-                      icon="check-gray-filled"
+                      icon={getStepProps(3).icon}
                       size={16}
                       className="tw-mr-2"
                     />
                     <span
-                      className={
-                        currentStep === "validate" && "tw-color-gray-800"
-                      }
+                      className={`${getStepProps(3).fontClass} ${
+                        getStepProps(3).textColor
+                      }`}
                     >
                       Validate the environment & Install{" "}
                       {state.selectedAppName || ""}
@@ -645,6 +751,8 @@ const Root = () => {
                         state.adminConsoleMetadata?.isEmbeddedCluster
                       }
                       setCurrentStep={setCurrentStep}
+                      setNavbarConfigGroups={setNavbarConfigGroups}
+                      setActiveGroups={setActiveGroups}
                     />
                   }
                 />

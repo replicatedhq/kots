@@ -357,7 +357,7 @@ class SecureAdminConsole extends Component<Props, State> {
                 style={{ fontSize: "32px" }}
                 className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-textColor--primary u-fontWeight--bold u-width--full u-textAlign--center break-word"
               >
-                Log injkjkljljk
+                Log in
                 {appName && appName !== ""
                   ? ` to ${appName} admin console`
                   : " to admin console"}
@@ -365,8 +365,7 @@ class SecureAdminConsole extends Component<Props, State> {
             </div>
             <div className="flex-auto flex-column justifyContent--center">
               <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy break-word">
-                Enter the password to access the {appName} adminhjkhjkhkjh
-                console.sdfjksdlfjsdklf
+                Enter the password to access the {appName} admin console
               </p>
               <div className="u-marginTop--20 flex-column">
                 {loginErr && (

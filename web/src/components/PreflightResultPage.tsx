@@ -28,7 +28,7 @@ interface Props {
   fromLicenseFlow?: boolean;
   logo: string;
   refetchAppsList?: () => void;
-  setCurrentStep: (step: string) => void;
+  setCurrentStep: (step: number) => void;
 }
 
 function PreflightResultPage(props: Props) {
@@ -56,13 +56,12 @@ function PreflightResultPage(props: Props) {
   // TODO: remove this once everything is using react-query
   // componentWilUnmount
   useEffect(() => {
+    props.setCurrentStep(3);
     return () => {
       if (props.fromLicenseFlow && props.refetchAppsList) {
         props.refetchAppsList();
       }
     };
-
-    props.setCurrentStep("validate");
   }, []);
 
   if (!preflightCheck?.showPreflightCheckPending) {
