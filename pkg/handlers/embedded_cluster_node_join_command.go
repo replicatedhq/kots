@@ -31,6 +31,7 @@ type GetEmbeddedClusterNodeJoinCommandResponse struct {
 	IsAirgap                  bool                   `json:"isAirgap"`
 	Proxy                     *ecv1beta1.ProxySpec   `json:"proxy,omitempty"`
 	Network                   *ecv1beta1.NetworkSpec `json:"network,omitempty"`
+	LocalArtifactMirrorPort   int                    `json:"localArtifactMirrorPort,omitempty"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -188,6 +189,11 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		}
 	}
 
+	localArtifactMirrorPort := 0
+	if install.Spec.LocalArtifactMirror != nil {
+		localArtifactMirrorPort = install.Spec.LocalArtifactMirror.Port
+	}
+
 	JSON(w, http.StatusOK, GetEmbeddedClusterNodeJoinCommandResponse{
 		ClusterID:                 install.Spec.ClusterID,
 		K0sJoinCommand:            k0sJoinCommand,
@@ -200,5 +206,6 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		IsAirgap:                  install.Spec.AirGap,
 		Proxy:                     proxy,
 		Network:                   install.Spec.Network,
+		LocalArtifactMirrorPort:   localArtifactMirrorPort,
 	})
 }
