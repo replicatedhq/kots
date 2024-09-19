@@ -20,17 +20,12 @@ type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
 }
 
 type GetEmbeddedClusterNodeJoinCommandResponse struct {
-	ClusterID                 string                 `json:"clusterID"`
-	K0sJoinCommand            string                 `json:"k0sJoinCommand"`
-	K0sToken                  string                 `json:"k0sToken"`
-	K0sUnsupportedOverrides   string                 `json:"k0sUnsupportedOverrides"`
-	EndUserK0sConfigOverrides string                 `json:"endUserK0sConfigOverrides"`
-	MetricsBaseURL            string                 `json:"metricsBaseURL"`
-	EmbeddedClusterVersion    string                 `json:"embeddedClusterVersion"`
-	AirgapRegistryAddress     string                 `json:"airgapRegistryAddress"`
-	IsAirgap                  bool                   `json:"isAirgap"`
-	Proxy                     *ecv1beta1.ProxySpec   `json:"proxy,omitempty"`
-	Network                   *ecv1beta1.NetworkSpec `json:"network,omitempty"`
+	ClusterID              string                     `json:"clusterID"`
+	K0sJoinCommand         string                     `json:"k0sJoinCommand"`
+	K0sToken               string                     `json:"k0sToken"`
+	EmbeddedClusterVersion string                     `json:"embeddedClusterVersion"`
+	AirgapRegistryAddress  string                     `json:"airgapRegistryAddress"`
+	Spec                   ecv1beta1.InstallationSpec `json:"installationSpec,omitempty"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -157,11 +152,9 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		return
 	}
 
-	// extract the configuration overrides from the installation object
-	endUserK0sConfigOverrides := install.Spec.EndUserK0sConfigOverrides
-	var k0sUnsupportedOverrides, ecVersion string
+	// extract the version from the installation object for backwards compatibility
+	var ecVersion string
 	if install.Spec.Config != nil {
-		k0sUnsupportedOverrides = install.Spec.Config.UnsupportedOverrides.K0s
 		ecVersion = install.Spec.Config.Version
 	}
 
@@ -176,29 +169,12 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		airgapRegistryAddress, _, _ = kotsutil.GetEmbeddedRegistryCreds(clientset)
 	}
 
-	httpProxy := util.HTTPProxy()
-	httpsProxy := util.HTTPSProxy()
-	noProxy := util.NoProxy()
-	var proxy *ecv1beta1.ProxySpec
-	if httpProxy != "" || httpsProxy != "" || noProxy != "" {
-		proxy = &ecv1beta1.ProxySpec{
-			HTTPProxy:  httpProxy,
-			HTTPSProxy: httpsProxy,
-			NoProxy:    noProxy,
-		}
-	}
-
 	JSON(w, http.StatusOK, GetEmbeddedClusterNodeJoinCommandResponse{
-		ClusterID:                 install.Spec.ClusterID,
-		K0sJoinCommand:            k0sJoinCommand,
-		K0sToken:                  k0sToken,
-		K0sUnsupportedOverrides:   k0sUnsupportedOverrides,
-		EndUserK0sConfigOverrides: endUserK0sConfigOverrides,
-		MetricsBaseURL:            install.Spec.MetricsBaseURL,
-		EmbeddedClusterVersion:    ecVersion,
-		AirgapRegistryAddress:     airgapRegistryAddress,
-		IsAirgap:                  install.Spec.AirGap,
-		Proxy:                     proxy,
-		Network:                   install.Spec.Network,
+		ClusterID:              install.Spec.ClusterID,
+		K0sJoinCommand:         k0sJoinCommand,
+		K0sToken:               k0sToken,
+		EmbeddedClusterVersion: ecVersion,
+		AirgapRegistryAddress:  airgapRegistryAddress,
+		Spec:                   install.Spec,
 	})
 }
