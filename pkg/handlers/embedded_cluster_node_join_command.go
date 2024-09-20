@@ -25,7 +25,7 @@ type GetEmbeddedClusterNodeJoinCommandResponse struct {
 	K0sToken               string                     `json:"k0sToken"`
 	EmbeddedClusterVersion string                     `json:"embeddedClusterVersion"`
 	AirgapRegistryAddress  string                     `json:"airgapRegistryAddress"`
-	Spec                   ecv1beta1.InstallationSpec `json:"installationSpec,omitempty"`
+	InstallationSpec       ecv1beta1.InstallationSpec `json:"installationSpec,omitempty"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -175,6 +175,6 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		K0sToken:               k0sToken,
 		EmbeddedClusterVersion: ecVersion,
 		AirgapRegistryAddress:  airgapRegistryAddress,
-		Spec:                   install.Spec,
+		InstallationSpec:       install.Spec,
 	})
 }
