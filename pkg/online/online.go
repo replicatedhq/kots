@@ -158,6 +158,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		AppSelectedChannelID:   opts.PendingApp.SelectedChannelID,
 		ReportingInfo:          reporting.GetReportingInfo(opts.PendingApp.ID),
 		SkipCompatibilityCheck: opts.SkipCompatibilityCheck,
+		PrivateCAsConfigmap:    os.Getenv("SSL_CERT_CONFIGMAP"),
 	}
 
 	pullOptions.HTTPProxyEnvValue = os.Getenv("HTTP_PROXY")

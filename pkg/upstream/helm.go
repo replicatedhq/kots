@@ -278,6 +278,10 @@ func buildReplicatedValues(u *types.Upstream, options types.WriteOptions) (map[s
 		replicatedValues["license"] = string(MustMarshalLicense(u.License))
 	}
 
+	if options.PrivateCAsConfigmap != "" {
+		replicatedValues["privateCAConfigmap"] = options.PrivateCAsConfigmap
+	}
+
 	replicatedValues["extraEnv"] = []struct {
 		Name  string `yaml:"name"`
 		Value string `yaml:"value"`

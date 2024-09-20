@@ -156,9 +156,10 @@ func RenderDir(opts types.RenderDirOptions) error {
 		RegistrySettings:     opts.RegistrySettings,
 
 		// TODO: pass in as arguments if this is ever called from CLI
-		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),
-		HTTPSProxyEnvValue: os.Getenv("HTTPS_PROXY"),
-		NoProxyEnvValue:    os.Getenv("NO_PROXY"),
+		HTTPProxyEnvValue:   os.Getenv("HTTP_PROXY"),
+		HTTPSProxyEnvValue:  os.Getenv("HTTPS_PROXY"),
+		NoProxyEnvValue:     os.Getenv("NO_PROXY"),
+		PrivateCAsConfigmap: os.Getenv("SSL_CERT_CONFIGMAP"),
 	}
 
 	err = rewrite.Rewrite(reOptions)

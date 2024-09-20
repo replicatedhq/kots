@@ -232,6 +232,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		SkipCompatibilityCheck: skipCompatibilityCheck,
 		KotsKinds:              beforeKotsKinds,
 		AppSelectedChannelID:   a.SelectedChannelID,
+		PrivateCAsConfigmap:    os.Getenv("SSL_CERT_CONFIGMAP"),
 	}
 
 	pullOptions.HTTPProxyEnvValue = os.Getenv("HTTP_PROXY")
