@@ -21,7 +21,7 @@ test('change channel', async ({ page }) => {
     await page.getByRole('button', { name: 'Ok, got it!' }).click();
 
     await expect(page.locator('#app')).toContainText('Alternate');
-    await expect(page.locator('#app')).toContainText('1.0.3', { timeout: 10000 });
+    await expect(page.locator('#app')).toContainText('v1.0.1', { timeout: 10000 });
     await expect(page.locator('#app')).toContainText('Upstream Update', { timeout: 10000 });
 
     await page.getByRole('button', { name: 'Deploy', exact: true }).click();
@@ -29,7 +29,7 @@ test('change channel', async ({ page }) => {
 
     await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
     await expect(page.getByText('v1.0.0')).not.toBeVisible();
-    await expect(page.getByText('1.0.3')).toBeVisible();
+    await expect(page.getByText('v1.0.1')).toBeVisible();
 });
 
 async function changeChannel(channelId: string) {
