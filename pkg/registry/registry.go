@@ -145,11 +145,12 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 			Password:   password,
 			IsReadOnly: isReadOnly,
 		},
-		AppID:         a.ID,
-		AppSlug:       a.Slug,
-		IsGitOps:      a.IsGitOps,
-		AppSequence:   nextAppSequence,
-		ReportingInfo: reporting.GetReportingInfo(a.ID),
+		AppID:                a.ID,
+		AppSlug:              a.Slug,
+		AppSelectedChannelID: a.SelectedChannelID,
+		IsGitOps:             a.IsGitOps,
+		AppSequence:          nextAppSequence,
+		ReportingInfo:        reporting.GetReportingInfo(a.ID),
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

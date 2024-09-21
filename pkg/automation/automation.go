@@ -203,8 +203,21 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return errors.Wrap(err, "failed to verify license signature")
 	}
 
+	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		return errors.Wrap(err, "failed to get existing kotsadm config map")
+	}
+
+	desiredAppName := strings.Replace(appSlug, "-", " ", 0)
+	upstreamURI := fmt.Sprintf("replicated://%s", appSlug)
+
+	matchedChannelID, err := kotsutil.FindChannelIDInLicense(instParams.RequestedChannelSlug, verifiedLicense)
+	if err != nil {
+		return errors.Wrap(err, "failed to find requested channel in license")
+	}
+
 	if !kotsadm.IsAirgap() {
-		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense, matchedChannelID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get latest license")
 		}
@@ -236,15 +249,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 	}
 
-	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
-	if err != nil {
-		return errors.Wrap(err, "failed to get existing kotsadm config map")
-	}
-
-	desiredAppName := strings.Replace(appSlug, "-", " ", 0)
-	upstreamURI := fmt.Sprintf("replicated://%s", appSlug)
-
-	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
+	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
 	if err != nil {
 		return errors.Wrap(err, "failed to create app record")
 	}
@@ -311,11 +316,12 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	} else if annotations["kots.io/airgap"] != "true" {
 		createAppOpts := online.CreateOnlineAppOpts{
 			PendingApp: &onlinetypes.PendingApp{
-				ID:           a.ID,
-				Slug:         a.Slug,
-				Name:         a.Name,
-				LicenseData:  string(license),
-				VersionLabel: instParams.AppVersionLabel,
+				ID:                a.ID,
+				Slug:              a.Slug,
+				Name:              a.Name,
+				LicenseData:       string(license),
+				VersionLabel:      instParams.AppVersionLabel,
+				SelectedChannelID: a.SelectedChannelID,
 			},
 			UpstreamURI:            upstreamURI,
 			IsAutomated:            true,

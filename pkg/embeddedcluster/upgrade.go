@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,8 +17,8 @@ import (
 	"time"
 
 	"github.com/mholt/archiver/v3"
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
-	embeddedclustertypes "github.com/replicatedhq/embedded-cluster-kinds/types"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
+	embeddedclustertypes "github.com/replicatedhq/embedded-cluster/kinds/types"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -54,7 +55,8 @@ func startClusterUpgrade(
 	if err != nil {
 		return fmt.Errorf("failed to get current installation: %w", err)
 	}
-	newins := &embeddedclusterv1beta1.Installation{
+
+	newInstall := &embeddedclusterv1beta1.Installation{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: embeddedclusterv1beta1.GroupVersion.String(),
 			Kind:       "Installation",
@@ -65,23 +67,15 @@ func startClusterUpgrade(
 				"replicated.com/disaster-recovery": "ec-install",
 			},
 		},
-		Spec: embeddedclusterv1beta1.InstallationSpec{
-			ClusterID:                 current.Spec.ClusterID,
-			MetricsBaseURL:            current.Spec.MetricsBaseURL,
-			HighAvailability:          current.Spec.HighAvailability,
-			AirGap:                    current.Spec.AirGap,
-			Network:                   current.Spec.Network,
-			Artifacts:                 artifacts,
-			Config:                    &newcfg,
-			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
-			BinaryName:                current.Spec.BinaryName,
-			LicenseInfo:               &embeddedclusterv1beta1.LicenseInfo{IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported},
-		},
+		Spec: current.Spec,
 	}
+	newInstall.Spec.Artifacts = artifacts
+	newInstall.Spec.Config = &newcfg
+	newInstall.Spec.LicenseInfo = &embeddedclusterv1beta1.LicenseInfo{IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported}
 
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 
-	err = runClusterUpgrade(ctx, k8sClient, newins, registrySettings, license, versionLabel)
+	err = runClusterUpgrade(ctx, k8sClient, newInstall, registrySettings, license, versionLabel)
 	if err != nil {
 		return fmt.Errorf("run cluster upgrade: %w", err)
 	}
@@ -218,7 +212,7 @@ func downloadUpgradeBinary(ctx context.Context, license kotsv1beta1.License, ver
 }
 
 func newDownloadUpgradeBinaryRequest(ctx context.Context, license kotsv1beta1.License, versionLabel string) (*http.Request, error) {
-	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", license.Spec.Endpoint, versionLabel)
+	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", license.Spec.Endpoint, url.QueryEscape(versionLabel))
 	req, err := util.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)

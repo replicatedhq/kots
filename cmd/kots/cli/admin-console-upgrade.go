@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -20,8 +22,8 @@ import (
 func AdminConsoleUpgradeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "upgrade",
-		Short:         "Upgrade the admin console to the latest version",
-		Long:          "Upgrade the admin console to the latest version",
+		Short:         fmt.Sprintf("Upgrade the admin console to version %s", buildversion.Version()),
+		Long:          "",
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {

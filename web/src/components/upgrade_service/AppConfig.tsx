@@ -12,6 +12,7 @@ import { withRouter } from "@src/utilities/react-router-utilities";
 import { useUpgradeServiceContext } from "./UpgradeServiceContext";
 
 import "@src/scss/components/watches/WatchConfig.scss";
+import { isEqual } from "lodash";
 
 // This was typed from the implementation of the component so it might be wrong
 type ConfigGroup = {
@@ -62,7 +63,8 @@ export const AppConfig = ({
   const navigate = useNavigate();
   const params = useParams();
 
-  const { config, setConfig } = useUpgradeServiceContext();
+  const { config, setConfig, prevConfig, setPrevConfig } =
+    useUpgradeServiceContext();
 
   const [state, setState] = useReducer(
     (currentState, newState) => ({ ...currentState, ...newState }),
@@ -184,6 +186,14 @@ export const AppConfig = ({
     getConfig();
     setCurrentStep(0);
   }, []);
+
+  useEffect(() => {
+    if (!isEqual(config, prevConfig)) {
+      // Config has changed
+      setPrevConfig(config);
+      // Perform actions
+    }
+  }, [config, prevConfig]);
 
   const markRequiredItems = (requiredItems: RequiredItems) => {
     const configGroups = state.configGroups;
@@ -466,7 +476,7 @@ export const AppConfig = ({
 
   if (configLoading) {
     return (
-      <div className="flex-column flex1 alignItems--center justifyContent--center">
+      <div className="flex-column flex1 alignItems--center justifyContent--center tw--mt-20">
         <Loader size="60" />
       </div>
     );

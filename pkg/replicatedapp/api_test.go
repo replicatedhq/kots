@@ -30,7 +30,7 @@ func Test_getRequest(t *testing.T) {
 			channel:         nil,
 			channelSequence: "",
 			versionLabel:    nil,
-			expectedURL:     "https://replicated-app/release/sluggy1?channelSequence=&isSemverSupported=true&licenseSequence=23",
+			expectedURL:     "https://replicated-app/release/sluggy1?channelSequence=&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel",
 		},
 		{
 			endpoint:        "http://localhost:30016",
@@ -38,7 +38,7 @@ func Test_getRequest(t *testing.T) {
 			channel:         &beta,
 			channelSequence: "",
 			versionLabel:    nil,
-			expectedURL:     "http://localhost:30016/release/sluggy2/beta?channelSequence=&isSemverSupported=true&licenseSequence=23",
+			expectedURL:     "http://localhost:30016/release/sluggy2/beta?channelSequence=&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel",
 		},
 		{
 			endpoint:        "https://replicated-app",
@@ -46,7 +46,7 @@ func Test_getRequest(t *testing.T) {
 			channel:         &unstable,
 			channelSequence: "10",
 			versionLabel:    nil,
-			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=10&isSemverSupported=true&licenseSequence=23",
+			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=10&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel",
 		},
 		{
 			endpoint:        "https://replicated-app",
@@ -54,7 +54,7 @@ func Test_getRequest(t *testing.T) {
 			channel:         &unstable,
 			channelSequence: "",
 			versionLabel:    &version,
-			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=&isSemverSupported=true&licenseSequence=23&versionLabel=1.1.0",
+			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel&versionLabel=1.1.0",
 		},
 	}
 
@@ -65,6 +65,7 @@ func Test_getRequest(t *testing.T) {
 				Endpoint:        test.endpoint,
 				AppSlug:         test.appSlug,
 				LicenseSequence: 23,
+				ChannelID:       "channel",
 			},
 		}
 		r := &ReplicatedUpstream{
@@ -77,8 +78,50 @@ func Test_getRequest(t *testing.T) {
 		if test.channel != nil {
 			cursor.ChannelName = *test.channel
 		}
-		request, err := r.GetRequest("GET", license, cursor)
+		request, err := r.GetRequest("GET", license, cursor, channel)
 		req.NoError(err)
 		assert.Equal(t, test.expectedURL, request.URL.String())
+	}
+}
+
+func Test_makeLicenseURL(t *testing.T) {
+	tests := []struct {
+		description       string
+		license           *kotsv1beta1.License
+		selectedChannelID string
+		expectedURL       string
+	}{
+		{
+			description: "with channel",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint:        "https://replicated-app",
+					AppSlug:         "slug1",
+					LicenseSequence: 42,
+				},
+			},
+			selectedChannelID: "channel1",
+			expectedURL:       "https://replicated-app/license/slug1?licenseSequence=42&selectedChannelId=channel1",
+		},
+		{
+			description: "without channel",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint:        "https://replicated-app",
+					AppSlug:         "slug2",
+					LicenseSequence: 42,
+				},
+			},
+			selectedChannelID: "",
+			expectedURL:       "https://replicated-app/license/slug2?licenseSequence=42",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			url, err := makeLicenseURL(test.license, test.selectedChannelID)
+			require.NoError(t, err)
+			assert.Equal(t, test.expectedURL, url)
+		})
 	}
 }

@@ -1,6 +1,6 @@
 include ./Makefile.build
 
-CURRENT_USER := $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
+CURRENT_USER := $(shell id -u -n)
 
 .PHONY: test
 test:
@@ -10,13 +10,13 @@ test:
 build:
 	go build ${LDFLAGS} -o bin/kurl_proxy cmd/main.go
 
-.PHONY: up
-up:
-	skaffold dev -f skaffold.yaml
+.PHONY: run
+run:
+	./bin/kurl_proxy
 
 .PHONY: build-ttl.sh
 build-ttl.sh: export GOOS ?= linux
 build-ttl.sh: export GOARCH ?= amd64
 build-ttl.sh: build
-	docker build --platform $(GOOS)/$(GOARCH) --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kurl-proxy:24h .
+	docker build --platform $(GOOS)/$(GOARCH) --pull -f dev/Dockerfile.ttlsh -t ttl.sh/${CURRENT_USER}/kurl-proxy:24h .
 	docker push ttl.sh/${CURRENT_USER}/kurl-proxy:24h

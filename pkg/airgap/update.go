@@ -203,6 +203,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		AppID:                  a.ID,
 		AppSlug:                a.Slug,
 		AppSequence:            appSequence,
+		AppSelectedChannelID:   a.SelectedChannelID,
 		SkipCompatibilityCheck: skipCompatibilityCheck,
 		KotsKinds:              beforeKotsKinds,
 	}

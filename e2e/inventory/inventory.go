@@ -169,6 +169,16 @@ func NewGitOps() Test {
 	}
 }
 
+func NewChangeChannel() Test {
+	return Test{
+		ID:          "change-channel",
+		Name:        "Change Channel",
+		Namespace:   "change-channel",
+		AppSlug:     "change-channel",
+		UpstreamURI: "change-channel/automated",
+	}
+}
+
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	cmd := kubectlCLI.Command(
 		context.Background(),

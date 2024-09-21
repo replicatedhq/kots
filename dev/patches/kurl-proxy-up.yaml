@@ -1,0 +1,34 @@
+spec:
+  template:
+    spec:
+      volumes:
+      - name: dev
+        hostPath:
+          path: __PROJECT_DIR__
+          type: Directory
+      - name: assets
+        hostPath:
+          path: __PROJECT_DIR__/kurl_proxy/assets
+          type: Directory
+      containers:
+      - name: proxy
+        image: kurl-proxy-dev
+        command: ["/bin/bash"]
+        args: ["-c", "while true; do sleep 30; done;"]
+        volumeMounts:
+        - name: dev
+          mountPath: /replicatedhq/kots # parent of workdir in the container
+        - name: assets
+          mountPath: /assets
+        env:
+        - name: GOCACHE
+          value: /replicatedhq/kots/dev/.gocache # from dev volume mount
+        - name: GOMODCACHE
+          value: /replicatedhq/kots/dev/.gomodcache # from dev volume mount
+        livenessProbe: ~
+        readinessProbe: ~
+        resources: ~
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false

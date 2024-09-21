@@ -409,6 +409,7 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app license")
 	}
+
 	downstreamtypes.SortDownstreamVersions(result.AllVersions, license.Spec.IsSemverRequired)
 
 	// retrieve additional details about the latest downloaded version,
@@ -673,6 +674,7 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 		if err != nil {
 			return errors.Wrap(err, "failed to get app license")
 		}
+
 		for _, v := range versions {
 			v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, allVersions, license.Spec.IsSemverRequired)
 		}

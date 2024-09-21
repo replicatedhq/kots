@@ -39,26 +39,23 @@ const UpgradeServiceModal = ({
             <Loader size="60" />
           </div>
         ) : (
-          <>
-            {isIframeLoading && (
-              <div className="tw-absolute tw-top-[45%] tw-w-full flex-column flex1 alignItems--center justifyContent--center tw-mt-4 tw-gap-4">
-                <span className="u-fontWeight--bold">Almost done...</span>
-                <Loader size="60" />
-              </div>
-            )}
-
-            <iframe
-              src={`/upgrade-service/app/${appSlug}`}
-              title="KOTS Upgrade Service"
-              width="100%"
-              height="100%"
-              allowFullScreen={true}
-              id="upgrade-service-iframe"
-              ref={iframeRef}
-              onLoad={onLoad}
-              style={{ visibility: isIframeLoading ? "hidden" : "visible" }}
-            />
-          </>
+          <iframe
+            src={`/upgrade-service/app/${appSlug}`}
+            title="KOTS Upgrade Service"
+            width="100%"
+            height="100%"
+            allowFullScreen={true}
+            id="upgrade-service-iframe"
+            ref={iframeRef}
+            onLoad={onLoad}
+            style={{ visibility: isIframeLoading ? "hidden" : "visible" }}
+          />
+        )}
+        {isIframeLoading && (
+          <div className="tw-absolute tw-top-[44.3%] tw-w-full flex-column flex1 alignItems--center justifyContent--center tw-gap-4">
+            <span className="u-fontWeight--bold">Almost done...</span>
+            <Loader size="60" />
+          </div>
         )}
         <div
           className="tw-flex tw-justify-start tw-m-4 tw-color-gray-400 tw-text-xs tw-invisible"

@@ -278,6 +278,24 @@ func buildReplicatedValues(u *types.Upstream, options types.WriteOptions) (map[s
 		replicatedValues["license"] = string(MustMarshalLicense(u.License))
 	}
 
+	replicatedValues["extraEnv"] = []struct {
+		Name  string `yaml:"name"`
+		Value string `yaml:"value"`
+	}{
+		{
+			Name:  "HTTP_PROXY",
+			Value: options.HTTPProxyEnvValue,
+		},
+		{
+			Name:  "HTTPS_PROXY",
+			Value: options.HTTPSProxyEnvValue,
+		},
+		{
+			Name:  "NO_PROXY",
+			Value: options.NoProxyEnvValue,
+		},
+	}
+
 	return replicatedValues, nil
 }
 

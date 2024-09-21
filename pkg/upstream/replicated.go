@@ -81,7 +81,7 @@ func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckR
 		return nil, errors.New("No license was provided")
 	}
 
-	pendingReleases, updateCheckTime, err := listPendingChannelReleases(fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.SortOrder, fetchOptions.ReportingInfo)
+	pendingReleases, updateCheckTime, err := listPendingChannelReleases(fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.SortOrder, fetchOptions.ReportingInfo, fetchOptions.CurrentChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -131,6 +131,7 @@ func downloadReplicated(
 	registry registrytypes.RegistrySettings,
 	reportingInfo *reportingtypes.ReportingInfo,
 	skipCompatibilityCheck bool,
+	appSelectedChannelID string,
 ) (*types.Upstream, error) {
 	var release *Release
 
@@ -168,12 +169,12 @@ func downloadReplicated(
 			}
 		}
 
-		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, license, updateCursor, reportingInfo)
+		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, license, updateCursor, reportingInfo, appSelectedChannelID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
 
-		licenseData, err := replicatedapp.GetLatestLicense(license)
+		licenseData, err := replicatedapp.GetLatestLicense(license, appSelectedChannelID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}
@@ -204,8 +205,17 @@ func downloadReplicated(
 	// get channel name from license, if one was provided
 	channelID, channelName := "", ""
 	if license != nil {
-		channelID = license.Spec.ChannelID
-		channelName = license.Spec.ChannelName
+		if appSelectedChannelID != "" {
+			channel, err := kotsutil.FindChannelInLicense(appSelectedChannelID, license)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to find channel in license")
+			}
+			channelID = channel.ChannelID
+			channelName = channel.ChannelName
+		} else {
+			channelID = license.Spec.ChannelID
+			channelName = license.Spec.ChannelName
+		}
 	}
 
 	if existingIdentityConfig == nil {
@@ -344,8 +354,8 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.
 	return &release, nil
 }
 
-func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream, license *kotsv1beta1.License, cursor replicatedapp.ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo) (*Release, error) {
-	getReq, err := replicatedUpstream.GetRequest("GET", license, cursor)
+func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream, license *kotsv1beta1.License, cursor replicatedapp.ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo, selectedAppChannel string) (*Release, error) {
+	getReq, err := replicatedUpstream.GetRequest("GET", license, cursor, selectedAppChannel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create http request")
 	}
@@ -441,7 +451,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	return &release, nil
 }
 
-func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, *time.Time, error) {
+func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]ChannelRelease, *time.Time, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -461,6 +471,7 @@ func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt 
 	urlValues.Set("channelSequence", sequence)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 	urlValues.Add("isSemverSupported", "true")
+	urlValues.Add("selectedChannelId", selectedChannelID)
 
 	if lastUpdateCheckAt != nil {
 		urlValues.Add("lastUpdateCheckAt", lastUpdateCheckAt.UTC().Format(time.RFC3339))

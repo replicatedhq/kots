@@ -18,7 +18,7 @@ import (
 	"github.com/blang/semver"
 	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
@@ -42,6 +42,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
@@ -1139,6 +1140,9 @@ type InstallationParams struct {
 	WaitDuration           time.Duration
 	WithMinio              bool
 	AppVersionLabel        string
+	RequestedChannelSlug   string
+	AdditionalAnnotations  map[string]string
+	AdditionalLabels       map[string]string
 }
 
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
@@ -1149,12 +1153,18 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
+	return GetInstallationParamsWithClientset(clientset, configMapName, util.PodNamespace)
+}
+
+func GetInstallationParamsWithClientset(clientset kubernetes.Interface, configMapName string, namespace string) (InstallationParams, error) {
+	autoConfig := InstallationParams{}
+
 	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return autoConfig, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 
-	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return autoConfig, nil
@@ -1174,11 +1184,37 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
+	autoConfig.RequestedChannelSlug = kotsadmConfigMap.Data["requested-channel-slug"]
 
 	if enableImageDeletion, ok := kotsadmConfigMap.Data["enable-image-deletion"]; ok {
 		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)
 	} else {
 		autoConfig.EnableImageDeletion = isKurl
+	}
+
+	autoConfig.AdditionalAnnotations = make(map[string]string)
+	allAnnotations := strings.Split(kotsadmConfigMap.Data["additional-annotations"], ",")
+	for _, annotation := range allAnnotations {
+		if annotation == "" {
+			continue
+		}
+		parts := strings.Split(annotation, "=")
+		if len(parts) != 2 {
+			return autoConfig, errors.Errorf("invalid additional annotation %q", annotation)
+		}
+		autoConfig.AdditionalAnnotations[parts[0]] = parts[1]
+	}
+	autoConfig.AdditionalLabels = make(map[string]string)
+	allLabels := strings.Split(kotsadmConfigMap.Data["additional-labels"], ",")
+	for _, label := range allLabels {
+		if label == "" {
+			continue
+		}
+		parts := strings.Split(label, "=")
+		if len(parts) != 2 {
+			return autoConfig, errors.Errorf("invalid additional label %q", label)
+		}
+		autoConfig.AdditionalLabels[parts[0]] = parts[1]
 	}
 
 	return autoConfig, nil
@@ -1597,4 +1633,67 @@ func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
 		return "", errors.New("installer version not found in embedded cluster metadata")
 	}
 	return ecVersion, nil
+}
+
+func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) (string, error) {
+	matchedChannelID := ""
+	if requestedSlug != "" {
+		// if we do not have a Channels array or its empty, default to using the top level fields for backwards compatibility
+		if len(license.Spec.Channels) == 0 {
+			logger.Debug("not a multi-channel license, using top level license channel id")
+			matchedChannelID = license.Spec.ChannelID
+		} else {
+			for _, channel := range license.Spec.Channels {
+				if channel.ChannelSlug == requestedSlug {
+					matchedChannelID = channel.ChannelID
+					break
+				}
+			}
+			if matchedChannelID == "" {
+				return "", errors.New("requested install channel slug not found in license channels")
+			}
+		}
+	} else { // this is an install from before the channel slug was added to the configmap
+		logger.Debug("requested channel slug not found in configmap, using top level channel id from license")
+		matchedChannelID = license.Spec.ChannelID
+	}
+	return matchedChannelID, nil
+}
+
+func FindChannelInLicense(channelID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
+	if channelID == "" {
+		return nil, errors.New("channelID is required")
+	}
+	if len(license.Spec.Channels) == 0 {
+		if license.Spec.ChannelID != channelID {
+			return nil, errors.New("channel not found in non-multi channel license")
+		}
+		// this is an install from before multi channel support, so emulate it using the top level info
+		return &kotsv1beta1.Channel{
+			ChannelID:        license.Spec.ChannelID,
+			ChannelName:      license.Spec.ChannelName,
+			IsDefault:        true,
+			IsSemverRequired: license.Spec.IsSemverRequired,
+		}, nil
+	}
+
+	for _, channel := range license.Spec.Channels {
+		if channel.ChannelID == channelID {
+			return &channel, nil
+		}
+	}
+
+	logger.Warnf("channel id '%s' not found in multi channel license with sequence", channelID, license.Spec.LicenseSequence)
+	return nil, errors.New("channel not found in multi channel format license")
+}
+
+func GetDefaultChannelIDFromLicense(license *kotsv1beta1.License) string {
+	for _, channel := range license.Spec.Channels {
+		if channel.IsDefault {
+			return channel.ChannelID
+		}
+	}
+	// either this isn't a multi channel license or the default channel is not set
+	// either way we should fall back to the top level channel id for backwards compatibility
+	return license.Spec.ChannelID
 }

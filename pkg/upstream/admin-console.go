@@ -37,6 +37,7 @@ type UpstreamSettings struct {
 	MigrateToMinioXl       bool
 	CurrentMinioImage      string
 	AdditionalNamespaces   []string
+	PrivateCAsConfigmap    string
 
 	RegistryConfig kotsadmtypes.RegistryConfig
 }
@@ -63,6 +64,7 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			IsMinimalRBAC:          options.IsMinimalRBAC,
 			AdditionalNamespaces:   options.AdditionalNamespaces,
 			RegistryConfig:         options.RegistryConfig,
+			PrivateCAsConfigmap:    options.PrivateCAsConfigmap,
 		}
 		return generateNewAdminConsoleFiles(settings)
 	}
@@ -84,6 +86,7 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 		IsMinimalRBAC:          options.IsMinimalRBAC,
 		AdditionalNamespaces:   options.AdditionalNamespaces,
 		RegistryConfig:         options.RegistryConfig,
+		PrivateCAsConfigmap:    options.PrivateCAsConfigmap,
 	}
 	if err := loadUpstreamSettingsFromFiles(settings, renderDir, existingFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to find existing settings")
@@ -191,6 +194,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		IsMinimalRBAC:          settings.IsMinimalRBAC,
 		AdditionalNamespaces:   settings.AdditionalNamespaces,
 		RegistryConfig:         settings.RegistryConfig,
+		PrivateCAsConfigmap:    settings.PrivateCAsConfigmap,
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" && deployOptions.SharedPassword == "" {

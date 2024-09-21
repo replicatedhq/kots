@@ -61,6 +61,12 @@ test('smoke test', async ({ page }) => {
   await page.getByRole('link', { name: 'Config', exact: true }).click();
   await expect(page.locator('h3')).toContainText('My Example Config');
   await expect(page.locator('#version_sequence-group')).toContainText('This version is 1');
+  await expect(page.getByRole("combobox")).toHaveValue("option_1");
+  await page.getByRole("combobox").selectOption("option_2");
+  await expect(page.getByRole("combobox")).toHaveValue("option_2");
+  await expect(page.getByLabel("radio_1")).toBeChecked();
+  await page.getByLabel("radio_2").click();
+  await expect(page.getByLabel("radio_2")).toBeChecked();
   await expect(page.getByRole('button', { name: 'Save config' })).toBeVisible();
   await page.getByRole('link', { name: 'Troubleshoot' }).click();
   await expect(page.getByRole('button', { name: 'Analyze App Name' })).toBeVisible();
@@ -157,7 +163,6 @@ test('smoke test', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Full Snapshots (Instance)');
   await page.getByRole('link', { name: 'Partial Snapshots (Application)' }).click();
   await page.getByRole('button', { name: 'Start a snapshot' }).click();
-  await expect(page.locator('#app')).toContainText('In Progress');
   await expect(page.locator('#app')).toContainText('Completed', { timeout: 30000 });
   await expect(page.getByText('It’s recommend that you use')).toBeVisible();
   await page.getByText('Learn more').click();

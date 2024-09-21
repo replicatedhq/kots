@@ -3,10 +3,11 @@ package k8sutil
 import (
 	"context"
 	"io"
+	"regexp"
 	"strconv"
 
 	"github.com/pkg/errors"
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -103,7 +104,15 @@ func GetK8sMinorVersion(clientset kubernetes.Interface) (int, error) {
 		return -1, errors.Wrap(err, "failed to get kubernetes server version")
 	}
 
-	k8sMinorVersion, err := strconv.Atoi(k8sVersion.Minor)
+	// remove + sign from Minor version if any (for EKS)
+	// https://github.com/aws/containers-roadmap/issues/1404
+	reg := regexp.MustCompile(`[0-9]+`)
+	minorVersion := reg.FindString(k8sVersion.Minor)
+	if minorVersion == "" {
+		return -1, errors.New("failed to get k8s minor version")
+	}
+
+	k8sMinorVersion, err := strconv.Atoi(minorVersion)
 	if err != nil {
 		return -1, errors.Wrap(err, "failed to convert k8s minor version to int")
 	}

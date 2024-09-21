@@ -82,15 +82,29 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 		initContainers = append(initContainers, migrateToMinioXlInitContainers(deployOptions, resourceRequirements)...)
 	}
 
+	podAnnotations := map[string]string{
+		"backup.velero.io/backup-volumes": "kotsadm-minio,minio-config-dir,minio-cert-dir",
+	}
+	for k, v := range deployOptions.AdditionalAnnotations {
+		podAnnotations[k] = v
+	}
+	podLabels := map[string]string{
+		"app": "kotsadm-minio",
+	}
+	for k, v := range deployOptions.AdditionalLabels {
+		podLabels[k] = v
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-minio",
-			Namespace: deployOptions.Namespace,
-			Labels:    types.GetKotsadmLabels(),
+			Name:        "kotsadm-minio",
+			Namespace:   deployOptions.Namespace,
+			Annotations: deployOptions.AdditionalAnnotations,
+			Labels:      types.GetKotsadmLabels(deployOptions.AdditionalLabels),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -122,12 +136,8 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm-minio",
-					}),
-					Annotations: map[string]string{
-						"backup.velero.io/backup-volumes": "kotsadm-minio,minio-config-dir,minio-cert-dir",
-					},
+					Labels:      types.GetKotsadmLabels(podLabels),
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{

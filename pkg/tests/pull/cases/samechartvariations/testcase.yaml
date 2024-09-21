@@ -16,3 +16,4 @@ PullOptions:
     IsReadOnly: true
   Downstreams:
     - this-cluster
+  AppSelectedChannelID: 1YHCrcZzBxY2nJF5kcTCN9PHpk0

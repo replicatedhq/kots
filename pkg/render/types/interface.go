@@ -19,12 +19,13 @@ type RenderFileOptions struct {
 }
 
 type RenderDirOptions struct {
-	ArchiveDir       string
-	App              *apptypes.App
-	Downstreams      []downstreamtypes.Downstream
-	RegistrySettings registrytypes.RegistrySettings
-	Sequence         int64
-	ReportingInfo    *reportingtypes.ReportingInfo
+	ArchiveDir           string
+	App                  *apptypes.App
+	Downstreams          []downstreamtypes.Downstream
+	RegistrySettings     registrytypes.RegistrySettings
+	Sequence             int64
+	ReportingInfo        *reportingtypes.ReportingInfo
+	AppSelectedChannelID string
 }
 
 type Renderer interface {

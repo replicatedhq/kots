@@ -13,6 +13,7 @@ import ConfigFileInput from "./ConfigFileInput";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 import Icon from "../Icon";
+import ConfigDropdown from "./ConfigDropdown";
 
 const ConfigGroup = (props) => {
   const markdownNode = createRef();
@@ -150,9 +151,35 @@ const ConfigGroup = (props) => {
               />
             </ConfigWrapper>
           );
+        case "radio":
+          return (
+            <ConfigSelectOne
+              key={`${i}-${item.name}`}
+              handleOnChange={handleItemChange}
+              hidden={item.hidden}
+              groupName={props.item.name}
+              when={item.when}
+              {...item}
+              readonly={isReadOnly}
+              index={i + 1}
+            />
+          );
         case "select_one":
           return (
             <ConfigSelectOne
+              key={`${i}-${item.name}`}
+              handleOnChange={handleItemChange}
+              hidden={item.hidden}
+              groupName={props.item.name}
+              when={item.when}
+              {...item}
+              readonly={isReadOnly}
+              index={i + 1}
+            />
+          );
+        case "dropdown":
+          return (
+            <ConfigDropdown
               key={`${i}-${item.name}`}
               handleOnChange={handleItemChange}
               hidden={item.hidden}

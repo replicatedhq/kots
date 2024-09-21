@@ -95,3 +95,52 @@ func Test_getHostFromEndpoint(t *testing.T) {
 		})
 	}
 }
+
+func Test_extractPreferredChannelSlug(t *testing.T) {
+	type args struct {
+		upstreamURI string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			"no channel",
+			args{
+				upstreamURI: "replicated://app-slug",
+			},
+			"stable",
+			false,
+		},
+		{
+			"with channel",
+			args{
+				upstreamURI: "replicated://app-slug/channel",
+			},
+			"channel",
+			false,
+		},
+		{
+			"invalid uri",
+			args{
+				upstreamURI: "junk",
+			},
+			"",
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := extractPreferredChannelSlug(nil, tt.args.upstreamURI)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("extractPreferredChannelSlug() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("extractPreferredChannelSlug() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

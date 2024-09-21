@@ -13,7 +13,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -439,7 +439,6 @@ func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence 
 
 func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) (int64, error) {
 	db := persistence.MustGetDBSession()
-
 	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, baseSequence, filesInDir, source, skipPreflights, renderer)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to construct app version statements")

@@ -50,15 +50,23 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 		storageClassName = &deployOptions.StorageClassName
 	}
 
+	podLabels := map[string]string{
+		"app": "kotsadm-rqlite",
+	}
+	for k, v := range deployOptions.AdditionalLabels {
+		podLabels[k] = v
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-rqlite",
-			Namespace: deployOptions.Namespace,
-			Labels:    types.GetKotsadmLabels(),
+			Name:        "kotsadm-rqlite",
+			Namespace:   deployOptions.Namespace,
+			Annotations: deployOptions.AdditionalAnnotations,
+			Labels:      types.GetKotsadmLabels(deployOptions.AdditionalLabels),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         "kotsadm-rqlite-headless",
@@ -89,9 +97,8 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm-rqlite",
-					}),
+					Annotations: deployOptions.AdditionalAnnotations,
+					Labels:      types.GetKotsadmLabels(podLabels),
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext:  securityContext,

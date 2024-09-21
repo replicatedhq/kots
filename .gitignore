@@ -15,6 +15,9 @@ bin/
 vendor
 .idea/
 .vscode/
+pact_logs/
+pacts/
+
 
 # goreleaser
 /dist
@@ -42,3 +45,11 @@ packages/*
 
 # precommit
 .pre-commit-config.yaml
+
+# tmp files
+*.tmp
+
+# dev cache
+dev/.gocache
+dev/.gomodcache
+dev/.yarncache

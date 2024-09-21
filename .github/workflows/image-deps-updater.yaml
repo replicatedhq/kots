@@ -87,7 +87,7 @@ jobs:
           go run ./cmd/imagedeps
 
       - name: Create Pull Request # creates a PR if there are differences
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         id: cpr
         with:
           token: ${{ secrets.GH_PAT }}
@@ -111,7 +111,7 @@ jobs:
 
       - name: Slack Notification
         if: ${{ steps.cpr.outputs.pull-request-number }}
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v1.27.0
         with: 
           payload: |
             {

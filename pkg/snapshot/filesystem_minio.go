@@ -19,6 +19,7 @@ import (
 	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
@@ -300,6 +301,11 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 		}
 	}
 
+	globalOptions, err := kotsutil.GetInstallationParamsWithClientset(clientset, kotsadmtypes.KotsadmConfigMap, deployOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get global options")
+	}
+
 	env := []corev1.EnvVar{
 		{
 			Name:  "MINIO_UPDATE",
@@ -329,13 +335,28 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 		},
 	}
 
+	podAnnotations := map[string]string{
+		"kots.io/fs-minio-creds-secret-checksum": secretChecksum,
+	}
+	for k, v := range globalOptions.AdditionalAnnotations {
+		podAnnotations[k] = v
+	}
+	podLabels := map[string]string{
+		"app": "kotsadm-fs-minio",
+	}
+	for k, v := range globalOptions.AdditionalLabels {
+		podLabels[k] = v
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: FileSystemMinioDeploymentName,
+			Name:        FileSystemMinioDeploymentName,
+			Labels:      globalOptions.AdditionalLabels,
+			Annotations: globalOptions.AdditionalAnnotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: pointer.Int32Ptr(1),
@@ -349,12 +370,8 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app": "kotsadm-fs-minio",
-					},
-					Annotations: map[string]string{
-						"kots.io/fs-minio-creds-secret-checksum": secretChecksum,
-					},
+					Labels:      podLabels,
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext:  &securityContext,
@@ -837,18 +854,28 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 		}
 	}
 
+	globalOptions, err := kotsutil.GetInstallationParamsWithClientset(clientset, kotsadmtypes.KotsadmConfigMap, deployOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get global options")
+	}
+	podLabels := map[string]string{
+		"app":   "kotsadm-fs-minio",
+		"check": podCheckTag,
+	}
+	for k, v := range globalOptions.AdditionalLabels {
+		podLabels[k] = v
+	}
+
 	pod := &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Pod",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: deployOptions.Namespace,
-			Labels: map[string]string{
-				"app":   "kotsadm-fs-minio",
-				"check": podCheckTag,
-			},
+			Name:        podName,
+			Namespace:   deployOptions.Namespace,
+			Labels:      podLabels,
+			Annotations: globalOptions.AdditionalAnnotations,
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext:  &securityContext,

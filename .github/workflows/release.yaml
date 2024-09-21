@@ -284,6 +284,26 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GORELEASER_CURRENT_TAG: ${{ needs.generate-tag.outputs.tag }}
 
+  publish-pact-contracts:
+    runs-on: ubuntu-20.04
+    needs: [ generate-tag, goreleaser ]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '^1.20.0'
+    - uses: replicatedhq/action-install-pact@main
+    - name: Publish pact contracts
+      env:
+        PACT_BROKER_BASE_URL: ${{ vars.PACT_BROKER_BASE_URL }}
+        PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
+        PACT_PUBLISH_CONTRACT: true
+        PACT_VERSION: ${{ github.sha }}
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+      run: |
+        set -x
+        make pact-consumer
+
   generate-kurl-addon:
     runs-on: ubuntu-20.04
     needs: [ generate-tag, build-kurl-proxy, build-kots, build-kotsadm-bundle ]

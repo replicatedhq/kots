@@ -120,15 +120,14 @@ const EmbeddedClusterViewNode = () => {
       )}
       {!nodeLoading && node && (
         <>
-          {/* Node Info */}
-          <div className="tw-p-3">
-            <p className="tw-font-semibold tw-text-xl tw-text-gray-800">
-              {node?.name}
-            </p>
-          </div>
           {/* Pods table */}
           <div className="card-bg tw-p-3 tw-flex tw-flex-col tw-gap-2">
-            <p className="tw-font-semibold tw-text-xl tw-text-gray-800">Pods</p>
+            <div>
+              <p className="tw-font-semibold tw-text-xl tw-text-gray-800">
+                Workloads
+              </p>
+              <p>View the workloads running on this node.</p>
+            </div>
             <div className="card-item">
               <MaterialReactTable
                 columns={columns}

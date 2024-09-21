@@ -26,8 +26,6 @@ kubectl kots install sentry-pro
 
 Set a namespace for the admin console and the application components to be installed, and provide a password for the admin console. After this command completes, the kotsadm Admin Console will be running in your cluster, listening on port :8800 on a ClusterIP service in the namespace you deployed the application to. By default this is exposed to your workstation using kubectl port-forward, but you could set up an ingress/load balancer of your own.
 
-**NOTE** Currently, the kotsadm pod can **only** be scheduled on nodes with the `linux/amd64` platform.  
-
 ### Access the Admin Console
 Visit http://localhost:8800 to access the Admin Console, enter the password.
 
@@ -40,8 +38,7 @@ kubectl kots admin-console --namespace sentry-pro
 
 ## Supportability
 
-Currently, the KOTS CLI supports OSX (including Apple Silicon arm64) and Linux platforms. However, the Kubernetes resources
-that it creates can **only** be scheduled on nodes with the `linux/amd64` platform.
+Supports OSX (including Apple Silicon arm64) and Linux platforms.
 
 # Community
 
@@ -61,22 +58,75 @@ cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/ko
 
 # Development
 
-## Github Codespaces
+### Requirements
 
-1. Create your own [codespace](https://github.com/replicatedhq/codespace).
+- MacOS
+- Docker Desktop with Kubernetes enabled
+- jq
+
+### Running the Development Environment
+
 1. Clone the KOTS repo:
     ```bash
-    git clone git@github.com:replicatedhq/kots.git
+    git clone https://github.com/replicatedhq/kots.git
+    cd kots
     ```
+
 1. From the root directory, run:
     ```bash
-    make cache
-    skaffold dev
+    make dev
     ```
-1. Visit the Admin Console URL. For VS Code:
-   ![Image 2024-02-23 at 2 55 11 PM](https://github.com/replicatedhq/kots/assets/39952863/aa86019f-0111-4d04-a142-3dfc539858a2)
 
-1. If you'll be working on the webapp or plan on using `make all-ttl.sh` for local testing, be sure to setup yarn:
+1. Once the development environment is running, you can access the admin console:
+   - Directly at http://localhost:30808
+   - Via kURL proxy at http://localhost:30880
+
+### Developing kotsadm web
+
+Changes to the kotsadm web component are reflected in real-time, no manual steps required.
+
+### Developing kotsadm API
+
+1. To apply your current changes, run the following commands:
     ```bash
-   cd web && yarn
+    make kotsadm-up
+    ```
+    ```bash
+    make build run
+    ```
+
+1. To apply additional changes, stop the current process with Ctrl+C, then run the following command:
+    ```bash
+    make build run
+    ```
+
+1. When finished developing, run the following command to revert back to the original state:
+    ```bash
+    exit
+    ```
+    ```bash
+    make kotsadm-down
+    ```
+
+### Developing kurl-proxy web / API
+
+1. To apply your current changes, run the following commands:
+    ```bash
+    make kurl-proxy-up
+    ```
+    ```bash
+    make build run
+    ```
+
+1. To apply additional changes, stop the current process with Ctrl+C, then run the following command:
+    ```bash
+    make build run
+    ```
+
+1. When finished developing, run the following command to revert back to the original state:
+    ```bash
+    exit
+    ```
+    ```bash
+    make kurl-proxy-down
     ```

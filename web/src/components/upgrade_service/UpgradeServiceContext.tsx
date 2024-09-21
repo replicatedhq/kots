@@ -4,16 +4,20 @@ export const UpgradeServiceContext = createContext(null);
 
 export const UpgradeServiceProvider = ({ children }) => {
   const [config, setConfig] = useState(null);
+  const [prevConfig, setPrevConfig] = useState(null);
 
   const [isSkipPreflights, setIsSkipPreflights] = useState(false);
   const [continueWithFailedPreflights, setContinueWithFailedPreflights] =
     useState(true);
+
   return (
     <UpgradeServiceContext.Provider
       // @ts-ignore
       value={{
         config,
         setConfig,
+        prevConfig,
+        setPrevConfig,
         isSkipPreflights,
         setIsSkipPreflights,
         continueWithFailedPreflights,

@@ -290,7 +290,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 		},
 		{
 			Name:  "S3_ENDPOINT",
-			Value: "http://kotsadm-minio:9000",
+			Value: fmt.Sprintf("http://kotsadm-minio.%s.svc.cluster.local:9000", deployOptions.Namespace),
 		},
 		{
 			Name:  "S3_BUCKET_NAME",
@@ -344,15 +344,96 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 		})
 	}
 
+	if deployOptions.PrivateCAsConfigmap != "" {
+		env = append(env, corev1.EnvVar{
+			Name:  "SSL_CERT_DIR",
+			Value: "/certs",
+		})
+		env = append(env, corev1.EnvVar{
+			Name:  "SSL_CERT_CONFIGMAP",
+			Value: deployOptions.PrivateCAsConfigmap,
+		})
+	}
+
+	podAnnotations := map[string]string{
+		"backup.velero.io/backup-volumes":   "backup",
+		"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
+		"pre.hook.backup.velero.io/timeout": "10m",
+	}
+	for k, v := range deployOptions.AdditionalAnnotations {
+		podAnnotations[k] = v
+	}
+	podLabels := map[string]string{
+		"app": "kotsadm",
+	}
+	for k, v := range deployOptions.AdditionalLabels {
+		podLabels[k] = v
+	}
+
+	volumes := []corev1.Volume{
+		{
+			Name: "migrations",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					Medium: corev1.StorageMediumMemory,
+				},
+			},
+		},
+		{
+			Name: "backup",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: "tmp",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
+
+	if deployOptions.PrivateCAsConfigmap != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: "kotsadm-private-cas",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: deployOptions.PrivateCAsConfigmap,
+					},
+				},
+			},
+		})
+	}
+
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "backup",
+			MountPath: "/backup",
+		},
+		{
+			Name:      "tmp",
+			MountPath: "/tmp",
+		},
+	}
+
+	if deployOptions.PrivateCAsConfigmap != "" {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "kotsadm-private-cas",
+			MountPath: "/certs",
+		})
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm",
-			Namespace: deployOptions.Namespace,
-			Labels:    types.GetKotsadmLabels(),
+			Name:        "kotsadm",
+			Namespace:   deployOptions.Namespace,
+			Annotations: deployOptions.AdditionalAnnotations,
+			Labels:      types.GetKotsadmLabels(deployOptions.AdditionalLabels),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -362,42 +443,15 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm",
-					}),
-					Annotations: map[string]string{
-						"backup.velero.io/backup-volumes":   "backup",
-						"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
-						"pre.hook.backup.velero.io/timeout": "10m",
-					},
+					Labels:      types.GetKotsadmLabels(podLabels),
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{
 						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
-					SecurityContext: securityContext,
-					Volumes: []corev1.Volume{
-						{
-							Name: "migrations",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									Medium: corev1.StorageMediumMemory,
-								},
-							},
-						},
-						{
-							Name: "backup",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-						{
-							Name: "tmp",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-					},
+					SecurityContext:    securityContext,
+					Volumes:            volumes,
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					ImagePullSecrets:   pullSecrets,
@@ -552,7 +606,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							Env: []corev1.EnvVar{
 								{
 									Name:  "S3_ENDPOINT",
-									Value: "http://kotsadm-minio:9000",
+									Value: fmt.Sprintf("http://kotsadm-minio.%s.svc.cluster.local:9000", deployOptions.Namespace),
 								},
 								{
 									Name:  "S3_BUCKET_NAME",
@@ -621,17 +675,8 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									},
 								},
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "backup",
-									MountPath: "/backup",
-								},
-								{
-									Name:      "tmp",
-									MountPath: "/tmp",
-								},
-							},
-							Env: env,
+							VolumeMounts: volumeMounts,
+							Env:          env,
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("1"),
@@ -684,6 +729,7 @@ func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredSt
 	return nil
 }
 
+// TODO add configmap for additional CAs
 func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
 	securityContext := k8sutil.SecurePodContext(1001, 1001, deployOptions.StrictSecurityContext)
 	if deployOptions.IsOpenShift {
@@ -836,9 +882,101 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 		})
 	}
 
+	if deployOptions.PrivateCAsConfigmap != "" {
+		env = append(env, corev1.EnvVar{
+			Name:  "SSL_CERT_DIR",
+			Value: "/certs",
+		})
+		env = append(env, corev1.EnvVar{
+			Name:  "SSL_CERT_CONFIGMAP",
+			Value: deployOptions.PrivateCAsConfigmap,
+		})
+	}
+
 	var storageClassName *string
 	if deployOptions.StorageClassName != "" {
 		storageClassName = &deployOptions.StorageClassName
+	}
+
+	podAnnotations := map[string]string{
+		"backup.velero.io/backup-volumes":   "backup",
+		"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
+		"pre.hook.backup.velero.io/timeout": "10m",
+	}
+	for k, v := range deployOptions.AdditionalAnnotations {
+		podAnnotations[k] = v
+	}
+	podLabels := map[string]string{
+		"app": "kotsadm",
+	}
+	for k, v := range deployOptions.AdditionalLabels {
+		podLabels[k] = v
+	}
+
+	volumes := []corev1.Volume{
+		{
+			Name: "kotsadmdata",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: "kotsadmdata",
+				},
+			},
+		},
+		{
+			Name: "migrations",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					Medium: corev1.StorageMediumMemory,
+				},
+			},
+		},
+		{
+			Name: "backup",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: "tmp",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
+
+	if deployOptions.PrivateCAsConfigmap != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: "kotsadm-private-cas",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: deployOptions.PrivateCAsConfigmap,
+					},
+				},
+			},
+		})
+	}
+
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "kotsadmdata",
+			MountPath: "/kotsadmdata",
+		},
+		{
+			Name:      "backup",
+			MountPath: "/backup",
+		},
+		{
+			Name:      "tmp",
+			MountPath: "/tmp",
+		},
+	}
+
+	if deployOptions.PrivateCAsConfigmap != "" {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "kotsadm-private-cas",
+			MountPath: "/certs",
+		})
 	}
 
 	statefulset := &appsv1.StatefulSet{
@@ -847,9 +985,10 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm",
-			Namespace: deployOptions.Namespace,
-			Labels:    types.GetKotsadmLabels(),
+			Name:        "kotsadm",
+			Namespace:   deployOptions.Namespace,
+			Annotations: deployOptions.AdditionalAnnotations,
+			Labels:      types.GetKotsadmLabels(deployOptions.AdditionalLabels),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: "kotsadm",
@@ -860,50 +999,15 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm",
-					}),
-					Annotations: map[string]string{
-						"backup.velero.io/backup-volumes":   "backup",
-						"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
-						"pre.hook.backup.velero.io/timeout": "10m",
-					},
+					Labels:      types.GetKotsadmLabels(podLabels),
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{
 						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
-					SecurityContext: securityContext,
-					Volumes: []corev1.Volume{
-						{
-							Name: "kotsadmdata",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "kotsadmdata",
-								},
-							},
-						},
-						{
-							Name: "migrations",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									Medium: corev1.StorageMediumMemory,
-								},
-							},
-						},
-						{
-							Name: "backup",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-						{
-							Name: "tmp",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-					},
+					SecurityContext:    securityContext,
+					Volumes:            volumes,
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					ImagePullSecrets:   pullSecrets,
@@ -1062,7 +1166,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							Env: []corev1.EnvVar{
 								{
 									Name:  "S3_ENDPOINT",
-									Value: "http://kotsadm-minio:9000",
+									Value: fmt.Sprintf("http://kotsadm-minio.%s.svc.cluster.local:9000", deployOptions.Namespace),
 								},
 								{
 									Name:  "S3_BUCKET_NAME",
@@ -1133,21 +1237,8 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									},
 								},
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "kotsadmdata",
-									MountPath: "/kotsadmdata",
-								},
-								{
-									Name:      "backup",
-									MountPath: "/backup",
-								},
-								{
-									Name:      "tmp",
-									MountPath: "/tmp",
-								},
-							},
-							Env: env,
+							VolumeMounts: volumeMounts,
+							Env:          env,
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("1"),

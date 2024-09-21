@@ -31,19 +31,21 @@ func TestGetAvailableUpdates(t *testing.T) {
 		license   *kotsv1beta1.License
 	}
 	tests := []struct {
-		name            string
-		args            args
-		channelReleases []upstream.ChannelRelease
-		setup           func(t *testing.T, args args, mockServerEndpoint string)
-		want            []types.AvailableUpdate
-		wantErr         bool
+		name                      string
+		args                      args
+		perChannelReleases        map[string][]upstream.ChannelRelease
+		setup                     func(t *testing.T, args args, mockServerEndpoint string)
+		want                      []types.AvailableUpdate
+		wantErr                   bool
+		expectedSelectedChannelId string
 	}{
 		{
 			name: "no updates",
 			args: args{
 				kotsStore: mockStore,
 				app: &apptypes.App{
-					ID: "app-id",
+					ID:                "app-id",
+					SelectedChannelID: "channel-id",
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -54,21 +56,23 @@ func TestGetAvailableUpdates(t *testing.T) {
 					},
 				},
 			},
-			channelReleases: []upstream.ChannelRelease{},
+			perChannelReleases: map[string][]upstream.ChannelRelease{},
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
-			want:    []types.AvailableUpdate{},
-			wantErr: false,
+			want:                      []types.AvailableUpdate{},
+			wantErr:                   false,
+			expectedSelectedChannelId: "channel-id",
 		},
 		{
 			name: "has updates",
 			args: args{
 				kotsStore: mockStore,
 				app: &apptypes.App{
-					ID: "app-id",
+					ID:                "app-id",
+					SelectedChannelID: "channel-id",
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -79,22 +83,24 @@ func TestGetAvailableUpdates(t *testing.T) {
 					},
 				},
 			},
-			channelReleases: []upstream.ChannelRelease{
-				{
-					ChannelSequence: 2,
-					ReleaseSequence: 2,
-					VersionLabel:    "0.0.2",
-					IsRequired:      false,
-					CreatedAt:       testTime.Format(time.RFC3339),
-					ReleaseNotes:    "release notes",
-				},
-				{
-					ChannelSequence: 1,
-					ReleaseSequence: 1,
-					VersionLabel:    "0.0.1",
-					IsRequired:      true,
-					CreatedAt:       testTime.Format(time.RFC3339),
-					ReleaseNotes:    "release notes",
+			perChannelReleases: map[string][]upstream.ChannelRelease{
+				"channel-id": {
+					{
+						ChannelSequence: 2,
+						ReleaseSequence: 2,
+						VersionLabel:    "0.0.2",
+						IsRequired:      false,
+						CreatedAt:       testTime.Format(time.RFC3339),
+						ReleaseNotes:    "release notes",
+					},
+					{
+						ChannelSequence: 1,
+						ReleaseSequence: 1,
+						VersionLabel:    "0.0.1",
+						IsRequired:      true,
+						CreatedAt:       testTime.Format(time.RFC3339),
+						ReleaseNotes:    "release notes",
+					},
 				},
 			},
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
@@ -123,14 +129,16 @@ func TestGetAvailableUpdates(t *testing.T) {
 					IsDeployable:       true,
 				},
 			},
-			wantErr: false,
+			wantErr:                   false,
+			expectedSelectedChannelId: "channel-id",
 		},
 		{
 			name: "fails to fetch updates",
 			args: args{
 				kotsStore: mockStore,
 				app: &apptypes.App{
-					ID: "app-id",
+					ID:                "app-id",
+					SelectedChannelID: "channel-id",
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -141,20 +149,99 @@ func TestGetAvailableUpdates(t *testing.T) {
 					},
 				},
 			},
-			channelReleases: []upstream.ChannelRelease{},
+			perChannelReleases: map[string][]upstream.ChannelRelease{},
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
-			want:    []types.AvailableUpdate{},
-			wantErr: true,
+			want:                      []types.AvailableUpdate{},
+			wantErr:                   true,
+			expectedSelectedChannelId: "channel-id",
+		},
+		{
+			name: "uses installed channel id when multi-channel present",
+			args: args{
+				kotsStore: mockStore,
+				app: &apptypes.App{
+					ID:                "app-id",
+					SelectedChannelID: "channel-id2", // explicitly using the non-default channel
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						AppSlug:     "app-slug",
+						LicenseID:   "license-id",
+						Channels: []kotsv1beta1.Channel{
+							{
+								ChannelID:   "channel-id",
+								ChannelName: "channel-name",
+								IsDefault:   true,
+							},
+							{
+								ChannelID:   "channel-id2",
+								ChannelName: "channel-name2",
+								IsDefault:   false,
+							},
+						},
+					},
+				},
+			},
+			perChannelReleases: map[string][]upstream.ChannelRelease{
+				"channel-id": {
+					{
+						ChannelSequence: 2,
+						ReleaseSequence: 2,
+						VersionLabel:    "0.0.2",
+						IsRequired:      false,
+						CreatedAt:       testTime.Format(time.RFC3339),
+						ReleaseNotes:    "release notes",
+					},
+					{
+						ChannelSequence: 1,
+						ReleaseSequence: 1,
+						VersionLabel:    "0.0.1",
+						IsRequired:      true,
+						CreatedAt:       testTime.Format(time.RFC3339),
+						ReleaseNotes:    "release notes",
+					},
+				},
+				"channel-id2": {
+					{
+						ChannelSequence: 3,
+						ReleaseSequence: 3,
+						VersionLabel:    "3.0.0",
+						IsRequired:      false,
+						CreatedAt:       testTime.Format(time.RFC3339),
+						ReleaseNotes:    "release notes",
+					},
+				},
+			},
+			setup: func(t *testing.T, args args, licenseEndpoint string) {
+				t.Setenv("USE_MOCK_REPORTING", "1")
+				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.Channels[1].ChannelID).Return("1", nil)
+			},
+			want: []types.AvailableUpdate{
+				{
+					VersionLabel:       "3.0.0",
+					UpdateCursor:       "3",
+					ChannelID:          "channel-id2",
+					IsRequired:         false,
+					UpstreamReleasedAt: &testTime,
+					ReleaseNotes:       "release notes",
+					IsDeployable:       true,
+				},
+			},
+			wantErr:                   false,
+			expectedSelectedChannelId: "channel-id2",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
-			mockServer := newMockServerWithReleases(tt.channelReleases, tt.wantErr)
+			mockServer := newMockServerWithReleases(tt.perChannelReleases, tt.expectedSelectedChannelId, tt.wantErr)
 			defer mockServer.Close()
 			tt.setup(t, tt.args, mockServer.URL)
 			got, err := GetAvailableUpdates(tt.args.kotsStore, tt.args.app, tt.args.license)
@@ -168,16 +255,29 @@ func TestGetAvailableUpdates(t *testing.T) {
 	}
 }
 
-func newMockServerWithReleases(channelReleases []upstream.ChannelRelease, wantErr bool) *httptest.Server {
+func newMockServerWithReleases(preChannelReleases map[string][]upstream.ChannelRelease, expectedSelectedChannelId string, wantErr bool) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if wantErr {
 			http.Error(w, "error", http.StatusInternalServerError)
 			return
 		}
+
 		var response struct {
 			ChannelReleases []upstream.ChannelRelease `json:"channelReleases"`
 		}
-		response.ChannelReleases = channelReleases
+
+		selectedChannelID := r.URL.Query().Get("selectedChannelId")
+		if selectedChannelID != expectedSelectedChannelId {
+			http.Error(w, "invalid selectedChannelId", http.StatusBadRequest)
+			return
+		}
+
+		if releases, ok := preChannelReleases[selectedChannelID]; ok {
+			response.ChannelReleases = releases
+		} else {
+			response.ChannelReleases = []upstream.ChannelRelease{}
+		}
+
 		w.Header().Set("X-Replicated-UpdateCheckAt", time.Now().Format(time.RFC3339))
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"

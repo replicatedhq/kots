@@ -6,10 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -23,6 +24,8 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
 
@@ -1052,6 +1055,323 @@ status: {}
 			if tt.postRun != nil {
 				tt.postRun()
 			}
+			req.NoError(err)
+			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func TestFindChannelIDInLicense(t *testing.T) {
+	tests := []struct {
+		name              string
+		license           *kotsv1beta1.License
+		requestedSlug     string
+		expectedChannelID string
+		expectError       bool
+	}{
+		{
+			name: "Found slug",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "slug-1",
+							IsDefault:   true,
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "slug-2",
+							IsDefault:   false,
+						},
+					},
+				},
+			},
+			requestedSlug:     "slug-2",
+			expectedChannelID: "channel-id-2",
+			expectError:       false,
+		},
+		{
+			name: "Empty requested slug",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID: "top-level-channel-id",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "channel-slug-1",
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "channel-slug-2",
+						},
+					},
+				},
+			},
+			requestedSlug:     "",
+			expectedChannelID: "top-level-channel-id",
+			expectError:       false,
+		},
+		{
+			name: "Legacy license with no / empty channels",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID: "test-channel-id",
+				},
+			},
+			requestedSlug:     "test-slug",
+			expectedChannelID: "test-channel-id",
+			expectError:       false,
+		},
+		{
+			name: "No matching slug should error",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID: "top-level-channel-id",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "channel-slug-1",
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "channel-slug-2",
+						},
+					},
+				},
+			},
+			requestedSlug:     "non-existent-slug",
+			expectedChannelID: "",
+			expectError:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			channelID, err := kotsutil.FindChannelIDInLicense(tt.requestedSlug, tt.license)
+
+			if tt.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expectedChannelID, channelID)
+			}
+		})
+	}
+}
+
+func TestFindChannelInLicense(t *testing.T) {
+	tests := []struct {
+		name            string
+		license         *kotsv1beta1.License
+		requestedID     string
+		expectedChannel *kotsv1beta1.Channel
+		expectError     bool
+	}{
+		{
+			name: "Find multi channel license",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:        "channel-id-1",
+							ChannelName:      "name-1",
+							IsDefault:        true,
+							IsSemverRequired: true,
+						},
+						{
+							ChannelID:        "channel-id-2",
+							ChannelName:      "name-2",
+							IsDefault:        false,
+							IsSemverRequired: false,
+						},
+					},
+				},
+			},
+			requestedID: "channel-id-2",
+			expectedChannel: &kotsv1beta1.Channel{
+				ChannelID:        "channel-id-2",
+				ChannelName:      "name-2",
+				IsDefault:        false,
+				IsSemverRequired: false,
+			},
+			expectError: false,
+		},
+		{
+			name: "Legacy license with no / empty channels",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID:        "test-channel-id",
+					ChannelName:      "test-channel-name",
+					IsSemverRequired: true,
+				},
+			},
+			requestedID: "test-channel-id",
+			expectedChannel: &kotsv1beta1.Channel{
+				ChannelID:        "test-channel-id",
+				ChannelName:      "test-channel-name",
+				IsSemverRequired: true,
+				IsDefault:        true,
+			},
+			expectError: false,
+		},
+		{
+			name: "No matching ID should error",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID:        "channel-id-1",
+					ChannelName:      "name-1",
+					IsSemverRequired: true,
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:        "channel-id-1",
+							ChannelName:      "name-1",
+							IsDefault:        true,
+							IsSemverRequired: true,
+						},
+						{
+							ChannelID:        "channel-id-2",
+							ChannelName:      "name-2",
+							IsDefault:        false,
+							IsSemverRequired: false,
+						},
+					},
+				},
+			},
+			requestedID:     "non-existent-id",
+			expectedChannel: nil,
+			expectError:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			channel, err := kotsutil.FindChannelInLicense(tt.requestedID, tt.license)
+
+			if tt.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, channel)
+				require.Equal(t, tt.expectedChannel, channel)
+			}
+		})
+	}
+}
+
+func TestGetInstallationParamsWithClientset(t *testing.T) {
+	type args struct {
+		configMapName string
+		namespace     string
+		clientSet     kubernetes.Interface
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    kotsutil.InstallationParams
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "basic test",
+			args: args{
+				configMapName: "kotsadm",
+				namespace:     "test-namespace",
+				clientSet: fake.NewClientset(&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm",
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						"additional-annotations":    "abc/xyz=test-annotation1,test.annotation/two=test.value/two/test",
+						"additional-labels":         "xyz=label2,abc=123",
+						"app-version-label":         "",
+						"ensure-rbac":               "true",
+						"initial-app-images-pushed": "false",
+						"kots-install-id":           "2liAJUuyAi3Gnyhvi5Arv5BJRZ4",
+						"minio-enabled-snapshots":   "true",
+						"registry-is-read-only":     "false",
+						"requested-channel-slug":    "stable",
+						"skip-compatibility-check":  "false",
+						"skip-preflights":           "false",
+						"skip-rbac-check":           "false",
+						"strict-security-context":   "false",
+						"use-minimal-rbac":          "false",
+						"wait-duration":             "2m0s",
+						"with-minio":                "true",
+					},
+				}),
+			},
+			want: kotsutil.InstallationParams{
+				AdditionalAnnotations:  map[string]string{"abc/xyz": "test-annotation1", "test.annotation/two": "test.value/two/test"},
+				AdditionalLabels:       map[string]string{"abc": "123", "xyz": "label2"},
+				AppVersionLabel:        "",
+				EnsureRBAC:             true,
+				KotsadmRegistry:        "",
+				SkipImagePush:          false,
+				SkipPreflights:         false,
+				SkipCompatibilityCheck: false,
+				RegistryIsReadOnly:     false,
+				EnableImageDeletion:    false,
+				SkipRBACCheck:          false,
+				UseMinimalRBAC:         false,
+				StrictSecurityContext:  false,
+				WaitDuration:           time.Minute * 2,
+				WithMinio:              true,
+				RequestedChannelSlug:   "stable",
+			},
+		},
+		{
+			name: "no labels or annotations",
+			args: args{
+				configMapName: "kotsadm",
+				namespace:     "test-namespace",
+				clientSet: fake.NewClientset(&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm",
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						"app-version-label":         "",
+						"ensure-rbac":               "true",
+						"initial-app-images-pushed": "false",
+						"kots-install-id":           "2liAJUuyAi3Gnyhvi5Arv5BJRZ4",
+						"minio-enabled-snapshots":   "true",
+						"registry-is-read-only":     "false",
+						"requested-channel-slug":    "stable",
+						"skip-compatibility-check":  "false",
+						"skip-preflights":           "false",
+						"skip-rbac-check":           "false",
+						"strict-security-context":   "false",
+						"use-minimal-rbac":          "false",
+						"wait-duration":             "2m0s",
+						"with-minio":                "true",
+					},
+				}),
+			},
+			want: kotsutil.InstallationParams{
+				AdditionalAnnotations:  map[string]string{},
+				AdditionalLabels:       map[string]string{},
+				AppVersionLabel:        "",
+				EnsureRBAC:             true,
+				KotsadmRegistry:        "",
+				SkipImagePush:          false,
+				SkipPreflights:         false,
+				SkipCompatibilityCheck: false,
+				RegistryIsReadOnly:     false,
+				EnableImageDeletion:    false,
+				SkipRBACCheck:          false,
+				UseMinimalRBAC:         false,
+				StrictSecurityContext:  false,
+				WaitDuration:           time.Minute * 2,
+				WithMinio:              true,
+				RequestedChannelSlug:   "stable",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			got, err := kotsutil.GetInstallationParamsWithClientset(tt.args.clientSet, tt.args.configMapName, tt.args.namespace)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

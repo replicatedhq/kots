@@ -64,6 +64,7 @@ func Test_PullReplicated(t *testing.T) {
 				ExcludeAdminConsole:     true,
 				ExcludeKotsKinds:        true,
 				Silent:                  true,
+				AppSelectedChannelID:    "1vusIYZLAVxMG6q760OJmRKj5i5",
 			}
 			_, err = pull.Pull("replicated://integration", pullOptions)
 			req.NoError(err)
