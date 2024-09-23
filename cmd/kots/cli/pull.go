@@ -83,6 +83,7 @@ func PullCmd() *cobra.Command {
 				NoProxyEnvValue:        v.GetString("no-proxy"),
 				IncludeMinio:           v.GetBool("with-minio"),
 				SkipCompatibilityCheck: v.GetBool("skip-compatibility-check"),
+				PrivateCAsConfigmap:    v.GetString("private-ca-configmap"),
 			}
 
 			if v.GetBool("copy-proxy-env") {
@@ -154,6 +155,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into all KOTS Admin Console components")
+	cmd.Flags().String("private-ca-configmap", "", "the name of a configmap containing private CAs to add to the kotsadm deployment")
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")

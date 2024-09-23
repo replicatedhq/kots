@@ -144,7 +144,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonS
 			if preflightErr != nil {
 				preflightResults := &types.PreflightResults{
 					Errors: []*types.PreflightError{
-						&types.PreflightError{
+						{
 							Error:  preflightErr.Error(),
 							IsRBAC: false,
 						},

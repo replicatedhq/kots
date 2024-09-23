@@ -92,15 +92,9 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 		return nil, errors.Wrap(err, "failed to find existing settings")
 	}
 
-	if options.HTTPProxyEnvValue != "" {
-		settings.HTTPProxyEnvValue = options.HTTPProxyEnvValue
-	}
-	if options.HTTPSProxyEnvValue != "" {
-		settings.HTTPSProxyEnvValue = options.HTTPSProxyEnvValue
-	}
-	if options.NoProxyEnvValue != "" {
-		settings.NoProxyEnvValue = options.NoProxyEnvValue
-	}
+	settings.HTTPProxyEnvValue = options.HTTPProxyEnvValue
+	settings.HTTPSProxyEnvValue = options.HTTPSProxyEnvValue
+	settings.NoProxyEnvValue = options.NoProxyEnvValue
 
 	return generateNewAdminConsoleFiles(settings)
 }
