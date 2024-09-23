@@ -1,6 +1,11 @@
 package preflight
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -11,9 +16,13 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight/types"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
+	"github.com/replicatedhq/troubleshoot/pkg/constants"
+	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
+	troubleshootversion "github.com/replicatedhq/troubleshoot/pkg/version"
 )
 
 // Execute will Execute the preflights using spec in preflightSpec.
@@ -98,11 +107,23 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 	preflightSpec.Spec.Collectors = troubleshootcollect.DedupCollectors(preflightSpec.Spec.Collectors)
 	preflightSpec.Spec.Analyzers = troubleshootanalyze.DedupAnalyzers(preflightSpec.Spec.Analyzers)
 
+	// Store collected data in a temp directory
+	bundlePath := filepath.Join(os.TempDir(), "last-preflight-result")
+
+	// Clean up the directory if it already exists. If the path does not exist nothing will happen.
+	_ = os.RemoveAll(bundlePath)
+	err = os.MkdirAll(bundlePath, 0755)
+	if err != nil {
+		logger.Warnf("failed to create preflight results directory. Proceed without storing the bundle to /tmp dir: %v", err)
+		bundlePath = "" // if we can't write to /tmp, don't try to store the bundle
+	}
+
 	collectOpts := troubleshootpreflight.CollectOpts{
 		Namespace:              "",
 		IgnorePermissionErrors: ignorePermissionErrors,
 		ProgressChan:           progressChan,
 		KubernetesRestConfig:   restConfig,
+		BundlePath:             bundlePath,
 	}
 
 	logger.Info("preflight collect phase")
@@ -111,6 +132,7 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		preflightRunError = err
 		return nil, errors.Wrap(err, "failed to collect")
 	}
+	isRBACErr := isPermissionsError(err)
 
 	clusterCollectResult, ok := collectResults.(troubleshootpreflight.ClusterCollectResult)
 	if !ok {
@@ -118,8 +140,10 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		return nil, preflightRunError
 	}
 
-	if isPermissionsError(err) {
-		logger.Debug("skipping analyze due to RBAC errors")
+	collectorResults := collect.CollectorResult(clusterCollectResult.AllCollectedData)
+
+	if isRBACErr {
+		logger.Warnf("skipping analyze due to RBAC errors")
 		rbacErrors := []*types.PreflightError{}
 		for _, collector := range clusterCollectResult.Collectors {
 			for _, e := range collector.GetRBACErrors() {
@@ -132,7 +156,21 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		uploadPreflightResults.Errors = rbacErrors
 	} else {
 		logger.Info("preflight analyze phase")
-		analyzeResults := collectResults.Analyze()
+		var analyzeResults []*troubleshootanalyze.AnalyzeResult
+		if bundlePath == "" {
+			analyzeResults = collectResults.Analyze()
+		} else {
+			// Its not a bundle if there is no version file in the root directory
+			err = saveTSVersionToBundle(collectorResults, bundlePath)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to save version file to preflight bundle")
+			}
+			ctx := context.Background()
+			analyzeResults, err = troubleshootanalyze.AnalyzeLocal(ctx, bundlePath, preflightSpec.Spec.Analyzers, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to analyze preflights from local bundle")
+			}
+		}
 
 		// the typescript api added some flair to this result
 		// so let's keep it for compatibility
@@ -152,6 +190,10 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 			results = append(results, uploadPreflightResult)
 		}
 		uploadPreflightResults.Results = results
+		err = saveAnalysisResultsToBundle(collectorResults, analyzeResults, bundlePath)
+		if err != nil {
+			logger.Warnf("Ignore storing preflight analysis file to preflight bundle: %v", err)
+		}
 	}
 
 	return uploadPreflightResults, nil
@@ -163,4 +205,43 @@ func isPermissionsError(err error) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), "insufficient permissions to run all collectors")
+}
+
+func saveAnalysisResultsToBundle(
+	results collect.CollectorResult, analyzeResults []*troubleshootanalyze.AnalyzeResult, bundlePath string,
+) error {
+	if results == nil {
+		return nil
+	}
+
+	data := convert.FromAnalyzerResult(analyzeResults)
+	analysis, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal analysis")
+	}
+
+	err = results.SaveResult(bundlePath, constants.ANALYSIS_FILENAME, bytes.NewBuffer(analysis))
+	if err != nil {
+		return errors.Wrap(err, "failed to save analysis")
+	}
+
+	return nil
+}
+
+func saveTSVersionToBundle(results collect.CollectorResult, bundlePath string) error {
+	if results == nil {
+		return nil
+	}
+
+	version, err := troubleshootversion.GetVersionFile()
+	if err != nil {
+		return errors.Wrap(err, "failed to get version file")
+	}
+
+	err = results.SaveResult(bundlePath, constants.VERSION_FILENAME, bytes.NewBuffer([]byte(version)))
+	if err != nil {
+		return errors.Wrap(err, "failed to save version file")
+	}
+
+	return nil
 }

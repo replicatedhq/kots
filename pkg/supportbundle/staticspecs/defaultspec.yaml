@@ -85,6 +85,13 @@ spec:
         selector:
           - app=kotsadm
         timeout: 10s
+    - copy:
+        collectorName: copy-last-run-preflight-result
+        name: kots/admin_console
+        selector:
+          - app=kotsadm
+        containerPath: /tmp/last-preflight-result
+        containerName: kotsadm
     - nodeMetrics: {}
   analyzers:
     - clusterVersion:
