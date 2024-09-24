@@ -346,6 +346,7 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 			"Secret":   tlsSecretName,
 			"AppIcon":  appIcon,
 			"AppTitle": app.Spec.Title,
+			"App":      app.Spec,
 		})
 	})
 
