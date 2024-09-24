@@ -9,15 +9,43 @@ function startTLS() {
   if (document.readyState !== "loading") {
     ready();
   } else {
-    document.addEventListener('DOMContentLoaded', ready);
+    document.addEventListener("DOMContentLoaded", ready);
   }
 
   function ready() {
     selfSignedLabels = document.getElementsByClassName("self-signed-visible");
     customCertLabels = document.getElementsByClassName("custom-cert-visible");
 
-    function handleSubmit(e) {
+    document
+      .getElementById("self-signed")
+      .addEventListener("change", function () {
+        const certTypeBox = this.closest(".cert-type-box");
+        const allCertBoxes = document.querySelectorAll(".cert-type-box");
+        if (this.checked) {
+          allCertBoxes.forEach((box) => {
+            box.classList.remove("checked-background");
+            if (box === certTypeBox) {
+              box.classList.add("checked-background");
+            }
+          });
+        }
+      });
+    document
+      .getElementById("custom-cert")
+      .addEventListener("change", function () {
+        const certTypeBox = this.closest(".cert-type-box");
+        const allCertBoxes = document.querySelectorAll(".cert-type-box");
+        if (this.checked) {
+          allCertBoxes.forEach((box) => {
+            box.classList.remove("checked-background");
+            if (box === certTypeBox) {
+              box.classList.add("checked-background");
+            }
+          });
+        }
+      });
 
+    function handleSubmit(e) {
       if (useSelfSigned) {
         skipAndWait(e);
         return;
@@ -36,10 +64,10 @@ function startTLS() {
       skip.addEventListener("click", skipAndWait);
     }
 
-    const typeToggle = document.getElementsByName('type');
+    const typeToggle = document.getElementsByName("type");
 
     typeToggle.forEach((el) => {
-      el.addEventListener('change', handleTypeToggle);
+      el.addEventListener("change", handleTypeToggle);
     });
 
     keyInput = document.getElementById("key");
@@ -47,14 +75,14 @@ function startTLS() {
 
     keyInput.onchange = (e) => {
       keyLabel.innerHTML = e.target.files[0].name;
-    }
+    };
 
     certInput = document.getElementById("cert");
     certLabel = document.getElementById("cert-label");
 
     certInput.onchange = (e) => {
       certLabel.innerHTML = e.target.files[0].name;
-    }
+    };
   }
 
   function uploadAndWait(e) {
@@ -69,11 +97,10 @@ function startTLS() {
     formData.append("hostname", hostnameInput.value);
     var xhr = new XMLHttpRequest();
 
-
     xhr.onerror = function () {
       showError();
       enableForm();
-    }
+    };
 
     xhr.onloadend = function () {
       if (xhr.status === 200) {
@@ -82,11 +109,11 @@ function startTLS() {
       }
 
       var resp = JSON.parse(xhr.response);
-      setErrorMsg(resp.error)
+      setErrorMsg(resp.error);
 
       showError();
       enableForm();
-    }
+    };
 
     xhr.open("POST", "/tls");
     xhr.send(formData);
@@ -101,7 +128,7 @@ function startTLS() {
     var hostnameInput = document.getElementById("hostname");
 
     var formData = new FormData();
-    formData.append("hostname", hostnameInput.value)
+    formData.append("hostname", hostnameInput.value);
 
     var xhr = new XMLHttpRequest();
 
@@ -163,23 +190,27 @@ function startTLS() {
   }
 
   function hideError() {
-    document.getElementById("error").style.display = 'none';
+    document.getElementById("error").style.display = "none";
   }
 
   function showError() {
-    document.getElementById("error").style.display = '';
+    document.getElementById("error").style.display = "";
   }
 
   function disableForm() {
-    document.querySelectorAll("#upload-form input,#upload-form button").forEach(function (el) {
-      el.disabled = true;
-    });
+    document
+      .querySelectorAll("#upload-form input,#upload-form button")
+      .forEach(function (el) {
+        el.disabled = true;
+      });
   }
 
   function enableForm() {
-    document.querySelectorAll("#upload-form input,#upload-form button").forEach(function (el) {
-      el.disabled = false;
-    });
+    document
+      .querySelectorAll("#upload-form input,#upload-form button")
+      .forEach(function (el) {
+        el.disabled = false;
+      });
   }
 
   function toggleLabels() {
@@ -194,10 +225,13 @@ function startTLS() {
 
   function handleTypeToggle(e) {
     if (e && e.target && e.target.value) {
-      if (e.target.value === "self-signed" || e.target.value === "custom-cert") {
+      if (
+        e.target.value === "self-signed" ||
+        e.target.value === "custom-cert"
+      ) {
         toggleLabels();
       }
     }
   }
-};
+}
 startTLS();
