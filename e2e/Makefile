@@ -6,16 +6,19 @@ PLAYWRIGHT_DIR := $(shell pwd)/playwright
 
 SHELL := /bin/bash
 
+OS ?= linux
+ARCH ?= $(shell go env GOARCH)
+
 .PHONY: all
 all: build deps test
 
 .PHONY: deps
 deps:
-	docker build -t e2e-deps .
+	docker build --platform $(OS)/$(ARCH) -t e2e-deps .
 
 .PHONY: build
 build:
-	go test $(BUILDFLAGS) -c -o bin/e2e.test .
+	GOOS=$(OS) GOARCH=$(ARCH) go test $(BUILDFLAGS) -c -o bin/e2e.test .
 
 .PHONY: test
 test: export GINKGO_EDITOR_INTEGRATION=1 # disable error on programatic focus
