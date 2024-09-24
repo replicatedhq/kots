@@ -1,0 +1,41 @@
+import { test, expect } from '@playwright/test';
+import { login, uploadLicense } from '../shared';
+
+const { execSync } = require("child_process");
+
+test('multi app install', async ({ page }) => {
+  test.slow();
+  await login(page);
+  await uploadLicense(page, expect, "app1-license.yaml");
+  await expect(page.locator('#app')).toContainText('Configure Multi App Install 1', { timeout: 15000 });
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.locator('#app')).toContainText('Required Kubernetes Version', { timeout: 15000 });
+  await expect(page.locator('#app')).toContainText('Your cluster meets the recommended and required versions of Kubernetes');
+  await page.getByRole('button', { name: 'Deploy' }).click();
+  await expect(page.locator('#app')).toContainText('Multi App Install 1');
+  await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
+  await expect(page.locator('#app')).toContainText('Currently deployed version');
+  await expect(page.locator('#app')).toContainText('0.1.3');
+  const app1Status = execSync(`kubectl kots get apps -n ${process.env.NAMESPACE} | grep mutli-app-install | awk '{print $2}'`).toString().trim();
+  expect(app1Status).toBe('ready');
+  await page.locator('div').filter({ hasText: /^Change passwordAdd new applicationLog out$/ }).getByRole('img').click();
+  await page.getByText('Add new application').click();
+  await uploadLicense(page, expect, "app2-license.yaml");
+  await expect(page.locator('#app')).toContainText('Configure Multi App Install 2', { timeout: 15000 });
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.locator('#app')).toContainText('Required Kubernetes Version', { timeout: 15000 });
+  await expect(page.locator('#app')).toContainText('Your cluster meets the recommended and required versions of Kubernetes');
+  await page.getByRole('button', { name: 'Deploy' }).click();
+  await expect(page.locator('#app')).toContainText('Multi App Install 2');
+  await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
+  await expect(page.locator('#app')).toContainText('Currently deployed version');
+  await expect(page.locator('#app')).toContainText('2.1.2');
+  const app2Status = execSync(`kubectl kots get apps -n ${process.env.NAMESPACE} | grep multi-app-install-2 | awk '{print $2}'`).toString().trim();
+  expect(app2Status).toBe('ready');
+  await page.getByRole('link', { name: 'Version history' }).click();
+  await expect(page.locator('#app')).toContainText('2.1.2', { timeout: 10000 });
+  await page.getByRole('link', { name: 'Multi App Install 1' }).click();
+  await expect(page.locator('#app')).toContainText('0.1.3', { timeout: 10000 });
+  await page.getByRole('link', { name: 'Version history' }).click();
+  await expect(page.locator('#app')).toContainText('0.1.3', { timeout: 10000 });
+});
