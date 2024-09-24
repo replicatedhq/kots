@@ -2895,7 +2895,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'multi-app-install'
+          test-focus: 'Multi App Install'
           kots-namespace: 'multi-app-install'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
