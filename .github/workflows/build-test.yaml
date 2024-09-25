@@ -2857,12 +2857,10 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'multi-app-backup-and-restore'
+          test-focus: 'Multi App Backup and Restore'
           kots-namespace: 'multi-app-backup-and-restore'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -4337,7 +4335,6 @@ jobs:
       - validate-min-kots-version
       - validate-target-kots-version
       - validate-range-kots-version
-      - validate-multi-app-backup-and-restore
       - validate-airgap-smoke-test
       - validate-support-bundle
       - validate-gitops
@@ -4347,6 +4344,7 @@ jobs:
       - validate-no-required-config
       - validate-config
       - validate-change-channel
+      - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       # non-testim tests
       - validate-minimal-rbac

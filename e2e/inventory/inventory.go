@@ -104,9 +104,10 @@ func NewChangeLicense() Test {
 
 func NewMultiAppBackupAndRestoreTest() Test {
 	return Test{
-		Name:           "multi-app-backup-and-restore",
-		TestimSuite:    "multi-app-backup-and-restore",
+		ID:             "multi-app-backup-and-restore",
+		Name:           "Multi App Backup and Restore",
 		Namespace:      "multi-app-backup-and-restore",
+		AppSlug:        "multi-app-backup-and-restore",
 		UpstreamURI:    "multi-app-backup-and-restore/automated",
 		NeedsSnapshots: true,
 	}
