@@ -113,14 +113,8 @@ function ec_build_and_load() {
 }
 
 function up() {
-  if [ "$1" == "kotsadm-web" ]; then
-    # Tail the logs of the new pod
-    newpod=$(kubectl get pods -l app=kotsadm-web --no-headers --sort-by=.metadata.creationTimestamp | awk 'END {print $1}')
-    kubectl logs -f $newpod --tail=100
-  else
-    # Exec into the deployment
-    kubectl exec -it deployment/$(deployment $1) -- bash
-  fi
+  # Exec into the deployment
+  kubectl exec -it deployment/$(deployment $1) -- bash
 }
 
 function ec_up() {

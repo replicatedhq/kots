@@ -6,10 +6,19 @@ spec:
         hostPath:
           path: __PROJECT_DIR__/web
           type: Directory
+      - name: yarncache
+        hostPath:
+          path: __PROJECT_DIR__/dev/.yarncache
+          type: Directory
       containers:
       - name: kotsadm-web
         image: kotsadm-web-dev
         volumeMounts:
         - name: dev
           mountPath: /replicatedhq/kots/web # workdir in the container
+        - name: yarncache
+          mountPath: /replicatedhq/kots/dev/.yarncache
+        env:
+        - name: YARN_CACHE_FOLDER
+          value: /replicatedhq/kots/dev/.yarncache
         resources: ~

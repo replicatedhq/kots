@@ -114,10 +114,11 @@ func NewMultiAppBackupAndRestoreTest() Test {
 
 func MultiAppTest() Test {
 	return Test{
-		Name:        "multi-app-install",
-		TestimSuite: "multi-app-install",
+		ID:          "multi-app-install",
+		Name:        "Multi App Install",
 		Namespace:   "multi-app-install",
-		UpstreamURI: "multi-app-install/automated",
+		AppSlug:     "mutli-app-install",
+		UpstreamURI: "mutli-app-install/automated",
 	}
 }
 
