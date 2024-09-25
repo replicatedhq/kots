@@ -12,6 +12,12 @@ if [ -z "$component" ]; then
 	exit 1
 fi
 
+# kotsadm-web must already be up
+if [ "$component" == "kotsadm-web" ]; then
+	up $component
+  exit 0
+fi
+
 # Save original state
 if [ ! -f "dev/patches/$component-down.yaml.tmp" ]; then
   kubectl get deployment $(deployment $component) -oyaml > dev/patches/$component-down.yaml.tmp

@@ -12,6 +12,12 @@ if [ -z "$component" ]; then
 	exit 1
 fi
 
+# kotsadm-web must already be up
+if [ "$component" == "kotsadm-web" ]; then
+	ec_up $component
+  exit 0
+fi
+
 # Build and load the image into the embedded cluster
 ec_build_and_load "$component"
 
