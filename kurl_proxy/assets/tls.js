@@ -16,35 +16,6 @@ function startTLS() {
     selfSignedLabels = document.getElementsByClassName("self-signed-visible");
     customCertLabels = document.getElementsByClassName("custom-cert-visible");
 
-    document
-      .getElementById("self-signed")
-      .addEventListener("change", function () {
-        const certTypeBox = this.closest(".cert-type-box");
-        const allCertBoxes = document.querySelectorAll(".cert-type-box");
-        if (this.checked) {
-          allCertBoxes.forEach((box) => {
-            box.classList.remove("checked-background");
-            if (box === certTypeBox) {
-              box.classList.add("checked-background");
-            }
-          });
-        }
-      });
-    document
-      .getElementById("custom-cert")
-      .addEventListener("change", function () {
-        const certTypeBox = this.closest(".cert-type-box");
-        const allCertBoxes = document.querySelectorAll(".cert-type-box");
-        if (this.checked) {
-          allCertBoxes.forEach((box) => {
-            box.classList.remove("checked-background");
-            if (box === certTypeBox) {
-              box.classList.add("checked-background");
-            }
-          });
-        }
-      });
-
     function handleSubmit(e) {
       if (useSelfSigned) {
         skipAndWait(e);
@@ -53,6 +24,33 @@ function startTLS() {
 
       uploadAndWait(e);
     }
+
+    const selfSignedBtn = document.getElementById("self-signed");
+    selfSignedBtn.addEventListener("change", function () {
+      const certTypeBox = this.closest(".cert-type-box");
+      const allCertBoxes = document.querySelectorAll(".cert-type-box");
+      if (this.checked) {
+        allCertBoxes.forEach((box) => {
+          box.classList.remove("checked-background");
+          if (box === certTypeBox) {
+            box.classList.add("checked-background");
+          }
+        });
+      }
+    });
+    const customCertBtn = document.getElementById("custom-cert");
+    customCertBtn.addEventListener("change", function () {
+      const certTypeBox = this.closest(".cert-type-box");
+      const allCertBoxes = document.querySelectorAll(".cert-type-box");
+      if (this.checked) {
+        allCertBoxes.forEach((box) => {
+          box.classList.remove("checked-background");
+          if (box === certTypeBox) {
+            box.classList.add("checked-background");
+          }
+        });
+      }
+    });
 
     var form = document.getElementById("upload-form");
     if (form) {
