@@ -8,13 +8,13 @@ component=$1
 
 # Check if a component name was provided
 if [ -z "$component" ]; then
-	echo "Error: No component name provided."
-	exit 1
+  echo "Error: No component name provided."
+  exit 1
 fi
 
 # kotsadm-web must already be up
 if [ "$component" == "kotsadm-web" ]; then
-	up $component
+  up $component
   exit 0
 fi
 

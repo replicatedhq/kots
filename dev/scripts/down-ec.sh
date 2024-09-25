@@ -8,8 +8,8 @@ component=$1
 
 # Check if a deployment name was provided
 if [ -z "$component" ]; then
-	echo "Error: No component name provided."
-	exit 1
+  echo "Error: No component name provided."
+  exit 1
 fi
 
 # Check if already down
