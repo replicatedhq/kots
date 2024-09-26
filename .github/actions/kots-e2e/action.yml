@@ -1,8 +1,8 @@
 name: 'KOTS E2E'
 description: 'Composite action for running KOTS e2e test'
 inputs:
-  test-focus:
-    description: 'Name of the test for FOCUS'
+  test-id:
+    description: 'ID of the test to run'
     required: true
   kots-namespace:
     description: 'KOTS namespace'
@@ -92,14 +92,14 @@ runs:
         instance-type: ${{ inputs.k8s-instance-type }}
         export-kubeconfig: true
 
-    - name: execute suite "${{ inputs.test-focus }}"
+    - name: execute suite "${{ inputs.test-id }}"
       env:
         TESTIM_ACCESS_TOKEN: ${{ inputs.testim-access-token }}
         REPLICATED_API_TOKEN: ${{ inputs.replicated-api-token }}
         KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
       run: |
         make -C e2e test \
-          FOCUS="${{ inputs.test-focus }}" \
+          FOCUS="${{ inputs.test-id }}" \
           EXISTING_KUBECONFIG=$KUBECONFIG \
           TESTIM_BRANCH=${{ inputs.testim-branch }} \
           KOTSADM_IMAGE_REGISTRY=${{ inputs.kotsadm-image-registry }} \

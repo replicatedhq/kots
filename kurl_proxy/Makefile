@@ -18,5 +18,5 @@ run:
 build-ttl.sh: export GOOS ?= linux
 build-ttl.sh: export GOARCH ?= amd64
 build-ttl.sh: build
-	docker build --platform $(GOOS)/$(GOARCH) --pull -f dev/Dockerfile.ttlsh -t ttl.sh/${CURRENT_USER}/kurl-proxy:24h .
+	docker build --platform $(GOOS)/$(GOARCH) --pull -f ../dev/dockerfiles/kurl-proxy/Dockerfile.ttlsh -t ttl.sh/${CURRENT_USER}/kurl-proxy:24h .
 	docker push ttl.sh/${CURRENT_USER}/kurl-proxy:24h

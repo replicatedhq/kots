@@ -101,6 +101,13 @@ var _ = BeforeSuite(func() {
 	kotsInstaller = kots.NewInstaller(kotsadmImageRegistry, kotsadmImageNamespace, kotsadmImageTag, airgap, kotsDockerhubUsername, kotsDockerhubPassword, isEKS)
 })
 
+var _ = ReportBeforeSuite(func(report Report) {
+	count := report.PreRunStats.SpecsThatWillRun
+	if count == 0 {
+		Fail("Did not match any tests")
+	}
+})
+
 var _ = AfterSuite(func() {
 	gexec.KillAndWait()
 })
@@ -204,7 +211,7 @@ var _ = Describe("E2E", func() {
 				testimRun.ShouldSucceed()
 			},
 			func(test inventory.Test) string {
-				return test.Name
+				return test.ID
 			},
 			Entry(nil, inventory.NewRegressionTest()),
 			Entry(nil, inventory.NewSmokeTest()),
@@ -223,7 +230,5 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewGitOps()),
 			Entry(nil, inventory.NewChangeChannel()),
 		)
-
 	})
-
 })

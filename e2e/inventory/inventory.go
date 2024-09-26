@@ -21,7 +21,7 @@ const (
 
 func NewRegressionTest() Test {
 	return Test{
-		Name:            "Regression",
+		ID:              "@regression",
 		TestimLabel:     "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
@@ -35,8 +35,7 @@ func NewRegressionTest() Test {
 
 func NewSmokeTest() Test {
 	return Test{
-		ID:             "smoke-test",
-		Name:           "Smoke Test",
+		ID:             "@smoke-test",
 		Namespace:      "smoke-test",
 		AppSlug:        "qakotstestim",
 		UpstreamURI:    "qakotstestim/github-actions-qa",
@@ -46,7 +45,7 @@ func NewSmokeTest() Test {
 
 func NewAirgapSmokeTest() Test {
 	return Test{
-		Name:        "airgap-smoke-test",
+		ID:          "@airgap-smoke-test",
 		TestimSuite: "airgap-smoke-test",
 		Namespace:   "airgap-smoke-test",
 		UpstreamURI: "airgap-smoke-test/automated",
@@ -55,8 +54,7 @@ func NewAirgapSmokeTest() Test {
 
 func NewConfigValidation() Test {
 	return Test{
-		ID:          "config-validation",
-		Name:        "Config Validation",
+		ID:          "@config-validation",
 		Namespace:   "config-validation",
 		AppSlug:     "config-validation-panda",
 		UpstreamURI: "config-validation-panda/automated",
@@ -65,8 +63,7 @@ func NewConfigValidation() Test {
 
 func NewBackupAndRestore() Test {
 	return Test{
-		ID:             "backup-and-restore",
-		Name:           "Backup and Restore",
+		ID:             "@backup-and-restore",
 		Namespace:      "backup-and-restore",
 		AppSlug:        "backup-and-restore",
 		UpstreamURI:    "backup-and-restore/automated",
@@ -76,8 +73,7 @@ func NewBackupAndRestore() Test {
 
 func NewNoRequiredConfig() Test {
 	return Test{
-		ID:          "no-required-config",
-		Name:        "No Required Config",
+		ID:          "@no-required-config",
 		Namespace:   "no-required-config",
 		AppSlug:     "no-required-config",
 		UpstreamURI: "no-required-config/automated",
@@ -86,7 +82,7 @@ func NewNoRequiredConfig() Test {
 
 func NewVersionHistoryPagination() Test {
 	return Test{
-		Name:        "Version History Pagination",
+		ID:          "@version-history-pagination",
 		TestimSuite: "version-history-pagination",
 		Namespace:   "version-history-pagination",
 		UpstreamURI: "version-history-pagination/automated",
@@ -95,7 +91,7 @@ func NewVersionHistoryPagination() Test {
 
 func NewChangeLicense() Test {
 	return Test{
-		Name:        "Change License",
+		ID:          "@change-license",
 		TestimSuite: "change-license",
 		Namespace:   "change-license",
 		UpstreamURI: "change-license/automated",
@@ -104,9 +100,9 @@ func NewChangeLicense() Test {
 
 func NewMultiAppBackupAndRestoreTest() Test {
 	return Test{
-		Name:           "multi-app-backup-and-restore",
-		TestimSuite:    "multi-app-backup-and-restore",
+		ID:             "@multi-app-backup-and-restore",
 		Namespace:      "multi-app-backup-and-restore",
+		AppSlug:        "multi-app-backup-and-restore",
 		UpstreamURI:    "multi-app-backup-and-restore/automated",
 		NeedsSnapshots: true,
 	}
@@ -114,8 +110,7 @@ func NewMultiAppBackupAndRestoreTest() Test {
 
 func MultiAppTest() Test {
 	return Test{
-		ID:          "multi-app-install",
-		Name:        "Multi App Install",
+		ID:          "@multi-app-install",
 		Namespace:   "multi-app-install",
 		AppSlug:     "mutli-app-install",
 		UpstreamURI: "mutli-app-install/automated",
@@ -124,7 +119,7 @@ func MultiAppTest() Test {
 
 func NewMinKotsVersion() Test {
 	return Test{
-		Name:                   "Min KOTS Version",
+		ID:                     "@min-kots-version",
 		TestimSuite:            "min-kots-version",
 		Namespace:              "min-kots-version",
 		UpstreamURI:            "min-kots-version/automated",
@@ -134,7 +129,7 @@ func NewMinKotsVersion() Test {
 
 func NewTargetKotsVersion() Test {
 	return Test{
-		Name:                   "Target KOTS Version",
+		ID:                     "@target-kots-version",
 		TestimSuite:            "target-kots-version",
 		Namespace:              "target-kots-version",
 		UpstreamURI:            "target-kots-version/automated",
@@ -144,7 +139,7 @@ func NewTargetKotsVersion() Test {
 
 func NewRangeKotsVersion() Test {
 	return Test{
-		Name:                   "Range KOTS Version",
+		ID:                     "@range-kots-version",
 		TestimSuite:            "range-kots-version",
 		Namespace:              "range-kots-version",
 		UpstreamURI:            "range-kots-version/automated",
@@ -154,7 +149,7 @@ func NewRangeKotsVersion() Test {
 
 func NewSupportBundle() Test {
 	return Test{
-		Name:        "Support Bundle",
+		ID:          "@support-bundle",
 		TestimSuite: "support-bundle",
 		Namespace:   "support-bundle",
 		UpstreamURI: "support-bundle-halibut/automated",
@@ -163,7 +158,7 @@ func NewSupportBundle() Test {
 
 func NewGitOps() Test {
 	return Test{
-		Name:        "GitOps",
+		ID:          "@gitops",
 		TestimSuite: "gitops",
 		Namespace:   "gitops",
 		UpstreamURI: "gitops-bobcat/automated",
@@ -172,8 +167,7 @@ func NewGitOps() Test {
 
 func NewChangeChannel() Test {
 	return Test{
-		ID:          "change-channel",
-		Name:        "Change Channel",
+		ID:          "@change-channel",
 		Namespace:   "change-channel",
 		AppSlug:     "change-channel",
 		UpstreamURI: "change-channel/automated",

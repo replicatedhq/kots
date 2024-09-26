@@ -4,7 +4,7 @@ E2E tests are run in build-test workflow on pull_request event.
 
 e2e_test.go uses Ginkgo to build a test suite from inventory.go and runs each test using testim/client.go or playwright/playwright.go
 
-Tests are parallelized using Gingko's test focus. Each workflow definition in .github/workflows/build-test.yaml must define a `test-focus` parameter that matches the `Test Name` property defined in inventory.go. Each e2e test workflow skips all tests but what is defined in `test-focus`. Please colocate new Playwright tests under the Playwright comment with the other pw tests.
+Tests are parallelized using Gingko's test focus. Each workflow definition in .github/workflows/build-test.yaml must define a `test-id` parameter that matches the `Test ID` property defined in inventory.go. Each e2e test workflow skips all tests but what is defined in `test-id`. Please colocate new Playwright tests under the Playwright comment with the other pw tests.
 
 New tests should be written with Playwright.
 
@@ -28,14 +28,13 @@ code --install-extension ms-playwright.playwright
 
 To add a new test that you've already added in the [kots-tests-app repo](https://github.com/replicatedhq/kots-test-apps) - do the following:
 
-- Update `.github/workflows/build-test.yaml` to include the new test. You can copy an existing pw entry like `validate-change-channel` and update the test-focus, kots-namespace, and any other parameters needed for the test.
+- Update `.github/workflows/build-test.yaml` to include the new test. You can copy an existing pw entry like `validate-change-channel` and update the `test-id`, kots-namespace, and any other parameters needed for the test.
 - Add the test to `e2e/inventory.go` , making sure the naming matches your kots-test-app and conforms to the naming convention of the other tests in the file:
 
 ```go
 func NewChangeChannel() Test {
 	return Test{
-		ID:          "change-channel",
-		Name:        "Change Channel",
+		ID:          "@change-channel",
 		Namespace:   "change-channel",
 		AppSlug:     "change-channel",
 		UpstreamURI: "change-channel/automated",
@@ -52,8 +51,8 @@ Entry(nil, inventory.NewChangeChannel()),
 - Create a new test directory in `e2e/playwright/tests` matching your test ID, with the corresponding test file:
 
 ```
-$ tree e2e/playwright/tests/change-channel
-e2e/playwright/tests/change-channel 
+$ tree e2e/playwright/tests/@change-channel
+e2e/playwright/tests/@change-channel 
 ├── license.yaml  // a test specific license if needed
 └── test.spec.ts  // the actual test file
 ```
@@ -77,7 +76,7 @@ To run an individual test run:
 
 ```bash
 make e2e \
-    FOCUS="Change License"
+    FOCUS="@change-license"
 ```
 
 To build and run with ttl.sh images:
@@ -103,7 +102,7 @@ To run against the okteto dev environment run:
 ```bash
 okteto context use https://replicated.okteto.dev
 make e2e \
-    FOCUS="Change License" \
+    FOCUS="@change-license" \
     EXISTING_KUBECONFIG=${KUBECONFIG:-$HOME/.kube/config}
 ```
 
@@ -113,7 +112,7 @@ To skip cluster teardown in order to debug issues:
 
 ```bash
 $ make e2e \
-    FOCUS="Change License" \
+    FOCUS="@change-license" \
     SKIP_TEARDOWN=1
 ...
     To set kubecontext run:

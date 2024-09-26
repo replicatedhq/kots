@@ -6,7 +6,6 @@ type TestimParams map[string]interface{}
 
 type Test struct {
 	ID                     string // must match directory name in e2e/playwright/tests
-	Name                   string // must match test-focus in .github/workflows/build-test.yaml
 	TestimSuite            string
 	TestimLabel            string
 	Namespace              string
