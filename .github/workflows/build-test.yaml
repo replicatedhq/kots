@@ -592,7 +592,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         with:
           kots-namespace: 'qakotsregression'
-          test-focus: 'Regression'
+          test-id: '@regression'
           k8s-distribution: k3s
           k8s-version: v1.26
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
@@ -628,7 +628,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Smoke Test'
+          test-id: '@smoke-test'
           kots-namespace: 'smoke-test'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -846,7 +846,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Backup and Restore'
+          test-id: '@backup-and-restore'
           kots-namespace: 'backup-and-restore'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -883,7 +883,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'No Required Config'
+          test-id: '@no-required-config'
           kots-namespace: 'no-required-config'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -1073,7 +1073,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Config Validation'
+          test-id: '@config-validation'
           kots-namespace: 'config-validation'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -1109,7 +1109,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Version History Pagination'
+          test-id: '@version-history-pagination'
           kots-namespace: 'version-history-pagination'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -1146,7 +1146,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Change License'
+          test-id: '@change-license'
           kots-namespace: 'change-license'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -1183,7 +1183,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Change Channel'
+          test-id: '@change-channel'
           kots-namespace: 'change-channel'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2338,7 +2338,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
         with:
-          test-focus: 'Min KOTS Version'
+          test-id: '@min-kots-version'
           kots-namespace: 'min-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2404,7 +2404,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
         with:
-          test-focus: 'Target KOTS Version'
+          test-id: '@target-kots-version'
           kots-namespace: 'target-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2469,7 +2469,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
         with:
-          test-focus: 'Range KOTS Version'
+          test-id: '@range-kots-version'
           kots-namespace: 'range-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2857,7 +2857,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Multi App Backup and Restore'
+          test-id: '@multi-app-backup-and-restore'
           kots-namespace: 'multi-app-backup-and-restore'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2893,7 +2893,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Multi App Install'
+          test-id: '@multi-app-install'
           kots-namespace: 'multi-app-install'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2929,7 +2929,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'airgap-smoke-test'
+          test-id: '@airgap-smoke-test'
           kots-namespace: 'airgap-smoke-test'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -3942,7 +3942,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Support Bundle'
+          test-id: '@support-bundle'
           kots-namespace: 'support-bundle'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -3980,7 +3980,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'GitOps'
+          test-id: '@gitops'
           kots-namespace: 'gitops'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
