@@ -35,7 +35,7 @@ func NewRegressionTest() Test {
 
 func NewSmokeTest() Test {
 	return Test{
-		ID:             "smoke-test",
+		ID:             "@smoke-test",
 		Name:           "Smoke Test",
 		Namespace:      "smoke-test",
 		AppSlug:        "qakotstestim",
@@ -55,7 +55,7 @@ func NewAirgapSmokeTest() Test {
 
 func NewConfigValidation() Test {
 	return Test{
-		ID:          "config-validation",
+		ID:          "@config-validation",
 		Name:        "Config Validation",
 		Namespace:   "config-validation",
 		AppSlug:     "config-validation-panda",
@@ -65,7 +65,7 @@ func NewConfigValidation() Test {
 
 func NewBackupAndRestore() Test {
 	return Test{
-		ID:             "backup-and-restore",
+		ID:             "@backup-and-restore",
 		Name:           "Backup and Restore",
 		Namespace:      "backup-and-restore",
 		AppSlug:        "backup-and-restore",
@@ -76,7 +76,7 @@ func NewBackupAndRestore() Test {
 
 func NewNoRequiredConfig() Test {
 	return Test{
-		ID:          "no-required-config",
+		ID:          "@no-required-config",
 		Name:        "No Required Config",
 		Namespace:   "no-required-config",
 		AppSlug:     "no-required-config",
@@ -104,7 +104,7 @@ func NewChangeLicense() Test {
 
 func NewMultiAppBackupAndRestoreTest() Test {
 	return Test{
-		ID:             "multi-app-backup-and-restore",
+		ID:             "@multi-app-backup-and-restore",
 		Name:           "Multi App Backup and Restore",
 		Namespace:      "multi-app-backup-and-restore",
 		AppSlug:        "multi-app-backup-and-restore",
@@ -115,7 +115,7 @@ func NewMultiAppBackupAndRestoreTest() Test {
 
 func MultiAppTest() Test {
 	return Test{
-		ID:          "multi-app-install",
+		ID:          "@multi-app-install",
 		Name:        "Multi App Install",
 		Namespace:   "multi-app-install",
 		AppSlug:     "mutli-app-install",
@@ -173,7 +173,7 @@ func NewGitOps() Test {
 
 func NewChangeChannel() Test {
 	return Test{
-		ID:          "change-channel",
+		ID:          "@change-channel",
 		Name:        "Change Channel",
 		Namespace:   "change-channel",
 		AppSlug:     "change-channel",

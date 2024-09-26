@@ -34,7 +34,7 @@ To add a new test that you've already added in the [kots-tests-app repo](https:/
 ```go
 func NewChangeChannel() Test {
 	return Test{
-		ID:          "change-channel",
+		ID:          "@change-channel",
 		Name:        "Change Channel",
 		Namespace:   "change-channel",
 		AppSlug:     "change-channel",
@@ -52,8 +52,8 @@ Entry(nil, inventory.NewChangeChannel()),
 - Create a new test directory in `e2e/playwright/tests` matching your test ID, with the corresponding test file:
 
 ```
-$ tree e2e/playwright/tests/change-channel
-e2e/playwright/tests/change-channel 
+$ tree e2e/playwright/tests/@change-channel
+e2e/playwright/tests/@change-channel 
 ├── license.yaml  // a test specific license if needed
 └── test.spec.ts  // the actual test file
 ```
