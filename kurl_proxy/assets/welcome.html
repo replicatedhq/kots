@@ -6,8 +6,9 @@
     <meta name="description" content="Welcome" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Welcome to {{.AppTitle}} Admin Console</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="stylesheet" href="/assets/tls-custom.css" />
+    <link rel="stylesheet" href="/assets/output.css" />
     {{if .AppIcon }}
     <link rel="icon" type="image/png" href="{{ .AppIcon }}" />
     {{end}}
@@ -21,9 +22,9 @@
     var insecureLink = httpsLink + "/insecure";
   </script>
   <body>
-    <div class="min-h-full w-full flex flex-col flex-1">
+    <div class="u-minHeight--full u-width--full flex flex-column flex1">
       <div class="flex mx-6 mt-6">
-        <div class="flex flex-col mb-8 items-center">
+        <div class="flex flex-column mb-8 items-center">
           {{if .AppIcon }}<span
             class="appIcon flex flex-auto"
             style="background-image: url('{{ .AppIcon }}')"
