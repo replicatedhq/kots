@@ -76,7 +76,7 @@ function PreflightResultPage(props: Props) {
   const { refetch: refetchApps } = useApps();
   const selectedApp = useSelectedApp();
   return (
-    <div className=" container">
+    <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
       {Utilities.isInitialAppInstall(selectedApp) && (
         <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
