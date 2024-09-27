@@ -645,12 +645,12 @@ video {
   flex: 1 1 auto;
 }
 
-.flex-col {
-  flex-direction: column;
-}
-
 .\!flex-col {
   flex-direction: column !important;
+}
+
+.flex-col {
+  flex-direction: column;
 }
 
 .items-center {
