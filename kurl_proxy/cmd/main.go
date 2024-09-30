@@ -275,9 +275,10 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 		}
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "insecure.html", gin.H{
-			"fingerprintSHA1": fingerprint,
-			"AppIcon":         appIcon,
-			"AppTitle":        app.Spec.Title,
+			"fingerprintSHA1":   fingerprint,
+			"AppIcon":           appIcon,
+			"AppTitle":          app.Spec.Title,
+			"IsEmbeddedCluster": isEmbeddedCluster(),
 		})
 	})
 	r.NoRoute(func(c *gin.Context) {
@@ -676,4 +677,8 @@ func generateCertHostnames(namespace string) (string, []string) {
 	}
 
 	return DEFAULT_KOTSADM_CERT_CN, altNames
+}
+
+func isEmbeddedCluster() bool {
+	return os.Getenv("EMBEDDED_CLUSTER_ID") != ""
 }
