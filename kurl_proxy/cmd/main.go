@@ -273,11 +273,13 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 		if err != nil {
 			log.Printf("No kotsadm application metadata: %v", err) // continue
 		}
+
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "welcome.html", gin.H{
-			"fingerprintSHA1": fingerprint,
-			"AppIcon":         appIcon,
-			"AppTitle":        app.Spec.Title,
+			"fingerprintSHA1":   fingerprint,
+			"AppIcon":           appIcon,
+			"AppTitle":          app.Spec.Title,
+			"IsEmbeddedCluster": isEmbeddedCluster(),
 		})
 	})
 	r.GET("/insecure", func(c *gin.Context) {

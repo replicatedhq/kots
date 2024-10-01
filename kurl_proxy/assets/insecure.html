@@ -71,8 +71,9 @@
       </div>
 
       <div class="min-h-full w-full flex flex-1">
-        <div class="w-[400px] bg-[#F9FBFC]">
-          <div class="py-8 pl-8 shadow-[0_1px_0_#c4c8ca]">
+        {{if .IsEmbeddedCluster}}
+        <div class="bg-[#F9FBFC]">
+          <div class="py-8 pl-8 shadow-[0_1px_0_#c4c8ca] w-[400px]">
             <span class="text-lg font-semibold text-gray-[#323232]">
               Let's get you started!
             </span>
@@ -106,6 +107,7 @@
             </span>
           </div>
         </div>
+        {{end}}
         <div class="tlsContent--wrapper px-8">
           <p class="tls-header my-8">Secure the Admin Console</p>
           <hr />
