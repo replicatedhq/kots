@@ -603,3 +603,10 @@ p.hidden {
 .tls-content {
   width: 800px;
 }
+
+.min-400 {
+  min-width: 400px;
+}
+.width-900 {
+  width: 900px;
+}
