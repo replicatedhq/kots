@@ -600,3 +600,6 @@ p.hidden {
   background-color: #ffffff;
   z-index: 1;
 }
+.tls-content {
+  width: 800px;
+}
