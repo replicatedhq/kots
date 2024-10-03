@@ -208,10 +208,6 @@ spec:
     - ceph: {}
     - longhorn: {}
     - nodeMetrics: {}
-    - http:
-        collectorName: curl-replicated-app
-        get:
-          url: https://replicated.app/healthz
   analyzers:
     - cephStatus: {}
     - longhorn: {}
@@ -475,15 +471,3 @@ spec:
           - pass:
               when: "false"
               message: No OOMKilling event detected
-    - http:
-        checkName: curl-replicated-app
-        collectorName: curl-replicated-app
-        outcomes:
-          - warn:
-              when: "error"
-              message: Error connecting to https://replicated.app/healthz
-          - pass:
-              when: "statusCode == 200"
-              message: Connected to https://replicated.app/healthz
-          - warn:
-              message: "Unexpected response"

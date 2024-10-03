@@ -94,7 +94,7 @@ spec:
         containerName: kotsadm
     - nodeMetrics: {}
     - http:
-        collectorName: curl-replicated-app
+        collectorName: replicated.app-health-check
         get:
           url: https://replicated.app/healthz
   analyzers:
@@ -173,15 +173,16 @@ spec:
               message: No default storage class found
           - pass:
               message: Default storage class found
-    - http:
-        checkName: curl-replicated-app
-        collectorName: curl-replicated-app
+    - jsonCompare:
+        checkName: https://replicated.app host health check
+        fileName: replicated.app-health-check.json
+        path: "response.status"
+        value: "200"
         outcomes:
-          - warn:
-              when: "error"
-              message: Error connecting to https://replicated.app/healthz
+          - fail:
+              when: "false"
+              message: https://replicated.app is unhealthy. License and software update checks from replicated will fail. If this is locked down environment, please check your proxy settings.
+              uri: https://kurl.sh/docs/install-with-kurl/proxy-installs
           - pass:
-              when: "statusCode == 200"
-              message: Connected to https://replicated.app/healthz
-          - warn:
-              message: "Unexpected response"
+              when: "true"
+              message: https://replicated.app host is healthy
