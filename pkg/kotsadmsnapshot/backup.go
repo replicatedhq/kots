@@ -1002,9 +1002,11 @@ func ecBackupAnnotations(ctx context.Context, kbClient kbclient.Client, in *embe
 		annotations["kots.io/embedded-cluster-service-cidr"] = in.Spec.Network.ServiceCIDR
 	}
 
-	rcAnnotations := ecRuntimeConfigToBackupAnnotations(in.Spec.RuntimeConfig)
-	for k, v := range rcAnnotations {
-		annotations[k] = v
+	if in.Spec.RuntimeConfig != nil {
+		rcAnnotations := ecRuntimeConfigToBackupAnnotations(in.Spec.RuntimeConfig)
+		for k, v := range rcAnnotations {
+			annotations[k] = v
+		}
 	}
 
 	return annotations, nil
