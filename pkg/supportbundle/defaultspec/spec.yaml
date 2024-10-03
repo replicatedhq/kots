@@ -172,6 +172,10 @@ spec:
           - app=kotsadm
         containerPath: /tmp/last-preflight-result
         containerName: kotsadm
+    - http:
+        collectorName: curl-replicated-app
+        get:
+          url: https://replicated.app/healthz
   analyzers:
     - clusterVersion:
         outcomes:
@@ -296,3 +300,15 @@ spec:
               message: No default storage class found
           - pass:
               message: Default storage class found
+    - http:
+        checkName: curl-replicated-app
+        collectorName: curl-replicated-app
+        outcomes:
+          - warn:
+              when: "error"
+              message: Error connecting to https://replicated.app/healthz
+          - pass:
+              when: "statusCode == 200"
+              message: Connected to https://replicated.app/healthz
+          - warn:
+              message: "Unexpected response"
