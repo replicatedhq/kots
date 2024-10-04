@@ -6,7 +6,6 @@ spec:
   uri: "https://raw.githubusercontent.com/replicatedhq/kots/main/pkg/supportbundle/staticspecs/defaultspec.yaml"
   collectors:
     - clusterInfo: {}
-    - clusterResources: {}
     - exec:
         args:
           - "http://localhost:3030/goroutines"
