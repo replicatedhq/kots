@@ -1021,6 +1021,9 @@ func ecRuntimeConfigToBackupAnnotations(runtimeConfig *embeddedclusterv1beta1.Ru
 	if runtimeConfig.LocalArtifactMirror.Port > 0 {
 		annotations["kots.io/embedded-cluster-local-artifact-mirror-port"] = strconv.Itoa(runtimeConfig.LocalArtifactMirror.Port)
 	}
+	if runtimeConfig.DataDir != "" {
+		annotations["kots.io/embedded-cluster-data-dir"] = runtimeConfig.DataDir
+	}
 
 	return annotations
 }
