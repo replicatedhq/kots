@@ -192,7 +192,7 @@ code {
 }
 
 .insecure-image {
-  width: 502px;
+  width: 450px;
   height: 290px;
   padding-top: 50px;
 }
@@ -387,6 +387,10 @@ button.text-button:hover {
 
 .justifyContent--center {
   justify-content: center;
+}
+
+.justifyContent--end {
+  justify-content: flex-end;
 }
 .alignContent--center {
   align-content: center;
@@ -609,4 +613,7 @@ p.hidden {
 }
 .width-900 {
   width: 900px;
+}
+.cursor {
+  cursor: pointer;
 }
