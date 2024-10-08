@@ -141,7 +141,7 @@ const PreflightCheck = ({
                     className="btn primary blue"
                     onClick={() => runPreflights()}
                   >
-                    Re-run
+                    Rerun
                   </button>
                 )}
               </div>

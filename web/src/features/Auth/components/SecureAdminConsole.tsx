@@ -386,7 +386,7 @@ class SecureAdminConsole extends Component<Props, State> {
                       }}
                     />
                   </div>
-                  <div className="u-marginTop--20 flex">
+                  <div className="u-marginTop--20 flex justifyContent--center">
                     <button
                       type="submit"
                       className="btn primary"

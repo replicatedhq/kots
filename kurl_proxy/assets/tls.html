@@ -31,6 +31,7 @@
       </div>
 
       <div class="min-h-full w-full flex flex-1">
+        {{if .IsEmbeddedCluster }}
         <div class="bg-[#F9FBFC] min-400">
           <div class="py-8 pl-8 shadow-[0_1px_0_#c4c8ca]">
             <span class="text-lg font-semibold !color-gray-[#323232]">
@@ -76,17 +77,19 @@
               style="width: 16px; height: 16px"
             />
             <span class="ml-2">
-              Validate the environment & Install {{.AppTitle}}
+              Validate the environment & install {{.AppTitle}}
             </span>
           </div>
         </div>
+        {{end}}
         <div class="tlsContent--wrapper px-8 width-900">
           <p class="tls-header my-8">Secure the Admin Console</p>
           <hr />
           <div class="mt-8 p-8 bg-[#F9FBFC] flex-column flex">
             <div class="flex-column flex1 justifyContent--center">
               <p class="tls-header mb-8">
-                HTTPS for the {{ .AppTitle }} admin console
+                Choose whether to continue using a self-signed certificate or
+                upload your own
               </p>
             </div>
 
@@ -99,7 +102,7 @@
             >
               <p class="tls-section-header2">Certificate type</p>
 
-              <div class="flex gap-4 mb-2">
+              <div class="flex gap-4 mb-4">
                 <label for="self-signed">
                   <div class="cert-type-box checked-background">
                     <input
@@ -128,15 +131,15 @@
                   </div>
                 </label>
               </div>
-              <p class="tls-header-sub self-signed-visible">
-                A self-signed TLS certificate is currently used to secure
-                communication between your browser and the admin console. You
-                will see a warning in your browser every time you access the
-                admin console unless you upload your own TLS certificate.
+              <p class="tls-header-sub self-signed-visible !mb-4">
+                Continue using a self-signed certificate to secure communication
+                with the Admin Console. You will see a warning in your browser
+                when you access the Admin Console, but this is expected and
+                secure.
               </p>
-              <p class="tls-header-sub custom-cert-visible hidden">
-                Upload a trusted certificate to secure communication between
-                your browser and the Admin Console.
+              <p class="tls-header-sub custom-cert-visible hidden !mb-4">
+                Upload a trusted certificate to secure communication with the
+                Admin Console.
               </p>
               <div>
                 <p class="tls-section-header2">
@@ -156,12 +159,6 @@
                   style="width: 250px; margin-bottom: 20px"
                 />
               </div>
-              <div class="custom-cert-visible hidden">
-                <p class="tls-section-header2">Private key and certificate</p>
-                <p class="tls-section-sub">
-                  Files will be stored in the cluster.
-                </p>
-              </div>
               <div
                 class="flex upload-form hidden custom-cert-visible"
                 id="upload-files"
@@ -173,7 +170,7 @@
                   <label for="key" class="btn secondary u-marginTop--8 w-fit"
                     >Choose private key</label
                   >
-                  <p id="key-label" class="tls-header-sub">No file chosen.</p>
+                  <p id="key-label" class="tls-header-sub">No file chosen</p>
                 </div>
 
                 <div
@@ -187,7 +184,7 @@
                   <label for="cert" class="btn secondary u-marginTop--8 w-fit"
                     >Choose SSL certificate</label
                   >
-                  <p id="cert-label" class="tls-header-sub">No file chosen.</p>
+                  <p id="cert-label" class="tls-header-sub">No file chosen</p>
                 </div>
               </div>
 
@@ -197,7 +194,7 @@
                 </div>
               </div>
 
-              <div class="button-wrapper flex alignItems--center">
+              <div class="button-wrapper flex justifyContent--end">
                 <button class="btn primary" type="submit">
                   <span class="self-signed-visible">Continue</span>
                   <span class="custom-cert-visible hidden">Continue</span>
