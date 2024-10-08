@@ -30,6 +30,7 @@ interface Props {
   logo: string;
   refetchAppsList?: () => void;
   setCurrentStep: (step: number) => void;
+  isEmbeddedCluster: boolean;
 }
 
 function PreflightResultPage(props: Props) {
@@ -78,10 +79,10 @@ function PreflightResultPage(props: Props) {
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
-      {Utilities.isInitialAppInstall(selectedApp) && (
+      {Utilities.isInitialAppInstall(selectedApp) && props.isEmbeddedCluster && (
         <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
           <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
-            Validate the environment and Install {selectedApp?.name}
+            Validate the environment and deploy {selectedApp?.name}
           </p>
         </div>
       )}
@@ -129,9 +130,12 @@ function PreflightResultPage(props: Props) {
               </div>
             </div>
           )}
-          <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
-            Preflight checks
-          </p>
+          {!Utilities.isInitialAppInstall(selectedApp) &&
+            props.isEmbeddedCluster && (
+              <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
+                Preflight checks
+              </p>
+            )}
           <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--15">
             Preflight checks validate that your cluster meets the minimum
             requirements. Required checks must pass in order to deploy the
@@ -170,7 +174,7 @@ function PreflightResultPage(props: Props) {
                 >
                   {!location.pathname.includes("version-history")
                     ? "Proceed"
-                    : "Re-run"}{" "}
+                    : "Rerun"}{" "}
                   with limited Preflights
                 </button>
               </div>
@@ -188,7 +192,7 @@ function PreflightResultPage(props: Props) {
                     className="btn primary blue"
                     onClick={() => rerunPreflights()}
                   >
-                    Re-run
+                    Rerun
                   </button>
                 )}
               </div>

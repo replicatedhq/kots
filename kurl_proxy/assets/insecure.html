@@ -49,9 +49,7 @@
         .replace(/\/$/, "");
       var httpsLink = "https:" + rawLink;
       var opensslLink = rawLink.substring(2).replace("/insecure", "");
-      console.log(opensslLink, "hello");
       var tlsManagementLink = "/tls";
-      console.log(tlsManagementLink, "link");
     </script>
   </head>
   <body>
@@ -71,7 +69,7 @@
       </div>
 
       <div class="min-h-full w-full flex flex-1">
-        {{if .IsEmbeddedCluster}}
+        {{if .IsEmbeddedCluster }}
         <div class="bg-[#F9FBFC] min-400">
           <div class="py-8 pl-8 shadow-[0_1px_0_#c4c8ca]">
             <span class="text-lg font-semibold text-gray-[#323232]">
@@ -103,7 +101,7 @@
           >
             <img src="/assets/images/check.svg" alt="check" />
             <span class="font-normal ml-2">
-              Validate the environment & Install {{.AppTitle}}
+              Validate the environment & install {{.AppTitle}}
             </span>
           </div>
         </div>
@@ -113,7 +111,6 @@
           <hr />
           <div class="mt-8 p-8 bg-[#F9FBFC]">
             <div>
-              <p class="tls-header mb-2">Bypass browser TLS warning</p>
               <p class="tls-header-sub">
                 We use a self-signed SSL/TLS Certificate to secure the
                 communication between your local machine and the Admin Console
@@ -124,7 +121,12 @@
             <div class="flex1 flex">
               <div class="flex-column flex1 left-block">
                 <div>
-                  <p class="tls-section-sub">
+                  <p class="tls-section-header">
+                    <script>
+                      document.write(browserPlainText);
+                    </script>
+                  </p>
+                  <p class="tls-header-sub">
                     <script>
                       document.write(browserBodyText);
                     </script>
@@ -132,7 +134,7 @@
                 </div>
 
                 <div
-                  class="flex-column flex1 right-block alignItems--center justifyContent--center"
+                  class="flex-column right-block alignItems--center justifyContent--center"
                 >
                   <script>
                     document.write(
@@ -142,25 +144,36 @@
                     );
                   </script>
                 </div>
-                <div class="flex-column justifyContent--center">
-                  <p class="text-muted" id="click-here-text">
-                    <a class="replicated-link">Click here</a> to verify the
-                    certificate's authenticity (optional)
+                <div class="flex gap-2 cursor mb-4" id="verify-link">
+                  <p class="text-muted">
+                    Verify the certificate's authenticity (optional)
                   </p>
+                  <img
+                    src="/assets/images/down_arrow.svg"
+                    alt="check"
+                    width="10"
+                    id="down-arrow"
+                  />
+                  <img
+                    src="/assets/images/up_arrow.svg"
+                    alt="check"
+                    width="10"
+                    id="up-arrow"
+                    style="display: none"
+                  />
                 </div>
                 <div
                   id="verification-container"
+                  className="cursor "
                   style="display: none"
-                  class="mt-8"
                 >
-                  <p class="tls-header mb-4">
-                    Verify the certificate’s authenticity (optional)
-                    <a class="replicated-link">hide</a>
-                  </p>
-                  <div class="flex flex-col gap-4">
+                  <div class="flex flex-column">
                     <div class="CodeSnippet">
                       <div class="CodeSnippet-content">
-                        <p>Where to run this script....</p>
+                        <p>
+                          Run this command on the host to calculate the
+                          certificate's fingerprint.
+                        </p>
                         <pre>
                         <code id="verify-snippet">
                         </code>
@@ -169,7 +182,7 @@
                     </div>
                     <div class="CodeSnippet">
                       <div class="CodeSnippet-content">
-                        <p>Expected SHA Fingerprint</p>
+                        <p>Expected fingerprint</p>
                         <pre>
                         <code>{{ .fingerprintSHA1 }}</code>
                       </pre>
@@ -177,13 +190,13 @@
                     </div>
                   </div>
                 </div>
-                <div class="button-wrapper flex alignItems--center">
+                <div class="button-wrapper flex justifyContent--end">
                   <button
                     type="submit"
                     class="btn primary"
                     onclick="location.href=tlsManagementLink;"
                   >
-                    Continue to Setup
+                    Continue
                   </button>
                 </div>
               </div>
@@ -200,23 +213,22 @@
       " 2>/dev/null | openssl x509 -noout -fingerprint";
   </script>
   <script>
-    const replicatedLink = document.querySelectorAll(".replicated-link");
+    const replicatedLink = document.getElementById("verify-link");
 
-    const clickHereLink = document.getElementById("click-here-text");
     const verificationContainer = document.getElementById(
       "verification-container",
     );
 
-    replicatedLink.forEach((link) => {
-      link.addEventListener("click", () => {
-        if (verificationContainer.style.display === "block") {
-          clickHereLink.style.display = "block";
-          verificationContainer.style.display = "none";
-        } else {
-          clickHereLink.style.display = "none";
-          verificationContainer.style.display = "block";
-        }
-      });
+    replicatedLink.addEventListener("click", () => {
+      if (verificationContainer.style.display === "block") {
+        verificationContainer.style.display = "none";
+        document.getElementById("down-arrow").style.display = "none";
+        document.getElementById("up-arrow").style.display = "block";
+      } else {
+        verificationContainer.style.display = "block";
+        document.getElementById("down-arrow").style.display = "block";
+        document.getElementById("up-arrow").style.display = "none";
+      }
     });
   </script>
 </html>

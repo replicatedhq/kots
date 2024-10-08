@@ -30,6 +30,8 @@ type Props = {
   refetchApps: () => void;
   navigate: ReturnType<typeof useNavigate>;
   setCurrentStep: (step: number) => void;
+  setNavbarConfigGroups: (ConfigGroup) => void;
+  setActiveGroups: (ConfigGroup) => void;
 };
 
 // This was typed from the implementation of the component so it might be wrong
@@ -253,11 +255,15 @@ class AppConfig extends Component<Props, State> {
           changed: false,
           configLoading: false,
         });
-        this.props.setNavbarConfigGroups(data.configGroups);
+        if (this.props.isEmbeddedCluster) {
+          this.props.setNavbarConfigGroups(data.configGroups);
+        }
         if (this.props.location.hash.length > 0) {
           this.navigateToCurrentHash();
         } else {
-          this.props.setActiveGroups([data.configGroups[0].name]);
+          if (this.props.isEmbeddedCluster) {
+            this.props.setActiveGroups([data.configGroups[0].name]);
+          }
           this.setState({
             activeGroups: [data.configGroups[0].name],
             configLoading: false,
@@ -389,7 +395,9 @@ class AppConfig extends Component<Props, State> {
             configGroups: newGroups,
             showValidationError: hasValidationError,
           });
-          this.props.setNavbarConfigGroups(newGroups);
+          if (this.props.isEmbeddedCluster) {
+            this.props.setNavbarConfigGroups(newGroups);
+          }
           if (result.error) {
             this.setState({
               showConfigError: Boolean(result.error),
@@ -594,7 +602,9 @@ class AppConfig extends Component<Props, State> {
         });
         const changed = this.isConfigChanged(newGroups);
         this.setState({ configGroups: newGroups, changed });
-        this.props.setNavbarConfigGroups({ newGroups, changed });
+        if (this.props.isEmbeddedCluster) {
+          this.props.setNavbarConfigGroups({ newGroups, changed });
+        }
       })
       .catch((error) => {
         if (error.name !== "AbortError") {
@@ -766,16 +776,14 @@ class AppConfig extends Component<Props, State> {
     return (
       <div className=" u-overflow--auto tw-font-sans tw-max-w-[1024px] tw-mx-auto">
         <KotsPageTitle pageName="Config" showAppSlug />
-        {Utilities.isInitialAppInstall(app) && (
-          <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
-            <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
-              Configure {app.name}
-            </p>
-          </div>
-        )}
+        <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
+          <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
+            Configure {app.name}
+          </p>
+        </div>
         <div className="flex flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-4 card-bg">
           <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
-            {!Utilities.isInitialAppInstall(app) && !Utilities.isLoggedIn() && (
+            {!Utilities.isInitialAppInstall(app) && (
               <div
                 id="configSidebarWrapper"
                 className="config-sidebar-wrapper card-bg clickable"
@@ -854,15 +862,14 @@ class AppConfig extends Component<Props, State> {
                 })}
               </div>
             )}
-            <div className="ConfigArea--wrapper">
+            <div className="ConfigArea--wrapper !tw-pt-0">
               <ConfigInfo
                 app={app}
                 fromLicenseFlow={this.props.fromLicenseFlow}
               />
               <div
                 className={classNames(
-                  "ConfigOuterWrapper card-bg u-padding--15",
-                  { "u-marginTop--20": fromLicenseFlow }
+                  "ConfigOuterWrapper card-bg u-padding--15"
                 )}
               >
                 <div className="ConfigInnerWrapper">
@@ -875,21 +882,21 @@ class AppConfig extends Component<Props, State> {
                     readonly={this.isConfigReadOnly(app)}
                   />
                 </div>
-                <div className="flex alignItems--flexStart">
+                <div className="flex tw-items-center tw-w-full">
                   {savingConfig && (
                     <div className="u-paddingBottom--30">
                       <Loader size="30" />
                     </div>
                   )}
                   {!savingConfig && (
-                    <div className="ConfigError--wrapper flex-column alignItems--flexStart">
+                    <div className="ConfigError--wrapper tw-flex tw-items-center tw-justify-between !tw-w-full">
                       {(showConfigError || this.state.showValidationError) && (
                         <span className="u-textColor--error tw-mb-2 tw-text-xs">
                           {configErrorMessage || validationErrorMessage}
                         </span>
                       )}
                       <button
-                        className="btn primary blue"
+                        className="btn primary blue tw-ml-auto"
                         disabled={
                           showValidationError ||
                           (!changed && !fromLicenseFlow) ||
@@ -906,7 +913,6 @@ class AppConfig extends Component<Props, State> {
             </div>{" "}
           </div>
         </div>
-
         <Modal
           isOpen={showNextStepModal}
           onRequestClose={this.hideNextStepModal}
