@@ -345,10 +345,11 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 		}
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "tls.html", gin.H{
-			"Secret":   tlsSecretName,
-			"AppIcon":  appIcon,
-			"AppTitle": app.Spec.Title,
-			"App":      app.Spec,
+			"Secret":            tlsSecretName,
+			"AppIcon":           appIcon,
+			"AppTitle":          app.Spec.Title,
+			"App":               app.Spec,
+			"IsEmbeddedCluster": isEmbeddedCluster(),
 		})
 	})
 

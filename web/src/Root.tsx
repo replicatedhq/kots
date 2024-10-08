@@ -1,4 +1,10 @@
-import { createContext, useEffect, useReducer, useState } from "react";
+import React, {
+  createContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from "react";
 import { createBrowserHistory } from "history";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -483,17 +489,75 @@ const Root = () => {
 
   const toggleActiveGroups = (name: string) => {
     let groupsArr = activeGroups;
-    console.log(groupsArr, "arr");
     if (groupsArr.includes(name)) {
       let updatedGroupsArr = groupsArr.filter((n) => n !== name);
-      console.log("ncludes", updatedGroupsArr);
       setActiveGroups(updatedGroupsArr);
     } else {
-      groupsArr.push(name);
-      console.log("add to it ", groupsArr);
-      setActiveGroups(groupsArr);
+      setActiveGroups([...groupsArr, name]);
     }
   };
+
+  const NavGroup = React.memo(
+    ({ group, isActive, i }: { group: any; isActive: boolean; i: number }) => {
+      return (
+        <div
+          key={`${i}-${group.name}-${group.title}`}
+          className={`side-nav-group ${isActive ? "group-open" : ""}`}
+          id={`config-group-nav-${group.name}`}
+        >
+          <div
+            className="flex alignItems--center"
+            onClick={() => toggleActiveGroups(group.name)}
+          >
+            <div className="u-lineHeight--normal group-title u-fontSize--normal">
+              {group.title}
+            </div>
+            {/* adding the arrow-down classes, will rotate the icon when clicked */}
+            <Icon
+              icon="down-arrow"
+              className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
+              size={12}
+              style={{}}
+              color={""}
+              disableFill={false}
+              removeInlineStyle={false}
+            />
+          </div>
+          {group.items ? (
+            <div className="side-nav-items">
+              {group.items
+                ?.filter((item) => item.type !== "label")
+                ?.map((item, j) => {
+                  const hash = location.hash.slice(1);
+                  if (item.hidden || item.when === "false") {
+                    return;
+                  }
+                  return (
+                    <a
+                      className={`u-fontSize--normal u-lineHeight--normal
+                                ${
+                                  item.validationError || item.error
+                                    ? "has-error"
+                                    : ""
+                                }
+                                ${
+                                  hash === `${item.name}-group`
+                                    ? "active-item"
+                                    : ""
+                                }`}
+                      href={`#${item.name}-group`}
+                      key={`${j}-${item.name}-${item.title}`}
+                    >
+                      {item.title}
+                    </a>
+                  );
+                })}
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -609,7 +673,7 @@ const Root = () => {
                     {navbarConfigGroups.length > 0 && (
                       <div
                         id="configSidebarWrapper"
-                        className="config-sidebar-wrapper clickable !tw-bg-[#F9FBFC]"
+                        className="config-sidebar-wrapper clickable !tw-bg-[#F9FBFC] tw-pt-4 tw-px-5"
                       >
                         {navbarConfigGroups?.map((group, i) => {
                           if (
@@ -620,71 +684,11 @@ const Root = () => {
                           ) {
                             return;
                           }
+                          const isActive =
+                            activeGroups.includes(group.name) || group.hasError;
+
                           return (
-                            <div
-                              key={`${i}-${group.name}-${group.title}`}
-                              className={`side-nav-group ${
-                                activeGroups.includes(group.name) ||
-                                group.hasError
-                                  ? "group-open"
-                                  : ""
-                              }
-                          `}
-                              id={`config-group-nav-${group.name}`}
-                            >
-                              <div
-                                className="flex alignItems--center"
-                                onClick={() => toggleActiveGroups(group.name)}
-                              >
-                                <div className="u-lineHeight--normal group-title u-fontSize--normal">
-                                  {group.title}
-                                </div>
-                                {/* adding the arrow-down classes, will rotate the icon when clicked */}
-                                <Icon
-                                  icon="down-arrow"
-                                  className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                                  size={12}
-                                  style={{}}
-                                  color={""}
-                                  disableFill={false}
-                                  removeInlineStyle={false}
-                                />
-                              </div>
-                              {group.items ? (
-                                <div className="side-nav-items">
-                                  {group.items
-                                    ?.filter((item) => item.type !== "label")
-                                    ?.map((item, j) => {
-                                      const hash = location.hash.slice(1);
-                                      if (
-                                        item.hidden ||
-                                        item.when === "false"
-                                      ) {
-                                        return;
-                                      }
-                                      return (
-                                        <a
-                                          className={`u-fontSize--normal u-lineHeight--normal
-                                ${
-                                  item.validationError || item.error
-                                    ? "has-error"
-                                    : ""
-                                }
-                                ${
-                                  hash === `${item.name}-group`
-                                    ? "active-item"
-                                    : ""
-                                }`}
-                                          href={`#${item.name}-group`}
-                                          key={`${j}-${item.name}-${item.title}`}
-                                        >
-                                          {item.title}
-                                        </a>
-                                      );
-                                    })}
-                                </div>
-                              ) : null}
-                            </div>
+                            <NavGroup group={group} isActive={isActive} i={i} />
                           );
                         })}
                       </div>
@@ -744,6 +748,9 @@ const Root = () => {
                       fromLicenseFlow={true}
                       refetchAppsList={getAppsList}
                       setCurrentStep={setCurrentStep}
+                      isEmbeddedCluster={
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      }
                     />
                   }
                 />
@@ -1032,6 +1039,9 @@ const Root = () => {
                         fromLicenseFlow={true}
                         refetchAppsList={getAppsList}
                         setCurrentStep={setCurrentStep}
+                        isEmbeddedCluster={
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        }
                       />
                     }
                   />

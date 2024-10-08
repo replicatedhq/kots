@@ -421,7 +421,7 @@ const EmbeddedClusterManagement = ({
   const AddNodeInstructions = () => {
     return (
       <div className="tw-mb-2 tw-text-base">
-        <p>
+        <p className="tw-mb-8">
           Optionally add nodes to the cluster. Click{" "}
           <span className="tw-font-semibold">Continue </span>
           to proceed with a single node.
@@ -533,11 +533,11 @@ const EmbeddedClusterManagement = ({
           </p>
         </div>
       )}
-      <div className="flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-4 card-bg">
+      <div className="flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-2 card-bg">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
           Nodes
         </p>
-        <div className="tw-flex tw-gap-6 tw-items-center">
+        <div className="tw-flex tw-items-center">
           {" "}
           {!Utilities.isInitialAppInstall(app) && (
             <div className="tw-flex tw-gap-6">
@@ -558,7 +558,7 @@ const EmbeddedClusterManagement = ({
             )}
         </div>
         {Utilities.isInitialAppInstall(app) && (
-          <div className="tw-mt-4 tw-flex tw-flex-col">
+          <div className="tw-flex tw-flex-col">
             <AddNodeInstructions />
             <AddNodeCommands />
           </div>
@@ -624,7 +624,7 @@ const EmbeddedClusterManagement = ({
         </div>
         {fromLicenseFlow && (
           <button
-            className="btn primary tw-w-fit tw-ml-auto"
+            className="btn primary tw-w-fit tw-ml-auto tw-mt-4"
             onClick={() => onContinueClick()}
           >
             Continue
