@@ -8,9 +8,7 @@ import { useState } from "react";
 async function getPreflightResult({
   slug,
 }: {
-  apiEndpoint?: string;
   slug: string;
-  sequence?: string;
 }): Promise<PreflightResponse> {
   const jsonResponse = await fetch(
     `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/preflight/result`,
@@ -170,9 +168,11 @@ function makeRefetchInterval(preflightCheck: PreflightCheck): number | false {
 function useGetPrelightResults({
   slug,
   sequence,
+  enabled = true,
 }: {
   slug: string;
   sequence?: string;
+  enabled?: boolean;
 }) {
   // this is for the progress bar
   const [refetchCount, setRefetchCount] = useState(0);
@@ -181,8 +181,9 @@ function useGetPrelightResults({
     queryFn: () => {
       setRefetchCount(refetchCount + 1);
 
-      return getPreflightResult({ slug, sequence });
+      return getPreflightResult({ slug });
     },
+    enabled,
     queryKey: ["preflight-results", sequence, slug],
     onError: (err: Error) => {
       console.log(err);
