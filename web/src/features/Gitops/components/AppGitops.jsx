@@ -187,7 +187,7 @@ const AppGitops = () => {
           <p className="step-sub">
             Connect a git version control system so all application updates are
             committed to a git repository. <br /> When GitOps is enabled, you
-            cannot deploy updates directly from the admin console.
+            cannot deploy updates directly from the Admin Console.
           </p>
         </div>
         <div className="card-item u-padding--15">
