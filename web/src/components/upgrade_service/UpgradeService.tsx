@@ -104,7 +104,12 @@ const UpgradeServiceBody = () => {
                 />
                 <Route
                   path="deploy"
-                  element={<ConfirmAndDeploy setCurrentStep={setCurrentStep} />}
+                  element={
+                    <ConfirmAndDeploy
+                      hasPreflight={upgradeInfo?.hasPreflight}
+                      setCurrentStep={setCurrentStep}
+                    />
+                  }
                 />
               </Route>
               <Route path="*" element={<NotFound />} />

@@ -28,7 +28,9 @@ interface PreflightResultResponse {
 
 const ConfirmAndDeploy = ({
   setCurrentStep,
+  hasPreflight,
 }: {
+  hasPreflight: boolean;
   setCurrentStep: (step: number) => void;
 }) => {
   useEffect(() => {
@@ -212,7 +214,7 @@ const ConfirmAndDeploy = ({
             Confirm and Deploy
           </p>
 
-          {preflightCheck?.showPreflightCheckPending && (
+          {hasPreflight && preflightCheck?.showPreflightCheckPending && (
             <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
               <PreflightsProgress
                 pendingPreflightCheckName={
@@ -245,7 +247,7 @@ const ConfirmAndDeploy = ({
             </div>
           </div>
 
-          {preflightCheck?.showPreflightResults && (
+          {hasPreflight && preflightCheck?.showPreflightResults && (
             <div className="tw-mt-6">
               <div className="flex flex1 tw-justify-between tw-items-end">
                 <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
@@ -258,7 +260,7 @@ const ConfirmAndDeploy = ({
             </div>
           )}
 
-          {preflightCheck?.showIgnorePreflight && (
+          {hasPreflight && preflightCheck?.showIgnorePreflight && (
             <div className="flex flex0 justifyContent--center alignItems--center">
               <span
                 className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
