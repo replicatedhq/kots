@@ -101,7 +101,7 @@
           >
             <img src="/assets/images/check.svg" alt="check" />
             <span class="font-normal ml-2">
-              Validate the environment & install {{.AppTitle}}
+              Validate the environment & deploy {{.AppTitle}}
             </span>
           </div>
         </div>
@@ -112,10 +112,10 @@
           <div class="mt-8 p-8 bg-[#F9FBFC]">
             <div>
               <p class="tls-header-sub">
-                We use a self-signed SSL/TLS Certificate to secure the
-                communication between your local machine and the Admin Console
-                during setup. You'll see a warning about this in your browser,
-                but you can be confident that this is secure.
+                We use a self-signed TLS Certificate to secure the communication
+                between your local machine and the Admin Console during setup.
+                You'll see a warning about this in your browser, but you can be
+                confident that this is secure.
               </p>
             </div>
             <div class="flex1 flex">
@@ -177,6 +177,7 @@
                         <pre>
                         <code id="verify-snippet">
                         </code>
+                        <span id="copy-command">Copy command</span>
                       </pre>
                       </div>
                     </div>
@@ -208,7 +209,7 @@
   </body>
   <script>
     document.getElementById("verify-snippet").innerHTML =
-      "$ echo | openssl s_client -servername local -connect " +
+      "echo | openssl s_client -servername local -connect " +
       opensslLink +
       " 2>/dev/null | openssl x509 -noout -fingerprint";
   </script>
@@ -230,5 +231,23 @@
         document.getElementById("up-arrow").style.display = "none";
       }
     });
+
+    document
+      .getElementById("copy-command")
+      .addEventListener("click", function () {
+        // Get the code inside the <code> element
+        const codeSnippet =
+          document.getElementById("verify-snippet").textContent;
+
+        // Copy the code to the clipboard
+        navigator.clipboard
+          .writeText(codeSnippet)
+          .then(() => {
+            alert("Command copied to clipboard!");
+          })
+          .catch((err) => {
+            console.error("Failed to copy text: ", err);
+          });
+      });
   </script>
 </html>

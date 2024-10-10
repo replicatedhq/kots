@@ -82,7 +82,7 @@ function PreflightResultPage(props: Props) {
       {Utilities.isInitialAppInstall(selectedApp) && props.isEmbeddedCluster && (
         <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
           <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
-            Validate the environment and deploy {selectedApp?.name}
+            Validate the environment & deploy {selectedApp?.name}
           </p>
         </div>
       )}

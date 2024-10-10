@@ -97,7 +97,7 @@ const SetupProvider = ({ appName }) => {
         Connect a git version control system so all application updates are
         committed to a git repository.
         <br /> When GitOps is enabled, you cannot deploy updates directly from
-        the admin console.
+        the Admin Console.
       </p>
       <div className="flex-column u-textAlign--left card-item u-padding--15">
         <div className="flex alignItems--center u-marginBottom--30">

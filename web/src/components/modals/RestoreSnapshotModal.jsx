@@ -70,7 +70,7 @@ export default function RestoreSnapshotModal(props) {
               Restoring to this version will remove data and replace it with
               data from the restored version. During the restoration, your
               application will not be available and you will not be able to use
-              the admin console. This action cannot be reversed.{" "}
+              the Admin Console. This action cannot be reversed.{" "}
             </p>
           </div>
           <div className="flex flex-column u-marginTop--20">
