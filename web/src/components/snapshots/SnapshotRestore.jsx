@@ -354,7 +354,7 @@ class SnapshotRestore extends Component {
             <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
               {" "}
               After all volumes have been restored you will need to log back in
-              to the admin console.{" "}
+              to the Admin Console.{" "}
             </p>
             <div className="flex flex-column  u-marginTop--40">
               {restoreLoading && (
