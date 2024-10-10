@@ -102,7 +102,7 @@ const PreflightCheck = ({
           </p>
 
           {preflightCheck?.showPreflightCheckPending && (
-            <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
+            <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full tw-mt-4">
               <PreflightsProgress
                 pendingPreflightCheckName={
                   preflightCheck?.pendingPreflightCheckName || ""
@@ -128,7 +128,7 @@ const PreflightCheck = ({
                     className="btn primary blue"
                     onClick={() => rerunPreflights()}
                   >
-                    Re-run
+                    Rerun
                   </button>
                 )}
               </div>

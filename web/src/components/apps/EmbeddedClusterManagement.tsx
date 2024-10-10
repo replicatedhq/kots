@@ -31,10 +31,10 @@ type State = {
 
 const EmbeddedClusterManagement = ({
   fromLicenseFlow = false,
-  isEmbeddedClusterWaitingForNodes = false,
+  setCurrentStep,
 }: {
   fromLicenseFlow?: boolean;
-  isEmbeddedClusterWaitingForNodes?: boolean;
+  setCurrentStep: (step: number) => void;
 }) => {
   const [state, setState] = useReducer(
     (prevState: State, newState: Partial<State>) => ({
@@ -248,6 +248,10 @@ const EmbeddedClusterManagement = ({
     }
   }, [rolesData]);
 
+  useEffect(() => {
+    setCurrentStep(1);
+  }, []);
+
   const determineDisabledState = () => {
     return false;
   };
@@ -417,13 +421,11 @@ const EmbeddedClusterManagement = ({
   const AddNodeInstructions = () => {
     return (
       <div className="tw-mb-2 tw-text-base">
-        {Utilities.isInitialAppInstall(app) && (
-          <p>
-            Optionally add nodes to the cluster. Click{" "}
-            <span className="tw-font-semibold">Continue </span>
-            to proceed with a single node.
-          </p>
-        )}
+        <p className="tw-mb-8 tw-text-gray-800">
+          Optionally add nodes to the cluster. Click{" "}
+          <span className="tw-font-semibold">Continue </span>
+          to proceed with a single node.
+        </p>
         <p>
           {rolesData?.roles &&
             rolesData.roles.length > 1 &&
@@ -471,7 +473,7 @@ const EmbeddedClusterManagement = ({
               >
                 <label
                   htmlFor={`${nodeType}NodeType`}
-                  className=" u-userSelect--none tw-text-gray-600 u-fontSize--normal u-fontWeight--medium tw-text-center tw-flex tw-items-center"
+                  className="u-userSelect--none tw-text-gray-600 u-fontSize--normal u-fontWeight--medium tw-text-center tw-flex tw-items-center"
                 >
                   {selectedNodeTypes.includes(nodeType) && (
                     <Icon icon="check" size={12} className="tw-mr-2" />
@@ -521,38 +523,42 @@ const EmbeddedClusterManagement = ({
     );
   };
 
-  const isInitialInstallOrRestore =
-    Utilities.isInitialAppInstall(app) || isEmbeddedClusterWaitingForNodes;
-
   return (
-    <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
+    <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto tw-font-sans tw-max-w-[1024px] tw-mx-auto tw-mt-6">
       <KotsPageTitle pageName="Cluster Management" />
-      <div className="flex1 tw-mb-10 tw-flex tw-flex-col tw-gap-4 card-bg">
+      {Utilities.isInitialAppInstall(app) && (
+        <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
+          <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
+            Configure the cluster
+          </p>
+        </div>
+      )}
+      <div className="flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-2 card-bg">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
           Nodes
         </p>
-        <div className="tw-flex tw-gap-6 tw-items-center">
-          {!isInitialInstallOrRestore && (
-            <>
-              <div className="tw-flex tw-gap-6">
-                <p>
-                  View the nodes in your cluster, generate commands to add nodes
-                  to the cluster, and view workloads running on each node.
-                </p>
-              </div>
-              {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
-                <button
-                  className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
-                  onClick={onAddNodeClick}
-                >
-                  Add node
-                </button>
-              )}
-            </>
+        <div className="tw-flex tw-items-center">
+          {" "}
+          {!Utilities.isInitialAppInstall(app) && (
+            <div className="tw-flex tw-gap-6">
+              <p>
+                View the nodes in your cluster, generate commands to add nodes
+                to the cluster, and view workloads running on each node.
+              </p>
+            </div>
           )}
+          {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
+            !Utilities.isInitialAppInstall(app) && (
+              <button
+                className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
+                onClick={onAddNodeClick}
+              >
+                Add node
+              </button>
+            )}
         </div>
-        {isInitialInstallOrRestore && (
-          <div className="tw-mt-4 tw-flex tw-flex-col">
+        {Utilities.isInitialAppInstall(app) && (
+          <div className="tw-flex tw-flex-col">
             <AddNodeInstructions />
             <AddNodeCommands />
           </div>
@@ -618,7 +624,7 @@ const EmbeddedClusterManagement = ({
         </div>
         {fromLicenseFlow && (
           <button
-            className="btn primary tw-w-fit tw-ml-auto"
+            className="btn primary tw-w-fit tw-ml-auto tw-mt-4"
             onClick={() => onContinueClick()}
           >
             Continue

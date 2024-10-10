@@ -273,6 +273,34 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 		if err != nil {
 			log.Printf("No kotsadm application metadata: %v", err) // continue
 		}
+
+		appIcon := template.URL(app.Spec.Icon)
+		c.HTML(http.StatusOK, "welcome.html", gin.H{
+			"fingerprintSHA1":   fingerprint,
+			"AppIcon":           appIcon,
+			"AppTitle":          app.Spec.Title,
+			"IsEmbeddedCluster": isEmbeddedCluster(),
+		})
+	})
+	r.GET("/insecure", func(c *gin.Context) {
+		if !acceptAnonymousUploads {
+			log.Println("TLS certs already uploaded, redirecting to https")
+			target := url.URL{
+				Scheme:   "https",
+				Host:     c.Request.Host,
+				Path:     c.Request.URL.Path,
+				RawQuery: c.Request.URL.RawQuery,
+			}
+			// Returns StatusFound (302) to avoid browser caching
+			c.Redirect(http.StatusFound, target.String())
+			return
+		}
+
+		app, err := kotsadmApplication()
+
+		if err != nil {
+			log.Printf("No kotsadm application metadata: %v", err) // continue
+		}
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "insecure.html", gin.H{
 			"fingerprintSHA1":   fingerprint,
@@ -317,9 +345,11 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 		}
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "tls.html", gin.H{
-			"Secret":   tlsSecretName,
-			"AppIcon":  appIcon,
-			"AppTitle": app.Spec.Title,
+			"Secret":            tlsSecretName,
+			"AppIcon":           appIcon,
+			"AppTitle":          app.Spec.Title,
+			"App":               app.Spec,
+			"IsEmbeddedCluster": isEmbeddedCluster(),
 		})
 	})
 

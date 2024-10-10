@@ -597,7 +597,7 @@ class Snapshots extends Component {
                   </div>
                 </div>
                 <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
-                  Back up the admin console and all application data for
+                  Back up the Admin Console and all application data for
                   disaster recovery.{" "}
                   {!this.props.isEmbeddedCluster && (
                     <>

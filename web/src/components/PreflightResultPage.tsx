@@ -22,12 +22,15 @@ import { useDeployAppVersion } from "@features/App/api";
 
 import { KotsParams } from "@types";
 import Icon from "./Icon";
-import { useApps } from "@features/App";
+import { useApps, useSelectedApp } from "@features/App";
+import { Utilities } from "@src/utilities/utilities";
 
 interface Props {
   fromLicenseFlow?: boolean;
   logo: string;
   refetchAppsList?: () => void;
+  setCurrentStep: (step: number) => void;
+  isEmbeddedCluster: boolean;
 }
 
 function PreflightResultPage(props: Props) {
@@ -55,6 +58,7 @@ function PreflightResultPage(props: Props) {
   // TODO: remove this once everything is using react-query
   // componentWilUnmount
   useEffect(() => {
+    props.setCurrentStep(3);
     return () => {
       if (props.fromLicenseFlow && props.refetchAppsList) {
         props.refetchAppsList();
@@ -71,10 +75,17 @@ function PreflightResultPage(props: Props) {
   const location = useLocation();
   const navigate = useNavigate();
   const { refetch: refetchApps } = useApps();
-
+  const selectedApp = useSelectedApp();
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
+      {Utilities.isInitialAppInstall(selectedApp) && props.isEmbeddedCluster && (
+        <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
+          <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
+            Validate the environment & deploy {selectedApp?.name}
+          </p>
+        </div>
+      )}
       <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]">
         {location.pathname.includes("version-history") && (
           <div className="u-fontWeight--bold link" onClick={() => navigate(-1)}>
@@ -119,9 +130,12 @@ function PreflightResultPage(props: Props) {
               </div>
             </div>
           )}
-          <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
-            Preflight checks
-          </p>
+          {!Utilities.isInitialAppInstall(selectedApp) &&
+            props.isEmbeddedCluster && (
+              <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
+                Preflight checks
+              </p>
+            )}
           <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--15">
             Preflight checks validate that your cluster meets the minimum
             requirements. Required checks must pass in order to deploy the
@@ -160,7 +174,7 @@ function PreflightResultPage(props: Props) {
                 >
                   {!location.pathname.includes("version-history")
                     ? "Proceed"
-                    : "Re-run"}{" "}
+                    : "Rerun"}{" "}
                   with limited Preflights
                 </button>
               </div>
@@ -178,7 +192,7 @@ function PreflightResultPage(props: Props) {
                     className="btn primary blue"
                     onClick={() => rerunPreflights()}
                   >
-                    Re-run
+                    Rerun
                   </button>
                 )}
               </div>
