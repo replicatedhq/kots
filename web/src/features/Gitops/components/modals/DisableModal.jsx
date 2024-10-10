@@ -29,7 +29,7 @@ const DisableModal = ({ isOpen, setOpen, disableGitOps, provider }) => {
           <p className="u-fontSize--normal u-textColor--bodyCopy  u-textAlign--center u-lineHeight--normal">
             Commits will no longer be made to your repository, and you will have
             to <br />
-            deploy from the admin console.
+            deploy from the Admin Console.
           </p>
           <div className="u-marginTop--30">
             <button

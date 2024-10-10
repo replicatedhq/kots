@@ -30,7 +30,7 @@ function InstallWithHelm() {
                 className="u-fontSize--normal u-textColor--accent u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginRight--30 u-marginLeft--30"
                 style={{ maxWidth: "300px" }}
               >
-                In order to use the admin console you need to install a Helm
+                In order to use the Admin Console you need to install a Helm
                 chart.
               </p>
             </div>

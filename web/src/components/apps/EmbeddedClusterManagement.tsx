@@ -421,7 +421,7 @@ const EmbeddedClusterManagement = ({
   const AddNodeInstructions = () => {
     return (
       <div className="tw-mb-2 tw-text-base">
-        <p className="tw-mb-8">
+        <p className="tw-mb-8 tw-text-gray-800">
           Optionally add nodes to the cluster. Click{" "}
           <span className="tw-font-semibold">Continue </span>
           to proceed with a single node.

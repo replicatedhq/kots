@@ -705,7 +705,7 @@ const Root = () => {
                         getStepProps(3).textColor
                       }`}
                     >
-                      Validate the environment & Install{" "}
+                      Validate the environment & deploy{" "}
                       {state.selectedAppName || ""}
                     </span>
                   </div>
