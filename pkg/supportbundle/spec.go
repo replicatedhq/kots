@@ -430,14 +430,14 @@ func createDefaultSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, 
 	}
 
 	if isKurl {
-		kurlSupportBunlde, err := staticspecs.GetKurlSpec(app)
+		kurlSupportBundle, err := staticspecs.GetKurlSpec(app)
 		if err != nil {
 			logger.Errorf("Failed to load kurl support bundle spec: %v", err)
 			return nil, err
 		}
 
-		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, kurlSupportBunlde.Spec.Collectors...)
-		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, kurlSupportBunlde.Spec.Analyzers...)
+		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, kurlSupportBundle.Spec.Collectors...)
+		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, kurlSupportBundle.Spec.Analyzers...)
 	}
 
 	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app, imageName, pullSecret)
@@ -647,8 +647,10 @@ func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *t
 				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
 				j--
 			} else if next.Spec.Collectors[i].ClusterResources != nil && next.Spec.Collectors[j].ClusterResources != nil {
-				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
-				j--
+				if reflect.DeepEqual(next.Spec.Collectors[i].ClusterResources.Namespaces, next.Spec.Collectors[j].ClusterResources.Namespaces) {
+					next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
+					j--
+				}
 			} else if next.Spec.Collectors[i].ClusterInfo != nil && next.Spec.Collectors[j].ClusterInfo != nil {
 				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
 				j--
@@ -726,6 +728,13 @@ func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBun
 
 func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
 	collectors := make([]*troubleshootv1beta2.Collect, 0)
+
+	// Collect Cluster Resources for the namespace that the Admin Console is running in
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		ClusterResources: &troubleshootv1beta2.ClusterResources{
+			Namespaces: []string{util.PodNamespace},
+		},
+	})
 
 	license, err := store.GetStore().GetLatestLicenseForApp(app.GetID())
 	if err != nil {
