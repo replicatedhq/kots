@@ -1118,7 +1118,6 @@ jobs:
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
-
   validate-change-license:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
@@ -1150,8 +1149,6 @@ jobs:
           kots-namespace: 'change-license'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -4331,7 +4328,6 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       - validate-version-history-pagination
-      - validate-change-license
       - validate-min-kots-version
       - validate-target-kots-version
       - validate-range-kots-version
@@ -4346,6 +4342,7 @@ jobs:
       - validate-change-channel
       - validate-multi-app-backup-and-restore
       - validate-multi-app-install
+      - validate-change-license
       # non-testim tests
       - validate-minimal-rbac
       - validate-minimal-rbac-override

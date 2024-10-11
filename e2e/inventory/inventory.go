@@ -92,8 +92,8 @@ func NewVersionHistoryPagination() Test {
 func NewChangeLicense() Test {
 	return Test{
 		ID:          "@change-license",
-		TestimSuite: "change-license",
 		Namespace:   "change-license",
+		AppSlug:     "change-license",
 		UpstreamURI: "change-license/automated",
 	}
 }
