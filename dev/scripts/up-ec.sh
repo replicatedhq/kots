@@ -26,20 +26,20 @@ ec_build_and_load "$component"
 # we can achieve a faster dev experience with hot reloading.
 if [ "$component" == "kotsadm" ]; then
   ec_build_and_load "kotsadm-web"
-  ec_exec k0s kubectl apply -f dev/manifests/kotsadm-web -n kotsadm
+  ec_exec k0s kubectl --kubeconfig=/var/lib/embedded-cluster/k0s/pki/admin.conf apply -f dev/manifests/kotsadm-web -n kotsadm
   ec_patch "kotsadm-web"
 fi
 
 # Save original state
 if [ ! -f "dev/patches/$component-down-ec.yaml.tmp" ]; then
-  ec_exec k0s kubectl get deployment $(deployment $component) -n kotsadm -oyaml > dev/patches/$component-down-ec.yaml.tmp
+  ec_exec k0s kubectl --kubeconfig=/var/lib/embedded-cluster/k0s/pki/admin.conf get deployment $(deployment $component) -n kotsadm -oyaml > dev/patches/$component-down-ec.yaml.tmp
 fi
 
 # Patch the deployment
 ec_patch $component
 
 # Wait for rollout to complete
-ec_exec k0s kubectl rollout status deployment/$(deployment $component) -n kotsadm
+ec_exec k0s kubectl --kubeconfig=/var/lib/embedded-cluster/k0s/pki/admin.conf rollout status deployment/$(deployment $component) -n kotsadm
 
 # Up into the updated deployment
 ec_up $component
