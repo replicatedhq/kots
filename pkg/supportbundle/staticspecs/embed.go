@@ -24,8 +24,8 @@ var vendorspec []byte
 //go:embed defaultspec.yaml
 var defaultspec []byte
 
-func GetVendorSpec() (*troubleshootv1beta2.SupportBundle, error) {
-	return supportbundle.ParseSupportBundleFromDoc(vendorspec)
+func GetVendorSpec(isAirgap bool) (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundle(vendorspec, !isAirgap)
 }
 
 func GetClusterSpecificSpec(app *apptypes.App) (*troubleshootv1beta2.SupportBundle, error) {

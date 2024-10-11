@@ -106,7 +106,7 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 	}
 
 	// split the default kotsadm support bundle into multiple support bundles
-	vendorSpec, err := createVendorSpec(builtBundle)
+	vendorSpec, err := createVendorSpec(builtBundle, app.IsAirgap)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create vendor support bundle spec")
 	}
@@ -370,8 +370,8 @@ func addAfterCollectionSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBun
 }
 
 // createVendorSpec creates a support bundle spec that includes the vendor specific collectors and analyzers
-func createVendorSpec(b *troubleshootv1beta2.SupportBundle) (*troubleshootv1beta2.SupportBundle, error) {
-	supportBundle, err := staticspecs.GetVendorSpec()
+func createVendorSpec(b *troubleshootv1beta2.SupportBundle, isAirgap bool) (*troubleshootv1beta2.SupportBundle, error) {
+	supportBundle, err := staticspecs.GetVendorSpec(isAirgap)
 	if err != nil {
 		logger.Errorf("Failed to load vendor support bundle spec: %v", err)
 		return nil, err
@@ -457,15 +457,12 @@ func addDiscoveredSpecs(
 	}
 
 	for _, specData := range specs {
-		sbObject, err := sb.ParseSupportBundleFromDoc([]byte(specData))
+		sbObject, err := sb.ParseSupportBundle([]byte(specData), !app.IsAirgap)
 		if err != nil {
 			logger.Errorf("Failed to unmarshal support bundle spec: %v", err)
 			continue
 		}
 
-		// ParseSupportBundleFromDoc will check if there is a uri field and if so,
-		// use the upstream spec, otherwise fall back to
-		// what's defined in the current spec
 		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, sbObject.Spec.Collectors...)
 		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, sbObject.Spec.Analyzers...)
 	}
@@ -709,12 +706,17 @@ func deduplicatedAfterCollection(supportBundle *troubleshootv1beta2.SupportBundl
 	return b
 }
 
-func getDefaultAnalyzers(isKurl bool) []*troubleshootv1beta2.Analyze {
-	defaultAnalyzers := defaultspec.Get().Spec.Analyzers
+func getDefaultAnalyzers(isKurl, isAirgap bool) ([]*troubleshootv1beta2.Analyze, error) {
+	defaultSpec, err := defaultspec.Get(isAirgap)
+	if err != nil {
+		return nil, err
+	}
+
+	defaultAnalyzers := defaultSpec.Spec.Analyzers
 	if !isKurl {
 		defaultAnalyzers = removeKurlAnalyzers(defaultAnalyzers)
 	}
-	return defaultAnalyzers
+	return defaultAnalyzers, nil
 }
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.

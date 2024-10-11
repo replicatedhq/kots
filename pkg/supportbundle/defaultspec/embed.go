@@ -12,14 +12,13 @@ var raw []byte
 
 var spec *troubleshootv1beta2.SupportBundle
 
-func init() {
-	var err error
-	spec, err = supportbundle.ParseSupportBundleFromDoc(raw)
-	if err != nil {
-		panic(err)
+func Get(isAirgap bool) (troubleshootv1beta2.SupportBundle, error) {
+	if spec == nil {
+		var err error
+		spec, err = supportbundle.ParseSupportBundle(raw, !isAirgap)
+		if err != nil {
+			return troubleshootv1beta2.SupportBundle{}, err
+		}
 	}
-}
-
-func Get() troubleshootv1beta2.SupportBundle {
-	return *spec.DeepCopy()
+	return *spec.DeepCopy(), nil
 }

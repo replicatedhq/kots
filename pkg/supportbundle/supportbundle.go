@@ -312,7 +312,12 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 	if err != nil {
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, getDefaultAnalyzers(isKurl)...)
+
+	defaultAnalyzers, err := getDefaultAnalyzers(isKurl, foundApp.IsAirgap)
+	if err != nil {
+		return err
+	}
+	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, defaultAnalyzers...)
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, getDefaultDynamicAnalyzers(foundApp)...)
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
