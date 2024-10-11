@@ -19,22 +19,6 @@ import { useGetUpgradeInfo } from "./hooks";
 // react-query client
 const queryClient = new QueryClient();
 
-const UpgradeService = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Helmet>
-        <meta
-          httpEquiv="Cache-Control"
-          content="no-cache, no-store, must-revalidate"
-        />
-        <meta httpEquiv="Pragma" content="no-cache" />
-        <meta httpEquiv="Expires" content="0" />
-      </Helmet>
-      <UpgradeServiceBody />
-    </QueryClientProvider>
-  );
-};
-
 const UpgradeServiceBody = () => {
   const Crashz = () => {
     throw new Error("Crashz!");
@@ -122,6 +106,22 @@ const UpgradeServiceBody = () => {
         </div>
       </ToastProvider>
     </UpgradeServiceProvider>
+  );
+};
+
+const UpgradeService = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Helmet>
+        <meta
+          httpEquiv="Cache-Control"
+          content="no-cache, no-store, must-revalidate"
+        />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+      </Helmet>
+      <UpgradeServiceBody />
+    </QueryClientProvider>
   );
 };
 

@@ -26,6 +26,39 @@ interface PreflightResultResponse {
   showWarn: boolean;
 }
 
+const BackButton = ({
+  slug,
+  hasPreflight,
+  isConfigurable,
+}: {
+  slug: string;
+  hasPreflight: boolean;
+  isConfigurable: boolean;
+}) => {
+  const navigate = useNavigate();
+
+  if (hasPreflight) {
+    return (
+      <button
+        className="btn secondary blue"
+        onClick={() => navigate(`/upgrade-service/app/${slug}/preflight`)}
+      >
+        Back: Preflight checks
+      </button>
+    );
+  }
+
+  return (
+    <button
+      className="btn secondary blue"
+      onClick={() => navigate(`/upgrade-service/app/${slug}/config`)}
+      disabled={!isConfigurable}
+    >
+      Back: Config
+    </button>
+  );
+};
+
 const ConfirmAndDeploy = ({
   setCurrentStep,
   hasPreflight,
@@ -349,39 +382,6 @@ const ConfirmAndDeploy = ({
         </div>
       </Modal>
     </div>
-  );
-};
-
-const BackButton = ({
-  slug,
-  hasPreflight,
-  isConfigurable,
-}: {
-  slug: string;
-  hasPreflight: boolean;
-  isConfigurable: boolean;
-}) => {
-  const navigate = useNavigate();
-
-  if (hasPreflight) {
-    return (
-      <button
-        className="btn secondary blue"
-        onClick={() => navigate(`/upgrade-service/app/${slug}/preflight`)}
-      >
-        Back: Preflight checks
-      </button>
-    );
-  }
-
-  return (
-    <button
-      className="btn secondary blue"
-      onClick={() => navigate(`/upgrade-service/app/${slug}/config`)}
-      disabled={!isConfigurable}
-    >
-      Back: Config
-    </button>
   );
 };
 
