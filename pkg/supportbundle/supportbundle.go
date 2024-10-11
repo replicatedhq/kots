@@ -65,7 +65,7 @@ func Collect(app *apptypes.App, clusterID string) (string, error) {
 	}
 
 	progressChan := executeUpdateRoutine(supportBundle)
-	executeSupportBundleCollectRoutine(supportBundle, progressChan)
+	executeSupportBundleCollectRoutine(supportBundle, progressChan, app.IsAirgap)
 
 	return supportBundle.ID, nil
 }

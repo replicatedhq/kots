@@ -146,7 +146,7 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 
 // executeSupportBundleCollectRoutine creates a goroutine to collect the support bundle, upload, analyze and
 // send redactors. The function takes a channel for progress updates and closes it when collectors are complete.
-func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressChan chan interface{}) {
+func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressChan chan interface{}, isAirgap bool) {
 
 	collectorCB := func(c chan interface{}, msg string) {
 		c <- supportBundleProgressUpdate{
@@ -182,7 +182,7 @@ func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressCha
 		redact.ResetRedactionList()
 
 		var response *troubleshootv1beta2.SupportBundleResponse
-		if bundle.URI != "" {
+		if bundle.URI != "" && !isAirgap {
 			response, err = troubleshootv1beta2.CollectSupportBundleFromURI(bundle.URI, bundle.RedactURIs, opts)
 			if err != nil {
 				logger.Error(errors.Wrap(err, fmt.Sprintf("error collecting support bundle ID from URI: %s", bundle.ID)))
