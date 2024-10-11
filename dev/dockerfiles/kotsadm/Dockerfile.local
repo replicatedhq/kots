@@ -7,18 +7,18 @@ FROM golang:1.23-alpine
 RUN apk add --no-cache ca-certificates s3cmd curl git make bash
 
 # Install Kubectl 1.29
-ENV KUBECTL_1_29_VERSION=v1.29.0
-ENV KUBECTL_1_29_URL=https://dl.k8s.io/release/${KUBECTL_1_29_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_29_SHA256SUM=0e03ab096163f61ab610b33f37f55709d3af8e16e4dcc1eb682882ef80f96fd5
-RUN curl -fsSLO "${KUBECTL_1_29_URL}" \
-  && echo "${KUBECTL_1_29_SHA256SUM} kubectl" | sha256sum -c - \
+ENV KUBECTL_VERSION=v1.31.0
+ENV KUBECTL_URL=https://dl.k8s.io/release/v1.31.0/bin/linux/arm64/kubectl
+ENV KUBECTL_SHA256SUM=f42832db7d77897514639c6df38214a6d8ae1262ee34943364ec1ffaee6c009c
+RUN curl -fsSLO "${KUBECTL_URL}" \
+  && echo "${KUBECTL_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
   && mv kubectl /usr/local/bin//kubectl
 
 # Install kustomize 5
-ENV KUSTOMIZE5_VERSION=5.1.1
-ENV KUSTOMIZE5_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE5_VERSION}/kustomize_v${KUSTOMIZE5_VERSION}_linux_amd64.tar.gz
-ENV KUSTOMIZE5_SHA256SUM=3b30477a7ff4fb6547fa77d8117e66d995c2bdd526de0dafbf8b7bcb9556c85d
+ENV KUSTOMIZE5_VERSION=5.5.0
+ENV KUSTOMIZE5_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE5_VERSION}/kustomize_v${KUSTOMIZE5_VERSION}_linux_arm64.tar.gz
+ENV KUSTOMIZE5_SHA256SUM=b4170d1acb8cfacace9f72884bef957ff56efdcd4813b66e7604aabc8b57e93d
 RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
   && echo "${KUSTOMIZE5_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
   && tar -xzvf kustomize.tar.gz \
@@ -27,15 +27,15 @@ RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
   && mv kustomize /usr/local/bin/kustomize
 
 # Install helm v3
-ENV HELM3_VERSION=3.13.2
-ENV HELM3_URL=https://get.helm.sh/helm-v${HELM3_VERSION}-linux-amd64.tar.gz
-ENV HELM3_SHA256SUM=55a8e6dce87a1e52c61e0ce7a89bf85b38725ba3e8deb51d4a08ade8a2c70b2d
+ENV HELM3_VERSION=3.16.2
+ENV HELM3_URL=https://get.helm.sh/helm-v${HELM3_VERSION}-linux-arm64.tar.gz
+ENV HELM3_SHA256SUM=1888301aeb7d08a03b6d9f4d2b73dcd09b89c41577e80e3455c113629fc657a4
 RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && echo "${HELM3_SHA256SUM} helm.tar.gz" | sha256sum -c - \
   && tar -xzvf helm.tar.gz \
-  && chmod a+x linux-amd64/helm \
-  && mv linux-amd64/helm /usr/local/bin/helm \
-  && rm -rf helm.tar.gz linux-amd64
+  && chmod a+x linux-arm64/helm \
+  && mv linux-arm64/helm /usr/local/bin/helm \
+  && rm -rf helm.tar.gz linux-arm64
 
 WORKDIR /replicatedhq/kots
 
