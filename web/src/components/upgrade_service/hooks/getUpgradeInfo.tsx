@@ -5,21 +5,23 @@ type UpgradeInfoResponse = {
   hasPreflight: boolean;
 };
 
-async function getUpgradeInfo({
-  slug,
-}: {
+type UpgradeInfoParams = {
+  api?: string;
+  retry?: number;
   slug: string;
-}): Promise<UpgradeInfoResponse> {
-  const jsonResponse = await fetch(
-    `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    }
-  );
+};
+
+async function getUpgradeInfo({
+  api = process.env.API_ENDPOINT,
+  slug,
+}: UpgradeInfoParams): Promise<UpgradeInfoResponse> {
+  const jsonResponse = await fetch(`${api}/upgrade-service/app/${slug}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
 
   if (!jsonResponse.ok) {
     throw new Error(
@@ -37,10 +39,11 @@ async function getUpgradeInfo({
   }
 }
 
-function useGetUpgradeInfo({ slug }: { slug: string }) {
+function useGetUpgradeInfo({ slug, api, retry = 3 }: UpgradeInfoParams) {
   return useQuery({
-    queryFn: () => getUpgradeInfo({ slug }),
+    queryFn: () => getUpgradeInfo({ slug, api }),
     queryKey: ["upgrade-info", slug],
+    retry,
     onError: (err: Error) => {
       console.log(err);
     },
