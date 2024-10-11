@@ -96,7 +96,10 @@ const UpgradeServiceBody = () => {
                   path="preflight"
                   element={
                     upgradeInfo?.hasPreflight ? (
-                      <PreflightChecks setCurrentStep={setCurrentStep} />
+                      <PreflightChecks
+                        setCurrentStep={setCurrentStep}
+                        isConfigurable={upgradeInfo?.isConfigurable}
+                      />
                     ) : (
                       <Navigate to="../deploy" />
                     )
@@ -106,6 +109,7 @@ const UpgradeServiceBody = () => {
                   path="deploy"
                   element={
                     <ConfirmAndDeploy
+                      isConfigurable={upgradeInfo?.isConfigurable}
                       hasPreflight={upgradeInfo?.hasPreflight}
                       setCurrentStep={setCurrentStep}
                     />

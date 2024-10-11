@@ -29,7 +29,9 @@ interface PreflightResultResponse {
 const ConfirmAndDeploy = ({
   setCurrentStep,
   hasPreflight,
+  isConfigurable,
 }: {
+  isConfigurable: boolean;
   hasPreflight: boolean;
   setCurrentStep: (step: number) => void;
 }) => {
@@ -272,12 +274,11 @@ const ConfirmAndDeploy = ({
           )}
         </div>
         <div className="tw-flex tw-justify-between tw-mt-4">
-          <button
-            className="btn secondary blue"
-            onClick={() => navigate(`/upgrade-service/app/${slug}/preflight`)}
-          >
-            Back: Preflight checks
-          </button>
+          <BackButton
+            slug={slug}
+            isConfigurable={isConfigurable}
+            hasPreflight={hasPreflight}
+          />
           <button
             className="btn primary blue"
             disabled={preflightCheck?.showDeploymentBlocked || isLoading}
@@ -348,6 +349,39 @@ const ConfirmAndDeploy = ({
         </div>
       </Modal>
     </div>
+  );
+};
+
+const BackButton = ({
+  slug,
+  hasPreflight,
+  isConfigurable,
+}: {
+  slug: string;
+  hasPreflight: boolean;
+  isConfigurable: boolean;
+}) => {
+  const navigate = useNavigate();
+
+  if (hasPreflight) {
+    return (
+      <button
+        className="btn secondary blue"
+        onClick={() => navigate(`/upgrade-service/app/${slug}/preflight`)}
+      >
+        Back: Preflight checks
+      </button>
+    );
+  }
+
+  return (
+    <button
+      className="btn secondary blue"
+      onClick={() => navigate(`/upgrade-service/app/${slug}/config`)}
+      disabled={!isConfigurable}
+    >
+      Back: Config
+    </button>
   );
 };
 

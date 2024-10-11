@@ -16,8 +16,10 @@ import { isEqual } from "lodash";
 
 const PreflightCheck = ({
   setCurrentStep,
+  isConfigurable,
 }: {
   setCurrentStep: (step: number) => void;
+  isConfigurable: boolean;
 }) => {
   const navigate = useNavigate();
 
@@ -164,6 +166,7 @@ const PreflightCheck = ({
           <button
             className="btn secondary blue"
             onClick={() => navigate(`/upgrade-service/app/${slug}/config`)}
+            disabled={!isConfigurable}
           >
             Back: Config
           </button>
