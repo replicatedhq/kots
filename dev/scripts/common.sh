@@ -89,7 +89,7 @@ function ec_exec() {
 # Patches a component deployment in the embedded cluster
 function ec_patch() {
   ec_render dev/patches/$1-up.yaml > dev/patches/$1-up-ec.yaml.tmp
-  ec_exec k0s kubectl patch deployment $(deployment $1) -n kotsadm --patch-file dev/patches/$1-up-ec.yaml.tmp
+  ec_exec k0s kubectl --kubeconfig=/var/lib/embedded-cluster/k0s/pki/admin.conf patch deployment $(deployment $1) -n kotsadm --patch-file dev/patches/$1-up-ec.yaml.tmp
   rm dev/patches/$1-up-ec.yaml.tmp
 }
 
@@ -118,5 +118,5 @@ function up() {
 }
 
 function ec_up() {
-  ec_exec k0s kubectl exec -it deployment/$(deployment $1) -n kotsadm -- bash
+  ec_exec k0s kubectl --kubeconfig=/var/lib/embedded-cluster/k0s/pki/admin.conf exec -it deployment/$(deployment $1) -n kotsadm -- bash
 }
