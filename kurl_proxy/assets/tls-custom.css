@@ -617,3 +617,8 @@ p.hidden {
 .cursor {
   cursor: pointer;
 }
+
+.copy-command {
+  font-size: 12px;
+  padding-top: 8px;
+}
