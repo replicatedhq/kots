@@ -44,7 +44,6 @@ describe("UpgradeService", () => {
     });
 
     it("We get routed to the config section if the initial request succeeds and the app is configurable", async () => {
-      const slug = "my-test-app";
       server = setupServer(
         http.get(`${api}/upgrade-service/app/${slug}`, () => {
           return HttpResponse.json({
@@ -67,7 +66,6 @@ describe("UpgradeService", () => {
     });
 
     it("We get routed to the preflight section if the initial request succeeds and the app is not configurable", async () => {
-      const slug = "my-test-app";
       server = setupServer(
         http.get(`${api}/upgrade-service/app/${slug}`, () => {
           return HttpResponse.json({
@@ -92,7 +90,6 @@ describe("UpgradeService", () => {
     });
 
     it("We get routed to the confirm and deploy section if the initial request succeeds and the app is not configurable and doesn't have preflights", async () => {
-      const slug = "my-test-app";
       server = setupServer(
         http.get(`${api}/upgrade-service/app/${slug}`, () => {
           return HttpResponse.json({
@@ -117,7 +114,6 @@ describe("UpgradeService", () => {
     });
 
     it("We show an error if the get info request fails", async () => {
-      const slug = "my-test-app";
       server = setupServer(
         http.get(`${api}/upgrade-service/app/${slug}`, () => {
           return new HttpResponse("Not found", { status: 404 });
