@@ -177,8 +177,12 @@
                         <pre>
                         <code id="verify-snippet">
                         </code>
-                        <span id="copy-command">Copy command</span>
                       </pre>
+                        <div class="copy-command">
+                          <a id="copy-command" class="replicated-link"
+                            >Copy command</a
+                          >
+                        </div>
                       </div>
                     </div>
                     <div class="CodeSnippet">
@@ -235,15 +239,19 @@
     document
       .getElementById("copy-command")
       .addEventListener("click", function () {
-        // Get the code inside the <code> element
         const codeSnippet =
           document.getElementById("verify-snippet").textContent;
 
-        // Copy the code to the clipboard
         navigator.clipboard
           .writeText(codeSnippet)
           .then(() => {
-            alert("Command copied to clipboard!");
+            const copyCommandElement = document.getElementById("copy-command");
+            const originalText = copyCommandElement.textContent;
+            copyCommandElement.textContent = "Copied!";
+
+            setTimeout(() => {
+              copyCommandElement.textContent = originalText;
+            }, 3000);
           })
           .catch((err) => {
             console.error("Failed to copy text: ", err);
