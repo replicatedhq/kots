@@ -108,7 +108,7 @@ describe("UpgradeService", () => {
         </MemoryRouter>
       );
 
-      await findByTestId("preflight-check-area");
+      await findByTestId("deploy-and-confirm-area");
 
       expect(getByText("Back: Config")).toBeDisabled();
     });
