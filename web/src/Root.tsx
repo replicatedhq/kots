@@ -78,10 +78,20 @@ const ThemeContext = createContext({
   clearThemeState: () => {},
 });
 
+type ConfigGroupItem = {
+  name: string;
+  title: string;
+  type: string;
+  hidden: boolean;
+  validationError: boolean;
+  error: boolean;
+  when: string;
+};
+
 type NavbarConfigGroup = {
   name: string;
   title: string;
-  items: string[];
+  items: ConfigGroupItem[];
   hidden: boolean;
   hasError: boolean;
   when: string;
