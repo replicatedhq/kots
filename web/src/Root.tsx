@@ -642,7 +642,9 @@ const Root = () => {
             errLoggingOut={state.errLoggingOut}
           />
           <div className="tw-flex flex1">
-            {Utilities.isInitialAppInstall(state.appsList[0]) &&
+            {(state.adminConsoleMetadata?.isKurl ||
+              state.adminConsoleMetadata?.isEmbeddedCluster) &&
+              Utilities.isInitialAppInstall(state.appsList[0]) &&
               Utilities.isLoggedIn() && (
                 <div className="tw-w-[400px]  tw-bg-[#F9FBFC]">
                   <div className="tw-py-8 tw-pl-8 tw-shadow-[0_1px_0_#c4c8ca]">
