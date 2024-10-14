@@ -76,7 +76,10 @@ const PreflightCheck = ({
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
-      <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]">
+      <div
+        data-testid="preflight-check-area"
+        className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]"
+      >
         <div
           className={`u-maxWidth--full u-marginTop--20 flex-column u-position--relative card-bg ${
             preflightCheck?.showPreflightCheckPending ? "flex1" : ""

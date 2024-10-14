@@ -194,6 +194,9 @@
     "not dead"
   ],
   "jest": {
+    "setupFilesAfterEnv": [
+      "<rootDir>/config/jest-setup.ts"
+    ],
     "testEnvironmentOptions": {
       "customExportConditions": [
         ""

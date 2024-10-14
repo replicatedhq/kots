@@ -11,6 +11,9 @@ type UpgradeInfoParams = {
   slug: string;
 };
 
+// Set the retries to 0 when testing
+const DEFAULT_RETRY = process.env.NODE_ENV === "test" ? 0 : 3;
+
 async function getUpgradeInfo({
   api = process.env.API_ENDPOINT,
   slug,
@@ -39,7 +42,11 @@ async function getUpgradeInfo({
   }
 }
 
-function useGetUpgradeInfo({ slug, api, retry = 3 }: UpgradeInfoParams) {
+function useGetUpgradeInfo({
+  slug,
+  api,
+  retry = DEFAULT_RETRY,
+}: UpgradeInfoParams) {
   return useQuery({
     queryFn: () => getUpgradeInfo({ slug, api }),
     queryKey: ["upgrade-info", slug],

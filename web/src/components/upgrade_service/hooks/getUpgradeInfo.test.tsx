@@ -2,19 +2,20 @@
  * @jest-environment jest-fixed-jsdom
  */
 import { http, HttpResponse } from "msw";
-import { setupServer } from "msw/node";
+import { setupServer, SetupServerApi } from "msw/node";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react-hooks";
 import { useGetUpgradeInfo } from "./getUpgradeInfo";
+import { ReactElement } from "react";
 
 describe("useGetUpgradeInfo", () => {
   const api = "http://test-api";
-  let server;
-  let queryClient;
-  let wrapper;
+  let server: SetupServerApi;
+  let queryClient: QueryClient;
+  let wrapper: ({ children }: { children: ReactElement }) => ReactElement;
 
   afterEach(() => {
-    // Remove any handlers you may have added
+    // Remove any handlers added
     // in individual tests (runtime handlers).
     server.resetHandlers();
     server.close();
@@ -35,7 +36,6 @@ describe("useGetUpgradeInfo", () => {
     const slug = "my-test-app";
     server = setupServer(
       http.get(`${api}/upgrade-service/app/${slug}`, () => {
-        console.log("On handler");
         return HttpResponse.json({
           isConfigurable: true,
           hasPreflight: false,
@@ -46,12 +46,13 @@ describe("useGetUpgradeInfo", () => {
 
     const { result, waitFor } = renderHook(useGetUpgradeInfo, {
       initialProps: { api, slug },
+      // @ts-expect-error: struggling to make the wrapper types comply, ignoring for now
       wrapper,
     });
 
     await waitFor(() => result.current.isSuccess);
-    expect(result.current.data.isConfigurable).toBe.true;
-    expect(result.current.data.hasPreflight).toBe.false;
+    expect(result.current.data.isConfigurable).toStrictEqual(true);
+    expect(result.current.data.hasPreflight).toStrictEqual(false);
   });
 
   it("non JSON response throws an error and is handled by the hook", async () => {
@@ -65,6 +66,7 @@ describe("useGetUpgradeInfo", () => {
 
     const { result, waitFor } = renderHook(useGetUpgradeInfo, {
       initialProps: { api, slug, retry: 0 },
+      // @ts-expect-error: struggling to make the wrapper types comply, ignoring for now
       wrapper,
     });
 
@@ -83,6 +85,7 @@ describe("useGetUpgradeInfo", () => {
 
     const { result, waitFor } = renderHook(useGetUpgradeInfo, {
       initialProps: { api, slug, retry: 0 },
+      // @ts-expect-error: struggling to make the wrapper types comply, ignoring for now
       wrapper,
     });
 
@@ -101,6 +104,7 @@ describe("useGetUpgradeInfo", () => {
 
     const { result, waitFor } = renderHook(useGetUpgradeInfo, {
       initialProps: { api, slug, retry: 0 },
+      // @ts-expect-error: struggling to make the wrapper types comply, ignoring for now
       wrapper,
     });
 

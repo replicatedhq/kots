@@ -218,7 +218,10 @@ const ConfirmAndDeploy = ({
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Confirm and Deploy" showAppSlug />
-      <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]">
+      <div
+        data-testid="deploy-and-confirm-area"
+        className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]"
+      >
         {location.pathname.includes("version-history") && (
           <div className="u-fontWeight--bold link" onClick={() => navigate(-1)}>
             <Icon
