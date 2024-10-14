@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  useState,
-} from "react";
+import React, { createContext, useEffect, useReducer, useState } from "react";
 import { createBrowserHistory } from "history";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -83,6 +77,15 @@ const ThemeContext = createContext({
   getThemeState: (): ThemeState => ({ navbarLogo: null }),
   clearThemeState: () => {},
 });
+
+type NavbarConfigGroup = {
+  name: string;
+  title: string;
+  items: string[];
+  hidden: boolean;
+  hasError: boolean;
+  when: string;
+};
 
 type AppBranding = {
   css?: string[];
@@ -462,8 +465,10 @@ const Root = () => {
   const navigate = useNavigate();
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [navbarConfigGroups, setNavbarConfigGroups] = useState<any>([]);
-  const [activeGroups, setActiveGroups] = useState<any>([]);
+  const [navbarConfigGroups, setNavbarConfigGroups] = useState<
+    NavbarConfigGroup[]
+  >([]);
+  const [activeGroups, setActiveGroups] = useState<string[]>([]);
 
   const getStepProps = (step: number) => {
     if (step < currentStep) {
@@ -498,7 +503,15 @@ const Root = () => {
   };
 
   const NavGroup = React.memo(
-    ({ group, isActive, i }: { group: any; isActive: boolean; i: number }) => {
+    ({
+      group,
+      isActive,
+      i,
+    }: {
+      group: NavbarConfigGroup;
+      isActive: boolean;
+      i: number;
+    }) => {
       return (
         <div
           key={`${i}-${group.name}-${group.title}`}
