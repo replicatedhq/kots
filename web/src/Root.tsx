@@ -549,7 +549,7 @@ const Root = () => {
           {group.items ? (
             <div className="side-nav-items">
               {group.items
-                ?.filter((item) => item.type !== "label")
+                ?.filter((item) => item?.type !== "label")
                 ?.map((item, j) => {
                   const hash = location.hash.slice(1);
                   if (item.hidden || item.when === "false") {
