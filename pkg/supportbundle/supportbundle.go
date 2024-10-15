@@ -315,7 +315,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 
 	defaultAnalyzers, err := getDefaultAnalyzers(isKurl, foundApp.IsAirgap)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get default analyzers")
 	}
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, defaultAnalyzers...)
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, getDefaultDynamicAnalyzers(foundApp)...)

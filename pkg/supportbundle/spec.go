@@ -709,7 +709,7 @@ func deduplicatedAfterCollection(supportBundle *troubleshootv1beta2.SupportBundl
 func getDefaultAnalyzers(isKurl, isAirgap bool) ([]*troubleshootv1beta2.Analyze, error) {
 	defaultSpec, err := defaultspec.Get(isAirgap)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get default spec")
 	}
 
 	defaultAnalyzers := defaultSpec.Spec.Analyzers
