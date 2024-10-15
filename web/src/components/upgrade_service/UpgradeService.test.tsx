@@ -3,18 +3,20 @@
  */
 
 import { http, HttpResponse } from "msw";
-import { setupServer, SetupServerApi } from "msw/node";
+import { setupServer } from "msw/node";
 import { render } from "@testing-library/react";
 import { UpgradeService } from "./UpgradeService";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { getSlug } from "@src/utilities/test-utils";
 
 describe("UpgradeService", () => {
   const api = "http://test-api";
-  const slug = "my-test-app";
 
   it("Loading screen is present", async () => {
     const { getByText } = render(
-      <MemoryRouter initialEntries={[`/upgrade-service/app/${slug}`]}>
+      <MemoryRouter
+        initialEntries={[`/upgrade-service/app/${getSlug(expect)}`]}
+      >
         <Routes>
           <Route path="/upgrade-service/*" element={<UpgradeService />} />
         </Routes>
@@ -25,26 +27,29 @@ describe("UpgradeService", () => {
   });
 
   describe("Initial state request", () => {
-    let server: SetupServerApi;
+    const server = setupServer();
 
     // Override the API url used by the query
     beforeAll(() => {
       process.env.API_ENDPOINT = api;
+      server.listen();
     });
 
+    // Restore the API_ENDPOINT env var and close the interceptor
     afterAll(() => {
       process.env.API_ENDPOINT = undefined;
+      server.close();
     });
 
     afterEach(() => {
       // Remove any handlers added
       // in individual tests (runtime handlers).
       server.resetHandlers();
-      server.close();
     });
 
     it("We get routed to the config section if the initial request succeeds and the app is configurable", async () => {
-      server = setupServer(
+      const slug = getSlug(expect);
+      server.use(
         http.get(`${api}/upgrade-service/app/${slug}`, () => {
           return HttpResponse.json({
             isConfigurable: true,
@@ -52,7 +57,6 @@ describe("UpgradeService", () => {
           });
         })
       );
-      server.listen();
 
       const { findByTestId } = render(
         <MemoryRouter initialEntries={[`/upgrade-service/app/${slug}`]}>
@@ -66,7 +70,8 @@ describe("UpgradeService", () => {
     });
 
     it("We get routed to the preflight section if the initial request succeeds and the app is not configurable", async () => {
-      server = setupServer(
+      const slug = getSlug(expect);
+      server.use(
         http.get(`${api}/upgrade-service/app/${slug}`, () => {
           return HttpResponse.json({
             isConfigurable: false,
@@ -74,7 +79,6 @@ describe("UpgradeService", () => {
           });
         })
       );
-      server.listen();
 
       const { findByTestId, getByText } = render(
         <MemoryRouter initialEntries={[`/upgrade-service/app/${slug}`]}>
@@ -90,7 +94,8 @@ describe("UpgradeService", () => {
     });
 
     it("We get routed to the confirm and deploy section if the initial request succeeds and the app is not configurable and doesn't have preflights", async () => {
-      server = setupServer(
+      const slug = getSlug(expect);
+      server.use(
         http.get(`${api}/upgrade-service/app/${slug}`, () => {
           return HttpResponse.json({
             isConfigurable: false,
@@ -98,7 +103,6 @@ describe("UpgradeService", () => {
           });
         })
       );
-      server.listen();
 
       const { findByTestId, getByText } = render(
         <MemoryRouter initialEntries={[`/upgrade-service/app/${slug}`]}>
@@ -114,12 +118,12 @@ describe("UpgradeService", () => {
     });
 
     it("We show an error if the get info request fails", async () => {
-      server = setupServer(
+      const slug = getSlug(expect);
+      server.use(
         http.get(`${api}/upgrade-service/app/${slug}`, () => {
           return new HttpResponse("Not found", { status: 404 });
         })
       );
-      server.listen();
 
       const { findByText } = render(
         <MemoryRouter initialEntries={[`/upgrade-service/app/${slug}`]}>
