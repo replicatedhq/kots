@@ -1,12 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-async function postPreflightRun({
-  slug,
-}: {
-  apiEndpoint?: string;
-  slug: string;
-  sequence: string;
-}) {
+async function postPreflightRun({ slug }: { slug: string }) {
   const response = await fetch(
     `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/preflight/run`,
     {
@@ -26,7 +20,7 @@ async function postPreflightRun({
   }
 }
 
-function useRerunPreflights({
+function useRunPreflights({
   slug,
   sequence,
 }: {
@@ -36,7 +30,7 @@ function useRerunPreflights({
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => postPreflightRun({ slug, sequence }),
+    mutationFn: () => postPreflightRun({ slug }),
     onError: (err: Error) => {
       console.log(err);
       throw new Error(err.message || "Error running preflight checks");
@@ -49,4 +43,4 @@ function useRerunPreflights({
   });
 }
 
-export { useRerunPreflights };
+export { useRunPreflights };
