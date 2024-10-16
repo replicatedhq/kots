@@ -137,6 +137,10 @@ func (c *Client) ApplyNamespacesInformer(namespaces []string, imagePullSecrets [
 			// we don't fail here...
 			log.Printf("error ensuring image pull secrets for namespace %s: %s", ns, err.Error())
 		}
+		if err := c.ensureEmbeddedClusterCAPresent(ns); err != nil {
+			// we don't fail here...
+			log.Printf("error ensuring cluster ca present for namespace %s: %s", ns, err.Error())
+		}
 	}
 
 	c.imagePullSecrets = imagePullSecrets

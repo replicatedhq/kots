@@ -116,6 +116,63 @@ func (c *Client) ensureImagePullSecretsPresent(namespace string, imagePullSecret
 	return nil
 }
 
+func (c *Client) ensureEmbeddedClusterCAPresent(namespace string) error {
+	if !util.IsEmbeddedCluster() {
+		return nil
+	}
+
+	logger.Debugf("ensuring embedded cluster ca present in namespace %s", namespace)
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	configMapName := os.Getenv("SSL_CERT_CONFIGMAP")
+	sourceConfigMap, err := clientset.CoreV1().ConfigMaps(util.AppNamespace()).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get source configmap")
+		}
+		// This would happen in older EC releases
+		return nil
+	}
+
+	destConfigMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        configMapName,
+			Labels:      sourceConfigMap.DeepCopy().Labels,
+			Annotations: sourceConfigMap.DeepCopy().Annotations,
+			Namespace:   namespace,
+		},
+		Data: sourceConfigMap.DeepCopy().Data,
+	}
+
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get destination configmap")
+		}
+
+		_, err = clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), destConfigMap, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create configmap")
+		}
+		return nil
+	}
+
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Update(context.TODO(), destConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update configmap")
+	}
+
+	return nil
+}
+
 func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) (*deployResult, error) {
 	var deployRes deployResult
 
