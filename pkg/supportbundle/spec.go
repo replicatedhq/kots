@@ -159,10 +159,13 @@ func mergeSupportBundleSpecs(builtBundles map[string]*troubleshootv1beta2.Suppor
 		},
 	}
 
+	mergedBundle.Spec.RunHostCollectorsInPod = true
+
 	for _, builtBundle := range builtBundles {
 		mergedBundle.Spec.Collectors = append(mergedBundle.Spec.Collectors, builtBundle.Spec.Collectors...)
 		mergedBundle.Spec.Analyzers = append(mergedBundle.Spec.Analyzers, builtBundle.Spec.Analyzers...)
 		mergedBundle.Spec.AfterCollection = append(mergedBundle.Spec.AfterCollection, builtBundle.Spec.AfterCollection...)
+		mergedBundle.Spec.HostCollectors = append(mergedBundle.Spec.HostCollectors, builtBundle.Spec.HostCollectors...)
 	}
 
 	mergedBundle = deduplicatedCollectors(mergedBundle)
@@ -465,7 +468,10 @@ func addDiscoveredSpecs(
 
 		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, sbObject.Spec.Collectors...)
 		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, sbObject.Spec.Analyzers...)
+		supportBundle.Spec.HostCollectors = append(supportBundle.Spec.HostCollectors, sbObject.Spec.HostCollectors...)
 	}
+
+	supportBundle.Spec.RunHostCollectorsInPod = true
 
 	// remove duplicated collectors and analyzers if there are multiple support bundle upstream spec
 	supportBundle = deduplicatedCollectors(supportBundle)
