@@ -359,13 +359,13 @@ class SecureAdminConsole extends Component<Props, State> {
               >
                 Log in
                 {appName && appName !== ""
-                  ? ` to ${appName} admin console`
-                  : " to admin console"}
+                  ? ` to ${appName} Admin Console`
+                  : " to Admin Console"}
               </p>
             </div>
             <div className="flex-auto flex-column justifyContent--center">
               <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy break-word">
-                Enter the password to access the {appName} admin console.
+                Enter the password to access the {appName} Admin Console.
               </p>
               <div className="u-marginTop--20 flex-column">
                 {loginErr && (
@@ -386,7 +386,7 @@ class SecureAdminConsole extends Component<Props, State> {
                       }}
                     />
                   </div>
-                  <div className="u-marginTop--20 flex">
+                  <div className="u-marginTop--20 flex justifyContent--center">
                     <button
                       type="submit"
                       className="btn primary"

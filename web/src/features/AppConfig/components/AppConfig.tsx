@@ -29,6 +29,9 @@ type Props = {
   refreshAppData: () => void;
   refetchApps: () => void;
   navigate: ReturnType<typeof useNavigate>;
+  setCurrentStep: (step: number) => void;
+  setNavbarConfigGroups: (ConfigGroup) => void;
+  setActiveGroups: (ConfigGroup) => void;
 };
 
 // This was typed from the implementation of the component so it might be wrong
@@ -126,6 +129,7 @@ class AppConfig extends Component<Props, State> {
   }
 
   componentDidMount() {
+    this.props.setCurrentStep(2);
     const { app, navigate } = this.props;
     if (app && !app.isConfigurable) {
       // app not configurable - redirect
@@ -251,9 +255,15 @@ class AppConfig extends Component<Props, State> {
           changed: false,
           configLoading: false,
         });
+        if (this.props.isEmbeddedCluster) {
+          this.props.setNavbarConfigGroups(data.configGroups);
+        }
         if (this.props.location.hash.length > 0) {
           this.navigateToCurrentHash();
         } else {
+          if (this.props.isEmbeddedCluster) {
+            this.props.setActiveGroups([data.configGroups[0].name]);
+          }
           this.setState({
             activeGroups: [data.configGroups[0].name],
             configLoading: false,
@@ -385,6 +395,9 @@ class AppConfig extends Component<Props, State> {
             configGroups: newGroups,
             showValidationError: hasValidationError,
           });
+          if (this.props.isEmbeddedCluster) {
+            this.props.setNavbarConfigGroups(newGroups);
+          }
           if (result.error) {
             this.setState({
               showConfigError: Boolean(result.error),
@@ -589,6 +602,9 @@ class AppConfig extends Component<Props, State> {
         });
         const changed = this.isConfigChanged(newGroups);
         this.setState({ configGroups: newGroups, changed });
+        if (this.props.isEmbeddedCluster) {
+          this.props.setNavbarConfigGroups({ newGroups, changed });
+        }
       })
       .catch((error) => {
         if (error.name !== "AbortError") {
@@ -758,69 +774,70 @@ class AppConfig extends Component<Props, State> {
     });
 
     return (
-      <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
+      <div className=" u-overflow--auto tw-font-sans tw-max-w-[1024px] tw-mx-auto">
         <KotsPageTitle pageName="Config" showAppSlug />
-        <div className="tw-flex tw-flex-col tw-mx-48">
-          {fromLicenseFlow && app && (
-            <span className="tw-text-lg tw-font-bold tw-mt-5 tw-mb-5 break-word">
-              Configure {app.name}
-            </span>
-          )}
+        <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
+          <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
+            Configure {app.name}
+          </p>
+        </div>
+        <div className="flex flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-4 card-bg">
           <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
-            <div
-              id="configSidebarWrapper"
-              className="config-sidebar-wrapper card-bg clickable"
-            >
-              {configGroups?.map((group, i) => {
-                if (
-                  group.title === "" ||
-                  group.title.length === 0 ||
-                  group.hidden ||
-                  group.when === "false"
-                ) {
-                  return;
-                }
-                return (
-                  <div
-                    key={`${i}-${group.name}-${group.title}`}
-                    className={`side-nav-group ${
-                      this.state.activeGroups.includes(group.name) ||
-                      group.hasError
-                        ? "group-open"
-                        : ""
-                    }`}
-                    id={`config-group-nav-${group.name}`}
-                  >
+            {!this.props.isEmbeddedCluster && (
+              <div
+                id="configSidebarWrapper"
+                className="config-sidebar-wrapper card-bg clickable"
+              >
+                {configGroups?.map((group, i) => {
+                  if (
+                    group.title === "" ||
+                    group.title.length === 0 ||
+                    group.hidden ||
+                    group.when === "false"
+                  ) {
+                    return;
+                  }
+                  return (
                     <div
-                      className="flex alignItems--center"
-                      onClick={() => this.toggleActiveGroups(group.name)}
+                      key={`${i}-${group.name}-${group.title}`}
+                      className={`side-nav-group ${
+                        this.state.activeGroups.includes(group.name) ||
+                        group.hasError
+                          ? "group-open"
+                          : ""
+                      }`}
+                      id={`config-group-nav-${group.name}`}
                     >
-                      <div className="u-lineHeight--normal group-title u-fontSize--normal">
-                        {group.title}
+                      <div
+                        className="flex alignItems--center"
+                        onClick={() => this.toggleActiveGroups(group.name)}
+                      >
+                        <div className="u-lineHeight--normal group-title u-fontSize--normal">
+                          {group.title}
+                        </div>
+                        {/* adding the arrow-down classes, will rotate the icon when clicked */}
+                        <Icon
+                          icon="down-arrow"
+                          className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
+                          size={12}
+                          style={{}}
+                          color={""}
+                          disableFill={false}
+                          removeInlineStyle={false}
+                        />
                       </div>
-                      {/* adding the arrow-down classes, will rotate the icon when clicked */}
-                      <Icon
-                        icon="down-arrow"
-                        className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                        size={12}
-                        style={{}}
-                        color={""}
-                        disableFill={false}
-                        removeInlineStyle={false}
-                      />
-                    </div>
-                    {group.items ? (
-                      <div className="side-nav-items">
-                        {group.items
-                          ?.filter((item) => item.type !== "label")
-                          ?.map((item, j) => {
-                            const hash = this.props.location.hash.slice(1);
-                            if (item.hidden || item.when === "false") {
-                              return;
-                            }
-                            return (
-                              <a
-                                className={`u-fontSize--normal u-lineHeight--normal
+                      {group.items ? (
+                        <div className="side-nav-items">
+                          {group.items
+                            ?.filter((item) => item.type !== "label")
+                            ?.map((item, j) => {
+                              const hash = this.props.location.hash.slice(1);
+                              if (item.hidden || item.when === "false") {
+                                return;
+                              }
+                              return (
+                                <a
+                                  className={`u-fontSize--normal u-lineHeight--normal
                                 ${
                                   item.validationError || item.error
                                     ? "has-error"
@@ -831,28 +848,28 @@ class AppConfig extends Component<Props, State> {
                                     ? "active-item"
                                     : ""
                                 }`}
-                                href={`#${item.name}-group`}
-                                key={`${j}-${item.name}-${item.title}`}
-                              >
-                                {item.title}
-                              </a>
-                            );
-                          })}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="ConfigArea--wrapper">
+                                  href={`#${item.name}-group`}
+                                  key={`${j}-${item.name}-${item.title}`}
+                                >
+                                  {item.title}
+                                </a>
+                              );
+                            })}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div className="ConfigArea--wrapper !tw-pt-0">
               <ConfigInfo
                 app={app}
                 fromLicenseFlow={this.props.fromLicenseFlow}
               />
               <div
                 className={classNames(
-                  "ConfigOuterWrapper card-bg u-padding--15",
-                  { "u-marginTop--20": fromLicenseFlow }
+                  "ConfigOuterWrapper card-bg u-padding--15"
                 )}
               >
                 <div className="ConfigInnerWrapper">
@@ -865,21 +882,21 @@ class AppConfig extends Component<Props, State> {
                     readonly={this.isConfigReadOnly(app)}
                   />
                 </div>
-                <div className="flex alignItems--flexStart">
+                <div className="flex tw-items-center tw-w-full">
                   {savingConfig && (
                     <div className="u-paddingBottom--30">
                       <Loader size="30" />
                     </div>
                   )}
                   {!savingConfig && (
-                    <div className="ConfigError--wrapper flex-column alignItems--flexStart">
+                    <div className="ConfigError--wrapper tw-flex tw-items-center tw-justify-between !tw-w-full">
                       {(showConfigError || this.state.showValidationError) && (
                         <span className="u-textColor--error tw-mb-2 tw-text-xs">
                           {configErrorMessage || validationErrorMessage}
                         </span>
                       )}
                       <button
-                        className="btn primary blue"
+                        className="btn primary blue tw-ml-auto"
                         disabled={
                           showValidationError ||
                           (!changed && !fromLicenseFlow) ||
@@ -896,7 +913,6 @@ class AppConfig extends Component<Props, State> {
             </div>{" "}
           </div>
         </div>
-
         <Modal
           isOpen={showNextStepModal}
           onRequestClose={this.hideNextStepModal}

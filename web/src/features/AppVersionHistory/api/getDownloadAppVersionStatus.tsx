@@ -57,7 +57,7 @@ function useAdminConsoleUpdateStatus({
       console.log(err);
       throw new Error(
         err.message ||
-          "Error while trying to get admin console update status. Please try again."
+          "Error while trying to get Admin Console update status. Please try again."
       );
     },
   });
