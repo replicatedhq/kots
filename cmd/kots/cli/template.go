@@ -86,7 +86,11 @@ func TemplateCmd() *cobra.Command {
 
 				// render all mode, similar to helm template
 				// we will utilize pull command to fetch and render manifests from upstream
-				log.Info("Pulling app from upstream and rendering templates...")
+				if localPath != "" {
+					log.Info("Rendering templates from local path...")
+				} else {
+					log.Info("Pulling app from upstream and rendering templates...")
+				}
 				err := pullAndRender(license.Spec.AppSlug, licenseFile, configFile, localPath)
 
 				if err != nil {
