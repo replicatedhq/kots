@@ -89,6 +89,7 @@ func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds
 		}
 		for _, item := range group.Items {
 			if IsRequiredItem(item) && IsUnsetItem(item) {
+				log.Info("config item %q is required but not set", item.Name)
 				return true, nil
 			}
 		}
