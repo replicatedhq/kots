@@ -166,11 +166,14 @@ func mergeSupportBundleSpecs(builtBundles map[string]*troubleshootv1beta2.Suppor
 		mergedBundle.Spec.Analyzers = append(mergedBundle.Spec.Analyzers, builtBundle.Spec.Analyzers...)
 		mergedBundle.Spec.AfterCollection = append(mergedBundle.Spec.AfterCollection, builtBundle.Spec.AfterCollection...)
 		mergedBundle.Spec.HostCollectors = append(mergedBundle.Spec.HostCollectors, builtBundle.Spec.HostCollectors...)
+		mergedBundle.Spec.HostAnalyzers = append(mergedBundle.Spec.HostAnalyzers, builtBundle.Spec.HostAnalyzers...)
 	}
 
-	mergedBundle = deduplicatedCollectors(mergedBundle)
-	mergedBundle = deduplicatedAnalyzers(mergedBundle)
-	mergedBundle = deduplicatedAfterCollection(mergedBundle)
+	mergedBundle.Spec.Collectors = kotsutil.Dedup(mergedBundle.Spec.Collectors)
+	mergedBundle.Spec.Analyzers = kotsutil.Dedup(mergedBundle.Spec.Analyzers)
+	mergedBundle.Spec.AfterCollection = kotsutil.Dedup(mergedBundle.Spec.AfterCollection)
+	mergedBundle.Spec.HostCollectors = kotsutil.Dedup(mergedBundle.Spec.HostCollectors)
+	mergedBundle.Spec.HostAnalyzers = kotsutil.Dedup(mergedBundle.Spec.HostAnalyzers)
 
 	return mergedBundle
 }
