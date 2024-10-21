@@ -163,11 +163,15 @@ func mergeSupportBundleSpecs(builtBundles map[string]*troubleshootv1beta2.Suppor
 		mergedBundle.Spec.Collectors = append(mergedBundle.Spec.Collectors, builtBundle.Spec.Collectors...)
 		mergedBundle.Spec.Analyzers = append(mergedBundle.Spec.Analyzers, builtBundle.Spec.Analyzers...)
 		mergedBundle.Spec.AfterCollection = append(mergedBundle.Spec.AfterCollection, builtBundle.Spec.AfterCollection...)
+		mergedBundle.Spec.HostCollectors = append(mergedBundle.Spec.HostCollectors, builtBundle.Spec.HostCollectors...)
+		mergedBundle.Spec.HostAnalyzers = append(mergedBundle.Spec.HostAnalyzers, builtBundle.Spec.HostAnalyzers...)
 	}
 
-	mergedBundle = deduplicatedCollectors(mergedBundle)
-	mergedBundle = deduplicatedAnalyzers(mergedBundle)
-	mergedBundle = deduplicatedAfterCollection(mergedBundle)
+	mergedBundle.Spec.Collectors = kotsutil.Dedup(mergedBundle.Spec.Collectors)
+	mergedBundle.Spec.Analyzers = kotsutil.Dedup(mergedBundle.Spec.Analyzers)
+	mergedBundle.Spec.AfterCollection = kotsutil.Dedup(mergedBundle.Spec.AfterCollection)
+	mergedBundle.Spec.HostCollectors = kotsutil.Dedup(mergedBundle.Spec.HostCollectors)
+	mergedBundle.Spec.HostAnalyzers = kotsutil.Dedup(mergedBundle.Spec.HostAnalyzers)
 
 	return mergedBundle
 }
@@ -465,11 +469,15 @@ func addDiscoveredSpecs(
 
 		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, sbObject.Spec.Collectors...)
 		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, sbObject.Spec.Analyzers...)
+		supportBundle.Spec.HostCollectors = append(supportBundle.Spec.HostCollectors, sbObject.Spec.HostCollectors...)
+		supportBundle.Spec.HostAnalyzers = append(supportBundle.Spec.HostAnalyzers, sbObject.Spec.HostAnalyzers...)
 	}
 
-	// remove duplicated collectors and analyzers if there are multiple support bundle upstream spec
-	supportBundle = deduplicatedCollectors(supportBundle)
-	supportBundle = deduplicatedAnalyzers(supportBundle)
+	// remove duplicated specs if there are multiple support bundle upstream spec
+	supportBundle.Spec.Collectors = kotsutil.Dedup(supportBundle.Spec.Collectors)
+	supportBundle.Spec.Analyzers = kotsutil.Dedup(supportBundle.Spec.Analyzers)
+	supportBundle.Spec.HostCollectors = kotsutil.Dedup(supportBundle.Spec.HostCollectors)
+	supportBundle.Spec.HostAnalyzers = kotsutil.Dedup(supportBundle.Spec.HostAnalyzers)
 
 	return supportBundle
 }
