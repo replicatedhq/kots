@@ -159,8 +159,6 @@ func mergeSupportBundleSpecs(builtBundles map[string]*troubleshootv1beta2.Suppor
 		},
 	}
 
-	mergedBundle.Spec.RunHostCollectorsInPod = true
-
 	for _, builtBundle := range builtBundles {
 		mergedBundle.Spec.Collectors = append(mergedBundle.Spec.Collectors, builtBundle.Spec.Collectors...)
 		mergedBundle.Spec.Analyzers = append(mergedBundle.Spec.Analyzers, builtBundle.Spec.Analyzers...)
@@ -472,13 +470,14 @@ func addDiscoveredSpecs(
 		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, sbObject.Spec.Collectors...)
 		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, sbObject.Spec.Analyzers...)
 		supportBundle.Spec.HostCollectors = append(supportBundle.Spec.HostCollectors, sbObject.Spec.HostCollectors...)
+		supportBundle.Spec.HostAnalyzers = append(supportBundle.Spec.HostAnalyzers, sbObject.Spec.HostAnalyzers...)
 	}
 
-	supportBundle.Spec.RunHostCollectorsInPod = true
-
-	// remove duplicated collectors and analyzers if there are multiple support bundle upstream spec
-	supportBundle = deduplicatedCollectors(supportBundle)
-	supportBundle = deduplicatedAnalyzers(supportBundle)
+	// remove duplicated specs if there are multiple support bundle upstream spec
+	supportBundle.Spec.Collectors = kotsutil.Dedup(supportBundle.Spec.Collectors)
+	supportBundle.Spec.Analyzers = kotsutil.Dedup(supportBundle.Spec.Analyzers)
+	supportBundle.Spec.HostCollectors = kotsutil.Dedup(supportBundle.Spec.HostCollectors)
+	supportBundle.Spec.HostAnalyzers = kotsutil.Dedup(supportBundle.Spec.HostAnalyzers)
 
 	return supportBundle
 }
