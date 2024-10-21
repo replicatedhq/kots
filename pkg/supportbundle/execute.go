@@ -175,6 +175,7 @@ func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressCha
 	}
 
 	logger.Infof("Executing Collection go routine for support bundle ID: %s", bundle.ID)
+	logger.Infof("Always run host collectors in pod: %t", opts.RunHostCollectorsInPod)
 
 	go func() {
 		defer close(progressChan)
