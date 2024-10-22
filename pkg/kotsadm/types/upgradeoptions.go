@@ -9,7 +9,7 @@ type UpgradeOptions struct {
 	ForceUpgradeKurl      bool
 	Timeout               time.Duration
 	EnsureRBAC            bool
-	StrictSecurityContext bool
+	StrictSecurityContext *bool
 	SimultaneousUploads   int
 	IncludeMinio          bool
 
