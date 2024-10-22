@@ -3,13 +3,15 @@ package kotsadm
 import (
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotsadm "github.com/replicatedhq/kots/pkg/kotsadm/objects"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"gopkg.in/go-playground/assert.v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/utils/ptr"
 )
 
 func Test_getHTTPProxySettings(t *testing.T) {
@@ -35,20 +37,11 @@ func Test_getHTTPProxySettings(t *testing.T) {
 								Containers: []corev1.Container{
 									{
 										Name: "kotsadm",
-										Env: []corev1.EnvVar{
-											{
-												Name:  "HTTP_PROXY",
-												Value: "http://proxy.com",
-											},
-											{
-												Name:  "HTTPS_PROXY",
-												Value: "https://proxy.com",
-											},
-											{
-												Name:  "NO_PROXY",
-												Value: "localhost",
-											},
-										},
+										Env: kotsadm.GetProxyEnv(types.DeployOptions{
+											HTTPProxyEnvValue:  "http://proxy.com",
+											HTTPSProxyEnvValue: "https://proxy.com",
+											NoProxyEnvValue:    "1.2.3.4",
+										}),
 									},
 								},
 							},
@@ -58,7 +51,7 @@ func Test_getHTTPProxySettings(t *testing.T) {
 			},
 			wantHttpProxy:  "http://proxy.com",
 			wantHttpsProxy: "https://proxy.com",
-			wantNoProxy:    "localhost",
+			wantNoProxy:    "1.2.3.4,kotsadm-rqlite,kotsadm-postgres,kotsadm-minio,kotsadm-api-node",
 			wantErr:        false,
 		},
 		{
@@ -75,20 +68,11 @@ func Test_getHTTPProxySettings(t *testing.T) {
 								Containers: []corev1.Container{
 									{
 										Name: "kotsadm",
-										Env: []corev1.EnvVar{
-											{
-												Name:  "HTTP_PROXY",
-												Value: "http://proxy.com",
-											},
-											{
-												Name:  "HTTPS_PROXY",
-												Value: "https://proxy.com",
-											},
-											{
-												Name:  "NO_PROXY",
-												Value: "localhost",
-											},
-										},
+										Env: kotsadm.GetProxyEnv(types.DeployOptions{
+											HTTPProxyEnvValue:  "http://proxy.com",
+											HTTPSProxyEnvValue: "https://proxy.com",
+											NoProxyEnvValue:    "1.2.3.4",
+										}),
 									},
 								},
 							},
@@ -98,7 +82,7 @@ func Test_getHTTPProxySettings(t *testing.T) {
 			},
 			wantHttpProxy:  "http://proxy.com",
 			wantHttpsProxy: "https://proxy.com",
-			wantNoProxy:    "localhost",
+			wantNoProxy:    "1.2.3.4,kotsadm-rqlite,kotsadm-postgres,kotsadm-minio,kotsadm-api-node",
 			wantErr:        false,
 		},
 	}
@@ -142,10 +126,7 @@ func Test_hasStrictSecurityContext(t *testing.T) {
 										Name: "kotsadm",
 									},
 								},
-								SecurityContext: &corev1.PodSecurityContext{
-									RunAsUser:    ptr.To(int64(1001)),
-									RunAsNonRoot: ptr.To(true),
-								},
+								SecurityContext: k8sutil.SecurePodContext(1001, 1001, true),
 							},
 						},
 					},
@@ -170,9 +151,7 @@ func Test_hasStrictSecurityContext(t *testing.T) {
 										Name: "kotsadm",
 									},
 								},
-								SecurityContext: &corev1.PodSecurityContext{
-									RunAsUser: ptr.To(int64(1001)),
-								},
+								SecurityContext: k8sutil.SecurePodContext(1001, 1001, false),
 							},
 						},
 					},
