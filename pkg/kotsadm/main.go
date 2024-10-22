@@ -124,7 +124,10 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 	deployOptions.EnsureRBAC = upgradeOptions.EnsureRBAC
 	deployOptions.SimultaneousUploads = upgradeOptions.SimultaneousUploads
 	deployOptions.IncludeMinio = upgradeOptions.IncludeMinio
-	deployOptions.StrictSecurityContext = upgradeOptions.StrictSecurityContext
+	// Override with value set by user
+	if upgradeOptions.StrictSecurityContext != nil {
+		deployOptions.StrictSecurityContext = *upgradeOptions.StrictSecurityContext
+	}
 
 	if deployOptions.IncludeMinio {
 		deployOptions.MigrateToMinioXl, deployOptions.CurrentMinioImage, err = IsMinioXlMigrationNeeded(clientset, deployOptions.Namespace)
@@ -1117,6 +1120,20 @@ func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 	if ingressConfig != nil {
 		deployOptions.IngressConfig = *ingressConfig
 	}
+
+	httpProxy, httpsProxy, noProxy, err := getHTTPProxySettings(deployOptions.Namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get http proxy settings")
+	}
+	deployOptions.HTTPProxyEnvValue = httpProxy
+	deployOptions.HTTPSProxyEnvValue = httpsProxy
+	deployOptions.NoProxyEnvValue = noProxy
+
+	strictSecurityContext, err := hasStrictSecurityContext(deployOptions.Namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if strict security context is enabled")
+	}
+	deployOptions.StrictSecurityContext = strictSecurityContext
 
 	return &deployOptions, nil
 }
