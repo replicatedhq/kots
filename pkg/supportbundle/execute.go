@@ -70,6 +70,7 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 
 					return
 				}
+				fmt.Println(msg)
 
 				switch val := msg.(type) {
 				case error:
