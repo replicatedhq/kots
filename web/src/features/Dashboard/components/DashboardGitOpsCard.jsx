@@ -96,7 +96,7 @@ export default function DashboardGitOpsCard(props) {
           >
             Config
           </Link>{" "}
-          page in the admin console.
+          page in the Admin Console.
         </p>
       </div>
       <div className="u-marginTop--10">

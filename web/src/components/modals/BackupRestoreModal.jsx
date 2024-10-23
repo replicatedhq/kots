@@ -64,7 +64,7 @@ export default function BackupRestoreModal(props) {
 
           <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
             Select the type of backup you want to perform. A full restore of the
-            admin console, your application and its metadata, application config
+            Admin Console, your application and its metadata, application config
             and your database or a partial restore of your application and its
             metadata. All data not backed up will be lost and replaced with data
             in this backup.
@@ -103,7 +103,7 @@ export default function BackupRestoreModal(props) {
             Will this be a full or partial restore?{" "}
           </p>
           <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
-            You can do a full restore of the application, admin console, and
+            You can do a full restore of the application, Admin Console, and
             databases or you can do a partial restore of just your application
             and its metadata.
           </p>
@@ -127,7 +127,7 @@ export default function BackupRestoreModal(props) {
                 </p>
                 <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
                   {" "}
-                  Admin console &amp; application{" "}
+                  Admin Console &amp; application{" "}
                 </p>
               </div>
             </div>
@@ -169,11 +169,11 @@ export default function BackupRestoreModal(props) {
               <div className="flex flex-column u-marginLeft--10">
                 <p className="u-fontSize--normal u-fontWeight--medium u-textColor--primary u-lineHeight--normal">
                   {" "}
-                  Restore admin console{" "}
+                  Restore Admin Console{" "}
                 </p>
                 <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
                   {" "}
-                  Only restores the admin console
+                  Only restores the Admin Console
                 </p>
               </div>
             </div>

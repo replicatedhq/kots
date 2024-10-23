@@ -273,8 +273,13 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 		if err != nil {
 			log.Printf("No kotsadm application metadata: %v", err) // continue
 		}
+
 		appIcon := template.URL(app.Spec.Icon)
-		c.HTML(http.StatusOK, "insecure.html", gin.H{
+		htmlPage := "welcome.html"
+		if c.Request.URL.Path == "/insecure" {
+			htmlPage = "insecure.html"
+		}
+		c.HTML(http.StatusOK, htmlPage, gin.H{
 			"fingerprintSHA1":   fingerprint,
 			"AppIcon":           appIcon,
 			"AppTitle":          app.Spec.Title,
@@ -317,9 +322,11 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 		}
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "tls.html", gin.H{
-			"Secret":   tlsSecretName,
-			"AppIcon":  appIcon,
-			"AppTitle": app.Spec.Title,
+			"Secret":            tlsSecretName,
+			"AppIcon":           appIcon,
+			"AppTitle":          app.Spec.Title,
+			"App":               app.Spec,
+			"IsEmbeddedCluster": isEmbeddedCluster(),
 		})
 	})
 

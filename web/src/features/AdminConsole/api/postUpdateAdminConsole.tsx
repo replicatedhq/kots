@@ -23,7 +23,7 @@ async function postUpdateAdminConsole({
 
   if (!response.ok) {
     throw new Error(
-      `Error while trying to update admin console: ${response.status}`
+      `Error while trying to update Admin Console: ${response.status}`
     );
   }
 
@@ -32,11 +32,11 @@ async function postUpdateAdminConsole({
   } catch (err) {
     if (err instanceof Error) {
       throw new Error(
-        `Error while trying to unmarshal update admin console response: ${err.message}`
+        `Error while trying to unmarshal update Admin Console response: ${err.message}`
       );
     }
     throw new Error(
-      `Error while trying to unmarshal update admin console response`
+      `Error while trying to unmarshal update Admin Console response`
     );
   }
 }
@@ -59,7 +59,7 @@ function useUpdateAdminConsole({
       console.log(err);
       throw new Error(
         err.message ||
-          "Error while trying to update admin console. Please try again."
+          "Error while trying to update Admin Console. Please try again."
       );
     },
     onSuccess: () => {

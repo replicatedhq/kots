@@ -318,7 +318,7 @@ const GenerateSupportBundleModal = ({
                   <p className="u-paddingBottom--10 u-textColor--secondary u-fontSize--normal">
                     Run the following commands to generate a support bundle from
                     the CLI. You can then upload a support bundle so that it
-                    appears in the admin console.
+                    appears in the Admin Console.
                   </p>
                   <CodeSnippet
                     language="bash"
@@ -356,7 +356,7 @@ const GenerateSupportBundleModal = ({
                   click here
                 </a>{" "}
                 to get a command to manually generate a support bundle. This is
-                useful if the admin console is inaccessible.
+                useful if the Admin Console is inaccessible.
               </span>
             </div>
           )
