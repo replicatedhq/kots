@@ -127,7 +127,7 @@ export default function BackupRestoreModal(props) {
                 </p>
                 <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
                   {" "}
-                  Admin console &amp; application{" "}
+                  Admin Console &amp; application{" "}
                 </p>
               </div>
             </div>
