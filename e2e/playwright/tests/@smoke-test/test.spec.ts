@@ -294,7 +294,7 @@ test("smoke test", async ({ page }) => {
     .click();
   await expect(page.getByLabel("Modal")).toContainText("Restore from backup");
   await expect(page.getByLabel("Modal")).toContainText(
-    "Admin console & application",
+    "Admin Console & application",
   );
   await expect(page.getByLabel("Modal")).toContainText(
     "Application & metadata only",
@@ -328,7 +328,7 @@ test("smoke test", async ({ page }) => {
     timeout: 30000,
   });
   await expect(page.locator("#app")).toContainText(
-    "Enter the password to access the App Name admin console.",
+    "Enter the password to access the App Name Admin Console.",
   );
   await expect(page.getByRole("button")).toContainText("Log in");
 });
