@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -72,9 +71,6 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 
 					return
 				}
-
-				fmt.Println(msg)
-				fmt.Println(reflect.TypeOf(msg))
 
 				switch val := msg.(type) {
 				case error:
