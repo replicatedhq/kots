@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -26,10 +27,11 @@ type supportBundleProgressUpdate struct {
 type supportBundleProgressUpdateType string
 
 const (
-	BUNDLE_PROGRESS_ERROR     supportBundleProgressUpdateType = "error"
-	BUNDLE_PROGRESS_COLLECTOR supportBundleProgressUpdateType = "collector"
-	BUNDLE_PROGRESS_FILETREE  supportBundleProgressUpdateType = "filetree"
-	BUNDLE_PROGRESS_UPLOADED  supportBundleProgressUpdateType = "uploaded"
+	BUNDLE_PROGRESS_ERROR          supportBundleProgressUpdateType = "error"
+	BUNDLE_PROGRESS_COLLECTOR      supportBundleProgressUpdateType = "collector"
+	BUNDLE_PROGRESS_HOST_COLLECTOR supportBundleProgressUpdateType = "collect.CollectProgress"
+	BUNDLE_PROGRESS_FILETREE       supportBundleProgressUpdateType = "filetree"
+	BUNDLE_PROGRESS_UPLOADED       supportBundleProgressUpdateType = "uploaded"
 )
 
 // supportBundleIsComplete checks the current progress against the declared totals in
@@ -70,7 +72,9 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 
 					return
 				}
+
 				fmt.Println(msg)
+				fmt.Println(reflect.TypeOf(msg))
 
 				switch val := msg.(type) {
 				case error:
@@ -79,6 +83,7 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 
 				case supportBundleProgressUpdate:
 					// Collect events are saved separately since there are many
+
 					if val.Type == BUNDLE_PROGRESS_COLLECTOR {
 						logger.Debugf("Received collector progress update %d, %s, for support bundle ID: %s", collectorsComplete, val.Message, bundle.ID)
 
@@ -88,6 +93,18 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 						bundle.Progress.Message = val.Message
 						if err := store.GetStore().UpdateSupportBundle(bundle); err != nil {
 							logger.Error(errors.Wrap(err, "could not update collector counter for bundle"))
+							return
+						}
+
+						// Host collectors are saved separately since there are many
+					} else if val.Type == BUNDLE_PROGRESS_HOST_COLLECTOR {
+						logger.Debugf("Received host collector progress update %d, %s, for support bundle ID: %s", collectorsComplete, val.Message, bundle.ID)
+
+						bundle.Progress.CollectorsCompleted = collectorsComplete
+						bundle.Progress.Message = val.Message
+
+						if err := store.GetStore().UpdateSupportBundle(bundle); err != nil {
+							logger.Error(errors.Wrap(err, "could not update progress for bundle"))
 							return
 						}
 
@@ -143,6 +160,10 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 	}()
 
 	return progressChan
+}
+
+func typeof(msg interface{}) {
+	panic("unimplemented")
 }
 
 // executeSupportBundleCollectRoutine creates a goroutine to collect the support bundle, upload, analyze and
