@@ -167,11 +167,11 @@ func mergeSupportBundleSpecs(builtBundles map[string]*troubleshootv1beta2.Suppor
 		mergedBundle.Spec.HostAnalyzers = append(mergedBundle.Spec.HostAnalyzers, builtBundle.Spec.HostAnalyzers...)
 	}
 
-	mergedBundle.Spec.Collectors = kotsutil.Dedup(mergedBundle.Spec.Collectors)
-	mergedBundle.Spec.Analyzers = kotsutil.Dedup(mergedBundle.Spec.Analyzers)
-	mergedBundle.Spec.AfterCollection = kotsutil.Dedup(mergedBundle.Spec.AfterCollection)
-	mergedBundle.Spec.HostCollectors = kotsutil.Dedup(mergedBundle.Spec.HostCollectors)
-	mergedBundle.Spec.HostAnalyzers = kotsutil.Dedup(mergedBundle.Spec.HostAnalyzers)
+	mergedBundle.Spec.Collectors = Dedup(mergedBundle.Spec.Collectors)
+	mergedBundle.Spec.Analyzers = Dedup(mergedBundle.Spec.Analyzers)
+	mergedBundle.Spec.AfterCollection = Dedup(mergedBundle.Spec.AfterCollection)
+	mergedBundle.Spec.HostCollectors = Dedup(mergedBundle.Spec.HostCollectors)
+	mergedBundle.Spec.HostAnalyzers = Dedup(mergedBundle.Spec.HostAnalyzers)
 
 	return mergedBundle
 }
@@ -474,10 +474,10 @@ func addDiscoveredSpecs(
 	}
 
 	// remove duplicated specs if there are multiple support bundle upstream spec
-	supportBundle.Spec.Collectors = kotsutil.Dedup(supportBundle.Spec.Collectors)
-	supportBundle.Spec.Analyzers = kotsutil.Dedup(supportBundle.Spec.Analyzers)
-	supportBundle.Spec.HostCollectors = kotsutil.Dedup(supportBundle.Spec.HostCollectors)
-	supportBundle.Spec.HostAnalyzers = kotsutil.Dedup(supportBundle.Spec.HostAnalyzers)
+	supportBundle.Spec.Collectors = Dedup(supportBundle.Spec.Collectors)
+	supportBundle.Spec.Analyzers = Dedup(supportBundle.Spec.Analyzers)
+	supportBundle.Spec.HostCollectors = Dedup(supportBundle.Spec.HostCollectors)
+	supportBundle.Spec.HostAnalyzers = Dedup(supportBundle.Spec.HostAnalyzers)
 
 	return supportBundle
 }
@@ -1256,4 +1256,27 @@ func removeKurlAnalyzers(analyzers []*troubleshootv1beta2.Analyze) []*troublesho
 	}
 
 	return analyze
+}
+
+func Dedup[T any](objs []T) []T {
+	seen := make(map[string]bool)
+	out := []T{}
+
+	if len(objs) == 0 {
+		return objs
+	}
+
+	for _, o := range objs {
+		data, err := json.Marshal(o)
+		if err != nil {
+			out = append(out, o)
+			continue
+		}
+		key := string(data)
+		if _, ok := seen[key]; !ok {
+			out = append(out, o)
+			seen[key] = true
+		}
+	}
+	return out
 }

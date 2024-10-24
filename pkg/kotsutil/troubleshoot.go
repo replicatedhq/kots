@@ -51,26 +51,3 @@ func LoadTSKindsFromPath(dir string) (*troubleshootloader.TroubleshootKinds, err
 	}
 	return tsKinds, nil
 }
-
-func Dedup[T any](objs []T) []T {
-	seen := make(map[string]bool)
-	out := []T{}
-
-	if len(objs) == 0 {
-		return objs
-	}
-
-	for _, o := range objs {
-		data, err := json.Marshal(o)
-		if err != nil {
-			out = append(out, o)
-			continue
-		}
-		key := string(data)
-		if _, ok := seen[key]; !ok {
-			out = append(out, o)
-			seen[key] = true
-		}
-	}
-	return out
-}
