@@ -7,7 +7,7 @@ LVP_TAG ?= v0.6.7
 PACT_PUBLISH_CONTRACT ?= false
 
 OS ?= linux
-ARCH ?= $(shell go env GOARCH) 
+ARCH ?= $(shell go env GOARCH)
 
 .PHONY: test
 test:
