@@ -2,7 +2,6 @@ package kotsutil
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"path/filepath"
 
