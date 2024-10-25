@@ -1352,6 +1352,8 @@ github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDH
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
 github.com/replicatedhq/troubleshoot v0.107.2 h1:KPMQR+inoNACvZE5AV/6teK4jcM+lFlH0vGZANmIU4g=
 github.com/replicatedhq/troubleshoot v0.107.2/go.mod h1:yzIVQsTu6bK+aw34SdWWUfh1UBhVwkDm6q1pVyoN6do=
+github.com/replicatedhq/troubleshoot v0.107.4 h1:w6sHGU/Xq5Or7tVNTfMaGZTrqDp2IR7YEWEjooFBDo8=
+github.com/replicatedhq/troubleshoot v0.107.4/go.mod h1:6mZzcO/EWVBNXVnFdSHfPaoTnjcQdV3sq61NkBF60YE=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
