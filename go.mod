@@ -52,7 +52,7 @@ require (
 	github.com/replicatedhq/embedded-cluster/kinds v1.15.0
 	github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95
 	github.com/replicatedhq/kurlkinds v1.5.0
-	github.com/replicatedhq/troubleshoot v0.107.2
+	github.com/replicatedhq/troubleshoot v0.107.4
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
