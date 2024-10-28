@@ -280,7 +280,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to get downstream version status")
 	}
 
-	if status == storetypes.VersionPendingClusterManagement {
+	if status == storetypes.VersionPendingClusterManagement && configFile == "" {
 		// if pending cluster management, we don't want to deploy the app
 		return nil
 	}

@@ -166,6 +166,7 @@ func UpdateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 	return values
 }
 
+// this is where config values that are passed to the install command are read from
 func ReadConfigValuesFromInClusterSecret() (string, error) {
 	log := logger.NewCLILogger(os.Stdout)
 
