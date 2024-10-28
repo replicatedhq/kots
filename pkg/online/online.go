@@ -220,7 +220,8 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	}
 
 	if status == storetypes.VersionPendingClusterManagement && configFile == "" {
-		// if pending cluster management, we don't want to deploy the app
+		// if pending cluster management, this is embedded cluster and we don't want to deploy the app before the user has added nodes
+		// if the config file is set, we assume that the user is OK with deploying the app on a single node
 		return kotsKinds, nil
 	}
 
