@@ -155,7 +155,7 @@ func CreateSupportBundleDependencies(app *apptypes.App, sequence int64, opts typ
 		URI:        GetSpecURI(app.GetSlug()),
 		RedactURIs: redactURIs,
 		Progress: types.SupportBundleProgress{
-			CollectorCount: len(supportBundle.Spec.Collectors),
+			CollectorCount: len(supportBundle.Spec.Collectors) + len(supportBundle.Spec.HostCollectors),
 		},
 	}
 
