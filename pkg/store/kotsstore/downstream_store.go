@@ -916,9 +916,10 @@ func isAppVersionDeployable(s store.Store, appID string, version *downstreamtype
 		}
 	}
 
+	// This is a past version
 	if versionIndex > deployedVersionIndex {
-		// this is a past version
-		// rollback support is based off of the latest downloaded version
+		// Rollback support is based off of the latest downloaded version so that a vendor can
+		// toggle on support without requiring the end user to deploy a new version.
 		for _, v := range appVersions.AllVersions {
 			if v.Status == types.VersionPendingDownload {
 				continue
