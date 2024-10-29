@@ -14,6 +14,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
@@ -27,6 +28,8 @@ import (
 var (
 	ErrNotFound = errors.New("not found")
 )
+
+var _ store.Store = &KOTSStore{}
 
 type KOTSStore struct {
 	sessionSecret     *corev1.Secret
