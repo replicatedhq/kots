@@ -439,10 +439,7 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 				return nil, errors.Wrapf(err, "failed to get embedded cluster config for version %d", v.Sequence)
 			}
 		}
-		v.IsDeployable, v.NonDeployableCause, err = isAppVersionDeployable(appID, v, result, license.Spec.IsSemverRequired, currentECConfig, newECConfig)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to check if version %s is deployable", v.VersionLabel)
-		}
+		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(appID, v, result, license.Spec.IsSemverRequired, currentECConfig, newECConfig)
 	}
 
 	if currentVersion == nil {
@@ -707,10 +704,7 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 					return errors.Wrapf(err, "failed to get embedded cluster config for version %d", v.Sequence)
 				}
 			}
-			v.IsDeployable, v.NonDeployableCause, err = isAppVersionDeployable(appID, v, allVersions, license.Spec.IsSemverRequired, currentECConfig, newECConfig)
-			if err != nil {
-				return errors.Wrapf(err, "failed to check if version %s is deployable", v.VersionLabel)
-			}
+			v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(appID, v, allVersions, license.Spec.IsSemverRequired, currentECConfig, newECConfig)
 		}
 	}
 
@@ -903,28 +897,28 @@ func isSameUpstreamRelease(v1 *downstreamtypes.DownstreamVersion, v2 *downstream
 func isAppVersionDeployable(
 	appID string, version *downstreamtypes.DownstreamVersion, appVersions *downstreamtypes.DownstreamVersions,
 	isSemverRequired bool, currentECConfig []byte, versionECConfig []byte,
-) (bool, string, error) {
+) (bool, string) {
 	if version.HasFailingStrictPreflights {
-		return false, "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run.", nil
+		return false, "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run."
 	}
 
 	if version.Status == types.VersionPendingDownload {
-		return false, "Version is pending download.", nil
+		return false, "Version is pending download."
 	}
 
 	if version.Status == types.VersionPendingConfig {
-		return false, "Version is pending configuration.", nil
+		return false, "Version is pending configuration."
 	}
 
 	if appVersions.CurrentVersion == nil {
 		// no version has been deployed yet, treat as an initial install where any version can be deployed at first.
-		return true, "", nil
+		return true, ""
 	}
 
 	if version.Sequence == appVersions.CurrentVersion.Sequence {
 		// version is currently deployed, so previous required versions should've already been deployed.
 		// also, we shouldn't block re-deploying if a previous release is edited later by the vendor to be required.
-		return true, "", nil
+		return true, ""
 	}
 
 	// rollback support is determined across all versions from all channels
@@ -955,7 +949,7 @@ func isAppVersionDeployable(
 				continue
 			}
 			if v.KOTSKinds == nil || !v.KOTSKinds.KotsApplication.Spec.AllowRollback {
-				return false, "Rollback is not supported.", nil
+				return false, "Rollback is not supported."
 			}
 			break
 		}
@@ -965,7 +959,7 @@ func isAppVersionDeployable(
 			// deployed version to check if it has changed. If it has, then we do not allow
 			// rollbacks.
 			if !bytes.Equal(currentECConfig, versionECConfig) {
-				return false, "Rollback is not supported, cluster configuration has changed.", nil
+				return false, "Rollback is not supported, cluster configuration has changed."
 			}
 		}
 	}
@@ -1001,7 +995,7 @@ func isAppVersionDeployable(
 
 	if deployedVersionIndex == -1 {
 		// the deployed version is from a different channel
-		return true, "", nil
+		return true, ""
 	}
 
 	// find required versions between the deployed version and the desired version
@@ -1019,7 +1013,7 @@ ALL_VERSIONS_LOOP:
 			// this is a past version
 			// >= because if the deployed version is required, rolling back isn't allowed
 			if i >= deployedVersionIndex && i < versionIndex {
-				return false, "One or more non-reversible versions have been deployed since this version.", nil
+				return false, "One or more non-reversible versions have been deployed since this version."
 			}
 			continue
 		}
@@ -1047,12 +1041,12 @@ ALL_VERSIONS_LOOP:
 		}
 		versionLabelsStr := strings.Join(versionLabels, ", ")
 		if len(requiredVersions) == 1 {
-			return false, fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr), nil
+			return false, fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr)
 		}
-		return false, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr), nil
+		return false, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
 	}
 
-	return true, "", nil
+	return true, ""
 }
 
 func (s *KOTSStore) getRawEmbeddedClusterConfigForVersion(appID string, sequence int64) ([]byte, error) {
