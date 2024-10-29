@@ -1,14 +1,15 @@
 package kotsstore
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/blang/semver"
+	"github.com/golang/mock/gomock"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kots/pkg/store/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
@@ -253,11 +254,10 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		version              *downstreamtypes.DownstreamVersion
 		appVersions          *downstreamtypes.DownstreamVersions
 		isSemverRequired     bool
-		currentECConfig      *embeddedclusterv1beta1.Config
-		versionECConfig      *embeddedclusterv1beta1.Config
-		setup                func(t *testing.T)
+		setup                func(t *testing.T, mockStore *mock_store.MockStore)
 		expectedIsDeployable bool
 		expectedCause        string
+		wantErr              bool
 	}{
 		{
 			name: "failing strict preflights",
@@ -3630,8 +3630,19 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		/* ---- Embedded cluster config tests start here ---- */
 		{
 			name: "embedded cluster config change should not allow rollbacks",
-			setup: func(t *testing.T) {
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
+
+				mockStore.EXPECT().GetEmbeddedClusterConfigForVersion("APPID", int64(0)).Return(&embeddedclusterv1beta1.Config{
+					Spec: embeddedclusterv1beta1.ConfigSpec{
+						Version: "1.0.0-ec.0",
+					},
+				}, nil)
+				mockStore.EXPECT().GetEmbeddedClusterConfigForVersion("APPID", int64(1)).Return(&embeddedclusterv1beta1.Config{
+					Spec: embeddedclusterv1beta1.ConfigSpec{
+						Version: "1.0.0-ec.1",
+					},
+				}, nil)
 			},
 			version: &downstreamtypes.DownstreamVersion{
 				VersionLabel: "1.0.0",
@@ -3662,16 +3673,6 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						VersionLabel: "1.0.0",
 						Sequence:     0,
 					},
-				},
-			},
-			currentECConfig: &embeddedclusterv1beta1.Config{
-				Spec: embeddedclusterv1beta1.ConfigSpec{
-					Version: "1.0.0-ec.1",
-				},
-			},
-			versionECConfig: &embeddedclusterv1beta1.Config{
-				Spec: embeddedclusterv1beta1.ConfigSpec{
-					Version: "1.0.0-ec.0",
 				},
 			},
 			expectedIsDeployable: false,
@@ -3679,8 +3680,19 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		},
 		{
 			name: "embedded cluster config no change should allow rollbacks",
-			setup: func(t *testing.T) {
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
+
+				mockStore.EXPECT().GetEmbeddedClusterConfigForVersion("APPID", int64(0)).Return(&embeddedclusterv1beta1.Config{
+					Spec: embeddedclusterv1beta1.ConfigSpec{
+						Version: "1.0.0-ec.0",
+					},
+				}, nil)
+				mockStore.EXPECT().GetEmbeddedClusterConfigForVersion("APPID", int64(1)).Return(&embeddedclusterv1beta1.Config{
+					Spec: embeddedclusterv1beta1.ConfigSpec{
+						Version: "1.0.0-ec.0",
+					},
+				}, nil)
 			},
 			version: &downstreamtypes.DownstreamVersion{
 				VersionLabel: "1.0.0",
@@ -3713,22 +3725,12 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					},
 				},
 			},
-			currentECConfig: &embeddedclusterv1beta1.Config{
-				Spec: embeddedclusterv1beta1.ConfigSpec{
-					Version: "1.0.0-ec.1",
-				},
-			},
-			versionECConfig: &embeddedclusterv1beta1.Config{
-				Spec: embeddedclusterv1beta1.ConfigSpec{
-					Version: "1.0.0-ec.1",
-				},
-			},
 			expectedIsDeployable: true,
 			expectedCause:        "",
 		},
 		{
 			name: "embedded cluster, allowRollback = false should not allow rollbacks",
-			setup: func(t *testing.T) {
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
 			},
 			version: &downstreamtypes.DownstreamVersion{
@@ -3760,16 +3762,6 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						VersionLabel: "1.0.0",
 						Sequence:     0,
 					},
-				},
-			},
-			currentECConfig: &embeddedclusterv1beta1.Config{
-				Spec: embeddedclusterv1beta1.ConfigSpec{
-					Version: "1.0.0-ec.1",
-				},
-			},
-			versionECConfig: &embeddedclusterv1beta1.Config{
-				Spec: embeddedclusterv1beta1.ConfigSpec{
-					Version: "1.0.0-ec.0",
 				},
 			},
 			expectedIsDeployable: false,
@@ -3811,21 +3803,20 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				}
 			}
 
-			var currentECConfig, versionECConfig []byte
-			if test.currentECConfig != nil {
-				currentECConfig, err = json.Marshal(test.currentECConfig)
-				require.NoError(t, err)
-			}
-			if test.versionECConfig != nil {
-				versionECConfig, err = json.Marshal(test.versionECConfig)
-				require.NoError(t, err)
-			}
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
+			mockStore := mock_store.NewMockStore(ctrl)
 			if test.setup != nil {
-				test.setup(t)
+				test.setup(t, mockStore)
 			}
 
-			isDeployable, cause := isAppVersionDeployable("APPID", test.version, test.appVersions, test.isSemverRequired, currentECConfig, versionECConfig)
+			isDeployable, cause, err := isAppVersionDeployable(mockStore, "APPID", test.version, test.appVersions, test.isSemverRequired)
+			if test.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 			assert.Equal(t, test.expectedIsDeployable, isDeployable)
 			assert.Equal(t, test.expectedCause, cause)
 		})
