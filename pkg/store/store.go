@@ -1,7 +1,6 @@
 package store
 
 import (
-	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -10,21 +9,14 @@ var (
 	globalStore Store
 )
 
-var _ Store = (*kotsstore.KOTSStore)(nil)
-
 func GetStore() Store {
 	if util.IsUpgradeService() {
 		panic("store cannot not be used in the upgrade service")
 	}
 	if !hasStore {
-		globalStore = storeFromEnv()
-		hasStore = true
+		panic("store not initialized")
 	}
 	return globalStore
-}
-
-func storeFromEnv() Store {
-	return kotsstore.StoreFromEnv()
 }
 
 func SetStore(s Store) {
