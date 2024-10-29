@@ -258,7 +258,6 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		setup                func(t *testing.T)
 		expectedIsDeployable bool
 		expectedCause        string
-		wantErr              bool
 	}{
 		{
 			name: "failing strict preflights",
@@ -3677,7 +3676,6 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			},
 			expectedIsDeployable: false,
 			expectedCause:        "Rollback is not supported, cluster configuration has changed.",
-			wantErr:              false,
 		},
 		{
 			name: "embedded cluster config no change should allow rollbacks",
@@ -3727,7 +3725,6 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			},
 			expectedIsDeployable: true,
 			expectedCause:        "",
-			wantErr:              false,
 		},
 		{
 			name: "embedded cluster, allowRollback = false should not allow rollbacks",
@@ -3777,7 +3774,6 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			},
 			expectedIsDeployable: false,
 			expectedCause:        "Rollback is not supported.",
-			wantErr:              false,
 		},
 		/* ---- Embedded cluster config tests end here ---- */
 	}
@@ -3829,12 +3825,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				test.setup(t)
 			}
 
-			isDeployable, cause, err := isAppVersionDeployable("APPID", test.version, test.appVersions, test.isSemverRequired, currentECConfig, versionECConfig)
-			if test.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
+			isDeployable, cause := isAppVersionDeployable("APPID", test.version, test.appVersions, test.isSemverRequired, currentECConfig, versionECConfig)
 			assert.Equal(t, test.expectedIsDeployable, isDeployable)
 			assert.Equal(t, test.expectedCause, cause)
 		})
