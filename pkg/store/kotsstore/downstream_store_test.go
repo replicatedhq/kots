@@ -3770,6 +3770,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			expectedCause:        "Rollback is not supported.",
 			wantErr:              false,
 		},
+		/* ---- Embedded cluster config tests end here ---- */
 	}
 
 	for _, test := range tests {
