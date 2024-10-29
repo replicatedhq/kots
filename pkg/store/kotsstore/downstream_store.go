@@ -426,20 +426,8 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 		if err := s.AddDownstreamVersionDetails(appID, clusterID, v, false); err != nil {
 			return nil, errors.Wrap(err, "failed to add details to latest downloaded version")
 		}
-		var currentECConfig, newECConfig []byte
-		if util.IsEmbeddedCluster() {
-			if result.CurrentVersion != nil {
-				currentECConfig, err = s.getRawEmbeddedClusterConfigForVersion(appID, result.CurrentVersion.Sequence)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to get embedded cluster config for current version %d", result.CurrentVersion.Sequence)
-				}
-			}
-			newECConfig, err = s.getRawEmbeddedClusterConfigForVersion(appID, v.Sequence)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to get embedded cluster config for version %d", v.Sequence)
-			}
-		}
-		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(appID, v, result, license.Spec.IsSemverRequired, currentECConfig, newECConfig)
+		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(appID, v, result, license.Spec.IsSemverRequired, nil, nil)
+		break
 	}
 
 	if currentVersion == nil {
