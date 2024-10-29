@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
@@ -29,11 +28,6 @@ func EmbeddedClusterConfirmManagementCmd() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
-
-			if len(args) < 1 {
-				cmd.Help()
-				os.Exit(1)
-			}
 
 			fmt.Print(cursor.Hide())
 			defer fmt.Print(cursor.Show())
