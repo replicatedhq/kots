@@ -921,6 +921,8 @@ func isAppVersionDeployable(s store.Store, appID string, version *downstreamtype
 		// Rollback support is based off of the latest downloaded version so that a vendor can
 		// toggle on support without requiring the end user to deploy a new version.
 		for _, v := range appVersions.AllVersions {
+			// Find the first version that is not pending download. This will be the latest
+			// version.
 			if v.Status == types.VersionPendingDownload {
 				continue
 			}
