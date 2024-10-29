@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_isSameUpstreamRelease(t *testing.T) {
@@ -252,6 +253,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		isSemverRequired     bool
 		expectedIsDeployable bool
 		expectedCause        string
+		wantErr              bool
 	}{
 		{
 			name: "failing strict preflights",
@@ -3656,7 +3658,12 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				}
 			}
 
-			isDeployable, cause := isAppVersionDeployable(test.version, test.appVersions, test.isSemverRequired)
+			isDeployable, cause, err := isAppVersionDeployable(test.version, test.appVersions, test.isSemverRequired)
+			if test.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 			assert.Equal(t, test.expectedIsDeployable, isDeployable)
 			assert.Equal(t, test.expectedCause, cause)
 		})

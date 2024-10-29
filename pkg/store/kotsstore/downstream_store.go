@@ -1,7 +1,9 @@
 package kotsstore
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -15,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/rqlite/gorqlite"
 )
@@ -423,8 +426,10 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 		if err := s.AddDownstreamVersionDetails(appID, clusterID, v, false); err != nil {
 			return nil, errors.Wrap(err, "failed to add details to latest downloaded version")
 		}
-		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, result, license.Spec.IsSemverRequired)
-		break
+		v.IsDeployable, v.NonDeployableCause, err = s.isAppVersionDeployable(appID, v, result, license.Spec.IsSemverRequired)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to check if version %s is deployable", v.VersionLabel)
+		}
 	}
 
 	if currentVersion == nil {
@@ -676,7 +681,10 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 		}
 
 		for _, v := range versions {
-			v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, allVersions, license.Spec.IsSemverRequired)
+			v.IsDeployable, v.NonDeployableCause, err = s.isAppVersionDeployable(appID, v, allVersions, license.Spec.IsSemverRequired)
+			if err != nil {
+				return errors.Wrapf(err, "failed to check if version %s is deployable", v.VersionLabel)
+			}
 		}
 	}
 
@@ -866,28 +874,28 @@ func isSameUpstreamRelease(v1 *downstreamtypes.DownstreamVersion, v2 *downstream
 	return v1.Semver.EQ(*v2.Semver)
 }
 
-func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersions *downstreamtypes.DownstreamVersions, isSemverRequired bool) (bool, string) {
+func (s *KOTSStore) isAppVersionDeployable(appID string, version *downstreamtypes.DownstreamVersion, appVersions *downstreamtypes.DownstreamVersions, isSemverRequired bool) (bool, string, error) {
 	if version.HasFailingStrictPreflights {
-		return false, "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run."
+		return false, "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run.", nil
 	}
 
 	if version.Status == types.VersionPendingDownload {
-		return false, "Version is pending download."
+		return false, "Version is pending download.", nil
 	}
 
 	if version.Status == types.VersionPendingConfig {
-		return false, "Version is pending configuration."
+		return false, "Version is pending configuration.", nil
 	}
 
 	if appVersions.CurrentVersion == nil {
 		// no version has been deployed yet, treat as an initial install where any version can be deployed at first.
-		return true, ""
+		return true, "", nil
 	}
 
 	if version.Sequence == appVersions.CurrentVersion.Sequence {
 		// version is currently deployed, so previous required versions should've already been deployed.
 		// also, we shouldn't block re-deploying if a previous release is edited later by the vendor to be required.
-		return true, ""
+		return true, "", nil
 	}
 
 	// rollback support is determined across all versions from all channels
@@ -906,7 +914,18 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 			break
 		}
 	}
+
 	if versionIndex > deployedVersionIndex {
+		if util.IsEmbeddedCluster() {
+			changed, err := s.didECClusterConfigChange(appID, version, appVersions.CurrentVersion)
+			if err != nil {
+				return false, "", errors.Wrapf(err, "failed to check if embedded cluster config changed for version %s", version.Sequence)
+			}
+			if changed {
+				return false, "Rollback is not supported, cluster configuration has changed.", nil
+			}
+		}
+
 		// this is a past version
 		// rollback support is based off of the latest downloaded version
 		for _, v := range appVersions.AllVersions {
@@ -914,7 +933,7 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 				continue
 			}
 			if v.KOTSKinds == nil || !v.KOTSKinds.KotsApplication.Spec.AllowRollback {
-				return false, "Rollback is not supported."
+				return false, "Rollback is not supported.", nil
 			}
 			break
 		}
@@ -951,7 +970,7 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 
 	if deployedVersionIndex == -1 {
 		// the deployed version is from a different channel
-		return true, ""
+		return true, "", nil
 	}
 
 	// find required versions between the deployed version and the desired version
@@ -969,7 +988,7 @@ ALL_VERSIONS_LOOP:
 			// this is a past version
 			// >= because if the deployed version is required, rolling back isn't allowed
 			if i >= deployedVersionIndex && i < versionIndex {
-				return false, "One or more non-reversible versions have been deployed since this version."
+				return false, "One or more non-reversible versions have been deployed since this version.", nil
 			}
 			continue
 		}
@@ -997,12 +1016,32 @@ ALL_VERSIONS_LOOP:
 		}
 		versionLabelsStr := strings.Join(versionLabels, ", ")
 		if len(requiredVersions) == 1 {
-			return false, fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr)
+			return false, fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr), nil
 		}
-		return false, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
+		return false, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr), nil
 	}
 
-	return true, ""
+	return true, "", nil
+}
+
+func (s *KOTSStore) didECClusterConfigChange(appID string, version *downstreamtypes.DownstreamVersion, currentVersion *downstreamtypes.DownstreamVersion) (bool, error) {
+	currentConf, err := s.GetEmbeddedClusterConfigForVersion(appID, currentVersion.Sequence)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to get embedded cluster config for current version %s", currentVersion.Sequence)
+	}
+	currentECConfigBytes, err := json.Marshal(currentConf)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to marshal embedded cluster config for current version %s", currentVersion.Sequence)
+	}
+	thisConf, err := s.GetEmbeddedClusterConfigForVersion(appID, version.Sequence)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get embedded cluster config")
+	}
+	ecConfigBytes, err := json.Marshal(thisConf)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to marshal embedded cluster config")
+	}
+	return !bytes.Equal(ecConfigBytes, currentECConfigBytes), nil
 }
 
 func getReleaseNotes(appID string, parentSequence int64) (string, error) {
