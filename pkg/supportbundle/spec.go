@@ -46,11 +46,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var appNameRE *regexp.Regexp
-
-func init() {
-	appNameRE = regexp.MustCompile(`^kotsadm-.*-supportbundle(?:$|.*)`)
-}
+var appNameRE = regexp.MustCompile(`^kotsadm-.*-supportbundle(?:$|.*)`)
 
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
 func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
