@@ -62,6 +62,10 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 	}
 	defer os.RemoveAll(configFile.Name())
 
+	// We use the KOTS CLI as a wrapper to start the docker registry service because:
+	// - We can't directly run the official docker registry binary because it doesn't necessarily exist when pushing images from the host.
+	// - We need to be able to control stdout and stderr and stop the process later, but the registry go module doesn't give control over that.
+	// - The KOTS CLI binary exists inside the kotsadm pod and/or will be used to push images from the host.
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(kotsutil.GetKOTSBinPath(), "docker-registry", "serve", configFile.Name())
 	cmd.Stdout = &stdout
@@ -71,6 +75,7 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 		return errors.Wrap(err, "failed to start")
 	}
 
+	// calling wait helps reap the zombie process
 	go cmd.Wait()
 
 	r.cmd = cmd
