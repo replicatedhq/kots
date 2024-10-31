@@ -69,10 +69,6 @@ func (s *KOTSStore) IsRollbackSupportedForVersion(appID string, sequence int64) 
 		return false, errors.Wrap(err, "failed to load kots app from contents")
 	}
 
-	if util.IsEmbeddedCluster() {
-		return false, nil
-	}
-
 	return kotsAppSpec.Spec.AllowRollback, nil
 }
 

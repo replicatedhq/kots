@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -15,6 +17,9 @@ func RootCmd() *cobra.Command {
 		Short: "kotsadm is the Admin Console for KOTS",
 		Long:  ``,
 		Args:  cobra.MinimumNArgs(1),
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			store.SetStore(kotsstore.StoreFromEnv())
+		},
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
