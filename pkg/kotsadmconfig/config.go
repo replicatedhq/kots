@@ -48,6 +48,7 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 	return true
 }
 
+// NeedsConfiguration returns true if the app has required config values that are not set
 func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, error) {
 	log := logger.NewCLILogger(os.Stdout)
 

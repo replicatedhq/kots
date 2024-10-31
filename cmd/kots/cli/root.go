@@ -57,7 +57,6 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(EnableHACmd())
 	cmd.AddCommand(UpgradeServiceCmd())
 	cmd.AddCommand(AirgapUpdateCmd())
-	cmd.AddCommand(EmbeddedClusterCmd())
 
 	viper.BindPFlags(cmd.Flags())
 
