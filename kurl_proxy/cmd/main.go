@@ -302,7 +302,7 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 			log.Printf("No kotsadm application metadata: %v", err) // continue
 		}
 		appIcon := template.URL(app.Spec.Icon)
-		c.HTML(http.StatusOK, "insecure.html", gin.H{
+		c.HTML(http.StatusOK, "tls-warning.html", gin.H{
 			"fingerprintSHA1":   fingerprint,
 			"AppIcon":           appIcon,
 			"AppTitle":          app.Spec.Title,
