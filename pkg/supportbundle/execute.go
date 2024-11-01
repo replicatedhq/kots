@@ -171,11 +171,9 @@ func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressCha
 		Namespace:                 "",
 		ProgressChan:              progressChan,
 		Redact:                    true,
-		RunHostCollectorsInPod:    true, // always run host collectors in pod from KOTS regardless of the spec value
 	}
 
 	logger.Infof("Executing Collection go routine for support bundle ID: %s", bundle.ID)
-	logger.Infof("Always run host collectors in pod: %t", opts.RunHostCollectorsInPod)
 
 	go func() {
 		defer close(progressChan)
