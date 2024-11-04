@@ -1,7 +1,7 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= 0.20240913.202602-r0
-RQLITE_TAG ?= 8.30.3-r0
+MINIO_TAG ?= 0.20241029.160148-r0
+RQLITE_TAG ?= 8.32.5-r0
 DEX_TAG ?= 2.41.1-r1
 LVP_TAG ?= v0.6.7
 PACT_PUBLISH_CONTRACT ?= false
@@ -118,11 +118,15 @@ web:
 	source .image.env && ${MAKE} -C web build-kotsadm
 
 .PHONY: build-ttl.sh
+build-ttl.sh: export GOOS ?= $(OS)
+build-ttl.sh: export GOARCH ?= $(ARCH)
 build-ttl.sh: web kots build
 	docker build --platform $(OS)/$(ARCH) -f dev/dockerfiles/kotsadm/Dockerfile.ttlsh -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 
 .PHONY: all-ttl.sh
+all-ttl.sh: export GOOS ?= $(OS)
+all-ttl.sh: export GOARCH ?= $(ARCH)
 all-ttl.sh: build-ttl.sh
 	source .image.env && \
 		IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h \

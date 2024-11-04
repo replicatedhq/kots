@@ -46,11 +46,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var appNameRE *regexp.Regexp
-
-func init() {
-	appNameRE = regexp.MustCompile(`^kotsadm-.*-supportbundle(?:$|.*)`)
-}
+var appNameRE = regexp.MustCompile(`^kotsadm-.*-supportbundle(?:$|.*)`)
 
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
 func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
@@ -106,7 +102,7 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 	}
 
 	// split the default kotsadm support bundle into multiple support bundles
-	vendorSpec, err := createVendorSpec(builtBundle)
+	vendorSpec, err := createVendorSpec(builtBundle, app.IsAirgap)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create vendor support bundle spec")
 	}
@@ -370,8 +366,8 @@ func addAfterCollectionSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBun
 }
 
 // createVendorSpec creates a support bundle spec that includes the vendor specific collectors and analyzers
-func createVendorSpec(b *troubleshootv1beta2.SupportBundle) (*troubleshootv1beta2.SupportBundle, error) {
-	supportBundle, err := staticspecs.GetVendorSpec()
+func createVendorSpec(b *troubleshootv1beta2.SupportBundle, isAirgap bool) (*troubleshootv1beta2.SupportBundle, error) {
+	supportBundle, err := staticspecs.GetVendorSpec(isAirgap)
 	if err != nil {
 		logger.Errorf("Failed to load vendor support bundle spec: %v", err)
 		return nil, err
@@ -430,14 +426,14 @@ func createDefaultSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, 
 	}
 
 	if isKurl {
-		kurlSupportBunlde, err := staticspecs.GetKurlSpec(app)
+		kurlSupportBundle, err := staticspecs.GetKurlSpec(app)
 		if err != nil {
 			logger.Errorf("Failed to load kurl support bundle spec: %v", err)
 			return nil, err
 		}
 
-		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, kurlSupportBunlde.Spec.Collectors...)
-		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, kurlSupportBunlde.Spec.Analyzers...)
+		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, kurlSupportBundle.Spec.Collectors...)
+		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, kurlSupportBundle.Spec.Analyzers...)
 	}
 
 	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app, imageName, pullSecret)
@@ -457,15 +453,12 @@ func addDiscoveredSpecs(
 	}
 
 	for _, specData := range specs {
-		sbObject, err := sb.ParseSupportBundleFromDoc([]byte(specData))
+		sbObject, err := sb.ParseSupportBundle([]byte(specData), !app.IsAirgap)
 		if err != nil {
 			logger.Errorf("Failed to unmarshal support bundle spec: %v", err)
 			continue
 		}
 
-		// ParseSupportBundleFromDoc will check if there is a uri field and if so,
-		// use the upstream spec, otherwise fall back to
-		// what's defined in the current spec
 		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, sbObject.Spec.Collectors...)
 		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, sbObject.Spec.Analyzers...)
 	}
@@ -647,8 +640,10 @@ func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *t
 				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
 				j--
 			} else if next.Spec.Collectors[i].ClusterResources != nil && next.Spec.Collectors[j].ClusterResources != nil {
-				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
-				j--
+				if reflect.DeepEqual(next.Spec.Collectors[i].ClusterResources.Namespaces, next.Spec.Collectors[j].ClusterResources.Namespaces) {
+					next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
+					j--
+				}
 			} else if next.Spec.Collectors[i].ClusterInfo != nil && next.Spec.Collectors[j].ClusterInfo != nil {
 				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
 				j--
@@ -707,12 +702,17 @@ func deduplicatedAfterCollection(supportBundle *troubleshootv1beta2.SupportBundl
 	return b
 }
 
-func getDefaultAnalyzers(isKurl bool) []*troubleshootv1beta2.Analyze {
-	defaultAnalyzers := defaultspec.Get().Spec.Analyzers
+func getDefaultAnalyzers(isKurl, isAirgap bool) ([]*troubleshootv1beta2.Analyze, error) {
+	defaultSpec, err := defaultspec.Get(isAirgap)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get default spec")
+	}
+
+	defaultAnalyzers := defaultSpec.Spec.Analyzers
 	if !isKurl {
 		defaultAnalyzers = removeKurlAnalyzers(defaultAnalyzers)
 	}
-	return defaultAnalyzers
+	return defaultAnalyzers, nil
 }
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
@@ -726,6 +726,13 @@ func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBun
 
 func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
 	collectors := make([]*troubleshootv1beta2.Collect, 0)
+
+	// Collect Cluster Resources for the namespace that the Admin Console is running in
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		ClusterResources: &troubleshootv1beta2.ClusterResources{
+			Namespaces: []string{util.PodNamespace},
+		},
+	})
 
 	license, err := store.GetStore().GetLatestLicenseForApp(app.GetID())
 	if err != nil {

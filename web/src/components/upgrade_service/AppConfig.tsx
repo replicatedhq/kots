@@ -603,7 +603,7 @@ export const AppConfig = ({
               );
             })}
           </div>
-          <div className="ConfigArea--wrapper">
+          <div data-testid="config-area" className="ConfigArea--wrapper">
             <div
               className={classNames("ConfigOuterWrapper card-bg u-padding--15")}
             >

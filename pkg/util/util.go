@@ -10,15 +10,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 func IsURL(str string) bool {
 	_, err := url.ParseRequestURI(str)
@@ -166,7 +161,7 @@ func HomeDir() string {
 }
 
 func IsEmbeddedCluster() bool {
-	return os.Getenv("EMBEDDED_CLUSTER_ID") != ""
+	return EmbeddedClusterID() != ""
 }
 
 func EmbeddedClusterID() string {

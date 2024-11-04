@@ -314,8 +314,8 @@ func ensureAPIClusterTokenSecret(deployOptions types.DeployOptions, clientset *k
 	return nil
 }
 
-func getAPIClusterToken(namespace string, clientset *kubernetes.Clientset) (string, error) {
-	apiSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), types.ClusterTokenSecret, metav1.GetOptions{})
+func getAPIClusterToken(namespace string, cli kubernetes.Interface) (string, error) {
+	apiSecret, err := cli.CoreV1().Secrets(namespace).Get(context.TODO(), types.ClusterTokenSecret, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return "", nil

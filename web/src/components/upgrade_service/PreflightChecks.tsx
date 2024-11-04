@@ -8,7 +8,7 @@ import SkipPreflightsModal from "@components/shared/modals/SkipPreflightsModal";
 import PreflightsProgress from "@components/troubleshoot/PreflightsProgress";
 import "../../scss/components/PreflightCheckPage.scss";
 
-import { useGetPrelightResults, useRerunPreflights } from "./hooks/index";
+import { useGetPrelightResults, useRunPreflights } from "./hooks/index";
 
 import { KotsParams } from "@types";
 import { useUpgradeServiceContext } from "./UpgradeServiceContext";
@@ -16,8 +16,10 @@ import { isEqual } from "lodash";
 
 const PreflightCheck = ({
   setCurrentStep,
+  isConfigurable,
 }: {
   setCurrentStep: (step: number) => void;
+  isConfigurable: boolean;
 }) => {
   const navigate = useNavigate();
 
@@ -35,10 +37,13 @@ const PreflightCheck = ({
 
   const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
 
+  const {
+    mutate: runPreflights,
+    error: runPreflightsError,
+    isSuccess: runPreflightsSuccess,
+  } = useRunPreflights({ slug, sequence });
   const { data: preflightCheck, error: getPreflightResultsError } =
-    useGetPrelightResults({ slug, sequence });
-  const { mutate: rerunPreflights, error: rerunPreflightsError } =
-    useRerunPreflights({ slug, sequence });
+    useGetPrelightResults({ slug, sequence, enabled: runPreflightsSuccess });
 
   if (!preflightCheck?.showPreflightCheckPending) {
     if (showConfirmIgnorePreflightsModal) {
@@ -48,12 +53,17 @@ const PreflightCheck = ({
 
   useEffect(() => {
     setCurrentStep(1);
-
+    // Config changed so we'll re-run the preflights
+    if (!isEqual(prevConfig, config)) {
+      runPreflights();
+      return;
+    }
+    // No preflight results means we haven't run them yet,  let's do that
     if (
-      !isEqual(prevConfig, config) &&
-      preflightCheck?.preflightResults.length > 0
+      !preflightCheck?.preflightResults ||
+      preflightCheck.preflightResults.length === 0
     ) {
-      rerunPreflights();
+      runPreflights();
     }
   }, []);
 
@@ -66,7 +76,10 @@ const PreflightCheck = ({
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
-      <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]">
+      <div
+        data-testid="preflight-check-area"
+        className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]"
+      >
         <div
           className={`u-maxWidth--full u-marginTop--20 flex-column u-position--relative card-bg ${
             preflightCheck?.showPreflightCheckPending ? "flex1" : ""
@@ -82,12 +95,12 @@ const PreflightCheck = ({
             </div>
           )}
 
-          {rerunPreflightsError?.message && (
+          {runPreflightsError?.message && (
             <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
               <div className="icon redWarningIcon u-marginRight--10" />
               <div>
                 <p className="title">Encountered an error</p>
-                <p className="error">{rerunPreflightsError.message}</p>
+                <p className="error">{runPreflightsError.message}</p>
               </div>
             </div>
           )}
@@ -102,7 +115,7 @@ const PreflightCheck = ({
           </p>
 
           {preflightCheck?.showPreflightCheckPending && (
-            <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
+            <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full tw-mt-4">
               <PreflightsProgress
                 pendingPreflightCheckName={
                   preflightCheck?.pendingPreflightCheckName || ""
@@ -126,9 +139,9 @@ const PreflightCheck = ({
                   <button
                     type="button"
                     className="btn primary blue"
-                    onClick={() => rerunPreflights()}
+                    onClick={() => runPreflights()}
                   >
-                    Re-run
+                    Rerun
                   </button>
                 )}
               </div>
@@ -156,6 +169,7 @@ const PreflightCheck = ({
           <button
             className="btn secondary blue"
             onClick={() => navigate(`/upgrade-service/app/${slug}/config`)}
+            disabled={!isConfigurable}
           >
             Back: Config
           </button>

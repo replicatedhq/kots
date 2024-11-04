@@ -8,8 +8,8 @@ component=$1
 
 # Check if a deployment name was provided
 if [ -z "$component" ]; then
-	echo "Error: No component name provided."
-	exit 1
+  echo "Error: No component name provided."
+  exit 1
 fi
 
 # Check if already down
@@ -21,8 +21,8 @@ fi
 echo "Reverting..."
 
 if [ "$component" == "kotsadm" ]; then
-  ec_exec k0s kubectl delete -f dev/manifests/kotsadm-web -n kotsadm
+  ec_exec k0s kubectl --kubeconfig=/var/lib/embedded-cluster/k0s/pki/admin.conf delete -f dev/manifests/kotsadm-web -n kotsadm
 fi
 
-ec_exec k0s kubectl replace -f dev/patches/$component-down-ec.yaml.tmp --force
+ec_exec k0s kubectl --kubeconfig=/var/lib/embedded-cluster/k0s/pki/admin.conf replace -f dev/patches/$component-down-ec.yaml.tmp --force
 ec_exec rm dev/patches/$component-down-ec.yaml.tmp

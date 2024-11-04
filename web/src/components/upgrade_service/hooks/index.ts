@@ -1,5 +1,11 @@
 import { useGetPrelightResults } from "./getPreflightResult";
-import { useRerunPreflights } from "./postPreflightRun";
+import { useGetUpgradeInfo } from "./getUpgradeInfo";
+import { useRunPreflights } from "./postPreflightRun";
 import { useDeployAppVersion } from "./postDeployAppVersion";
 
-export { useGetPrelightResults, useRerunPreflights, useDeployAppVersion };
+export {
+  useGetPrelightResults,
+  useGetUpgradeInfo,
+  useRunPreflights,
+  useDeployAppVersion,
+};

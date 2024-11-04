@@ -74,6 +74,7 @@ type PullOptions struct {
 	HTTPProxyEnvValue       string
 	HTTPSProxyEnvValue      string
 	NoProxyEnvValue         string
+	PrivateCAsConfigmap     string
 	ReportingInfo           *reportingtypes.ReportingInfo
 	SkipCompatibilityCheck  bool
 	KotsKinds               *kotsutil.KotsKinds
@@ -304,6 +305,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsAirgap:            pullOptions.IsAirgap,
 		KotsadmID:           k8sutil.GetKotsadmID(clientset),
 		AppID:               pullOptions.AppID,
+		PrivateCAsConfigmap: pullOptions.PrivateCAsConfigmap,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()

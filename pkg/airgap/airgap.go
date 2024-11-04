@@ -281,8 +281,14 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 
 	if status == storetypes.VersionPendingClusterManagement {
-		// if pending cluster management, we don't want to deploy the app
-		return nil
+		if configFile != "" {
+			// if there is a config file, then we should proceed with the installation normally, not wait for the user
+			// to click through the UI to add nodes and configure the app
+			status = storetypes.VersionPendingConfig
+		} else {
+			// if pending cluster management, we don't want to deploy the app
+			return nil
+		}
 	}
 
 	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)

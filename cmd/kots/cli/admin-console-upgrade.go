@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func AdminConsoleUpgradeCmd() *cobra.Command {
@@ -72,12 +73,11 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
 
 			upgradeOptions := kotsadmtypes.UpgradeOptions{
-				Namespace:             namespace,
-				ForceUpgradeKurl:      v.GetBool("force-upgrade-kurl"),
-				EnsureRBAC:            v.GetBool("ensure-rbac"),
-				SimultaneousUploads:   simultaneousUploads,
-				IncludeMinio:          includeMinio,
-				StrictSecurityContext: v.GetBool("strict-security-context"),
+				Namespace:           namespace,
+				ForceUpgradeKurl:    v.GetBool("force-upgrade-kurl"),
+				EnsureRBAC:          v.GetBool("ensure-rbac"),
+				SimultaneousUploads: simultaneousUploads,
+				IncludeMinio:        includeMinio,
 
 				RegistryConfig: kotsadmtypes.RegistryConfig{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
@@ -86,6 +86,10 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 					Username:          v.GetString("registry-username"),
 					Password:          v.GetString("registry-password"),
 				},
+			}
+
+			if v.IsSet("strict-security-context") {
+				upgradeOptions.StrictSecurityContext = ptr.To(v.GetBool("strict-security-context"))
 			}
 
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))

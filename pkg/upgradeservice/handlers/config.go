@@ -25,7 +25,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/template"
-	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
@@ -377,13 +376,6 @@ func (h *Handler) SaveConfig(w http.ResponseWriter, r *http.Request) {
 			JSON(w, http.StatusInternalServerError, response)
 			return
 		}
-	}
-
-	if err := upgradepreflight.Run(params); err != nil {
-		response.Error = "failed to run preflights"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
 	}
 
 	response.Success = true

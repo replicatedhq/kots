@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="description" content="Replicated App Manager" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TLS Warning | Admin Console</title>
+    <link rel="stylesheet" href="/assets/output.css" />
+    <link rel="stylesheet" href="/assets/tls-custom.css" />
+    {{if .AppIcon }}
+    <link rel="icon" type="image/png" href="{{ .AppIcon }}" />
+    {{end}}
+    <script>
+      //defaults to chrome example
+      var firefoxText =
+        'On the next screen, click "I Understand the Risks", then click "Add Exception". Finally, click "Confirm Security Exception" to proceed to the Admin Console.';
+      var ieText =
+        'On the next screen, click "Continue to this website" to proceed to the Admin Console.';
+      var safariText =
+        'On the next screen, click "Continue" when prompted to proceed to the Admin Console.';
+      var chromeText =
+        'On the next screen, click "Advanced", then click "Proceed" to continue to the Admin Console.';
+
+      var browserPlainText = "Chrome";
+      var browserBodyText = chromeText;
+      if (typeof InstallTrigger !== "undefined") {
+        browserPlainText = "Firefox";
+        browserBodyText = chromeText;
+      } else if (
+        Object.prototype.toString
+          .call(window.HTMLElement)
+          .indexOf("Constructor") > 0
+      ) {
+        browserPlainText = "Safari";
+        browserBodyText = safariText;
+      } else if (
+        /*@cc_on!@*/ false ||
+        !!document.documentMode ||
+        !!window.StyleMedia
+      ) {
+        //grouping Edge + IE 6 - 11 in this one
+        browserPlainText = "Internet Explorer";
+        browserBodyText = ieText;
+      }
+
+      var rawLink = window.location.href
+        .substring(window.location.protocol.length)
+        .replace(/\/$/, "");
+      var httpsLink = "https:" + rawLink;
+      var opensslLink = rawLink.substring(2).replace("/insecure", "");
+      var tlsManagementLink = "/tls";
+    </script>
+  </head>
+  <body>
+    <div class="flex !flex-col flex-1">
+      <div class="NavBarWrapper">
+        <div class="flex flex-auto h-[50px]">
+          <div class="flex items-center flex-1 relative">
+            <div class="HeaderLogo">
+              {{if .AppIcon }}<span
+                class="appIcon flex"
+                style="background-image: url('{{ .AppIcon }}')"
+              ></span
+              >{{end}}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="min-h-full w-full flex flex-1">
+        {{if .IsEmbeddedCluster }}
+        <div class="bg-[#F9FBFC] min-400">
+          <div class="py-8 pl-8 shadow-[0_1px_0_#c4c8ca]">
+            <span class="text-lg font-semibold text-gray-[#323232]">
+              Let's get you started!
+            </span>
+          </div>
+          <div
+            class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#323232]"
+          >
+            <img src="/assets/images/check.svg" alt="check" />
+            <span class="font-bold ml-2"> Secure the Admin Console </span>
+          </div>
+          <div
+            class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c]"
+          >
+            <img src="/assets/images/check.svg" alt="check" />
+            <span class="font-normal ml-2">
+              Configure the cluster (optional)
+            </span>
+          </div>
+          <div
+            class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c]"
+          >
+            <img src="/assets/images/check.svg" alt="check" />
+            <span class="font-normal ml-2"> Configure {{.AppTitle}} </span>
+          </div>
+          <div
+            class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c]"
+          >
+            <img src="/assets/images/check.svg" alt="check" />
+            <span class="font-normal ml-2">
+              Validate the environment & deploy {{.AppTitle}}
+            </span>
+          </div>
+        </div>
+        {{end}}
+        <div class="tlsContent--wrapper px-8">
+          <p class="tls-header my-8">Secure the Admin Console</p>
+          <hr />
+          <div class="mt-8 p-8 bg-[#F9FBFC]">
+            <div>
+              <p class="tls-header-sub">
+                We use a self-signed TLS Certificate to secure the communication
+                between your local machine and the Admin Console during setup.
+                You'll see a warning about this in your browser, but you can be
+                confident that this is secure.
+              </p>
+            </div>
+            <div class="flex1 flex">
+              <div class="flex-column flex1 left-block">
+                <div>
+                  <p class="tls-section-header">
+                    <script>
+                      document.write(browserPlainText);
+                    </script>
+                  </p>
+                  <p class="tls-header-sub">
+                    <script>
+                      document.write(browserBodyText);
+                    </script>
+                  </p>
+                </div>
+
+                <div
+                  class="flex-column right-block alignItems--center justifyContent--center"
+                >
+                  <script>
+                    document.write(
+                      '<img class="insecure-image m-auto" src="/assets/images/' +
+                        browserPlainText.toLowerCase().replace(" ", "") +
+                        '-insecure.png" />',
+                    );
+                  </script>
+                </div>
+                <div class="flex gap-2 cursor mb-4" id="verify-link">
+                  <p class="text-muted">
+                    Verify the certificate's authenticity (optional)
+                  </p>
+                  <img
+                    src="/assets/images/down_arrow.svg"
+                    alt="check"
+                    width="10"
+                    id="down-arrow"
+                  />
+                  <img
+                    src="/assets/images/up_arrow.svg"
+                    alt="check"
+                    width="10"
+                    id="up-arrow"
+                    style="display: none"
+                  />
+                </div>
+                <div
+                  id="verification-container"
+                  className="cursor "
+                  style="display: none"
+                >
+                  <div class="flex flex-column">
+                    <div class="CodeSnippet">
+                      <div class="CodeSnippet-content">
+                        <p>
+                          Run this command on the host to calculate the
+                          certificate's fingerprint.
+                        </p>
+                        <pre>
+                        <code id="verify-snippet">
+                        </code>
+                      </pre>
+                        <div class="copy-command">
+                          <a id="copy-command" class="replicated-link"
+                            >Copy command</a
+                          >
+                        </div>
+                      </div>
+                    </div>
+                    <div class="CodeSnippet">
+                      <div class="CodeSnippet-content">
+                        <p>Expected fingerprint</p>
+                        <pre>
+                        <code>{{ .fingerprintSHA1 }}</code>
+                      </pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="button-wrapper flex justifyContent--end">
+                  <button
+                    type="submit"
+                    class="btn primary"
+                    onclick="location.href=tlsManagementLink;"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    document.getElementById("verify-snippet").innerHTML =
+      "echo | openssl s_client -servername local -connect " +
+      opensslLink +
+      " 2>/dev/null | openssl x509 -noout -fingerprint";
+  </script>
+  <script>
+    const replicatedLink = document.getElementById("verify-link");
+
+    const verificationContainer = document.getElementById(
+      "verification-container",
+    );
+
+    replicatedLink.addEventListener("click", () => {
+      if (verificationContainer.style.display === "block") {
+        verificationContainer.style.display = "none";
+        document.getElementById("down-arrow").style.display = "none";
+        document.getElementById("up-arrow").style.display = "block";
+      } else {
+        verificationContainer.style.display = "block";
+        document.getElementById("down-arrow").style.display = "block";
+        document.getElementById("up-arrow").style.display = "none";
+      }
+    });
+
+    document
+      .getElementById("copy-command")
+      .addEventListener("click", function () {
+        const codeSnippet =
+          document.getElementById("verify-snippet").textContent;
+
+        navigator.clipboard
+          .writeText(codeSnippet)
+          .then(() => {
+            const copyCommandElement = document.getElementById("copy-command");
+            const originalText = copyCommandElement.textContent;
+            copyCommandElement.textContent = "Copied!";
+
+            setTimeout(() => {
+              copyCommandElement.textContent = originalText;
+            }, 3000);
+          })
+          .catch((err) => {
+            console.error("Failed to copy text: ", err);
+          });
+      });
+  </script>
+</html>

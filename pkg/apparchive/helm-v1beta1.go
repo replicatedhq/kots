@@ -15,12 +15,8 @@ import (
 )
 
 var (
-	goTemplateRegex *regexp.Regexp
-)
-
-func init() {
 	goTemplateRegex = regexp.MustCompile(`({{)|(}})`)
-}
+)
 
 func GetRenderedV1Beta1ChartsArchive(versionArchive string, downstreamName, kustomizeBinPath string) ([]byte, map[string][]byte, error) {
 	renderedChartsDir := filepath.Join(versionArchive, "rendered", downstreamName, "charts")

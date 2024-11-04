@@ -21,7 +21,7 @@ async function getAdminConsoleUpdateStatus({
 
   if (!response.ok) {
     throw new Error(
-      `Error while trying to get admin console update status: ${response.status}`
+      `Error while trying to get Admin Console update status: ${response.status}`
     );
   }
 
@@ -48,7 +48,7 @@ function useAdminConsoleUpdateStatus({ slug }: { slug: string }) {
       console.log(err);
       throw new Error(
         err.message ||
-          "Error while trying to get admin console update status. Please try again."
+          "Error while trying to get Admin Console update status. Please try again."
       );
     },
   });

@@ -19,14 +19,15 @@ func Test_configureChart(t *testing.T) {
 	}
 
 	type Test struct {
-		name         string
-		isAirgap     bool
-		httpProxy    string
-		httpsProxy   string
-		noProxy      string
-		chartContent map[string]string
-		want         map[string]string
-		wantErr      bool
+		name                string
+		isAirgap            bool
+		httpProxy           string
+		httpsProxy          string
+		noProxy             string
+		privateCAsConfigmap string
+		chartContent        map[string]string
+		want                map[string]string
+		wantErr             bool
 	}
 
 	tests := []Test{
@@ -291,11 +292,12 @@ another: value
 	// Generate dynamic tests using the supported replicated chart names
 	for _, chartName := range testReplicatedChartNames {
 		tests = append(tests, Test{
-			name:       "online - a standalone replicated chart",
-			isAirgap:   false,
-			httpProxy:  "http://10.1.0.1:3128",
-			httpsProxy: "https://10.1.0.1:3129",
-			noProxy:    "localhost,127.0.0.1",
+			name:                "online - a standalone replicated chart",
+			isAirgap:            false,
+			httpProxy:           "http://10.1.0.1:3128",
+			httpsProxy:          "https://10.1.0.1:3129",
+			noProxy:             "localhost,127.0.0.1",
+			privateCAsConfigmap: "my-private-cas",
 			chartContent: map[string]string{
 				"replicated/Chart.yaml": fmt.Sprintf(`apiVersion: v1
 name: %s
@@ -390,6 +392,7 @@ extraEnv:
   - name: NO_PROXY
     value: localhost,127.0.0.1
 isAirgap: false
+privateCAConfigmap: my-private-cas
 replicatedID: kotsadm-id
 `,
 			},
@@ -502,11 +505,12 @@ global:
 		})
 
 		tests = append(tests, Test{
-			name:       "online - a guestbook chart with the replicated subchart",
-			isAirgap:   false,
-			httpProxy:  "http://10.1.0.1:3128",
-			httpsProxy: "https://10.1.0.1:3129",
-			noProxy:    "localhost,127.0.0.1",
+			name:                "online - a guestbook chart with the replicated subchart",
+			isAirgap:            false,
+			httpProxy:           "http://10.1.0.1:3128",
+			httpsProxy:          "https://10.1.0.1:3129",
+			noProxy:             "localhost,127.0.0.1",
+			privateCAsConfigmap: "my-private-cas",
 			chartContent: map[string]string{
 				"guestbook/Chart.yaml": `apiVersion: v2
 name: guestbook
@@ -600,6 +604,7 @@ image:
     - name: NO_PROXY
       value: localhost,127.0.0.1
   isAirgap: false
+  privateCAConfigmap: my-private-cas
   replicatedID: kotsadm-id
 global:
   replicated:
@@ -770,11 +775,12 @@ some: value
 		})
 
 		tests = append(tests, Test{
-			name:       "online - a redis chart with the replicated subchart and predefined replicated and global values",
-			isAirgap:   false,
-			httpProxy:  "http://10.1.0.1:3128",
-			httpsProxy: "https://10.1.0.1:3129",
-			noProxy:    "localhost,127.0.0.1",
+			name:                "online - a redis chart with the replicated subchart and predefined replicated and global values",
+			isAirgap:            false,
+			httpProxy:           "http://10.1.0.1:3128",
+			httpsProxy:          "https://10.1.0.1:3129",
+			noProxy:             "localhost,127.0.0.1",
+			privateCAsConfigmap: "my-private-cas",
 			chartContent: map[string]string{
 				"redis/Chart.yaml": `apiVersion: v1
 name: redis
@@ -896,6 +902,7 @@ global:
     - name: NO_PROXY
       value: localhost,127.0.0.1
   isAirgap: false
+  privateCAConfigmap: my-private-cas
   replicatedID: kotsadm-id
 `, chartName),
 				"redis/charts/replicated/Chart.yaml": fmt.Sprintf(`apiVersion: v1
@@ -1298,12 +1305,13 @@ some: value
 			}
 
 			writeOptions := types.WriteOptions{
-				KotsadmID:          "kotsadm-id",
-				AppID:              "app-id",
-				IsAirgap:           tt.isAirgap,
-				HTTPProxyEnvValue:  tt.httpProxy,
-				HTTPSProxyEnvValue: tt.httpsProxy,
-				NoProxyEnvValue:    tt.noProxy,
+				KotsadmID:           "kotsadm-id",
+				AppID:               "app-id",
+				IsAirgap:            tt.isAirgap,
+				HTTPProxyEnvValue:   tt.httpProxy,
+				HTTPSProxyEnvValue:  tt.httpsProxy,
+				NoProxyEnvValue:     tt.noProxy,
+				PrivateCAsConfigmap: tt.privateCAsConfigmap,
 			}
 
 			got, err := configureChart(chartBytes, upstream, writeOptions)

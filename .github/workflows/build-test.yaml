@@ -592,7 +592,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         with:
           kots-namespace: 'qakotsregression'
-          test-focus: 'Regression'
+          test-id: '@regression'
           k8s-distribution: k3s
           k8s-version: v1.26
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
@@ -628,7 +628,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Smoke Test'
+          test-id: '@smoke-test'
           kots-namespace: 'smoke-test'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -846,7 +846,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Backup and Restore'
+          test-id: '@backup-and-restore'
           kots-namespace: 'backup-and-restore'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -883,7 +883,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'No Required Config'
+          test-id: '@no-required-config'
           kots-namespace: 'no-required-config'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -1073,7 +1073,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Config Validation'
+          test-id: '@config-validation'
           kots-namespace: 'config-validation'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -1109,7 +1109,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Version History Pagination'
+          test-id: '@version-history-pagination'
           kots-namespace: 'version-history-pagination'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -1117,7 +1117,6 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-
 
   validate-change-license:
     runs-on: ubuntu-20.04
@@ -1146,12 +1145,10 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Change License'
+          test-id: '@change-license'
           kots-namespace: 'change-license'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -1183,7 +1180,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Change Channel'
+          test-id: '@change-channel'
           kots-namespace: 'change-channel'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2338,7 +2335,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
         with:
-          test-focus: 'Min KOTS Version'
+          test-id: '@min-kots-version'
           kots-namespace: 'min-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2404,7 +2401,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
         with:
-          test-focus: 'Target KOTS Version'
+          test-id: '@target-kots-version'
           kots-namespace: 'target-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2469,7 +2466,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
         with:
-          test-focus: 'Range KOTS Version'
+          test-id: '@range-kots-version'
           kots-namespace: 'range-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -2857,12 +2854,10 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'multi-app-backup-and-restore'
+          test-id: '@multi-app-backup-and-restore'
           kots-namespace: 'multi-app-backup-and-restore'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -2895,12 +2890,10 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'multi-app-install'
+          test-id: '@multi-app-install'
           kots-namespace: 'multi-app-install'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -2933,7 +2926,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'airgap-smoke-test'
+          test-id: '@airgap-smoke-test'
           kots-namespace: 'airgap-smoke-test'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -3946,7 +3939,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Support Bundle'
+          test-id: '@support-bundle'
           kots-namespace: 'support-bundle'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -3984,7 +3977,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'GitOps'
+          test-id: '@gitops'
           kots-namespace: 'gitops'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -4335,12 +4328,9 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       - validate-version-history-pagination
-      - validate-change-license
       - validate-min-kots-version
       - validate-target-kots-version
       - validate-range-kots-version
-      - validate-multi-app-backup-and-restore
-      - validate-multi-app-install
       - validate-airgap-smoke-test
       - validate-support-bundle
       - validate-gitops
@@ -4350,6 +4340,9 @@ jobs:
       - validate-no-required-config
       - validate-config
       - validate-change-channel
+      - validate-multi-app-backup-and-restore
+      - validate-multi-app-install
+      - validate-change-license
       # non-testim tests
       - validate-minimal-rbac
       - validate-minimal-rbac-override

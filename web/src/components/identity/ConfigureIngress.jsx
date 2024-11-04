@@ -113,7 +113,7 @@ class ConfigureIngress extends Component {
                 </div>
                 <p className="u-fontSize--normal u-lineHeight--normal u-fontWeight--medium u-marginTop--5">
                   {" "}
-                  This is the host at which you can reach the admin console.{" "}
+                  This is the host at which you can reach the Admin Console.{" "}
                 </p>
                 <input
                   type="text"

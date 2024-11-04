@@ -53,6 +53,7 @@ type RewriteOptions struct {
 	HTTPProxyEnvValue    string
 	HTTPSProxyEnvValue   string
 	NoProxyEnvValue      string
+	PrivateCAsConfigmap  string
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -114,6 +115,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		HTTPProxyEnvValue:    rewriteOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:   rewriteOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:      rewriteOptions.NoProxyEnvValue,
+		PrivateCAsConfigmap:  rewriteOptions.PrivateCAsConfigmap,
 	}
 	if err = upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()

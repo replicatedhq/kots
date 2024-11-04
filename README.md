@@ -83,7 +83,24 @@ cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/ko
 
 ### Developing kotsadm web
 
-Changes to the kotsadm web component are reflected in real-time, no manual steps required.
+Changes to the kotsadm web component are reflected in real-time; no manual steps are required.
+
+However, to add, remove, or upgrade a dependency / package:
+
+1. Exec into the kotsadm-web container:
+    ```bash
+    make kotsadm-web-up
+    ```
+
+1. Run the desired `yarn` commands. For example:
+    ```bash
+    yarn add <package>
+    ```
+
+1. When finished, exit the container:
+    ```bash
+    exit
+    ```
 
 ### Developing kotsadm API
 

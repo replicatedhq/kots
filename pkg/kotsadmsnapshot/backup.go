@@ -996,19 +996,36 @@ func ecBackupAnnotations(ctx context.Context, kbClient kbclient.Client, in *embe
 	annotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
 	annotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()
 	annotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(in.Spec.HighAvailability)
-	if in.Spec.AdminConsole != nil && in.Spec.AdminConsole.Port > 0 {
-		annotations["kots.io/embedded-cluster-admin-console-port"] = strconv.Itoa(in.Spec.AdminConsole.Port)
-	}
-	if in.Spec.LocalArtifactMirror != nil && in.Spec.LocalArtifactMirror.Port > 0 {
-		annotations["kots.io/embedded-cluster-local-artifact-mirror-port"] = strconv.Itoa(in.Spec.LocalArtifactMirror.Port)
-	}
 
 	if in.Spec.Network != nil {
 		annotations["kots.io/embedded-cluster-pod-cidr"] = in.Spec.Network.PodCIDR
 		annotations["kots.io/embedded-cluster-service-cidr"] = in.Spec.Network.ServiceCIDR
 	}
 
+	if in.Spec.RuntimeConfig != nil {
+		rcAnnotations := ecRuntimeConfigToBackupAnnotations(in.Spec.RuntimeConfig)
+		for k, v := range rcAnnotations {
+			annotations[k] = v
+		}
+	}
+
 	return annotations, nil
+}
+
+func ecRuntimeConfigToBackupAnnotations(runtimeConfig *embeddedclusterv1beta1.RuntimeConfigSpec) map[string]string {
+	annotations := map[string]string{}
+
+	if runtimeConfig.AdminConsole.Port > 0 {
+		annotations["kots.io/embedded-cluster-admin-console-port"] = strconv.Itoa(runtimeConfig.AdminConsole.Port)
+	}
+	if runtimeConfig.LocalArtifactMirror.Port > 0 {
+		annotations["kots.io/embedded-cluster-local-artifact-mirror-port"] = strconv.Itoa(runtimeConfig.LocalArtifactMirror.Port)
+	}
+	if runtimeConfig.DataDir != "" {
+		annotations["kots.io/embedded-cluster-data-dir"] = runtimeConfig.DataDir
+	}
+
+	return annotations
 }
 
 // ecIncludedNamespaces returns the namespaces that should be included in an embedded cluster backup

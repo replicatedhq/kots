@@ -35,12 +35,14 @@ import (
 // jobs maps app ids to their cron jobs
 var jobs = make(map[string]*cron.Cron)
 var mtx sync.Mutex
-var store = storepkg.GetStore()
+var store storepkg.Store
 
 // Start will start the update checker
 // the frequency of those update checks are app specific and can be modified by the user
 func Start() error {
 	logger.Debug("starting update checker")
+
+	store = storepkg.GetStore()
 
 	appsList, err := store.ListInstalledApps()
 	if err != nil {

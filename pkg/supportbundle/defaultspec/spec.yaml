@@ -165,6 +165,13 @@ spec:
         name: kurl-last-config # NOTE: this will not live under the kots/ directory like other collectors
         namespace: kurl
         includeAllData: true
+    - copy:
+        collectorName: copy-last-run-preflight-result
+        name: kots/admin_console
+        selector:
+          - app=kotsadm
+        containerPath: /tmp/last-preflight-result
+        containerName: kotsadm
   analyzers:
     - clusterVersion:
         outcomes:

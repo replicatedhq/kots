@@ -26,9 +26,46 @@ interface PreflightResultResponse {
   showWarn: boolean;
 }
 
+const BackButton = ({
+  slug,
+  hasPreflight,
+  isConfigurable,
+}: {
+  slug: string;
+  hasPreflight: boolean;
+  isConfigurable: boolean;
+}) => {
+  const navigate = useNavigate();
+
+  if (hasPreflight) {
+    return (
+      <button
+        className="btn secondary blue"
+        onClick={() => navigate(`/upgrade-service/app/${slug}/preflight`)}
+      >
+        Back: Preflight checks
+      </button>
+    );
+  }
+
+  return (
+    <button
+      className="btn secondary blue"
+      onClick={() => navigate(`/upgrade-service/app/${slug}/config`)}
+      disabled={!isConfigurable}
+    >
+      Back: Config
+    </button>
+  );
+};
+
 const ConfirmAndDeploy = ({
   setCurrentStep,
+  hasPreflight,
+  isConfigurable,
 }: {
+  isConfigurable: boolean;
+  hasPreflight: boolean;
   setCurrentStep: (step: number) => void;
 }) => {
   useEffect(() => {
@@ -181,7 +218,10 @@ const ConfirmAndDeploy = ({
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Confirm and Deploy" showAppSlug />
-      <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]">
+      <div
+        data-testid="deploy-and-confirm-area"
+        className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]"
+      >
         {location.pathname.includes("version-history") && (
           <div className="u-fontWeight--bold link" onClick={() => navigate(-1)}>
             <Icon
@@ -212,7 +252,7 @@ const ConfirmAndDeploy = ({
             Confirm and Deploy
           </p>
 
-          {preflightCheck?.showPreflightCheckPending && (
+          {hasPreflight && preflightCheck?.showPreflightCheckPending && (
             <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
               <PreflightsProgress
                 pendingPreflightCheckName={
@@ -245,7 +285,7 @@ const ConfirmAndDeploy = ({
             </div>
           </div>
 
-          {preflightCheck?.showPreflightResults && (
+          {hasPreflight && preflightCheck?.showPreflightResults && (
             <div className="tw-mt-6">
               <div className="flex flex1 tw-justify-between tw-items-end">
                 <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
@@ -258,7 +298,7 @@ const ConfirmAndDeploy = ({
             </div>
           )}
 
-          {preflightCheck?.showIgnorePreflight && (
+          {hasPreflight && preflightCheck?.showIgnorePreflight && (
             <div className="flex flex0 justifyContent--center alignItems--center">
               <span
                 className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
@@ -270,12 +310,11 @@ const ConfirmAndDeploy = ({
           )}
         </div>
         <div className="tw-flex tw-justify-between tw-mt-4">
-          <button
-            className="btn secondary blue"
-            onClick={() => navigate(`/upgrade-service/app/${slug}/preflight`)}
-          >
-            Back: Preflight checks
-          </button>
+          <BackButton
+            slug={slug}
+            isConfigurable={isConfigurable}
+            hasPreflight={hasPreflight}
+          />
           <button
             className="btn primary blue"
             disabled={preflightCheck?.showDeploymentBlocked || isLoading}

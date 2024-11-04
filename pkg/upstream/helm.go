@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"gopkg.in/yaml.v3"
 )
 
@@ -276,6 +277,14 @@ func buildReplicatedValues(u *types.Upstream, options types.WriteOptions) (map[s
 	// because the airgap builder doesn't have the license context
 	if u.License != nil && options.IsAirgap {
 		replicatedValues["license"] = string(MustMarshalLicense(u.License))
+	}
+
+	if options.PrivateCAsConfigmap != "" {
+		replicatedValues["privateCAConfigmap"] = options.PrivateCAsConfigmap
+	}
+
+	if util.IsEmbeddedCluster() {
+		replicatedValues["clusterRole"] = "kotsadm-role"
 	}
 
 	replicatedValues["extraEnv"] = []struct {

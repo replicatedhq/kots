@@ -4,12 +4,16 @@ import (
 	"testing"
 
 	"github.com/blang/semver"
+	"github.com/golang/mock/gomock"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kots/pkg/store/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_isSameUpstreamRelease(t *testing.T) {
@@ -250,8 +254,10 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		version              *downstreamtypes.DownstreamVersion
 		appVersions          *downstreamtypes.DownstreamVersions
 		isSemverRequired     bool
+		setup                func(t *testing.T, mockStore *mock_store.MockStore)
 		expectedIsDeployable bool
 		expectedCause        string
+		wantErr              bool
 	}{
 		{
 			name: "failing strict preflights",
@@ -3621,6 +3627,147 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		},
 		/* ---- Semver rollback tests end here ---- */
 		/* ---- Semver tests end here ---- */
+		/* ---- Embedded cluster config tests start here ---- */
+		{
+			name: "embedded cluster config change should not allow rollbacks",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
+
+				mockStore.EXPECT().GetEmbeddedClusterConfigForVersion("APPID", int64(0)).Return(&embeddedclusterv1beta1.Config{
+					Spec: embeddedclusterv1beta1.ConfigSpec{
+						Version: "1.0.0-ec.0",
+					},
+				}, nil)
+				mockStore.EXPECT().GetEmbeddedClusterConfigForVersion("APPID", int64(1)).Return(&embeddedclusterv1beta1.Config{
+					Spec: embeddedclusterv1beta1.ConfigSpec{
+						Version: "1.0.0-ec.1",
+					},
+				}, nil)
+			},
+			version: &downstreamtypes.DownstreamVersion{
+				VersionLabel: "1.0.0",
+				Sequence:     0,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					VersionLabel: "2.0.0",
+					Sequence:     1,
+				},
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						VersionLabel: "3.0.0",
+						Sequence:     2,
+						KOTSKinds: &kotsutil.KotsKinds{
+							KotsApplication: kotsv1beta1.Application{
+								Spec: kotsv1beta1.ApplicationSpec{
+									AllowRollback: true,
+								},
+							},
+						},
+					},
+					{
+						VersionLabel: "2.0.0",
+						Sequence:     1,
+					},
+					{
+						VersionLabel: "1.0.0",
+						Sequence:     0,
+					},
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "Rollback is not supported, cluster configuration has changed.",
+		},
+		{
+			name: "embedded cluster config no change should allow rollbacks",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
+
+				mockStore.EXPECT().GetEmbeddedClusterConfigForVersion("APPID", int64(0)).Return(&embeddedclusterv1beta1.Config{
+					Spec: embeddedclusterv1beta1.ConfigSpec{
+						Version: "1.0.0-ec.0",
+					},
+				}, nil)
+				mockStore.EXPECT().GetEmbeddedClusterConfigForVersion("APPID", int64(1)).Return(&embeddedclusterv1beta1.Config{
+					Spec: embeddedclusterv1beta1.ConfigSpec{
+						Version: "1.0.0-ec.0",
+					},
+				}, nil)
+			},
+			version: &downstreamtypes.DownstreamVersion{
+				VersionLabel: "1.0.0",
+				Sequence:     0,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					VersionLabel: "2.0.0",
+					Sequence:     1,
+				},
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						VersionLabel: "3.0.0",
+						Sequence:     2,
+						KOTSKinds: &kotsutil.KotsKinds{
+							KotsApplication: kotsv1beta1.Application{
+								Spec: kotsv1beta1.ApplicationSpec{
+									AllowRollback: true,
+								},
+							},
+						},
+					},
+					{
+						VersionLabel: "2.0.0",
+						Sequence:     1,
+					},
+					{
+						VersionLabel: "1.0.0",
+						Sequence:     0,
+					},
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "embedded cluster, allowRollback = false should not allow rollbacks",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
+			},
+			version: &downstreamtypes.DownstreamVersion{
+				VersionLabel: "1.0.0",
+				Sequence:     0,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					VersionLabel: "2.0.0",
+					Sequence:     1,
+				},
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						VersionLabel: "3.0.0",
+						Sequence:     2,
+						KOTSKinds: &kotsutil.KotsKinds{
+							KotsApplication: kotsv1beta1.Application{
+								Spec: kotsv1beta1.ApplicationSpec{
+									AllowRollback: false,
+								},
+							},
+						},
+					},
+					{
+						VersionLabel: "2.0.0",
+						Sequence:     1,
+					},
+					{
+						VersionLabel: "1.0.0",
+						Sequence:     0,
+					},
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "Rollback is not supported.",
+		},
+		/* ---- Embedded cluster config tests end here ---- */
 	}
 
 	for _, test := range tests {
@@ -3656,7 +3803,20 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				}
 			}
 
-			isDeployable, cause := isAppVersionDeployable(test.version, test.appVersions, test.isSemverRequired)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockStore := mock_store.NewMockStore(ctrl)
+			if test.setup != nil {
+				test.setup(t, mockStore)
+			}
+
+			isDeployable, cause, err := isAppVersionDeployable(mockStore, "APPID", test.version, test.appVersions, test.isSemverRequired)
+			if test.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 			assert.Equal(t, test.expectedIsDeployable, isDeployable)
 			assert.Equal(t, test.expectedCause, cause)
 		})
