@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
 	"io/ioutil"
@@ -65,7 +66,11 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 	// - We can't directly run the official docker registry binary because it doesn't necessarily exist when pushing images from the host.
 	// - We need to be able to control stdout and stderr and stop the process later, but the registry go module doesn't give control over that.
 	// - The KOTS CLI binary exists inside the kotsadm pod and/or will be used to push images from the host.
+	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(kotsutil.GetKOTSBinPath(), "docker-registry", "serve", configFile.Name())
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	cmd.Env = []string{} // ignore env vars because they may override the config
 	if err := cmd.Start(); err != nil {
 		return errors.Wrap(err, "failed to start")
 	}
@@ -77,7 +82,7 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 	r.port = freePort
 
 	if err := r.WaitForReady(time.Second * 30); err != nil {
-		return errors.Wrap(err, "failed to wait for registry to become ready")
+		return errors.Wrapf(err, "failed to wait for registry to become ready\nstdout: %s\nstderr: %s", stdout.String(), stderr.String())
 	}
 
 	return nil
