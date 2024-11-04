@@ -161,7 +161,7 @@ func HomeDir() string {
 }
 
 func IsEmbeddedCluster() bool {
-	return os.Getenv("EMBEDDED_CLUSTER_ID") != ""
+	return EmbeddedClusterID() != ""
 }
 
 func EmbeddedClusterID() string {

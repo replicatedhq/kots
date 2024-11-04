@@ -220,8 +220,14 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	}
 
 	if status == storetypes.VersionPendingClusterManagement {
-		// if pending cluster management, we don't want to deploy the app
-		return kotsKinds, nil
+		if configFile != "" {
+			// if there is a config file, then we should proceed with the installation normally, not wait for the user
+			// to click through the UI to add nodes and configure the app
+			status = storetypes.VersionPendingConfig
+		} else {
+			// if pending cluster management, we don't want to deploy the app
+			return kotsKinds, nil
+		}
 	}
 
 	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(opts.PendingApp.ID, newSequence)
