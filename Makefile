@@ -44,6 +44,16 @@ integration-cli:
 ci-test:
 	go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... ./integration/... -coverprofile cover.out
 
+.PHONY: kots-linux-amd64
+kots-linux-amd64: export GOOS = linux
+kots-linux-amd64: export GOARCH = amd64
+kots-linux-amd64: kots
+
+.PHONY: kots-linux-arm64
+kots-linux-arm64: export GOOS = linux
+kots-linux-arm64: export GOARCH = arm64
+kots-linux-arm64: kots
+
 .PHONY: kots
 kots:
 	mkdir -p web/dist
