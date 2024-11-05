@@ -772,6 +772,17 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		updateAppConfigResponse.Error = "failed to get downstream version status"
 		return updateAppConfigResponse, err
 	}
+
+	if sequence == 0 && status == storetypes.VersionPending {
+		// we're in the initial config page and the app is now ready to be deployed
+		if err := version.DeployVersion(updateApp.ID, sequence); err != nil {
+			updateAppConfigResponse.Error = "failed to deploy"
+			return updateAppConfigResponse, err
+		}
+		updateAppConfigResponse.Success = true
+		return updateAppConfigResponse, nil
+	}
+
 	if status == storetypes.VersionPendingPreflight {
 		if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, skipPreflights, archiveDir); err != nil {
 			updateAppConfigResponse.Error = errors.Cause(err).Error()

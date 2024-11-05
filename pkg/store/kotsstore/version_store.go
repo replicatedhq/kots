@@ -25,6 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/secrets"
@@ -240,11 +241,6 @@ func (s *KOTSStore) GetEmbeddedClusterConfigForVersion(appID string, sequence in
 
 // GetAppVersionArchive will fetch the archive and extract it into the given dstPath directory name
 func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
-	// too noisy
-	// logger.Debug("getting app version archive",
-	// 	zap.String("appID", appID),
-	// 	zap.Int64("sequence", sequence))
-
 	path := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
 	bundlePath, err := filestore.GetStore().ReadArchive(path)
 	if err != nil {
@@ -762,6 +758,7 @@ func (s *KOTSStore) determineDownstreamVersionStatus(a *apptypes.App, sequence i
 			return types.VersionUnknown, errors.Wrap(err, "failed to check strict preflights from spec")
 		}
 		if hasStrictPreflights {
+			logger.Warnf("preflights will not be skipped, strict preflights are set to true")
 			return types.VersionPendingPreflight, nil
 		}
 	}
