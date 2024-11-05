@@ -9,6 +9,7 @@ spec:
         collectorName: replicated.app-health-check
         get:
           url: https://replicated.app/healthz
+          timeout: 10s
     - logs:
         collectorName: weave-net
         selector:
