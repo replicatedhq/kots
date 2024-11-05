@@ -190,7 +190,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", false, "", uploadExistingAppRequest.SkipPreflights, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", false, false, "", uploadExistingAppRequest.SkipPreflights, render.Renderer{})
 	if err != nil {
 		uploadResponse.Error = util.StrPointer("failed to create app version")
 		logger.Error(errors.Wrap(err, *uploadResponse.Error))
