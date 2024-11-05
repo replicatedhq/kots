@@ -19,6 +19,7 @@ import (
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	"github.com/replicatedhq/troubleshoot/pkg/multitype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -567,12 +568,132 @@ var _ = Describe("Kots", func() {
 			Expect(preflightResult).To(BeFalse())
 		})
 
-		It("returns true when there are more than one analyzers defined in the preflight spec", func() {
+		It("returns false when the client-side object does not have analyzers", func() {
+			kotsKind := &kotsutil.KotsKinds{
+				Preflight: &troubleshootv1beta2.Preflight{
+					Spec: troubleshootv1beta2.PreflightSpec{
+						Analyzers: []*troubleshootv1beta2.Analyze{},
+					},
+				},
+				Preflights: []troubleshootv1beta2.Preflight{
+					{
+						Spec: troubleshootv1beta2.PreflightSpec{
+							Analyzers: []*troubleshootv1beta2.Analyze{},
+						},
+					},
+					{
+						Spec: troubleshootv1beta2.PreflightSpec{
+							Analyzers: []*troubleshootv1beta2.Analyze{},
+						},
+					},
+				},
+			}
+			preflightResult := kotsKind.HasPreflights()
+			Expect(preflightResult).To(BeFalse())
+		})
+
+		It("returns true when there are analyzers defined in the preflight spec", func() {
+			// single spec
 			kotsKind := &kotsutil.KotsKinds{
 				Preflight: &troubleshootv1beta2.Preflight{
 					Spec: troubleshootv1beta2.PreflightSpec{
 						Analyzers: []*troubleshootv1beta2.Analyze{
 							{},
+						},
+					},
+				},
+			}
+			preflightResult := kotsKind.HasPreflights()
+			Expect(preflightResult).To(BeTrue())
+
+			// multiple specs
+			kotsKind = &kotsutil.KotsKinds{
+				Preflights: []troubleshootv1beta2.Preflight{
+					{
+						Spec: troubleshootv1beta2.PreflightSpec{
+							Analyzers: []*troubleshootv1beta2.Analyze{
+								{},
+							},
+						},
+					},
+					{
+						Spec: troubleshootv1beta2.PreflightSpec{},
+					},
+				},
+			}
+			preflightResult = kotsKind.HasPreflights()
+			Expect(preflightResult).To(BeTrue())
+		})
+
+		It("returns false when all analyzers are excluded", func() {
+			kotsKind := &kotsutil.KotsKinds{
+				Preflight: &troubleshootv1beta2.Preflight{
+					Spec: troubleshootv1beta2.PreflightSpec{
+						Analyzers: []*troubleshootv1beta2.Analyze{
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+										Exclude: multitype.FromBool(true),
+									},
+								},
+							},
+						},
+					},
+				},
+				Preflights: []troubleshootv1beta2.Preflight{
+					{
+						Spec: troubleshootv1beta2.PreflightSpec{
+							Analyzers: []*troubleshootv1beta2.Analyze{
+								{
+									ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+										AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+											Exclude: multitype.FromBool(true),
+										},
+									},
+								},
+								{
+									ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+										AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+											Exclude: multitype.FromBool(true),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			preflightResult := kotsKind.HasPreflights()
+			Expect(preflightResult).To(BeFalse())
+		})
+
+		It("returns true when a single analyzer is not excluded", func() {
+			kotsKind := &kotsutil.KotsKinds{
+				Preflight: &troubleshootv1beta2.Preflight{
+					Spec: troubleshootv1beta2.PreflightSpec{
+						Analyzers: []*troubleshootv1beta2.Analyze{
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+										Exclude: multitype.FromBool(true),
+									},
+								},
+							},
+						},
+					},
+				},
+				Preflights: []troubleshootv1beta2.Preflight{
+					{
+						Spec: troubleshootv1beta2.PreflightSpec{
+							Analyzers: []*troubleshootv1beta2.Analyze{
+								{
+									ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+										AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+											Exclude: multitype.FromBool(false),
+										},
+									},
+								},
+							},
 						},
 					},
 				},

@@ -13,8 +13,8 @@ test('multi app install', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Your cluster meets the recommended and required versions of Kubernetes');
   await page.getByRole('button', { name: 'Deploy' }).click();
   await expect(page.locator('#app')).toContainText('Multi App Install 1');
+  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Currently deployed version');
   await expect(page.locator('#app')).toContainText('0.1.3');
   const app1Status = execSync(`kubectl kots get apps -n ${process.env.NAMESPACE} | grep mutli-app-install | awk '{print $2}'`).toString().trim();
   expect(app1Status).toBe('ready');
@@ -27,8 +27,8 @@ test('multi app install', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Your cluster meets the recommended and required versions of Kubernetes');
   await page.getByRole('button', { name: 'Deploy' }).click();
   await expect(page.locator('#app')).toContainText('Multi App Install 2');
+  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Currently deployed version');
   await expect(page.locator('#app')).toContainText('2.1.2');
   const app2Status = execSync(`kubectl kots get apps -n ${process.env.NAMESPACE} | grep multi-app-install-2 | awk '{print $2}'`).toString().trim();
   expect(app2Status).toBe('ready');

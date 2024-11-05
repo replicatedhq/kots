@@ -6,14 +6,14 @@ test('multi app backup and restore', async ({ page }) => {
   await login(page);
   await uploadLicense(page, expect, "app1-license.yaml");
   await expect(page.locator('#app')).toContainText('Multi App Backup and Restore 1', { timeout: 10000 });
+  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Currently deployed version');
   await page.locator('div').filter({ hasText: /^Change passwordAdd new applicationLog out$/ }).getByRole('img').click();
   await page.getByText('Add new application').click();
   await uploadLicense(page, expect, "app2-license.yaml");
   await expect(page.locator('#app')).toContainText('Multi App Backup and Restore 2', { timeout: 10000 });
+  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Currently deployed version');
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click(); 
   await page.getByRole('link', { name: 'Partial Snapshots' }).click({ timeout: 10000 });
   await page.getByRole('button', { name: 'Start a snapshot' }).click({ timeout: 15000 });

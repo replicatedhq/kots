@@ -753,13 +753,15 @@ func (s *KOTSStore) determineDownstreamVersionStatus(a *apptypes.App, sequence i
 		if !skipPreflights {
 			return types.VersionPendingPreflight, nil
 		}
-		hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(kotsKinds.Preflight)
-		if err != nil {
-			return types.VersionUnknown, errors.Wrap(err, "failed to check strict preflights from spec")
-		}
-		if hasStrictPreflights {
-			logger.Warnf("preflights will not be skipped, strict preflights are set to true")
-			return types.VersionPendingPreflight, nil
+		for _, p := range kotsKinds.AllPreflights() {
+			hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(&p)
+			if err != nil {
+				return types.VersionUnknown, errors.Wrap(err, "failed to check strict preflights from spec")
+			}
+			if hasStrictPreflights {
+				logger.Warnf("preflights will not be skipped, strict preflights are set to true")
+				return types.VersionPendingPreflight, nil
+			}
 		}
 	}
 

@@ -6,8 +6,8 @@ test('change license', async ({ page }) => {
   await login(page);
   await uploadLicense(page, expect, "community-license.yaml");
   await expect(page.locator('#app')).toContainText('Change License', { timeout: 10000 });
+  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Currently deployed version');
   await page.getByRole('link', { name: 'License', exact: true }).click();
   await expect(page.locator('#app')).toContainText('change-license-community', { timeout: 10000 });
   await expect(page.locator('#app')).toContainText('Community license');

@@ -32,6 +32,7 @@ import (
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	kurlscheme "github.com/replicatedhq/kurlkinds/client/kurlclientset/scheme"
 	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
+	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/troubleshoot/pkg/collect"
@@ -89,7 +90,8 @@ type KotsKinds struct {
 	V1Beta2HelmCharts *kotsv1beta2.HelmChartList
 
 	Collector     *troubleshootv1beta2.Collector
-	Preflight     *troubleshootv1beta2.Preflight
+	Preflight     *troubleshootv1beta2.Preflight // TODO: consolidate this with Preflights
+	Preflights    []troubleshootv1beta2.Preflight
 	Analyzer      *troubleshootv1beta2.Analyzer
 	SupportBundle *troubleshootv1beta2.SupportBundle
 	Redactor      *troubleshootv1beta2.Redactor
@@ -235,10 +237,28 @@ func (k *KotsKinds) IsConfigurable() bool {
 }
 
 func (k *KotsKinds) HasPreflights() bool {
-	if k == nil || k.Preflight == nil {
+	if k == nil {
 		return false
 	}
-	return len(k.Preflight.Spec.Analyzers) > 0
+	numAnalyzers := 0
+	for _, p := range k.AllPreflights() {
+		for _, a := range p.Spec.Analyzers {
+			exclude := troubleshootanalyze.GetExcludeFlag(a).BoolOrDefaultFalse()
+			if !exclude {
+				numAnalyzers += 1
+			}
+		}
+	}
+	return numAnalyzers > 0
+}
+
+func (k *KotsKinds) AllPreflights() []troubleshootv1beta2.Preflight {
+	all := []troubleshootv1beta2.Preflight{}
+	if k.Preflight != nil {
+		all = append(all, *k.Preflight)
+	}
+	all = append(all, k.Preflights...)
+	return all
 }
 
 func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
@@ -724,6 +744,12 @@ func LoadKotsKindsWithOpts(archive string, opts LoadKotsKindsOptions) (*KotsKind
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to walk upstream dir")
 	}
+
+	tsKinds, err := LoadTSKindsFromPath(fromDir)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from: %s", fromDir))
+	}
+	kotsKinds.Preflights = append(kotsKinds.Preflights, tsKinds.PreflightsV1Beta2...)
 
 	return &kotsKinds, nil
 }
