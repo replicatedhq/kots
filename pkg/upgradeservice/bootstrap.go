@@ -133,7 +133,7 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	pullOptions.KotsKinds = beforeKotsKinds
 
 	_, err = pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions)
-	if err != nil {
+	if err != nil && errors.Cause(err) != pull.ErrConfigNeeded {
 		return errors.Wrap(err, "failed to pull")
 	}
 
