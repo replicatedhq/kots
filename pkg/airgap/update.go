@@ -229,7 +229,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 
 	// Create the app in the db
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Airgap Update", skipPreflights, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Airgap Update", false, "", skipPreflights, render.Renderer{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
@@ -239,40 +239,17 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
 	}
 
-	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)
+	status, err := store.GetStore().GetDownstreamVersionStatus(a.ID, newSequence)
 	if err != nil {
-		return errors.Wrap(err, "failed to check if app preflight has strict analyzers")
+		return errors.Wrap(err, "failed to get downstream version status")
 	}
-
-	if hasStrictPreflights && skipPreflights {
-		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
-	}
-
-	if !skipPreflights || hasStrictPreflights {
+	if status == storetypes.VersionPendingPreflight {
 		if err := preflight.Run(a.ID, a.Slug, newSequence, true, skipPreflights, archiveDir); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
 	}
 
 	if deploy {
-		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
-		if err != nil {
-			return errors.Wrap(err, "failed to fetch downstreams")
-		}
-		if len(downstreams) == 0 {
-			return errors.Errorf("no downstreams found for app %q", a.Slug)
-		}
-		downstream := downstreams[0]
-
-		status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, newSequence)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get status for version %d", newSequence)
-		}
-
-		if status == storetypes.VersionPendingConfig {
-			return errors.Errorf("not deploying version %d because it's %s", newSequence, status)
-		}
-
 		if err := version.DeployVersion(a.ID, newSequence); err != nil {
 			return errors.Wrap(err, "failed to deploy app version")
 		}

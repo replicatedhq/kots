@@ -749,7 +749,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	}
 
 	if createNewVersion {
-		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", skipPreflights, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", false, "", skipPreflights, render.Renderer{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err
@@ -761,28 +761,18 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 			updateAppConfigResponse.Error = "failed to get existing downstream version source"
 			return updateAppConfigResponse, err
 		}
-		if err := store.GetStore().UpdateAppVersion(updateApp.ID, sequence, nil, archiveDir, source, skipPreflights, render.Renderer{}); err != nil {
+		if err := store.GetStore().UpdateAppVersion(updateApp.ID, sequence, nil, archiveDir, source, false, "", skipPreflights, render.Renderer{}); err != nil {
 			updateAppConfigResponse.Error = "failed to update app version"
 			return updateAppConfigResponse, err
 		}
 	}
 
-	if err := store.GetStore().SetDownstreamVersionStatus(updateApp.ID, int64(sequence), storetypes.VersionPendingPreflight, ""); err != nil {
-		updateAppConfigResponse.Error = "failed to set downstream status to 'pending preflight'"
-		return updateAppConfigResponse, err
-	}
-
-	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(updateApp.ID, sequence)
+	status, err := store.GetStore().GetDownstreamVersionStatus(updateApp.ID, sequence)
 	if err != nil {
-		updateAppConfigResponse.Error = "failed to check if version has strict preflights"
+		updateAppConfigResponse.Error = "failed to get downstream version status"
 		return updateAppConfigResponse, err
 	}
-
-	if hasStrictPreflights && skipPreflights {
-		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
-	}
-
-	if !skipPreflights || hasStrictPreflights {
+	if status == storetypes.VersionPendingPreflight {
 		if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, skipPreflights, archiveDir); err != nil {
 			updateAppConfigResponse.Error = errors.Cause(err).Error()
 			return updateAppConfigResponse, err
@@ -790,8 +780,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	}
 
 	if deploy {
-		err := version.DeployVersion(updateApp.ID, sequence)
-		if err != nil {
+		if err := version.DeployVersion(updateApp.ID, sequence); err != nil {
 			updateAppConfigResponse.Error = "failed to deploy"
 			return updateAppConfigResponse, err
 		}

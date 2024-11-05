@@ -190,7 +190,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", false, "", uploadExistingAppRequest.SkipPreflights, render.Renderer{})
 	if err != nil {
 		uploadResponse.Error = util.StrPointer("failed to create app version")
 		logger.Error(errors.Wrap(err, *uploadResponse.Error))
@@ -198,19 +198,14 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)
+	status, err := store.GetStore().GetDownstreamVersionStatus(a.ID, newSequence)
 	if err != nil {
-		uploadResponse.Error = util.StrPointer("failed to check if app preflight has strict analyzers")
+		uploadResponse.Error = util.StrPointer("failed to get downstream version status")
 		logger.Error(errors.Wrap(err, *uploadResponse.Error))
 		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
-
-	if hasStrictPreflights && uploadExistingAppRequest.SkipPreflights {
-		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
-	}
-
-	if !uploadExistingAppRequest.SkipPreflights || hasStrictPreflights {
+	if status == storetypes.VersionPendingPreflight {
 		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, uploadExistingAppRequest.SkipPreflights, archiveDir); err != nil {
 			uploadResponse.Error = util.StrPointer("failed to get run preflights")
 			logger.Error(errors.Wrap(err, *uploadResponse.Error))
@@ -220,21 +215,6 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if uploadExistingAppRequest.Deploy {
-		status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, newSequence)
-		if err != nil {
-			uploadResponse.Error = util.StrPointer("failed to get update downstream status")
-			logger.Error(errors.Wrap(err, *uploadResponse.Error))
-			JSON(w, http.StatusInternalServerError, uploadResponse)
-			return
-		}
-
-		if status == storetypes.VersionPendingConfig {
-			uploadResponse.Error = util.StrPointer(fmt.Sprintf("not deploying version %d because it's %s", newSequence, status))
-			logger.Error(errors.Wrap(err, *uploadResponse.Error))
-			JSON(w, http.StatusInternalServerError, uploadResponse)
-			return
-		}
-
 		if err := version.DeployVersion(a.ID, newSequence); err != nil {
 			cause := errors.Cause(err)
 			if _, ok := cause.(util.ActionableError); ok {

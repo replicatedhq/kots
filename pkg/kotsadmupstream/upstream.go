@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
@@ -265,14 +266,14 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeInstallation.UpdateCursor && afterKotsKinds.Installation.Spec.ChannelID == beforeInstallation.ChannelID {
 			return
 		}
-		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", false, "", skipPreflights, render.Renderer{})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return
 		}
 		finalSequence = &newSequence
 	} else {
-		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, render.Renderer{})
+		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", false, "", skipPreflights, render.Renderer{})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return
@@ -280,17 +281,12 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		finalSequence = update.AppSequence
 	}
 
-	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, *finalSequence)
+	status, err := store.GetStore().GetDownstreamVersionStatus(a.ID, *finalSequence)
 	if err != nil {
-		finalError = errors.Wrap(err, "failed to check if app preflight has strict analyzers")
+		finalError = errors.Wrap(err, "failed to get downstream version status")
 		return
 	}
-
-	if hasStrictPreflights && skipPreflights {
-		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
-	}
-
-	if !skipPreflights || hasStrictPreflights {
+	if status == storetypes.VersionPendingPreflight {
 		if err := preflight.Run(appID, a.Slug, *finalSequence, a.IsAirgap, skipPreflights, archiveDir); err != nil {
 			finalError = errors.Wrap(err, "failed to run preflights")
 			return
