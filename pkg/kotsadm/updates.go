@@ -171,7 +171,7 @@ func UpdateToVersion(newVersion string) error {
 	return nil
 }
 
-func findUpdatePod(ctx context.Context, clientset *kubernetes.Clientset) (*corev1.Pod, error) {
+func findUpdatePod(ctx context.Context, clientset kubernetes.Interface) (*corev1.Pod, error) {
 	selectorLabels := map[string]string{
 		"app": "kotsadm-updater",
 	}
@@ -199,7 +199,7 @@ func findUpdatePod(ctx context.Context, clientset *kubernetes.Clientset) (*corev
 	return pod, nil
 }
 
-func getLastLogLineFromPod(ctx context.Context, clientset *kubernetes.Clientset, pod *corev1.Pod) (string, error) {
+func getLastLogLineFromPod(ctx context.Context, clientset kubernetes.Interface, pod *corev1.Pod) (string, error) {
 	if len(pod.Spec.Containers) == 0 {
 		return "", nil
 	}

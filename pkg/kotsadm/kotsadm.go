@@ -116,7 +116,7 @@ func getKotsadmNamespacedRBAC(s *json.Serializer, additionalNamespace string, ko
 	return nil
 }
 
-func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset kubernetes.Interface) error {
 	if deployOptions.EnsureRBAC {
 		if err := ensureKotsadmRBAC(*deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure kotsadm rbac")
@@ -153,7 +153,7 @@ func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kuber
 	return nil
 }
 
-func ensureKotsadmRBAC(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureKotsadmRBAC(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	isClusterScoped, err := isKotsadmClusterScoped(&deployOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if kotsadm is cluster scoped")
@@ -207,7 +207,7 @@ func ensureKotsadmRBAC(deployOptions types.DeployOptions, clientset *kubernetes.
 }
 
 // ensureKotsadmClusterRBAC will ensure that the cluster role and cluster role bindings exists
-func ensureKotsadmClusterRBAC(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureKotsadmClusterRBAC(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	err := ensureKotsadmClusterRole(clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm cluster role")
@@ -224,7 +224,7 @@ func ensureKotsadmClusterRBAC(deployOptions types.DeployOptions, clientset *kube
 	return nil
 }
 
-func ensureKotsadmClusterRole(clientset *kubernetes.Clientset) error {
+func ensureKotsadmClusterRole(clientset kubernetes.Interface) error {
 	_, err := clientset.RbacV1().ClusterRoles().Create(context.TODO(), kotsadmobjects.KotsadmClusterRole(), metav1.CreateOptions{})
 	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
 		return nil
@@ -233,7 +233,7 @@ func ensureKotsadmClusterRole(clientset *kubernetes.Clientset) error {
 	return errors.Wrap(err, "failed to create cluster role")
 }
 
-func ensureKotsadmClusterRoleBinding(serviceAccountNamespace string, clientset *kubernetes.Clientset) error {
+func ensureKotsadmClusterRoleBinding(serviceAccountNamespace string, clientset kubernetes.Interface) error {
 	clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), "kotsadm-rolebinding", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		_, err := clientset.RbacV1().ClusterRoleBindings().Create(context.TODO(), kotsadmobjects.KotsadmClusterRoleBinding(serviceAccountNamespace), metav1.CreateOptions{})
@@ -265,7 +265,7 @@ func ensureKotsadmClusterRoleBinding(serviceAccountNamespace string, clientset *
 	return nil
 }
 
-func ensureKotsadmServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
+func ensureKotsadmServiceAccount(namespace string, clientset kubernetes.Interface) error {
 	_, err := clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
@@ -281,7 +281,7 @@ func ensureKotsadmServiceAccount(namespace string, clientset *kubernetes.Clients
 	return nil
 }
 
-func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	desiredDeployment, err := kotsadmobjects.KotsadmDeployment(deployOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to get desired kotsadm deployment definition")
@@ -312,7 +312,7 @@ func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kuber
 	return nil
 }
 
-func ensureKotsadmStatefulSet(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
+func ensureKotsadmStatefulSet(deployOptions types.DeployOptions, clientset kubernetes.Interface, size resource.Quantity) error {
 	desiredStatefulSet, err := kotsadmobjects.KotsadmStatefulSet(deployOptions, size)
 	if err != nil {
 		return errors.Wrap(err, "failed to get desired kotsadm statefulset definition")
@@ -344,7 +344,7 @@ func ensureKotsadmStatefulSet(deployOptions types.DeployOptions, clientset *kube
 	return nil
 }
 
-func ensureKotsadmService(namespace string, clientset *kubernetes.Clientset, nodePort int32) error {
+func ensureKotsadmService(namespace string, clientset kubernetes.Interface, nodePort int32) error {
 	service := kotsadmobjects.KotsadmService(namespace, nodePort)
 
 	existing, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})

@@ -27,7 +27,7 @@ func getApplicationMetadataYAML(data []byte, namespace string, upstreamURI strin
 	return docs, nil
 }
 
-func ensureApplicationMetadata(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureApplicationMetadata(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {

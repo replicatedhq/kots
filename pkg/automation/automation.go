@@ -124,7 +124,7 @@ func AutomateInstall(opts AutomateInstallOptions) error {
 	return nil
 }
 
-func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.Secret, additionalFiles map[string][]byte) (finalError error) {
+func installLicenseSecret(clientset kubernetes.Interface, licenseSecret corev1.Secret, additionalFiles map[string][]byte) (finalError error) {
 	license, ok := licenseSecret.Data["license"]
 	if !ok {
 		return fmt.Errorf("license secret %q does not contain a license field", licenseSecret.Name)

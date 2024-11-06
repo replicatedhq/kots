@@ -54,7 +54,7 @@ func getRqliteYAML(deployOptions types.DeployOptions) (map[string][]byte, error)
 	return docs, nil
 }
 
-func ensureRqlite(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureRqlite(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	if err := ensureRqliteSecret(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure rqlite secret")
 	}
@@ -79,7 +79,7 @@ func ensureRqlite(deployOptions types.DeployOptions, clientset *kubernetes.Clien
 	return nil
 }
 
-func ensureRqliteStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
+func ensureRqliteStatefulset(deployOptions types.DeployOptions, clientset kubernetes.Interface, size resource.Quantity) error {
 	desiredRqlite, err := kotsadmobjects.RqliteStatefulset(deployOptions, size)
 	if err != nil {
 		return errors.Wrap(err, "failed to get desired rqlite statefulset definition")
@@ -129,7 +129,7 @@ func ensureRqliteStatefulset(deployOptions types.DeployOptions, clientset *kuber
 	return nil
 }
 
-func ensureRqliteService(namespace string, clientset *kubernetes.Clientset) error {
+func ensureRqliteService(namespace string, clientset kubernetes.Interface) error {
 	_, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm-rqlite", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
@@ -145,7 +145,7 @@ func ensureRqliteService(namespace string, clientset *kubernetes.Clientset) erro
 	return nil
 }
 
-func ensureRqliteHeadlessService(namespace string, clientset *kubernetes.Clientset) error {
+func ensureRqliteHeadlessService(namespace string, clientset kubernetes.Interface) error {
 	_, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm-rqlite-headless", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {

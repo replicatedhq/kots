@@ -12,7 +12,7 @@ import (
 )
 
 // removeNodeAPI should be removable when we don't need to support direct upgrade paths from 1.19.6 and before
-func removeNodeAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func removeNodeAPI(deployOptions *types.DeployOptions, clientset kubernetes.Interface) error {
 	ns := deployOptions.Namespace
 
 	err := clientset.AppsV1().Deployments(ns).Delete(context.TODO(), "kotsadm-api", metav1.DeleteOptions{})
@@ -35,7 +35,7 @@ func removeNodeAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 }
 
 // removeNodeAPIRBAC should be removable when we don't need to support direct upgrade paths from 1.19.6 and before
-func removeNodeAPIRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func removeNodeAPIRBAC(deployOptions *types.DeployOptions, clientset kubernetes.Interface) error {
 	isClusterScoped, err := isKotsadmClusterScoped(deployOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if kotsadm api is cluster scoped")
@@ -60,7 +60,7 @@ func removeNodeAPIRBAC(deployOptions *types.DeployOptions, clientset *kubernetes
 }
 
 // removeNodeAPIClusterRBAC should be removable when we don't need to support direct upgrade paths from 1.19.6 and before
-func removeNodeAPIClusterRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func removeNodeAPIClusterRBAC(deployOptions *types.DeployOptions, clientset kubernetes.Interface) error {
 	err := clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-api", metav1.DeleteOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to delete api service account")

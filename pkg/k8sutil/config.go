@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func GetCurrentRules(deployOptions kotsadmtypes.DeployOptions, clientset *kubernetes.Clientset) ([]rbacv1.PolicyRule, error) {
+func GetCurrentRules(deployOptions kotsadmtypes.DeployOptions, clientset kubernetes.Interface) ([]rbacv1.PolicyRule, error) {
 	sar := &authorizationv1.SelfSubjectRulesReview{
 		Spec: authorizationv1.SelfSubjectRulesReviewSpec{
 			Namespace: deployOptions.Namespace,

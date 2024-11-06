@@ -33,7 +33,7 @@ func getLicenseSecretYAML(deployOptions *types.DeployOptions) (map[string][]byte
 	return docs, nil
 }
 
-func ensureLicenseSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) (bool, error) {
+func ensureLicenseSecret(deployOptions *types.DeployOptions, clientset kubernetes.Interface) (bool, error) {
 	existingSecret, err := getLicenseSecret(deployOptions.Namespace, clientset)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to check for existing license secret")
@@ -57,7 +57,7 @@ func ensureLicenseSecret(deployOptions *types.DeployOptions, clientset *kubernet
 	return true, nil
 }
 
-func getLicenseSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+func getLicenseSecret(namespace string, clientset kubernetes.Interface) (*corev1.Secret, error) {
 	licenseSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-default-license", metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {

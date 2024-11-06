@@ -384,7 +384,7 @@ func getVersion(ctx context.Context, namespace string) (string, error) {
 	return serverStatus.Status.ServerVersion, nil
 }
 
-func getVeleroPod(ctx context.Context, clientset *kubernetes.Clientset, namespace string) (string, error) {
+func getVeleroPod(ctx context.Context, clientset kubernetes.Interface, namespace string) (string, error) {
 	veleroLabels := map[string]string{
 		"component": "velero",
 		"deploy":    "velero",
@@ -415,7 +415,7 @@ func getVeleroPod(ctx context.Context, clientset *kubernetes.Clientset, namespac
 	return "", nil
 }
 
-func getNodeAgentPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]string, error) {
+func getNodeAgentPods(ctx context.Context, clientset kubernetes.Interface, namespace string) ([]string, error) {
 	componentReq, err := labels.NewRequirement("component", selection.Equals, []string{"velero"})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create component requirement")
@@ -456,7 +456,7 @@ func getNodeAgentPods(ctx context.Context, clientset *kubernetes.Clientset, name
 
 // listPossibleVeleroDeployments filters with a label selector based on how we've found velero deployed
 // using the CLI or the Helm Chart.
-func listPossibleVeleroDeployments(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]v1.Deployment, error) {
+func listPossibleVeleroDeployments(ctx context.Context, clientset kubernetes.Interface, namespace string) ([]v1.Deployment, error) {
 	deployments, err := clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "component=velero",
 	})
@@ -476,7 +476,7 @@ func listPossibleVeleroDeployments(ctx context.Context, clientset *kubernetes.Cl
 
 // listPossibleNodeAgentDaemonsets filters with a label selector based on how we've found node-agent deployed
 // using the CLI or the Helm Chart.
-func listPossibleNodeAgentDaemonsets(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]v1.DaemonSet, error) {
+func listPossibleNodeAgentDaemonsets(ctx context.Context, clientset kubernetes.Interface, namespace string) ([]v1.DaemonSet, error) {
 	daemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "component=velero",
 	})

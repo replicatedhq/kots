@@ -33,7 +33,7 @@ func getConfigMapsYAML(deployOptions types.DeployOptions) (map[string][]byte, er
 	return docs, nil
 }
 
-func ensureKotsadmConfig(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureKotsadmConfig(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	if err := kotsadmresources.EnsurePrivateKotsadmRegistrySecret(deployOptions.Namespace, deployOptions.RegistryConfig, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure private kotsadm registry secret")
 	}
@@ -45,7 +45,7 @@ func ensureKotsadmConfig(deployOptions types.DeployOptions, clientset *kubernete
 	return nil
 }
 
-func EnsureConfigMaps(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func EnsureConfigMaps(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	desiredConfigMap := kotsadmobjects.KotsadmConfigMap(deployOptions)
 
 	existingConfigMap, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
@@ -77,7 +77,7 @@ func updateConfigMap(existingConfigMap, desiredConfigMap *corev1.ConfigMap) *cor
 	return existingConfigMap
 }
 
-func ensureWaitForAirgapConfig(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, configMapName string) error {
+func ensureWaitForAirgapConfig(deployOptions types.DeployOptions, clientset kubernetes.Interface, configMapName string) error {
 	additionalLabels := map[string]string{
 		"kots.io/automation": "airgap",
 	}
@@ -117,7 +117,7 @@ func ensureWaitForAirgapConfig(deployOptions types.DeployOptions, clientset *kub
 	return nil
 }
 
-func ensureConfigMapWithData(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, configMapName string, data map[string]string) error {
+func ensureConfigMapWithData(deployOptions types.DeployOptions, clientset kubernetes.Interface, configMapName string, data map[string]string) error {
 	configMap, err := configMapWithData(deployOptions, configMapName, data)
 	if err != nil {
 		return errors.Wrap(err, "failed to build config map")

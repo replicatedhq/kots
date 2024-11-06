@@ -378,7 +378,7 @@ func createDialer(cfg *rest.Config, namespace string, podName string) (httpstrea
 	return spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL), nil
 }
 
-func ServiceForward(clientset *kubernetes.Clientset, cfg *rest.Config, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {
+func ServiceForward(clientset kubernetes.Interface, cfg *rest.Config, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {
 	isPortAvailable, err := IsPortAvailable(clientset, localPort)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if port is available")
@@ -454,7 +454,7 @@ func ServiceForward(clientset *kubernetes.Clientset, cfg *rest.Config, localPort
 	return stopChan, nil
 }
 
-func getFirstPod(clientset *kubernetes.Clientset, namespace string, selector string) (string, error) {
+func getFirstPod(clientset kubernetes.Interface, namespace string, selector string) (string, error) {
 	options := metav1.ListOptions{LabelSelector: selector}
 
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), options)

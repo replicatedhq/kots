@@ -60,7 +60,7 @@ func ValidateCurrentPassword(kotsStore store.Store, currentPassword string) erro
 }
 
 // ChangePassword - will change the password in the kotsadm secret
-func ChangePassword(clientset *kubernetes.Clientset, namespace string, newPassword string) error {
+func ChangePassword(clientset kubernetes.Interface, namespace string, newPassword string) error {
 	passwordLock.Lock()
 	defer passwordLock.Unlock()
 

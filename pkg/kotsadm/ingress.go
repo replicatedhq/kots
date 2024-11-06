@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset, ingressSpec kotsv1beta1.IngressConfigSpec) error {
+func EnsureIngress(ctx context.Context, namespace string, clientset kubernetes.Interface, ingressSpec kotsv1beta1.IngressConfigSpec) error {
 	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
 		return DeleteIngress(ctx, namespace, clientset)
 	}
@@ -20,7 +20,7 @@ func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.
 	return ingress.EnsureIngress(ctx, clientset, namespace, kotsadmIngress)
 }
 
-func DeleteIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset) error {
+func DeleteIngress(ctx context.Context, namespace string, clientset kubernetes.Interface) error {
 	err := clientset.NetworkingV1().Ingresses(namespace).Delete(ctx, "kotsadm", metav1.DeleteOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		err = nil

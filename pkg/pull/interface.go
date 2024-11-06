@@ -3,10 +3,10 @@ package pull
 var _p PullerInterface
 
 func init() {
-	SetPuller(&Puller{})
+	Set(&Puller{})
 }
 
-func SetPuller(p PullerInterface) {
+func Set(p PullerInterface) {
 	_p = p
 }
 

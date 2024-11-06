@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func ensureAdditionalNamespaces(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
+func ensureAdditionalNamespaces(deployOptions *types.DeployOptions, clientset kubernetes.Interface, log *logger.CLILogger) error {
 	// try to parse
 	if deployOptions.ApplicationMetadata == nil {
 		return nil

@@ -398,7 +398,7 @@ func createClusterSpecificSpec(app *apptypes.App, b *troubleshootv1beta2.Support
 }
 
 // createDefaultSpec creates a default support bundle spec that includes the default collectors and analyzers and add kurl specific collectors and analyzers if the cluster is a kurl cluster
-func createDefaultSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, clientset *kubernetes.Clientset) (*troubleshootv1beta2.SupportBundle, error) {
+func createDefaultSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, clientset kubernetes.Interface) (*troubleshootv1beta2.SupportBundle, error) {
 	supportBundle, err := staticspecs.GetDefaultSpec(app)
 	if err != nil {
 		logger.Errorf("Failed to load default support bundle spec: %v", err)

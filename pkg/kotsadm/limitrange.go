@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func maybeGetNamespaceLimitRanges(clientset *kubernetes.Clientset, namespace string) (*corev1.LimitRange, error) {
+func maybeGetNamespaceLimitRanges(clientset kubernetes.Interface, namespace string) (*corev1.LimitRange, error) {
 	limitRanges, err := clientset.CoreV1().LimitRanges(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list limit ranges")

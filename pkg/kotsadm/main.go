@@ -99,7 +99,7 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOptions) error {
+func Upgrade(clientset kubernetes.Interface, upgradeOptions types.UpgradeOptions) error {
 	log := logger.NewCLILogger(os.Stdout)
 
 	if err := canUpgrade(upgradeOptions, clientset, log); err != nil {
@@ -245,7 +245,7 @@ func IsAirgap() bool {
 	return os.Getenv("DISABLE_OUTBOUND_CONNECTIONS") == "true"
 }
 
-func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
+func canUpgrade(upgradeOptions types.UpgradeOptions, clientset kubernetes.Interface, log *logger.CLILogger) error {
 	_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), upgradeOptions.Namespace, metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		err := errors.New("The namespace cannot be found or accessed")
@@ -273,7 +273,7 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 	return nil
 }
 
-func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
+func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset kubernetes.Interface, log *logger.CLILogger) error {
 	// if there's a kotsadm web deployment, remove (pre 1.11.0)
 	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-web", metav1.GetOptions{})
 	if err == nil {
@@ -309,7 +309,7 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 	return nil
 }
 
-func removeKotsadmOperator(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
+func removeKotsadmOperator(deployOptions types.DeployOptions, clientset kubernetes.Interface, log *logger.CLILogger) error {
 	err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator", metav1.DeleteOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to delete kotsadm-operator deployment")
@@ -369,7 +369,7 @@ func removeKotsadmOperator(deployOptions types.DeployOptions, clientset *kuberne
 	return nil
 }
 
-func removeKotsadmMinio(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func removeKotsadmMinio(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	// if there's a deployment named "kotsadm", remove (pre 1.47.0)
 	// only delete the deployment if minio is not included because that will mean that it's been replaced with a statefulset
 	err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{})
@@ -415,7 +415,7 @@ func removeKotsadmMinio(deployOptions types.DeployOptions, clientset *kubernetes
 	return nil
 }
 
-func removeKotsadmPostgres(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func removeKotsadmPostgres(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	// if there's a service named "kotsadm-postgres", remove (pre 1.89.0)
 	err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-postgres", metav1.DeleteOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
@@ -460,7 +460,7 @@ func removeKotsadmPostgres(deployOptions types.DeployOptions, clientset *kuberne
 	return nil
 }
 
-func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
+func ensureKotsadm(deployOptions types.DeployOptions, clientset kubernetes.Interface, log *logger.CLILogger) error {
 	restartKotsadmAPI := false
 
 	ingressConfig := deployOptions.IngressConfig
@@ -652,7 +652,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	return nil
 }
 
-func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset kubernetes.Interface) error {
 	selectorLabels := map[string]string{
 		types.KotsadmKey: types.KotsadmLabelValue,
 	}
@@ -971,7 +971,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	return nil
 }
 
-func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
+func ReadDeployOptionsFromCluster(namespace string, clientset kubernetes.Interface) (*types.DeployOptions, error) {
 	deployOptions := types.DeployOptions{
 		Namespace:      namespace,
 		ServiceType:    "ClusterIP",

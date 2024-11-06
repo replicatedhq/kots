@@ -93,7 +93,7 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	return docs, nil
 }
 
-func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureSecrets(deployOptions *types.DeployOptions, clientset kubernetes.Interface) error {
 	if err := ensureJWTSessionSecret(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure jwt session secret")
 	}
@@ -154,7 +154,7 @@ func ensureS3Secret(namespace string, clientset kubernetes.Interface) error {
 	return nil
 }
 
-func getJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+func getJWTSessionSecret(namespace string, clientset kubernetes.Interface) (*corev1.Secret, error) {
 	jwtSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-session", metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
@@ -167,7 +167,7 @@ func getJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) (*co
 	return jwtSecret, nil
 }
 
-func ensureJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) error {
+func ensureJWTSessionSecret(namespace string, clientset kubernetes.Interface) error {
 	existingJWTSessionSecret, err := getJWTSessionSecret(namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check for existing jwt sesssion secret")
@@ -183,7 +183,7 @@ func ensureJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) e
 	return nil
 }
 
-func getRqliteSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+func getRqliteSecret(namespace string, clientset kubernetes.Interface) (*corev1.Secret, error) {
 	rqliteSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-rqlite", metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
@@ -195,7 +195,7 @@ func getRqliteSecret(namespace string, clientset *kubernetes.Clientset) (*corev1
 	return rqliteSecret, nil
 }
 
-func ensureRqliteSecret(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureRqliteSecret(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	existingRqliteSecret, err := getRqliteSecret(deployOptions.Namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check for existing rqlite secret")
@@ -211,7 +211,7 @@ func ensureRqliteSecret(deployOptions types.DeployOptions, clientset *kubernetes
 	return nil
 }
 
-func getSharedPasswordSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+func getSharedPasswordSecret(namespace string, clientset kubernetes.Interface) (*corev1.Secret, error) {
 	sharedPasswordSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-password", metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
@@ -224,7 +224,7 @@ func getSharedPasswordSecret(namespace string, clientset *kubernetes.Clientset) 
 	return sharedPasswordSecret, nil
 }
 
-func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset kubernetes.Interface) error {
 	if deployOptions.SharedPassword == "" {
 		sharedPassword, err := util.PromptForNewPassword()
 		if err != nil {
@@ -255,7 +255,7 @@ func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset *k
 	return nil
 }
 
-func ensureAPIEncryptionSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureAPIEncryptionSecret(deployOptions *types.DeployOptions, clientset kubernetes.Interface) error {
 	secret, err := getAPIEncryptionSecret(deployOptions.Namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check for existing api encryption secret")
@@ -283,7 +283,7 @@ func ensureAPIEncryptionSecret(deployOptions *types.DeployOptions, clientset *ku
 	return nil
 }
 
-func getAPIEncryptionSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+func getAPIEncryptionSecret(namespace string, clientset kubernetes.Interface) (*corev1.Secret, error) {
 	apiSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-encryption", metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
@@ -296,7 +296,7 @@ func getAPIEncryptionSecret(namespace string, clientset *kubernetes.Clientset) (
 	return apiSecret, nil
 }
 
-func ensureAPIClusterTokenSecret(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureAPIClusterTokenSecret(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), types.ClusterTokenSecret, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {

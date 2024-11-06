@@ -245,7 +245,7 @@ func applicationPullSecretLabels() map[string]string {
 	return secretLabels
 }
 
-func EnsureDockerHubSecret(username string, password string, namespace string, clientset *kubernetes.Clientset) error {
+func EnsureDockerHubSecret(username string, password string, namespace string, clientset kubernetes.Interface) error {
 	dockerHubSecretMutex.Lock()
 	defer dockerHubSecretMutex.Unlock()
 

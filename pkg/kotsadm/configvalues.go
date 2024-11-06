@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func ensureConfigValuesSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) (bool, error) {
+func ensureConfigValuesSecret(deployOptions *types.DeployOptions, clientset kubernetes.Interface) (bool, error) {
 	existingSecret, err := getConfigValuesSecret(deployOptions.Namespace, clientset)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to check for existing config values secret")
@@ -39,7 +39,7 @@ func ensureConfigValuesSecret(deployOptions *types.DeployOptions, clientset *kub
 	return true, nil
 }
 
-func getConfigValuesSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+func getConfigValuesSecret(namespace string, clientset kubernetes.Interface) (*corev1.Secret, error) {
 	configValuesSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-default-configvalues", metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {

@@ -14,12 +14,12 @@ func InitHelmCapabilities() error {
 		return errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	serverGroups, err := clientset.ServerGroups()
+	serverGroups, err := clientset.Discovery().ServerGroups()
 	if err != nil {
 		return errors.Wrap(err, "failed to get server groups")
 	}
 
-	serverVersion, err := clientset.ServerVersion()
+	serverVersion, err := clientset.Discovery().ServerVersion()
 	if err != nil {
 		return errors.Wrap(err, "failed to get server version")
 	}
