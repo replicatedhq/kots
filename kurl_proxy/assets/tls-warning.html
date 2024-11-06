@@ -239,23 +239,29 @@
     document
       .getElementById("copy-command")
       .addEventListener("click", function () {
-        const codeSnippet =
-          document.getElementById("verify-snippet").textContent;
+        const verifySnippetElement = document.getElementById("verify-snippet");
+        const codeSnippet = verifySnippetElement.textContent;
 
-        navigator.clipboard
-          .writeText(codeSnippet)
-          .then(() => {
-            const copyCommandElement = document.getElementById("copy-command");
-            const originalText = copyCommandElement.textContent;
-            copyCommandElement.textContent = "Copied!";
-
-            setTimeout(() => {
-              copyCommandElement.textContent = originalText;
-            }, 3000);
-          })
-          .catch((err) => {
-            console.error("Failed to copy text: ", err);
-          });
+        const textArea = document.createElement("textarea");
+        textArea.value = codeSnippet;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand("copy");
+          showCopySuccess();
+        } catch (err) {
+          console.error("copy failed:", err);
+        }
+        document.body.removeChild(textArea);
       });
+
+    function showCopySuccess() {
+      const copyCommandElement = document.getElementById("copy-command");
+      const originalText = copyCommandElement.textContent;
+      copyCommandElement.textContent = "Copied!";
+      setTimeout(() => {
+        copyCommandElement.textContent = originalText;
+      }, 3000);
+    }
   </script>
 </html>
