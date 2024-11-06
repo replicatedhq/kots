@@ -1,0 +1,36 @@
+apiVersion: kots.io/v1beta1
+kind: License
+metadata:
+  name: test-license
+spec:
+  appSlug: fake-app-slug
+  channelID: fake-channel-id
+  channelName: fake-channel-name
+  channels:
+  - channelID: fake-channel-id
+    channelName: fake-channel-name
+    channelSlug: fake-channel-slug
+    endpoint: https://fake-endpoint.com
+    isDefault: true
+    replicatedProxyDomain: fake-replicated-proxy.test.net
+  customerEmail: salah@replicated.com
+  customerName: Salah EC Dev
+  endpoint: https://fake-endpoint.com
+  entitlements:
+    expires_at:
+      description: License Expiration
+      signature: {}
+      title: Expiration
+      value: ""
+      valueType: String
+  isDisasterRecoverySupported: true
+  isEmbeddedClusterDownloadEnabled: true
+  isKotsInstallEnabled: true
+  isNewKotsUiEnabled: true
+  isSnapshotSupported: true
+  isSupportBundleUploadSupported: true
+  licenseID: fake-license-id
+  licenseSequence: 4
+  licenseType: dev
+  replicatedProxyDomain: fake-replicated-proxy.test.net
+  signature: ZmFrZS1zaWduYXR1cmU=
