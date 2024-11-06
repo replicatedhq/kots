@@ -28,7 +28,6 @@
 
       var browserPlainText = "Other";
       var browserBodyText = 'On the next screen, click through the warning to proceed to the Admin Console.';
-      alert(navigator.userAgent);
       if (typeof InstallTrigger !== "undefined") {
         browserPlainText = "Firefox";
         browserBodyText = firefoxText;
@@ -54,6 +53,7 @@
         /*@cc_on!@*/ false ||
         !!document.documentMode
       ) {
+        //grouping Edge + IE 6 - 11 in this one
         browserPlainText = "Internet Explorer";
         browserBodyText = ieText;
       } else {
