@@ -6,26 +6,39 @@ import (
 
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
+	"github.com/stretchr/testify/require"
 )
 
 //go:embed testassets/license.yaml
 var testLicense string
 
 func Test_bootstrap(t *testing.T) {
-	pull.SetPuller(&MockPuller{
-		PullFunc: func(upstreamURI string, pullOptions pull.PullOptions) (string, error) {
-			return "", pull.ErrConfigNeeded
+	tests := []struct {
+		name         string
+		mockPullFunc func(upstreamURI string, pullOptions pull.PullOptions) (string, error)
+	}{
+		{
+			name: "does not error when version needs config",
+			mockPullFunc: func(upstreamURI string, pullOptions pull.PullOptions) (string, error) {
+				return "", pull.ErrConfigNeeded
+			},
 		},
-	})
-
-	params := types.UpgradeServiceParams{
-		AppLicense: testLicense,
-		AppArchive: t.TempDir(),
 	}
 
-	err := bootstrap(params)
-	if err != nil {
-		t.Errorf("expected no error when ErrConfigNeeded is returned, got %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pull.SetPuller(&MockPuller{
+				PullFunc: tt.mockPullFunc,
+			})
+
+			params := types.UpgradeServiceParams{
+				AppLicense: testLicense,
+				AppArchive: t.TempDir(),
+			}
+
+			err := bootstrap(params)
+			require.NoError(t, err)
+		})
 	}
 }
 
