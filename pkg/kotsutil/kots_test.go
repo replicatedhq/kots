@@ -575,18 +575,6 @@ var _ = Describe("Kots", func() {
 						Analyzers: []*troubleshootv1beta2.Analyze{},
 					},
 				},
-				Preflights: []troubleshootv1beta2.Preflight{
-					{
-						Spec: troubleshootv1beta2.PreflightSpec{
-							Analyzers: []*troubleshootv1beta2.Analyze{},
-						},
-					},
-					{
-						Spec: troubleshootv1beta2.PreflightSpec{
-							Analyzers: []*troubleshootv1beta2.Analyze{},
-						},
-					},
-				},
 			}
 			preflightResult := kotsKind.HasPreflights()
 			Expect(preflightResult).To(BeFalse())
@@ -605,24 +593,6 @@ var _ = Describe("Kots", func() {
 			}
 			preflightResult := kotsKind.HasPreflights()
 			Expect(preflightResult).To(BeTrue())
-
-			// multiple specs
-			kotsKind = &kotsutil.KotsKinds{
-				Preflights: []troubleshootv1beta2.Preflight{
-					{
-						Spec: troubleshootv1beta2.PreflightSpec{
-							Analyzers: []*troubleshootv1beta2.Analyze{
-								{},
-							},
-						},
-					},
-					{
-						Spec: troubleshootv1beta2.PreflightSpec{},
-					},
-				},
-			}
-			preflightResult = kotsKind.HasPreflights()
-			Expect(preflightResult).To(BeTrue())
 		})
 
 		It("returns false when all analyzers are excluded", func() {
@@ -637,25 +607,17 @@ var _ = Describe("Kots", func() {
 									},
 								},
 							},
-						},
-					},
-				},
-				Preflights: []troubleshootv1beta2.Preflight{
-					{
-						Spec: troubleshootv1beta2.PreflightSpec{
-							Analyzers: []*troubleshootv1beta2.Analyze{
-								{
-									ClusterVersion: &troubleshootv1beta2.ClusterVersion{
-										AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-											Exclude: multitype.FromBool(true),
-										},
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+										Exclude: multitype.FromBool(true),
 									},
 								},
-								{
-									ClusterVersion: &troubleshootv1beta2.ClusterVersion{
-										AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-											Exclude: multitype.FromBool(true),
-										},
+							},
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+										Exclude: multitype.FromBool(true),
 									},
 								},
 							},
@@ -679,18 +641,10 @@ var _ = Describe("Kots", func() {
 									},
 								},
 							},
-						},
-					},
-				},
-				Preflights: []troubleshootv1beta2.Preflight{
-					{
-						Spec: troubleshootv1beta2.PreflightSpec{
-							Analyzers: []*troubleshootv1beta2.Analyze{
-								{
-									ClusterVersion: &troubleshootv1beta2.ClusterVersion{
-										AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-											Exclude: multitype.FromBool(false),
-										},
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+										Exclude: multitype.FromBool(false),
 									},
 								},
 							},

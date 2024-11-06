@@ -34,7 +34,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/rqlite/gorqlite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -753,15 +752,13 @@ func (s *KOTSStore) determineDownstreamVersionStatus(a *apptypes.App, sequence i
 		if !skipPreflights {
 			return types.VersionPendingPreflight, nil
 		}
-		for _, p := range kotsKinds.AllPreflights() {
-			hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(&p)
-			if err != nil {
-				return types.VersionUnknown, errors.Wrap(err, "failed to check strict preflights from spec")
-			}
-			if hasStrictPreflights {
-				logger.Warnf("preflights will not be skipped, strict preflights are set to true")
-				return types.VersionPendingPreflight, nil
-			}
+		strict, err := kotsKinds.HasStrictPreflights()
+		if err != nil {
+			return types.VersionUnknown, errors.Wrap(err, "failed to check strict preflights from spec")
+		}
+		if strict {
+			logger.Warnf("preflights will not be skipped, strict preflights are set to true")
+			return types.VersionPendingPreflight, nil
 		}
 	}
 

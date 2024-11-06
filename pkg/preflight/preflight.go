@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
@@ -66,11 +65,6 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonS
 		return nil
 	}
 
-	var preflight *troubleshootv1beta2.Preflight
-	for _, p := range kotsKinds.AllPreflights() {
-		preflight = troubleshootpreflight.ConcatPreflightSpec(preflight, &p)
-	}
-
 	ignoreRBAC, err := store.GetStore().GetIgnoreRBACErrors(appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to get ignore rbac flag")
@@ -80,6 +74,8 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonS
 	if err != nil {
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
+
+	InjectDefaultPreflights(kotsKinds.Preflight, kotsKinds, registrySettings)
 
 	var preflightErr error
 	defer func() {
@@ -106,12 +102,12 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonS
 		}
 	}
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(kotsKinds.Preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		preflightErr = errors.Wrap(err, "failed to rewrite images in preflight")
 		return preflightErr
 	}
-	preflight.Spec.Collectors = collectors
+	kotsKinds.Preflight.Spec.Collectors = collectors
 
 	go func() {
 		logger.Info("preflight checks beginning",
@@ -124,7 +120,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonS
 		setResults := func(results *types.PreflightResults) error {
 			return setPreflightResults(appID, sequence, results)
 		}
-		uploadPreflightResults, err := Execute(preflight, ignoreRBAC, setProgress, setResults)
+		uploadPreflightResults, err := Execute(kotsKinds.Preflight, ignoreRBAC, setProgress, setResults)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 			return
@@ -296,21 +292,7 @@ func GetPreflightCommand(appSlug string) []string {
 }
 
 func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds, archiveDir string) error {
-	var builtPreflight *troubleshootv1beta2.Preflight
-
-	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(archiveDir, "rendered"))
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(archiveDir, "rendered")))
-	}
-
-	if tsKinds.PreflightsV1Beta2 != nil {
-		for _, v := range tsKinds.PreflightsV1Beta2 {
-			builtPreflight = troubleshootpreflight.ConcatPreflightSpec(builtPreflight, &v)
-		}
-	} else {
-		builtPreflight = kotsKinds.Preflight.DeepCopy()
-	}
-
+	builtPreflight := kotsKinds.Preflight.DeepCopy()
 	if builtPreflight == nil {
 		builtPreflight = &troubleshootv1beta2.Preflight{
 			TypeMeta: v1.TypeMeta{

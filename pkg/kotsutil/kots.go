@@ -37,6 +37,7 @@ import (
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"gopkg.in/yaml.v2"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -90,8 +91,7 @@ type KotsKinds struct {
 	V1Beta2HelmCharts *kotsv1beta2.HelmChartList
 
 	Collector     *troubleshootv1beta2.Collector
-	Preflight     *troubleshootv1beta2.Preflight // TODO: consolidate this with Preflights
-	Preflights    []troubleshootv1beta2.Preflight
+	Preflight     *troubleshootv1beta2.Preflight
 	Analyzer      *troubleshootv1beta2.Analyzer
 	SupportBundle *troubleshootv1beta2.SupportBundle
 	Redactor      *troubleshootv1beta2.Redactor
@@ -237,28 +237,27 @@ func (k *KotsKinds) IsConfigurable() bool {
 }
 
 func (k *KotsKinds) HasPreflights() bool {
-	if k == nil {
+	if k == nil || k.Preflight == nil {
 		return false
 	}
-	numAnalyzers := 0
-	for _, p := range k.AllPreflights() {
-		for _, a := range p.Spec.Analyzers {
-			exclude := troubleshootanalyze.GetExcludeFlag(a).BoolOrDefaultFalse()
-			if !exclude {
-				numAnalyzers += 1
-			}
+	for _, a := range k.Preflight.Spec.Analyzers {
+		exclude := troubleshootanalyze.GetExcludeFlag(a).BoolOrDefaultFalse()
+		if !exclude {
+			return true
 		}
 	}
-	return numAnalyzers > 0
+	return false
 }
 
-func (k *KotsKinds) AllPreflights() []troubleshootv1beta2.Preflight {
-	all := []troubleshootv1beta2.Preflight{}
-	if k.Preflight != nil {
-		all = append(all, *k.Preflight)
+func (k *KotsKinds) HasStrictPreflights() (bool, error) {
+	if !k.HasPreflights() {
+		return false, nil
 	}
-	all = append(all, k.Preflights...)
-	return all
+	strict, err := troubleshootpreflight.HasStrictAnalyzers(k.Preflight)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to check strict preflights from spec")
+	}
+	return strict, nil
 }
 
 func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
@@ -563,7 +562,7 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 		case "troubleshoot.sh/v1beta2, Kind=Redactor":
 			k.Redactor = decoded.(*troubleshootv1beta2.Redactor)
 		case "troubleshoot.sh/v1beta2, Kind=Preflight":
-			k.Preflight = decoded.(*troubleshootv1beta2.Preflight)
+			k.Preflight = troubleshootpreflight.ConcatPreflightSpec(k.Preflight, decoded.(*troubleshootv1beta2.Preflight))
 		case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
 			k.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
 		case "velero.io/v1, Kind=Backup":
@@ -744,12 +743,6 @@ func LoadKotsKindsWithOpts(archive string, opts LoadKotsKindsOptions) (*KotsKind
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to walk upstream dir")
 	}
-
-	tsKinds, err := LoadTSKindsFromPath(fromDir)
-	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from: %s", fromDir))
-	}
-	kotsKinds.Preflights = append(kotsKinds.Preflights, tsKinds.PreflightsV1Beta2...)
 
 	return &kotsKinds, nil
 }

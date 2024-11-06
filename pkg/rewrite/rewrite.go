@@ -337,13 +337,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", u.GetRenderedDir(writeUpstreamOptions)))
 	}
-
 	if tsKinds.PreflightsV1Beta2 != nil {
 		var renderedPreflight *troubleshootv1beta2.Preflight
 		for _, v := range tsKinds.PreflightsV1Beta2 {
 			renderedPreflight = troubleshootpreflight.ConcatPreflightSpec(renderedPreflight, &v)
 		}
-
 		if renderedPreflight != nil {
 			renderedPreflightBytes, err := kotsutil.MarshalRuntimeObject(renderedPreflight)
 			if err != nil {

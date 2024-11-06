@@ -2,7 +2,6 @@ package preflight
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -14,12 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/render"
-	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
-	"github.com/replicatedhq/kots/pkg/util"
-	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
 )
@@ -45,10 +39,9 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
-
-	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(params.AppArchive, "rendered"))
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(params.AppArchive, "rendered")))
+	if !kotsKinds.HasPreflights() {
+		logger.Info("no preflights found, not running preflights")
+		return nil
 	}
 
 	registrySettings := registrytypes.RegistrySettings{
@@ -59,52 +52,7 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 		IsReadOnly: params.RegistryIsReadOnly,
 	}
 
-	var preflight *troubleshootv1beta2.Preflight
-	if tsKinds.PreflightsV1Beta2 != nil {
-		for _, v := range tsKinds.PreflightsV1Beta2 {
-			preflight = troubleshootpreflight.ConcatPreflightSpec(preflight, &v)
-		}
-	} else if kotsKinds.Preflight != nil {
-		renderedMarshalledPreflights, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal rendered preflight")
-		}
-		renderedPreflight, err := render.RenderFile(rendertypes.RenderFileOptions{
-			KotsKinds:        kotsKinds,
-			RegistrySettings: registrySettings,
-			AppSlug:          params.AppSlug,
-			Sequence:         params.NextSequence,
-			IsAirgap:         params.AppIsAirgap,
-			Namespace:        util.PodNamespace,
-			InputContent:     []byte(renderedMarshalledPreflights),
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to render preflights")
-		}
-		preflight, err = kotsutil.LoadPreflightFromContents(renderedPreflight)
-		if err != nil {
-			return errors.Wrap(err, "failed to load rendered preflight")
-		}
-	}
-
-	if preflight == nil {
-		logger.Info("no preflight spec found, not running preflights")
-		return nil
-	}
-
-	preflightpkg.InjectDefaultPreflights(preflight, kotsKinds, registrySettings)
-
-	numAnalyzers := 0
-	for _, analyzer := range preflight.Spec.Analyzers {
-		exclude := troubleshootanalyze.GetExcludeFlag(analyzer).BoolOrDefaultFalse()
-		if !exclude {
-			numAnalyzers += 1
-		}
-	}
-	if numAnalyzers == 0 {
-		logger.Info("no analyzers found, not running preflights")
-		return nil
-	}
+	preflightpkg.InjectDefaultPreflights(kotsKinds.Preflight, kotsKinds, registrySettings)
 
 	var preflightErr error
 	defer func() {
@@ -124,12 +72,12 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 		}
 	}()
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(kotsKinds.Preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		preflightErr = errors.Wrap(err, "failed to rewrite images in preflight")
 		return preflightErr
 	}
-	preflight.Spec.Collectors = collectors
+	kotsKinds.Preflight.Spec.Collectors = collectors
 
 	go func() {
 		logger.Info("preflight checks beginning",
@@ -140,7 +88,7 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 			return setPreflightResults(params.AppSlug, results)
 		}
 
-		_, err := preflightpkg.Execute(preflight, false, setPreflightProgress, setResults)
+		_, err := preflightpkg.Execute(kotsKinds.Preflight, false, setPreflightProgress, setResults)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 			return
