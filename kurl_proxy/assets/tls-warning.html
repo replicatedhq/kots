@@ -236,24 +236,48 @@
       }
     });
 
+    function copy() {
+  const copyText = document.querySelector("#verify-snippet").textContent;
+  console.log("Copy text:", copyText);
+
+  // Try the Clipboard API first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(copyText)
+      .then(() => {
+        showCopySuccess();
+      })
+      .catch(err => {
+        // Fallback to the textarea method if Clipboard API fails
+        fallbackCopy(copyText);
+      });
+  } else {
+    // Directly use the textarea method for older browsers or unsupported environments
+    fallbackCopy(copyText);
+  }
+}
+
+function fallbackCopy(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  document.body.appendChild(textArea);
+  textArea.select();
+
+  try {
+    document.execCommand('copy');   
+
+    showCopySuccess();
+  } catch (err) {
+    console.error('Failed to copy:', err);
+    // Handle the error, e.g., display a message to the user
+  } finally {
+    document.body.removeChild(textArea);
+  }
+}
+
+
     document
       .getElementById("copy-command")
-      .addEventListener("click", function () {
-        const verifySnippetElement = document.getElementById("verify-snippet");
-        const codeSnippet = verifySnippetElement.textContent;
-
-        const textArea = document.createElement("textarea");
-        textArea.value = codeSnippet;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-          document.execCommand("copy");
-          showCopySuccess();
-        } catch (err) {
-          console.error("copy failed:", err);
-        }
-        document.body.removeChild(textArea);
-      });
+      .addEventListener("click", copy);
 
     function showCopySuccess() {
       const copyCommandElement = document.getElementById("copy-command");
@@ -263,5 +287,6 @@
         copyCommandElement.textContent = originalText;
       }, 3000);
     }
+  
   </script>
 </html>
