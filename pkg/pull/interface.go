@@ -1,13 +1,13 @@
 package pull
 
-var p PullerInterface
+var _p PullerInterface
 
 func init() {
 	SetPuller(&Puller{})
 }
 
-func SetPuller(_p PullerInterface) {
-	p = _p
+func SetPuller(p PullerInterface) {
+	_p = p
 }
 
 type PullerInterface interface {
@@ -17,5 +17,5 @@ type PullerInterface interface {
 // Convenience functions
 
 func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
-	return p.Pull(upstreamURI, pullOptions)
+	return _p.Pull(upstreamURI, pullOptions)
 }
