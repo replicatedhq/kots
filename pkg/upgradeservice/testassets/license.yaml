@@ -13,8 +13,8 @@ spec:
     endpoint: https://fake-endpoint.com
     isDefault: true
     replicatedProxyDomain: fake-replicated-proxy.test.net
-  customerEmail: salah@replicated.com
-  customerName: Salah EC Dev
+  customerEmail: test-customer@replicated.com
+  customerName: test customer
   endpoint: https://fake-endpoint.com
   entitlements:
     expires_at:
