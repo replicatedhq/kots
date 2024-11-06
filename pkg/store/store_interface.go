@@ -184,7 +184,7 @@ type VersionStore interface {
 	GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error)
 	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error)
 	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) error
-	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) (int64, error)
+	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, isInstall bool, isAutomated bool, configFile string, skipPreflights bool, renderer rendertypes.Renderer) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
 	GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error

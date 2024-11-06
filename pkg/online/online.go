@@ -191,7 +191,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", opts.SkipPreflights, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", true, opts.IsAutomated, configFile, opts.SkipPreflights, render.Renderer{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
@@ -218,70 +218,12 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get downstream version status")
 	}
-
-	if status == storetypes.VersionPendingClusterManagement {
-		if configFile != "" {
-			// if there is a config file, then we should proceed with the installation normally, not wait for the user
-			// to click through the UI to add nodes and configure the app
-			status = storetypes.VersionPendingConfig
-		} else {
-			// if pending cluster management, we don't want to deploy the app
-			return kotsKinds, nil
-		}
-	}
-
-	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(opts.PendingApp.ID, newSequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if app preflight has strict analyzers")
-	}
-
-	if hasStrictPreflights && opts.SkipPreflights {
-		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
-	}
-
-	if opts.IsAutomated && kotsKinds.IsConfigurable() {
-		// bypass the config screen if no configuration is required and it's an automated install
-		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(opts.PendingApp.ID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get registry settings for app")
-		}
-		needsConfig, err := kotsadmconfig.NeedsConfiguration(opts.PendingApp.Slug, newSequence, false, kotsKinds, registrySettings)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if app needs configuration")
-		}
-		if !needsConfig {
-			if opts.SkipPreflights && !hasStrictPreflights {
-				if err := store.GetStore().SetDownstreamVersionStatus(opts.PendingApp.ID, newSequence, storetypes.VersionPending, ""); err != nil {
-					return nil, errors.Wrap(err, "failed to set downstream version status to pending")
-				}
-				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
-					return nil, errors.Wrap(err, "failed to deploy version")
-				}
-				go func() {
-					if err := reporting.WaitAndReportPreflightChecks(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
-						logger.Debugf("failed to send preflights data to replicated app: %v", err)
-					}
-				}()
-			} else {
-				err := store.GetStore().SetDownstreamVersionStatus(opts.PendingApp.ID, newSequence, storetypes.VersionPendingPreflight, "")
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
-				}
-			}
-		}
-	}
-
-	if !opts.SkipPreflights || hasStrictPreflights {
+	switch status {
+	case storetypes.VersionPendingPreflight:
 		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, opts.SkipPreflights, tmpRoot); err != nil {
 			return nil, errors.Wrap(err, "failed to start preflights")
 		}
-	}
-
-	if !kotsKinds.IsConfigurable() && opts.SkipPreflights && !hasStrictPreflights {
-		if err := store.GetStore().SetDownstreamVersionStatus(opts.PendingApp.ID, newSequence, storetypes.VersionPending, ""); err != nil {
-			return nil, errors.Wrap(err, "failed to set downstream version status to pending")
-		}
-		// app is not configurable and preflights are skipped, so just deploy the app
+	case storetypes.VersionPending:
 		if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 			return nil, errors.Wrap(err, "failed to deploy version")
 		}
