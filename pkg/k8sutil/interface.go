@@ -2,17 +2,17 @@ package k8sutil
 
 import "k8s.io/client-go/kubernetes"
 
-var _k8s K8sutilInterface
+var _k8s K8sutil
 
 func init() {
-	Set(&K8sutil{})
+	_k8s = &k8sutil{}
 }
 
-func Set(k8s K8sutilInterface) {
+func Mock(k8s K8sutil) {
 	_k8s = k8s
 }
 
-type K8sutilInterface interface {
+type K8sutil interface {
 	GetClientset() (kubernetes.Interface, error)
 }
 

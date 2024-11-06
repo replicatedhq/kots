@@ -39,9 +39,9 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-type Puller struct{}
+type puller struct{}
 
-var _ PullerInterface = (*Puller)(nil)
+var _ Puller = (*puller)(nil)
 
 type PullOptions struct {
 	RootDir                 string
@@ -111,7 +111,7 @@ func PullApplicationMetadata(upstreamURI string, versionLabel string) (*replicat
 
 // Pull will download the application specified in upstreamURI using the options
 // specified in pullOptions. It returns the directory that the app was pulled to
-func (p *Puller) Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
+func (p *puller) Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log := logger.NewCLILogger(os.Stdout)
 
 	if pullOptions.Silent {

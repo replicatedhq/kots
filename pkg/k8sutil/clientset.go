@@ -25,9 +25,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-type K8sutil struct{}
+type k8sutil struct{}
 
-var _ K8sutilInterface = (*K8sutil)(nil)
+var _ K8sutil = (*k8sutil)(nil)
 
 const (
 	DEFAULT_K8S_CLIENT_QPS   = 100
@@ -45,7 +45,7 @@ func AddFlags(flags *flag.FlagSet) {
 	kubernetesConfigFlags.AddFlags(flags)
 }
 
-func (k *K8sutil) GetClientset() (kubernetes.Interface, error) {
+func (k *k8sutil) GetClientset() (kubernetes.Interface, error) {
 	cfg, err := GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")

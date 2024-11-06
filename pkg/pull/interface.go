@@ -1,16 +1,16 @@
 package pull
 
-var _p PullerInterface
+var _p Puller
 
 func init() {
-	Set(&Puller{})
+	_p = &puller{}
 }
 
-func Set(p PullerInterface) {
+func Mock(p Puller) {
 	_p = p
 }
 
-type PullerInterface interface {
+type Puller interface {
 	Pull(upstreamURI string, pullOptions PullOptions) (string, error)
 }
 

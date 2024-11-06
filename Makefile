@@ -89,6 +89,8 @@ mock:
 	mockgen -source=pkg/store/store_interface.go -destination=pkg/store/mock/mock.go
 	mockgen -source=pkg/handlers/interface.go -destination=pkg/handlers/mock/mock.go
 	mockgen -source=pkg/operator/client/client_interface.go -destination=pkg/operator/client/mock/mock.go
+	mockgen -source=pkg/k8sutil/interface.go -destination=pkg/k8sutil/mock/mock.go
+	mockgen -source=pkg/pull/interface.go -destination=pkg/pull/mock/mock.go
 
 .PHONY: dev
 dev:
