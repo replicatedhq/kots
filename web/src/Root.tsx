@@ -1080,6 +1080,8 @@ const Root = () => {
                           state.adminConsoleMetadata?.isEmbeddedCluster
                         }
                         setCurrentStep={setCurrentStep}
+                        setNavbarConfigGroups={setNavbarConfigGroups}
+                        setActiveGroups={setActiveGroups}
                       />
                     }
                   />

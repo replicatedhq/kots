@@ -242,7 +242,7 @@
     const replicatedLink = document.getElementById("verify-link");
 
     const verificationContainer = document.getElementById(
-      "verification-container",
+      "verification-container"
     );
 
     replicatedLink.addEventListener("click", () => {
@@ -257,26 +257,59 @@
       }
     });
 
-    document
-      .getElementById("copy-command")
-      .addEventListener("click", function () {
-        const codeSnippet =
-          document.getElementById("verify-snippet").textContent;
+    function copy() {
+      const copyText = document.querySelector("#verify-snippet").textContent;
 
+      if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard
-          .writeText(codeSnippet)
+          .writeText(copyText)
           .then(() => {
-            const copyCommandElement = document.getElementById("copy-command");
-            const originalText = copyCommandElement.textContent;
-            copyCommandElement.textContent = "Copied!";
-
-            setTimeout(() => {
-              copyCommandElement.textContent = originalText;
-            }, 3000);
+            showCopySuccess();
           })
           .catch((err) => {
-            console.error("Failed to copy text: ", err);
+            // Fallback to the textarea method if Clipboard API fails
+            fallbackCopy(copyText);
           });
-      });
+      } else {
+        // Directly use the textarea method for older browsers or unsupported environments
+        fallbackCopy(copyText);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+
+      try {
+        document.execCommand("copy");
+        showCopySuccess();
+      } catch (err) {
+        console.error("Failed to copy:", err);
+        showCopyError();
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+
+    document.getElementById("copy-command").addEventListener("click", copy);
+
+    function showCopySuccess() {
+      const copyCommandElement = document.getElementById("copy-command");
+      const originalText = copyCommandElement.textContent;
+      copyCommandElement.textContent = "Copied!";
+      setTimeout(() => {
+        copyCommandElement.textContent = originalText;
+      }, 3000);
+    }
+    function showCopyError() {
+      const copyCommandElement = document.getElementById("copy-command");
+      const originalText = copyCommandElement.textContent;
+      copyCommandElement.textContent = "There was an error, please try again.";
+      setTimeout(() => {
+        copyCommandElement.textContent = originalText;
+      }, 3000);
+    }
   </script>
 </html>
