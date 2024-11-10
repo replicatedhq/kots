@@ -5,9 +5,9 @@ package image
 // image name.
 
 const (
-	Minio      = "kotsadm/minio:0.20241029.160148-r1"
-	Rqlite     = "kotsadm/rqlite:8.32.7-r0"
+	Minio      = "kotsadm/minio:0.20241107.005220-r0"
+	Rqlite     = "kotsadm/rqlite:8.33.0-r0"
 	Dex        = "kotsadm/dex:2.41.1-r1"
-	Schemahero = "schemahero/schemahero:0.17.10"
+	Schemahero = "schemahero/schemahero:0.17.12"
 	Lvp        = "replicated/local-volume-provider:v0.6.7"
 )
