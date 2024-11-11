@@ -71,7 +71,15 @@ func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (stri
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return "", errors.Errorf("unexpected status code %d", resp.StatusCode)
+		if resp.Body != nil {
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return "", errors.Wrapf(err, "failed to read body following unexpected status code %d", resp.StatusCode)
+			}
+			return "", errors.Errorf("unexpected status code %d: %s", resp.StatusCode, body)
+		} else {
+			return "", errors.Errorf("unexpected status code %d", resp.StatusCode)
+		}
 	}
 
 	tmpFile, err := os.CreateTemp("", "kotsbin")
