@@ -4198,7 +4198,7 @@ jobs:
           }
 
           # make latest different from current
-          ./bin/kots set config "$APP_SLUG" --key=username --value=latest-username --namespace default
+          ./bin/kots set config "$APP_SLUG" --key=username --value=latest-username --namespace "$APP_SLUG"
 
           # validate the archive for sequence 0
           ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --sequence=0 --decrypt-password-values --overwrite
