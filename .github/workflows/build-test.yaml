@@ -4191,7 +4191,7 @@ jobs:
           func validate_configmap_in_archive() {
             local expected_value="$1"
             if ! grep -q "$expected_value" get-set-config/base/configmap.yaml; then
-              echo "expected configmap.yaml to contain $expected_value"
+              echo "expected base/configmap.yaml to contain $expected_value"
               exit 1
             fi
           }
