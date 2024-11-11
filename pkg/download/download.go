@@ -20,6 +20,8 @@ type DownloadOptions struct {
 	Overwrite             bool
 	Silent                bool
 	DecryptPasswordValues bool
+	Current               bool
+	Sequence              int64
 }
 
 func Download(appSlug string, path string, downloadOptions DownloadOptions) error {
@@ -68,6 +70,12 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 	url := fmt.Sprintf("http://localhost:%d/api/v1/download?slug=%s", localPort, appSlug)
 	if downloadOptions.DecryptPasswordValues {
 		url = fmt.Sprintf("%s&decryptPasswordValues=1", url)
+	}
+	if downloadOptions.Current {
+		url = fmt.Sprintf("%s&current=1", url)
+	}
+	if downloadOptions.Sequence != -1 {
+		url = fmt.Sprintf("%s&sequence=%d", url, downloadOptions.Sequence)
 	}
 
 	newRequest, err := util.NewRequest("GET", url, nil)
