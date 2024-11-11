@@ -25,17 +25,17 @@ import (
 // NOTE: this uses special kots token authorization
 func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	if err := requireValidKOTSToken(w, r); err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to validate KOTS token"))
 		return
 	}
 
 	a, err := store.GetStore().GetAppFromSlug(r.URL.Query().Get("slug"))
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get app from slug"))
 		if store.GetStore().IsNotFound(err) {
-			w.WriteHeader(404)
+			w.WriteHeader(http.StatusNotFound)
 		} else {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
 	}
@@ -44,59 +44,97 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("decryptPasswordValues") != "" {
 		decryptPasswordValues, err = strconv.ParseBool(r.URL.Query().Get("decryptPasswordValues"))
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
+			logger.Error(errors.Wrap(err, "failed to parse decrypt password values param"))
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
 
-	latestSequence, err := store.GetStore().GetLatestAppSequence(a.ID, true)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
+	var sequence int64
+	if r.URL.Query().Get("sequence") != "" {
+		s, err := strconv.ParseInt(r.URL.Query().Get("sequence"), 10, 64)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to parse sequence param"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		sequence = s
+	} else if r.URL.Query().Get("current") != "" {
+		// use the currently deployed version as the base
+		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to list downstreams for app"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if len(downstreams) == 0 {
+			logger.Error(errors.New("no downstreams found for app"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		currVersion, err := store.GetStore().GetCurrentDownstreamVersion(a.ID, downstreams[0].ClusterID)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get current downstream version"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if currVersion == nil {
+			logger.Error(errors.New("no current version found"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		sequence = currVersion.Sequence
+	} else {
+		// no sequence was specified, fall back to the latest
+		latestSequence, err := store.GetStore().GetLatestAppSequence(a.ID, true)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get latest app sequence"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		sequence = latestSequence
 	}
 
-	archivePath, err := ioutil.TempDir("", "kotsadm")
+	archivePath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to create temp dir"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	defer os.RemoveAll(archivePath)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, latestSequence, archivePath)
+	err = store.GetStore().GetAppVersionArchive(a.ID, sequence, archivePath)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app version archive"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if decryptPasswordValues {
 		kotsKinds, err := kotsutil.LoadKotsKinds(archivePath)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
+			logger.Error(errors.Wrap(err, "failed to load kots kinds"))
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		if kotsKinds.ConfigValues != nil {
 			if err := kotsKinds.DecryptConfigValues(); err != nil {
-				logger.Error(err)
-				w.WriteHeader(500)
+				logger.Error(errors.Wrap(err, "failed to decrypt config values"))
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
 			updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 			if err != nil {
-				logger.Error(err)
-				w.WriteHeader(500)
+				logger.Error(errors.Wrap(err, "failed to marshal config values"))
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
-			if err := ioutil.WriteFile(filepath.Join(archivePath, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
-				logger.Error(err)
-				w.WriteHeader(500)
+			if err := os.WriteFile(filepath.Join(archivePath, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
+				logger.Error(errors.Wrap(err, "failed to write config values file"))
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 		}
@@ -133,16 +171,16 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 
 	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to create temp dir"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	defer os.RemoveAll(tmpDir)
 	fileToSend := filepath.Join(tmpDir, "archive.tar.gz")
 
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to process temp dir"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -152,33 +190,33 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	if err := tarGz.Archive(paths, fileToSend); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to create archive"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	fi, err := os.Stat(fileToSend)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to stat archive file"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	f, err := os.Open(fileToSend)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to open archive file"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Disposition", "attachment; filename=archive.tar.gz")
 	w.Header().Set("Content-Type", "application/gzip")
 	w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 
 	_, err = io.Copy(w, f)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to send archive file"))
 	}
 }
 
