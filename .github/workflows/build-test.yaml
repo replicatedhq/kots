@@ -4186,6 +4186,53 @@ jobs:
             exit 1
           fi
 
+          # ---- validate archives ---- #
+
+          function validate_configmap_in_archive {
+            local expected_value="$1"
+            if ! grep -q "$expected_value" get-set-config/base/configmap.yaml; then
+              echo "expected base/configmap.yaml to contain $expected_value:"
+              cat get-set-config/base/configmap.yaml
+              exit 1
+            fi
+          }
+
+          # make latest different from current
+          ./bin/kots set config "$APP_SLUG" --key=username --value=latest-username --namespace "$APP_SLUG"
+
+          # validate the archive for sequence 0
+          ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --sequence=0 --decrypt-password-values --overwrite
+
+          validate_configmap_in_archive "username: ''"
+          validate_configmap_in_archive "password: ''"
+          validate_configmap_in_archive "email: ''"
+          validate_configmap_in_archive "sequence: '0'"
+
+          # validate the archive for sequence 2
+          ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --sequence=2 --decrypt-password-values --overwrite
+
+          validate_configmap_in_archive "username: 'example-username'"
+          validate_configmap_in_archive "password: 'example-password'"
+          validate_configmap_in_archive "email: ''"
+          validate_configmap_in_archive "sequence: '2'"
+
+          # validate the archive for the currently deployed version
+          ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --current --decrypt-password-values --overwrite
+
+          validate_configmap_in_archive "username: 'updated-username'"
+          validate_configmap_in_archive "password: ''"
+          validate_configmap_in_archive "email: ''"
+          validate_configmap_in_archive "sequence: '5'"
+
+          # validate the archive for the latest version
+          ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --decrypt-password-values --overwrite
+
+          validate_configmap_in_archive "username: 'latest-username'"
+          validate_configmap_in_archive "password: ''"
+          validate_configmap_in_archive "email: ''"
+          validate_configmap_in_archive "sequence: '6'"
+
+
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
