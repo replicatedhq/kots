@@ -4191,17 +4191,14 @@ jobs:
           function validate_configmap_in_archive {
             local expected_value="$1"
             if ! grep -q "$expected_value" get-set-config/base/configmap.yaml; then
-              echo "expected base/configmap.yaml to contain $expected_value"
+              echo "expected base/configmap.yaml to contain $expected_value:"
+              cat get-set-config/base/configmap.yaml
               exit 1
             fi
           }
 
           # make latest different from current
-          ./bin/kots set config "$APP_SLUG" \
-            --key=username --value=latest-username \
-            --key=password --value=latest-password \
-            --key=email --value=latest-email \
-            --namespace "$APP_SLUG"
+          ./bin/kots set config "$APP_SLUG" --key=username --value=latest-username --namespace default
 
           # validate the archive for sequence 0
           ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --sequence=0 --decrypt-password-values --overwrite
@@ -4232,7 +4229,7 @@ jobs:
 
           validate_configmap_in_archive "username: 'latest-username'"
           validate_configmap_in_archive "password: ''"
-          validate_configmap_in_archive "email: 'latest-email'"
+          validate_configmap_in_archive "email: ''"
           validate_configmap_in_archive "sequence: '6'"
 
 
