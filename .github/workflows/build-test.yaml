@@ -646,7 +646,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: openshift, version: 4.15.0-okd}
         ]
     env:
       APP_SLUG: minimal-rbac
@@ -1196,7 +1196,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: openshift, version: 4.15.0-okd}
         ]
     env:
       APP_SLUG: minimal-rbac
@@ -3610,7 +3610,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: openshift, version: 4.15.0-okd}
         ]
     env:
       KOTS_NAMESPACE: replicated-sdk
@@ -3919,7 +3919,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: openshift, version: 4.15.0-okd}
         ]
     steps:
       - name: Checkout
