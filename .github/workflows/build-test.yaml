@@ -646,7 +646,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: openshift, version: 4.15.0-okd}
         ]
     env:
       APP_SLUG: minimal-rbac
@@ -1196,7 +1196,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: openshift, version: 4.15.0-okd}
         ]
     env:
       APP_SLUG: minimal-rbac
@@ -3610,7 +3610,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: openshift, version: 4.15.0-okd}
         ]
     env:
       KOTS_NAMESPACE: replicated-sdk
@@ -3919,7 +3919,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: openshift, version: 4.15.0-okd}
         ]
     steps:
       - name: Checkout
@@ -4185,6 +4185,53 @@ jobs:
             echo "expected error when using --current and --sequence together in set config"
             exit 1
           fi
+
+          # ---- validate archives ---- #
+
+          function validate_configmap_in_archive {
+            local expected_value="$1"
+            if ! grep -q "$expected_value" get-set-config/base/configmap.yaml; then
+              echo "expected base/configmap.yaml to contain $expected_value:"
+              cat get-set-config/base/configmap.yaml
+              exit 1
+            fi
+          }
+
+          # make latest different from current
+          ./bin/kots set config "$APP_SLUG" --key=username --value=latest-username --namespace "$APP_SLUG"
+
+          # validate the archive for sequence 0
+          ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --sequence=0 --decrypt-password-values --overwrite
+
+          validate_configmap_in_archive "username: ''"
+          validate_configmap_in_archive "password: ''"
+          validate_configmap_in_archive "email: ''"
+          validate_configmap_in_archive "sequence: '0'"
+
+          # validate the archive for sequence 2
+          ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --sequence=2 --decrypt-password-values --overwrite
+
+          validate_configmap_in_archive "username: 'example-username'"
+          validate_configmap_in_archive "password: 'example-password'"
+          validate_configmap_in_archive "email: ''"
+          validate_configmap_in_archive "sequence: '2'"
+
+          # validate the archive for the currently deployed version
+          ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --current --decrypt-password-values --overwrite
+
+          validate_configmap_in_archive "username: 'updated-username'"
+          validate_configmap_in_archive "password: ''"
+          validate_configmap_in_archive "email: ''"
+          validate_configmap_in_archive "sequence: '5'"
+
+          # validate the archive for the latest version
+          ./bin/kots download --namespace "$APP_SLUG" --slug "$APP_SLUG" --decrypt-password-values --overwrite
+
+          validate_configmap_in_archive "username: 'latest-username'"
+          validate_configmap_in_archive "password: ''"
+          validate_configmap_in_archive "email: ''"
+          validate_configmap_in_archive "sequence: '6'"
+
 
       - name: Generate support bundle on failure
         if: failure()

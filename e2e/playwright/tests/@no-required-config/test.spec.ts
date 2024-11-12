@@ -12,5 +12,5 @@ test('no required config', async ({ page }) => {
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
   await page.getByRole('link', { name: 'Version history' }).click();
-  await expect(page.locator('#app')).toContainText('Currently deployed version');
+  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
 });

@@ -14,34 +14,52 @@
     <script>
       //defaults to chrome example
       var firefoxText =
-        'On the next screen, click "I Understand the Risks", then click "Add Exception". Finally, click "Confirm Security Exception" to proceed to the Admin Console.';
+        'On the next screen, click <span class="font-medium">Advanced…</span>, then click <span class="font-medium">Accept the Risk and Continue</span> to continue to the Admin Console.';
       var ieText =
-        'On the next screen, click "Continue to this website" to proceed to the Admin Console.';
+        'On the next screen, click "Continue to this website" to continue to the Admin Console.';
       var safariText =
-        'On the next screen, click "Continue" when prompted to proceed to the Admin Console.';
+        'On the next screen, click <span class="font-medium">Show Details</span>, then click <span class="font-medium">visit this website</span> to continue to the Admin Console.';
       var chromeText =
-        'On the next screen, click "Advanced", then click "Proceed" to continue to the Admin Console.';
+        'On the next screen, click <span class="font-medium">Advanced</span>, then click <span class="font-medium">Proceed</span> to continue to the Admin Console.';
+      var operaText =
+        'On the next screen, click <span class="font-medium">Help me understand</span>, then click <span class="font-medium">Proceed</span> to continue to the Admin Console.';
+      var edgeText =
+        'On the next screen, click <span class="font-medium">Advanced</span>, then click <span class="font-medium">Continue</span> to continue to the Admin Console.';
 
-      var browserPlainText = "Chrome";
-      var browserBodyText = chromeText;
+      var browserPlainText = "Other";
+      var browserBodyText = 'On the next screen, click through the warning to continue to the Admin Console.';
       if (typeof InstallTrigger !== "undefined") {
         browserPlainText = "Firefox";
+        browserBodyText = firefoxText;
+      } else if (
+        /Chrome/.test(navigator.userAgent) &&
+        !/Edg|OPR/.test(navigator.userAgent)
+      ) {
+        browserPlainText = "Chrome";
         browserBodyText = chromeText;
       } else if (
-        Object.prototype.toString
-          .call(window.HTMLElement)
-          .indexOf("Constructor") > 0
+        /Safari/.test(navigator.userAgent) &&
+        !/Chrome|Edg|OPR/.test(navigator.userAgent)
       ) {
         browserPlainText = "Safari";
         browserBodyText = safariText;
+      } else if (/Edg/.test(navigator.userAgent)) {
+        browserPlainText = "Edge";
+        browserBodyText = edgeText;
+      } else if (/OPR/.test(navigator.userAgent)) {
+        browserPlainText = "Opera";
+        browserBodyText = operaText;
       } else if (
         /*@cc_on!@*/ false ||
-        !!document.documentMode ||
-        !!window.StyleMedia
+        !!document.documentMode
       ) {
         //grouping Edge + IE 6 - 11 in this one
         browserPlainText = "Internet Explorer";
         browserBodyText = ieText;
+      } else {
+        // Catch-all for any other browser
+        browserPlainText = "Other";
+        browserBodyText = otherText;
       }
 
       var rawLink = window.location.href
@@ -112,10 +130,9 @@
           <div class="mt-8 p-8 bg-[#F9FBFC]">
             <div>
               <p class="tls-header-sub">
-                We use a self-signed TLS Certificate to secure the communication
-                between your local machine and the Admin Console during setup.
-                You'll see a warning about this in your browser, but you can be
-                confident that this is secure.
+                We use a self-signed TLS certificate to secure communication
+                with the Admin Console during setup. You'll see a warning about
+                this in your browser, but it is secure.
               </p>
             </div>
             <div class="flex1 flex">
@@ -123,7 +140,9 @@
                 <div>
                   <p class="tls-section-header">
                     <script>
-                      document.write(browserPlainText);
+                      if (browserPlainText !== "Other") {
+                        document.write(browserPlainText);
+                      }
                     </script>
                   </p>
                   <p class="tls-header-sub">
@@ -137,11 +156,13 @@
                   class="flex-column right-block alignItems--center justifyContent--center"
                 >
                   <script>
-                    document.write(
-                      '<img class="insecure-image m-auto" src="/assets/images/' +
-                        browserPlainText.toLowerCase().replace(" ", "") +
-                        '-insecure.png" />',
-                    );
+                    if (["Safari", "Chrome", "Firefox", "Internet Explorer"].includes(browserPlainText)) {
+                      document.write(
+                        '<img class="insecure-image m-auto" src="/assets/images/' +
+                          browserPlainText.toLowerCase().replace(" ", "") +
+                          '-insecure.png" />',
+                      );
+                    }
                   </script>
                 </div>
                 <div class="flex gap-2 cursor mb-4" id="verify-link">
@@ -221,7 +242,7 @@
     const replicatedLink = document.getElementById("verify-link");
 
     const verificationContainer = document.getElementById(
-      "verification-container",
+      "verification-container"
     );
 
     replicatedLink.addEventListener("click", () => {
@@ -236,26 +257,59 @@
       }
     });
 
-    document
-      .getElementById("copy-command")
-      .addEventListener("click", function () {
-        const codeSnippet =
-          document.getElementById("verify-snippet").textContent;
+    function copy() {
+      const copyText = document.querySelector("#verify-snippet").textContent;
 
+      if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard
-          .writeText(codeSnippet)
+          .writeText(copyText)
           .then(() => {
-            const copyCommandElement = document.getElementById("copy-command");
-            const originalText = copyCommandElement.textContent;
-            copyCommandElement.textContent = "Copied!";
-
-            setTimeout(() => {
-              copyCommandElement.textContent = originalText;
-            }, 3000);
+            showCopySuccess();
           })
           .catch((err) => {
-            console.error("Failed to copy text: ", err);
+            // Fallback to the textarea method if Clipboard API fails
+            fallbackCopy(copyText);
           });
-      });
+      } else {
+        // Directly use the textarea method for older browsers or unsupported environments
+        fallbackCopy(copyText);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+
+      try {
+        document.execCommand("copy");
+        showCopySuccess();
+      } catch (err) {
+        console.error("Failed to copy:", err);
+        showCopyError();
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+
+    document.getElementById("copy-command").addEventListener("click", copy);
+
+    function showCopySuccess() {
+      const copyCommandElement = document.getElementById("copy-command");
+      const originalText = copyCommandElement.textContent;
+      copyCommandElement.textContent = "Copied!";
+      setTimeout(() => {
+        copyCommandElement.textContent = originalText;
+      }, 3000);
+    }
+    function showCopyError() {
+      const copyCommandElement = document.getElementById("copy-command");
+      const originalText = copyCommandElement.textContent;
+      copyCommandElement.textContent = "There was an error, please try again.";
+      setTimeout(() => {
+        copyCommandElement.textContent = originalText;
+      }, 3000);
+    }
   </script>
 </html>

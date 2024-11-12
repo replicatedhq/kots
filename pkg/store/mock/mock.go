@@ -112,18 +112,18 @@ func (mr *MockStoreMockRecorder) CreateApp(name, channelID, upstreamURI, license
 }
 
 // CreateAppVersion mocks base method.
-func (m *MockStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, renderer types9.Renderer) (int64, error) {
+func (m *MockStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, isInstall, isAutomated bool, configFile string, skipPreflights bool, renderer types9.Renderer) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, renderer)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, isInstall, isAutomated, configFile, skipPreflights, renderer)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion.
-func (mr *MockStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, renderer interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, isInstall, isAutomated, configFile, skipPreflights, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, renderer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, isInstall, isAutomated, configFile, skipPreflights, renderer)
 }
 
 // CreateInProgressSupportBundle mocks base method.
@@ -3481,18 +3481,18 @@ func (m *MockVersionStore) EXPECT() *MockVersionStoreMockRecorder {
 }
 
 // CreateAppVersion mocks base method.
-func (m *MockVersionStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, renderer types9.Renderer) (int64, error) {
+func (m *MockVersionStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, isInstall, isAutomated bool, configFile string, skipPreflights bool, renderer types9.Renderer) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, renderer)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, isInstall, isAutomated, configFile, skipPreflights, renderer)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion.
-func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, renderer interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, isInstall, isAutomated, configFile, skipPreflights, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, renderer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, isInstall, isAutomated, configFile, skipPreflights, renderer)
 }
 
 // CreatePendingDownloadAppVersion mocks base method.

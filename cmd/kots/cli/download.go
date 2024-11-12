@@ -43,6 +43,10 @@ func DownloadCmd() *cobra.Command {
 				}
 			}
 
+			if v.GetBool("current") && v.GetInt64("sequence") != -1 {
+				return errors.New("cannot use --current and --sequence together")
+			}
+
 			output := v.GetString("output")
 			if output != "json" && output != "" {
 				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
@@ -58,6 +62,8 @@ func DownloadCmd() *cobra.Command {
 				Overwrite:             v.GetBool("overwrite"),
 				Silent:                output != "",
 				DecryptPasswordValues: v.GetBool("decrypt-password-values"),
+				Current:               v.GetBool("current"),
+				Sequence:              v.GetInt64("sequence"),
 			}
 
 			var downloadOutput DownloadOutput
@@ -97,6 +103,8 @@ func DownloadCmd() *cobra.Command {
 	cmd.Flags().String("slug", "", "the application slug to download")
 	cmd.Flags().Bool("decrypt-password-values", false, "decrypt password values to plaintext")
 	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
+	cmd.Flags().Bool("current", false, "set to true to download the archive of the currently deployed app version")
+	cmd.Flags().Int64("sequence", -1, "sequence of the app version to download the archive for (defaults to the latest version unless --current flag is set)")
 
 	return cmd
 }

@@ -470,7 +470,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &latestSequence, archiveDir, "Identity Service", false, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &latestSequence, archiveDir, "Identity Service", false, false, "", false, render.Renderer{})
 	if err != nil {
 		err = errors.Wrap(err, "failed to create an app version")
 		logger.Error(err)

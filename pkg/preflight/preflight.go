@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
@@ -19,9 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/render/helper"
-	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -47,11 +44,6 @@ const (
 )
 
 func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonStrict bool, archiveDir string) error {
-	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to load rendered kots kinds")
-	}
-
 	status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check downstream version %d status", sequence)
@@ -65,180 +57,107 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonS
 		return nil
 	}
 
-	var ignoreRBAC bool
-	var registrySettings registrytypes.RegistrySettings
-	var preflight *troubleshootv1beta2.Preflight
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to load rendered kots kinds")
+	}
+	if !kotsKinds.HasPreflights() {
+		return nil
+	}
 
-	ignoreRBAC, err = store.GetStore().GetIgnoreRBACErrors(appID, sequence)
+	ignoreRBAC, err := store.GetStore().GetIgnoreRBACErrors(appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to get ignore rbac flag")
 	}
 
-	registrySettings, err = store.GetStore().GetRegistryDetailsForApp(appID)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(archiveDir, "rendered"))
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(archiveDir, "rendered")))
-	}
+	InjectDefaultPreflights(kotsKinds.Preflight, kotsKinds, registrySettings)
 
-	runPreflights := false
-	if tsKinds.PreflightsV1Beta2 != nil {
-
-		for _, v := range tsKinds.PreflightsV1Beta2 {
-			preflight = troubleshootpreflight.ConcatPreflightSpec(preflight, &v)
-		}
-
-		InjectDefaultPreflights(preflight, kotsKinds, registrySettings)
-
-		numAnalyzers := 0
-		for _, analyzer := range preflight.Spec.Analyzers {
-			exclude := troubleshootanalyze.GetExcludeFlag(analyzer).BoolOrDefaultFalse()
-			if !exclude {
-				numAnalyzers += 1
-			}
-		}
-		runPreflights = numAnalyzers > 0
-	} else if kotsKinds.Preflight != nil {
-		// render the preflight file
-		// we need to convert to bytes first, so that we can reuse the renderfile function
-		renderedMarshalledPreflights, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal rendered preflight")
-		}
-
-		renderedPreflight, err := render.RenderFile(rendertypes.RenderFileOptions{
-			KotsKinds:        kotsKinds,
-			RegistrySettings: registrySettings,
-			AppSlug:          appSlug,
-			Sequence:         sequence,
-			IsAirgap:         isAirgap,
-			Namespace:        util.PodNamespace,
-			InputContent:     []byte(renderedMarshalledPreflights),
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to render preflights")
-		}
-		preflight, err = kotsutil.LoadPreflightFromContents(renderedPreflight)
-		if err != nil {
-			return errors.Wrap(err, "failed to load rendered preflight")
-		}
-
-		InjectDefaultPreflights(preflight, kotsKinds, registrySettings)
-
-		numAnalyzers := 0
-		for _, analyzer := range preflight.Spec.Analyzers {
-			exclude := troubleshootanalyze.GetExcludeFlag(analyzer).BoolOrDefaultFalse()
-			if !exclude {
-				numAnalyzers += 1
-			}
-		}
-		runPreflights = numAnalyzers > 0
-	}
-
-	if runPreflights {
-		var preflightErr error
-		defer func() {
-			if preflightErr != nil {
-				preflightResults := &types.PreflightResults{
-					Errors: []*types.PreflightError{
-						{
-							Error:  preflightErr.Error(),
-							IsRBAC: false,
-						},
+	var preflightErr error
+	defer func() {
+		if preflightErr != nil {
+			preflightResults := &types.PreflightResults{
+				Errors: []*types.PreflightError{
+					{
+						Error:  preflightErr.Error(),
+						IsRBAC: false,
 					},
-				}
-				if err := setPreflightResults(appID, sequence, preflightResults); err != nil {
-					logger.Error(errors.Wrap(err, "failed to set preflight results"))
-					return
-				}
+				},
 			}
-		}()
-
-		status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
-		if err != nil {
-			preflightErr = errors.Wrap(err, "failed to get version status")
-			return preflightErr
-		}
-
-		if status != storetypes.VersionDeployed && status != storetypes.VersionDeploying {
-			if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPendingPreflight, ""); err != nil {
-				preflightErr = errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
-				return preflightErr
+			if err := setPreflightResults(appID, sequence, preflightResults); err != nil {
+				logger.Error(errors.Wrap(err, "failed to set preflight results"))
+				return
 			}
 		}
+	}()
 
-		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
-		if err != nil {
-			preflightErr = errors.Wrap(err, "failed to rewrite images in preflight")
+	if status != storetypes.VersionDeployed && status != storetypes.VersionDeploying {
+		if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPendingPreflight, ""); err != nil {
+			preflightErr = errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
 			return preflightErr
 		}
-		preflight.Spec.Collectors = collectors
+	}
+
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(kotsKinds.Preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
+	if err != nil {
+		preflightErr = errors.Wrap(err, "failed to rewrite images in preflight")
+		return preflightErr
+	}
+	kotsKinds.Preflight.Spec.Collectors = collectors
+
+	go func() {
+		logger.Info("preflight checks beginning",
+			zap.String("appID", appID),
+			zap.Int64("sequence", sequence))
+
+		setProgress := func(progress map[string]interface{}) error {
+			return setPreflightProgress(appID, sequence, progress)
+		}
+		setResults := func(results *types.PreflightResults) error {
+			return setPreflightResults(appID, sequence, results)
+		}
+		uploadPreflightResults, err := Execute(kotsKinds.Preflight, ignoreRBAC, setProgress, setResults)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to run preflight checks"))
+			return
+		}
+		logger.Info("preflight checks completed")
 
 		go func() {
-			logger.Info("preflight checks beginning",
-				zap.String("appID", appID),
-				zap.Int64("sequence", sequence))
-
-			setProgress := func(progress map[string]interface{}) error {
-				return setPreflightProgress(appID, sequence, progress)
-			}
-			setResults := func(results *types.PreflightResults) error {
-				return setPreflightResults(appID, sequence, results)
-			}
-			uploadPreflightResults, err := Execute(preflight, ignoreRBAC, setProgress, setResults)
+			err := reporting.GetReporter().SubmitAppInfo(appID) // send app and preflight info when preflights finish
 			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to run preflight checks"))
-				return
-			}
-			logger.Info("preflight checks completed")
-
-			go func() {
-				err := reporting.GetReporter().SubmitAppInfo(appID) // send app and preflight info when preflights finish
-				if err != nil {
-					logger.Debugf("failed to submit app info: %v", err)
-				}
-			}()
-
-			// status could've changed while preflights were running
-			status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
-			if err != nil {
-				logger.Error(errors.Wrapf(err, "failed to check downstream version %d status", sequence))
-				return
-			}
-			if status == storetypes.VersionDeployed || status == storetypes.VersionDeploying || status == storetypes.VersionFailed {
-				return
-			}
-
-			isDeployed, err := maybeDeployFirstVersion(appID, sequence, uploadPreflightResults, ignoreNonStrict)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to deploy first version"))
-				return
-			}
-
-			// preflight reporting
-			if isDeployed {
-				if err := reporting.WaitAndReportPreflightChecks(appID, sequence, false, false); err != nil {
-					logger.Debugf("failed to send preflights data to replicated app: %v", err)
-					return
-				}
+				logger.Debugf("failed to submit app info: %v", err)
 			}
 		}()
-	} else if status != storetypes.VersionDeployed && status != storetypes.VersionFailed {
-		if sequence == 0 {
-			_, err := maybeDeployFirstVersion(appID, sequence, &types.PreflightResults{}, ignoreNonStrict)
-			if err != nil {
-				return errors.Wrap(err, "failed to deploy first version")
-			}
-		} else {
-			err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPending, "")
-			if err != nil {
-				return errors.Wrap(err, "failed to set downstream version status to pending")
+
+		// status could've changed while preflights were running
+		status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to check downstream version %d status", sequence))
+			return
+		}
+		if status == storetypes.VersionDeployed || status == storetypes.VersionDeploying || status == storetypes.VersionFailed {
+			return
+		}
+
+		isDeployed, err := maybeDeployFirstVersion(appID, sequence, uploadPreflightResults, ignoreNonStrict)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to deploy first version"))
+			return
+		}
+
+		// preflight reporting
+		if isDeployed {
+			if err := reporting.WaitAndReportPreflightChecks(appID, sequence, false, false); err != nil {
+				logger.Debugf("failed to send preflights data to replicated app: %v", err)
+				return
 			}
 		}
-	}
+	}()
 
 	return nil
 }
@@ -373,21 +292,7 @@ func GetPreflightCommand(appSlug string) []string {
 }
 
 func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds, archiveDir string) error {
-	var builtPreflight *troubleshootv1beta2.Preflight
-
-	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(archiveDir, "rendered"))
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(archiveDir, "rendered")))
-	}
-
-	if tsKinds.PreflightsV1Beta2 != nil {
-		for _, v := range tsKinds.PreflightsV1Beta2 {
-			builtPreflight = troubleshootpreflight.ConcatPreflightSpec(builtPreflight, &v)
-		}
-	} else {
-		builtPreflight = kotsKinds.Preflight.DeepCopy()
-	}
-
+	builtPreflight := kotsKinds.Preflight.DeepCopy()
 	if builtPreflight == nil {
 		builtPreflight = &troubleshootv1beta2.Preflight{
 			TypeMeta: v1.TypeMeta{
