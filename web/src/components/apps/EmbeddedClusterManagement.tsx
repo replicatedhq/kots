@@ -226,6 +226,7 @@ const EmbeddedClusterManagement = ({
       return res.json();
     },
     enabled: selectedNodeTypes.length > 0,
+    refetchOnWindowFocus: false,
   });
   // #endregion
 
