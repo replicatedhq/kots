@@ -77,6 +77,44 @@ func GenerateAddNodeToken(ctx context.Context, client kbclient.Client, nodeRole 
 	return newToken, nil
 }
 
+// GetAllNodeIPAddresses returns the internal IP addresses of all the ready nodes in the cluster grouped by
+// controller and worker nodes respectively
+func GetAllNodeIPAddresses(ctx context.Context, client kbclient.Client) ([]string, []string, error) {
+	var nodes corev1.NodeList
+	if err := client.List(ctx, &nodes); err != nil {
+		return nil, nil, fmt.Errorf("failed to list nodes: %w", err)
+	}
+
+	controllerAddr := []string{}
+	workerAddr := []string{}
+	for _, node := range nodes.Items {
+		// Only consider nodes that are ready
+		isReady := false
+		for _, condition := range node.Status.Conditions {
+			if condition.Type == corev1.NodeReady && condition.Status == corev1.ConditionTrue {
+				isReady = true
+				break
+			}
+		}
+		if !isReady {
+			continue
+		}
+
+		// Filter nodes by control-plane and worker roles
+		if cp, ok := node.Labels["node-role.kubernetes.io/control-plane"]; ok && cp == "true" {
+			if addr := findInternalIPAddress(node.Status.Addresses); addr != nil {
+				controllerAddr = append(controllerAddr, addr.Address)
+			}
+		} else {
+			if addr := findInternalIPAddress(node.Status.Addresses); addr != nil {
+				workerAddr = append(workerAddr, addr.Address)
+			}
+		}
+	}
+
+	return controllerAddr, workerAddr, nil
+}
+
 func makeK0sToken(ctx context.Context, client kbclient.Client, nodeRole string) (string, error) {
 	rawToken, err := k8sutil.GenerateK0sBootstrapToken(client, time.Hour, nodeRole)
 	if err != nil {
@@ -89,7 +127,7 @@ func makeK0sToken(ctx context.Context, client kbclient.Client, nodeRole string) 
 	}
 	cert = base64.StdEncoding.EncodeToString([]byte(cert))
 
-	firstPrimary, err := firstPrimaryIpAddress(ctx, client)
+	firstPrimary, err := firstPrimaryIPAddress(ctx, client)
 	if err != nil {
 		return "", fmt.Errorf("failed to get first primary ip address: %w", err)
 	}
@@ -111,7 +149,7 @@ func makeK0sToken(ctx context.Context, client kbclient.Client, nodeRole string) 
 	return b64Token, nil
 }
 
-func firstPrimaryIpAddress(ctx context.Context, client kbclient.Client) (string, error) {
+func firstPrimaryIPAddress(ctx context.Context, client kbclient.Client) (string, error) {
 	var nodes corev1.NodeList
 	if err := client.List(ctx, &nodes); err != nil {
 		return "", fmt.Errorf("failed to list nodes: %w", err)
@@ -122,14 +160,21 @@ func firstPrimaryIpAddress(ctx context.Context, client kbclient.Client) (string,
 			continue
 		}
 
-		for _, address := range node.Status.Addresses {
-			if address.Type == "InternalIP" {
-				return address.Address, nil
-			}
+		if addr := findInternalIPAddress(node.Status.Addresses); addr != nil {
+			return addr.Address, nil
 		}
 	}
 
 	return "", fmt.Errorf("failed to find controller node")
+}
+
+func findInternalIPAddress(addresses []corev1.NodeAddress) *corev1.NodeAddress {
+	for _, address := range addresses {
+		if address.Type == "InternalIP" {
+			return &address
+		}
+	}
+	return nil
 }
 
 // GenerateAddNodeCommand returns the command a user should run to add a node with the provided token
