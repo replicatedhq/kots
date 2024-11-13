@@ -25,6 +25,8 @@ type GetEmbeddedClusterNodeJoinCommandResponse struct {
 	K0sToken               string                     `json:"k0sToken"`
 	EmbeddedClusterVersion string                     `json:"embeddedClusterVersion"`
 	AirgapRegistryAddress  string                     `json:"airgapRegistryAddress"`
+	WorkerNodeIPs          []string                   `json:"workerNodeIPs"`
+	ControllerNodeIps      []string                   `json:"controllerNodeIPs"`
 	InstallationSpec       ecv1beta1.InstallationSpec `json:"installationSpec,omitempty"`
 }
 
@@ -169,12 +171,22 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		airgapRegistryAddress, _, _ = kotsutil.GetEmbeddedRegistryCreds(clientset)
 	}
 
+	// get all the healthy node ip addresses, to be used for preflight checks in the upcoming join
+	controllerNodeIPs, workerNodeIPs, err := embeddedcluster.GetAllNodeIPAddresses(r.Context(), kbClient)
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to get the node ip addresses: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	JSON(w, http.StatusOK, GetEmbeddedClusterNodeJoinCommandResponse{
 		ClusterID:              install.Spec.ClusterID,
 		K0sJoinCommand:         k0sJoinCommand,
 		K0sToken:               k0sToken,
 		EmbeddedClusterVersion: ecVersion,
 		AirgapRegistryAddress:  airgapRegistryAddress,
+		WorkerNodeIPs:          workerNodeIPs,
+		ControllerNodeIps:      controllerNodeIPs,
 		InstallationSpec:       install.Spec,
 	})
 }

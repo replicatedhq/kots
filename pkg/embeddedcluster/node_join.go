@@ -89,14 +89,7 @@ func GetAllNodeIPAddresses(ctx context.Context, client kbclient.Client) ([]strin
 	workerAddr := []string{}
 	for _, node := range nodes.Items {
 		// Only consider nodes that are ready
-		isReady := false
-		for _, condition := range node.Status.Conditions {
-			if condition.Type == corev1.NodeReady && condition.Status == corev1.ConditionTrue {
-				isReady = true
-				break
-			}
-		}
-		if !isReady {
+		if !isReady(node) {
 			continue
 		}
 
