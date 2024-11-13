@@ -6,6 +6,15 @@ spec:
         hostPath:
           path: __PROJECT_DIR__
           type: Directory
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - node0
       containers:
       - name: kotsadm
         image: kotsadm-api-dev
