@@ -14,6 +14,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/gitops"
+	"github.com/replicatedhq/kots/pkg/handlers/kubeclient"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -114,7 +115,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		responseApp, err := responseAppFromApp(r.Context(), a)
+		responseApp, err := responseAppFromApp(r.Context(), a, h.KubeClientBuilder)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -160,7 +161,7 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	responseApp, err := responseAppFromApp(r.Context(), a)
+	responseApp, err := responseAppFromApp(r.Context(), a, h.KubeClientBuilder)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -170,7 +171,7 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, responseApp)
 }
 
-func responseAppFromApp(ctx context.Context, a *apptypes.App) (*types.ResponseApp, error) {
+func responseAppFromApp(ctx context.Context, a *apptypes.App, kcb kubeclient.KubeClientBuilder) (*types.ResponseApp, error) {
 	license, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license")
@@ -278,7 +279,7 @@ func responseAppFromApp(ctx context.Context, a *apptypes.App) (*types.ResponseAp
 		Slug: d.ClusterSlug,
 	}
 	if util.IsEmbeddedCluster() {
-		kbClient, err := k8sutil.GetKubeClient(ctx)
+		kbClient, err := kcb.GetKubeClient(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kubeclient: %w", err)
 		}

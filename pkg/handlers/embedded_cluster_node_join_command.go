@@ -68,7 +68,7 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 	}
 	app := apps[0]
 
-	kbClient, err := k8sutil.GetKubeClient(r.Context())
+	kbClient, err := h.GetKubeClient(r.Context())
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to get kubeclient: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -105,7 +105,7 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 	}
 
 	// use roles to generate join token etc
-	kbClient, err := k8sutil.GetKubeClient(r.Context())
+	kbClient, err := h.GetKubeClient(r.Context())
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to get kubeclient: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)

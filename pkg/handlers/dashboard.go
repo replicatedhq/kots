@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -68,7 +67,7 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 
 	embeddedClusterState := ""
 	if util.IsEmbeddedCluster() {
-		kbClient, err := k8sutil.GetKubeClient(r.Context())
+		kbClient, err := h.GetKubeClient(r.Context())
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(500)

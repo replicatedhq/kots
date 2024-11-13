@@ -68,7 +68,7 @@ func (h *Handler) GetEmbeddedClusterRoles(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	kbClient, err := k8sutil.GetKubeClient(r.Context())
+	kbClient, err := h.GetKubeClient(r.Context())
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
