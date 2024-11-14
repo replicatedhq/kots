@@ -26,10 +26,10 @@ func (b *Builder) GetKubeClient(ctx context.Context) (kbclient.Client, error) {
 // MockBuilder is a mock implementation of KubeClientBuilder. It returns the client that was set in the struct allowing
 // you to set a fakeClient for example.
 type MockBuilder struct {
-	client kbclient.Client
+	Client kbclient.Client
 }
 
 // GetKubeClient returns the client that was set in the struct.
 func (b *MockBuilder) GetKubeClient(ctx context.Context) (kbclient.Client, error) {
-	return b.client, nil
+	return b.Client, nil
 }
