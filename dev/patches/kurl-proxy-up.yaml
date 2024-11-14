@@ -10,6 +10,15 @@ spec:
         hostPath:
           path: __PROJECT_DIR__/kurl_proxy/assets
           type: Directory
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - __NODE_NAME__
       containers:
       - name: proxy
         image: kurl-proxy-dev

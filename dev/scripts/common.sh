@@ -73,7 +73,7 @@ function render() {
 
 # The embedded-cluster container mounts the KOTS project at /replicatedhq/kots
 function ec_render() {
-  sed "s|__PROJECT_DIR__|/replicatedhq/kots|g" "$1"
+  sed "s|__PROJECT_DIR__|/replicatedhq/kots|g ; s|__NODE_NAME__|$(ec_node)|g" "$1"
 }
 
 # Get the embedded cluster node name

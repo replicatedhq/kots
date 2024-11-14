@@ -9,7 +9,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - node0
+                - __NODE_NAME__
       volumes:
       - name: dev
         hostPath:

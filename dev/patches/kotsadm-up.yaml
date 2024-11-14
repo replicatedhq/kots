@@ -14,7 +14,7 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - node0
+                - __NODE_NAME__
       containers:
       - name: kotsadm
         image: kotsadm-api-dev
