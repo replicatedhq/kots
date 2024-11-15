@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,28 +16,33 @@ import (
 	"github.com/replicatedhq/kots/pkg/handlers/kubeclient"
 	"github.com/replicatedhq/kots/pkg/store"
 	mockstore "github.com/replicatedhq/kots/pkg/store/mock"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	bootstrapapi "k8s.io/cluster-bootstrap/token/api"
+	bootstraputil "k8s.io/cluster-bootstrap/token/util"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+type testNodeJoinCommandHarness struct {
+	name              string
+	kbClient          kbclient.Client
+	httpStatus        int
+	token             string
+	getRoles          func(t *testing.T, token string) ([]string, error)
+	embeddedClusterID string
+	validateBody      func(t *testing.T, h *testNodeJoinCommandHarness, r *GetEmbeddedClusterNodeJoinCommandResponse)
+}
 
 func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 	scheme := runtime.NewScheme()
 	corev1.AddToScheme(scheme)
 	embeddedclusterv1beta1.AddToScheme(scheme)
 
-	tests := []struct {
-		name              string
-		kbClient          kbclient.Client
-		httpStatus        int
-		token             string
-		getRoles          func(t *testing.T, token string) ([]string, error)
-		embeddedClusterID string
-		expectedBody      GetEmbeddedClusterNodeJoinCommandResponse
-	}{
+	tests := []testNodeJoinCommandHarness{
 		{
 			name:              "not an embedded cluster",
 			httpStatus:        http.StatusBadRequest,
@@ -60,9 +67,32 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 			},
 		},
 		{
-			name:              "succesful request",
+			name:              "bootstrap token secret creation succeeds and it matches returned K0SToken",
 			httpStatus:        http.StatusOK,
 			embeddedClusterID: "cluster-id",
+			validateBody: func(t *testing.T, h *testNodeJoinCommandHarness, r *GetEmbeddedClusterNodeJoinCommandResponse) {
+				// Check that a secret was created with the cluster bootstrap token
+				var secrets corev1.SecretList
+				h.kbClient.List(context.Background(), &secrets, &kbclient.ListOptions{
+					Namespace: metav1.NamespaceSystem,
+				})
+				require.Lenf(t, secrets.Items, 1, "expected 1 secret to have been created with cluster bootstrap token, got %d", len(secrets.Items))
+				secret := secrets.Items[0]
+				id, ok := secret.Data[bootstrapapi.BootstrapTokenIDKey]
+				require.True(t, ok)
+				key, ok := secret.Data[bootstrapapi.BootstrapTokenSecretKey]
+				require.True(t, ok)
+				// Use the persisted token to generate the expected token we return in the response
+				expectedToken := bootstraputil.TokenFromIDAndSecret(string(id), string(key))
+
+				// K0SToken is a well known kubeconfig, gzipped and base64 encoded
+				decodedK0SToken, err := base64.StdEncoding.DecodeString(r.K0sToken)
+				require.NoError(t, err)
+				decompressed, err := util.GunzipData(decodedK0SToken)
+				require.NoError(t, err)
+
+				require.Containsf(t, string(decompressed), fmt.Sprintf("token: %s", expectedToken), "expected K0sToken:\n%s\nto contain the generated bootstrap token: %s", string(decompressed), expectedToken)
+			},
 			kbClient: fake.NewClientBuilder().WithScheme(scheme).WithObjects(
 				&embeddedclusterv1beta1.Installation{
 					ObjectMeta: metav1.ObjectMeta{
@@ -146,6 +176,7 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 			mockStore := mockstore.NewMockStore(ctrl)
 			store.SetStore(mockStore)
 
+			// Mock the store.GetEmbeddedClusterInstallCommandRoles method, if the test provides a custom implementation use that, else default to returning an array of roles
 			mockStore.EXPECT().GetEmbeddedClusterInstallCommandRoles(test.token).AnyTimes().DoAndReturn(func(token string) ([]string, error) {
 				if test.getRoles != nil {
 					return test.getRoles(t, token)
@@ -171,12 +202,17 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 			response, err := http.Get(url)
 			require.Nil(t, err)
 			require.Equal(t, test.httpStatus, response.StatusCode)
+			// If the response status code is not 200, we don't need to check the body
 			if response.StatusCode != http.StatusOK {
 				return
 			}
+
+			// Run the body validation function if provided
 			var body GetEmbeddedClusterNodeJoinCommandResponse
 			require.NoError(t, json.NewDecoder(response.Body).Decode(&body))
-			require.Equal(t, test.expectedBody, body)
+			if test.validateBody != nil {
+				test.validateBody(t, &test, &body)
+			}
 		})
 	}
 
