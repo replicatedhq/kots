@@ -67,6 +67,7 @@ runs:
     - name: build melange package
       shell: bash
       run: |
+        sudo apt install bubblewrap -y
         mkdir -p build
         melange keygen melange.rsa
         melange build ${{ inputs.context }}/melange.yaml --arch ${{ inputs.arch }}
