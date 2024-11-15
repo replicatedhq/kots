@@ -26,7 +26,7 @@ type GetEmbeddedClusterNodeJoinCommandResponse struct {
 	EmbeddedClusterVersion string                     `json:"embeddedClusterVersion"`
 	AirgapRegistryAddress  string                     `json:"airgapRegistryAddress"`
 	WorkerNodeIPs          []string                   `json:"workerNodeIPs"`
-	ControllerNodeIps      []string                   `json:"controllerNodeIPs"`
+	ControllerNodeIPs      []string                   `json:"controllerNodeIPs"`
 	InstallationSpec       ecv1beta1.InstallationSpec `json:"installationSpec,omitempty"`
 }
 
@@ -186,7 +186,7 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		EmbeddedClusterVersion: ecVersion,
 		AirgapRegistryAddress:  airgapRegistryAddress,
 		WorkerNodeIPs:          workerNodeIPs,
-		ControllerNodeIps:      controllerNodeIPs,
+		ControllerNodeIPs:      controllerNodeIPs,
 		InstallationSpec:       install.Spec,
 	})
 }
