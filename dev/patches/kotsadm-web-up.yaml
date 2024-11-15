@@ -1,6 +1,7 @@
 spec:
   template:
     spec:
+{{- if .Env.EC_NODE  }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -9,15 +10,16 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - __NODE_NAME__
+                - {{ .Env.EC_NODE }}
+{{- end  }}
       volumes:
       - name: dev
         hostPath:
-          path: __PROJECT_DIR__/web
+          path: {{ .Env.PROJECT_DIR }}/web
           type: Directory
       - name: yarncache
         hostPath:
-          path: __PROJECT_DIR__/dev/.yarncache
+          path: {{ .Env.PROJECT_DIR }}/dev/.yarncache
           type: Directory
       containers:
       - name: kotsadm-web
