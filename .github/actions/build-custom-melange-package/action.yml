@@ -51,6 +51,22 @@ runs:
         go-version: '1.23'
         cache: true
 
+    # TODO: the bubblewrap package available from "apt install"
+    # is outdated and missing newer features such as --clearenv flag,
+    # so instead we download the wolfi .apk and use the binary in there
+    - name: 'Install dependencies (bubblewrap)'
+      shell: bash
+      run: |
+        sudo apt install -y libcap-dev meson ninja-build
+        git clone https://github.com/containers/bubblewrap
+        pushd bubblewrap
+        meson --prefix=/usr -Drequire_userns=true . output
+        cd output
+        ninja
+        sudo ninja install
+        popd
+        rm -rf bubblewrap
+
     - name: install latest melange binary
       shell: bash
       run: |
@@ -67,7 +83,6 @@ runs:
     - name: build melange package
       shell: bash
       run: |
-        sudo apt install bubblewrap -y
         mkdir -p build
         melange keygen melange.rsa
         melange build ${{ inputs.context }}/melange.yaml --arch ${{ inputs.arch }}
