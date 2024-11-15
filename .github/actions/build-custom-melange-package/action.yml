@@ -49,7 +49,7 @@ runs:
     - name: install melange
       shell: bash
       run: |
-        apt install -y make
+        sudo apt install -y make
         make melange
 
     - name: build melange package
