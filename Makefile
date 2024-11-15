@@ -1,4 +1,5 @@
 include Makefile.build.mk
+include common.mk
 CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= 0.20241107.005220-r0
 RQLITE_TAG ?= 8.34.0-r0
