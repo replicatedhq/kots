@@ -90,24 +90,28 @@ mock:
 	mockgen -source=pkg/handlers/interface.go -destination=pkg/handlers/mock/mock.go
 	mockgen -source=pkg/operator/client/client_interface.go -destination=pkg/operator/client/mock/mock.go
 
+.PHONY: install-gomplate
+install-gomplate:
+	go install github.com/hairyhenderson/gomplate/v4/cmd/gomplate@latest
+
 .PHONY: dev
-dev:
+dev: install-gomplate
 	@dev/scripts/dev.sh
 
 .PHONY: %-up
-%-up:
+%-up: install-gomplate
 	@dev/scripts/up.sh $*
 
 .PHONY: %-down
-%-down:
+%-down: install-gomplate
 	@dev/scripts/down.sh $*
 
 .PHONY: %-up-ec
-%-up-ec:
+%-up-ec: install-gomplate
 	@dev/scripts/up-ec.sh $*
 
 .PHONY: %-down-ec
-%-down-ec:
+%-down-ec: install-gomplate
 	@dev/scripts/down-ec.sh $*
 
 .PHONY: reset

@@ -4,8 +4,9 @@ spec:
       volumes:
       - name: dev
         hostPath:
-          path: __PROJECT_DIR__
+          path: {{ .Env.PROJECT_DIR }}
           type: Directory
+{{- if .Env.EC_NODE  }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -14,7 +15,8 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                - __NODE_NAME__
+                - {{ .Env.EC_NODE }}
+{{- end  }}
       containers:
       - name: kotsadm
         image: kotsadm-api-dev
