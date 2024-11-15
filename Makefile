@@ -103,7 +103,7 @@ dev: install-gomplate
 	@dev/scripts/up.sh $*
 
 .PHONY: %-down
-%-down: install-gomplate
+%-down:
 	@dev/scripts/down.sh $*
 
 .PHONY: %-up-ec
@@ -111,7 +111,7 @@ dev: install-gomplate
 	@dev/scripts/up-ec.sh $*
 
 .PHONY: %-down-ec
-%-down-ec: install-gomplate
+%-down-ec:
 	@dev/scripts/down-ec.sh $*
 
 .PHONY: reset
