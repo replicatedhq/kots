@@ -113,14 +113,16 @@ melange-build: $(MELANGE_CACHE_DIR) melange-template
 		--signing-key build/melange.rsa \
 		--cache-dir=$(MELANGE_CACHE_DIR) \
 		--source-dir $(MELANGE_SOURCE_DIR) \
-		--out-dir build/packages/
+		--out-dir build/packages \
+		--git-repo-url github.com/replicatedhq/kots
+
 
 .PHONY: melange-template
-melange-template: check-env-MELANGE_CONFIG check-env-PACKAGE_VERSION
+melange-template: check-env-MELANGE_CONFIG check-env-GIT_TAG
 	mkdir -p build
-	envsubst '$${PACKAGE_VERSION}' < ${MELANGE_CONFIG} > build/melange.yaml
+	envsubst '$${GIT_TAG}' < ${MELANGE_CONFIG} > build/melange.yaml
 
 .PHONY: apko-template
-apko-template: check-env-APKO_CONFIG check-env-PACKAGE_VERSION
+apko-template: check-env-APKO_CONFIG check-env-GIT_TAG
 	mkdir -p build
-	envsubst '$${PACKAGE_VERSION}' < ${APKO_CONFIG} > build/apko.yaml
+	envsubst '$${GIT_TAG}' < ${APKO_CONFIG} > build/apko.yaml
