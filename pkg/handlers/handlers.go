@@ -379,6 +379,10 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 	loggingRouter.Path("/api/v1/embedded-cluster/join").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterNodeJoinCommand)
 }
 
+func RegisterECWebsocketRoutes(handler KOTSHandler, kotsStore store.Store, wsRouter *mux.Router) {
+	wsRouter.HandleFunc("/embedded-cluster-ws", handler.ConnectToECWebsocket)
+}
+
 func StreamJSON(c *websocket.Conn, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {

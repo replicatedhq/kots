@@ -167,4 +167,7 @@ type KOTSHandler interface {
 	// Upgrade service
 	StartUpgradeService(w http.ResponseWriter, r *http.Request)
 	GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request)
+
+	// EC Websocket
+	ConnectToECWebsocket(w http.ResponseWriter, r *http.Request)
 }
