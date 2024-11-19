@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"sync"
@@ -10,7 +11,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"golang.org/x/exp/rand"
 )
 
 var wsUpgrader = websocket.Upgrader{}
