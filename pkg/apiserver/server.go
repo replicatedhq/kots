@@ -171,7 +171,7 @@ func Start(params *APIServerParams) {
 
 	if util.IsEmbeddedCluster() {
 		wsRouter := r.NewRoute().Subrouter()
-		handlers.RegisterECWebsocketRoutes(handler, kotsStore, wsRouter)
+		wsRouter.HandleFunc("/ec-ws", handler.ConnectToECWebsocket)
 	}
 
 	/**********************************************************************
