@@ -18,14 +18,11 @@ var wsClients = make(map[string]*websocket.Conn)
 var wsMutex = sync.Mutex{}
 
 type ConnectToECWebsocketResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func (h *Handler) ConnectToECWebsocket(w http.ResponseWriter, r *http.Request) {
-	response := ConnectToECWebsocketResponse{
-		Success: false,
-	}
+	response := ConnectToECWebsocketResponse{}
 
 	clientID := r.URL.Query().Get("id")
 	if clientID == "" {
