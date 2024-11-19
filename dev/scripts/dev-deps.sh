@@ -3,7 +3,7 @@
 set -e
 
 function is_not_in_path() {
-  if ! which "$1" > /dev/null; then
+  if ! command -v "$1" > /dev/null; then
     echo "$1 is not installed"
     return 0
   fi
@@ -17,4 +17,16 @@ function check_gomplate() {
   fi
 }
 
+function check_jq() {
+  if is_not_in_path jq; then
+    echo "jq is not installed. Attempting to install it using brew."
+    if is_not_in_path brew; then
+      echo "brew is not installed. Please install jq manually."
+      return
+    fi
+    brew install jq
+  fi
+}
+
 check_gomplate
+check_jq

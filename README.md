@@ -62,7 +62,8 @@ cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/ko
 
 - MacOS
 - Docker Desktop with Kubernetes enabled
-- jq
+- gomplate (we'll automatically install this for you)
+- jq (we'll automatically install this for you using brew if available)
 
 ### Running the Development Environment
 
