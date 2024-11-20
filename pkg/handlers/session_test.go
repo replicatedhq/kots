@@ -400,7 +400,7 @@ func Test_requireValidSession_FailedToFetchPasswordUpdated_AfterSessionIssuedErr
 	req.Error(err)
 	req.Equal("failed to fetch password updatedAt", err.Error())
 	req.Equal(want, got)
-	req.Equal(401, w.Code)
+	req.Equal(500, w.Code)
 }
 
 func Test_requireValidSession_PasswordUpdated_AfterSessionIssuedErr(t *testing.T) {
