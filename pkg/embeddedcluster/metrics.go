@@ -9,6 +9,7 @@ import (
 	"time"
 
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 // UpgradeStartedEvent is send back home when the upgrade starts.
@@ -46,7 +47,7 @@ func NotifyUpgradeStarted(ctx context.Context, baseURL string, ins, prev *embedd
 }
 
 // NotifyUpgradeFailed notifies the metrics server that an upgrade has failed.
-func NotifyUpgradeFailed(ctx context.Context, baseURL string, ins, prev *embeddedclusterv1beta1.Installation) error {
+func NotifyUpgradeFailed(ctx context.Context, baseURL string, ins, prev *embeddedclusterv1beta1.Installation, reason string) error {
 	if ins.Spec.AirGap {
 		return nil
 	}
@@ -54,6 +55,7 @@ func NotifyUpgradeFailed(ctx context.Context, baseURL string, ins, prev *embedde
 		ClusterID:      ins.Spec.ClusterID,
 		TargetVersion:  ins.Spec.Config.Version,
 		InitialVersion: prev.Spec.Config.Version,
+		Reason:         reason,
 	})
 }
 
@@ -72,6 +74,8 @@ func NotifyUpgradeSucceeded(ctx context.Context, baseURL string, ins, prev *embe
 // sendEvent sends the received event to the metrics server through a post request.
 func sendEvent(ctx context.Context, evname, baseURL string, ev interface{}) error {
 	url := fmt.Sprintf("%s/embedded_cluster_metrics/%s", baseURL, evname)
+
+	logger.Infof("Sending event %s to %s", evname, url)
 
 	body := map[string]interface{}{"event": ev}
 	buf := bytes.NewBuffer(nil)

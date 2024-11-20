@@ -1044,19 +1044,21 @@ func (o *Operator) waitForClusterUpgrade(appID string, appSlug string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get kube client")
 	}
-	logger.Infof("waiting for cluster upgrade to finish")
+	logger.Infof("Waiting for cluster upgrade to finish")
 	for {
 		ins, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
 		if err != nil {
 			return errors.Wrap(err, "failed to wait for embedded cluster installation")
 		}
 		if embeddedcluster.InstallationSucceeded(ctx, ins) {
+			logger.Infof("Cluster upgrade succeeded")
 			if err := o.notifyUpgradeSucceeded(ctx, kbClient, ins, appID); err != nil {
 				logger.Errorf("Failed to notify upgrade succeeded: %v", err)
 			}
 			return nil
 		}
 		if embeddedcluster.InstallationFailed(ctx, ins) {
+			logger.Infof("Cluster upgrade failed")
 			if err := o.notifyUpgradeFailed(ctx, kbClient, ins, appID); err != nil {
 				logger.Errorf("Failed to notify upgrade failed: %v", err)
 			}
@@ -1115,7 +1117,7 @@ func (o *Operator) notifyUpgradeFailed(ctx context.Context, kbClient kbclient.Cl
 		return errors.New("previous installation not found")
 	}
 
-	err = embeddedcluster.NotifyUpgradeFailed(ctx, license.Spec.Endpoint, ins, prev)
+	err = embeddedcluster.NotifyUpgradeFailed(ctx, license.Spec.Endpoint, ins, prev, ins.Status.Reason)
 	if err != nil {
 		return errors.Wrap(err, "failed to send event")
 	}
