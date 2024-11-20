@@ -18,6 +18,7 @@ import (
 	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator"
 	operatorclient "github.com/replicatedhq/kots/pkg/operator/client"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -53,11 +54,14 @@ func Start(params *APIServerParams) {
 	}
 	cancel()
 
+	logger.Debug("store is ready")
+
 	// check if we need to migrate from postgres before doing anything else
 	if err := persistence.MigrateFromPostgresToRqlite(); err != nil {
 		log.Println("error migrating from postgres to rqlite")
 		panic(err)
 	}
+	logger.Debug("postgres -> rqlite migration is skipped or completed")
 
 	if err := bootstrap(BootstrapParams{
 		AutoCreateClusterToken: params.AutocreateClusterToken,
@@ -65,11 +69,15 @@ func Start(params *APIServerParams) {
 		log.Println("error bootstrapping")
 		panic(err)
 	}
+	logger.Debug("bootstrap is complete")
 
 	store.GetStore().RunMigrations()
+	logger.Debug("store migrations are complete")
+
 	if err := identitymigrate.RunMigrations(context.TODO(), util.PodNamespace); err != nil {
 		log.Println("Failed to run identity migrations: ", err)
 	}
+	logger.Debug("identity migrations are complete")
 
 	if err := binaries.InitKubectl(); err != nil {
 		log.Println("error initializing kubectl binaries package")
