@@ -68,12 +68,12 @@ function restart() {
 # the mounted directories from the macOS host filesystem into the Docker Desktop VM.
 # This is required for using HostPath volumes in Kubernetes.
 function render() {
-  sed "s|__PROJECT_DIR__|/host_mnt$(pwd)|g" "$1"
+  PROJECT_DIR="/host_mnt$(pwd)" gomplate --missing-key zero -f "$1"
 }
 
 # The embedded-cluster container mounts the KOTS project at /replicatedhq/kots
 function ec_render() {
-  sed "s|__PROJECT_DIR__|/replicatedhq/kots|g" "$1"
+  EC_NODE=$(ec_node) PROJECT_DIR="/replicatedhq/kots" gomplate --missing-key zero -f "$1"
 }
 
 # Get the embedded cluster node name

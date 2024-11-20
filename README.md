@@ -62,7 +62,7 @@ cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/ko
 
 - MacOS
 - Docker Desktop with Kubernetes enabled
-- jq
+- Homebrew
 
 ### Running the Development Environment
 

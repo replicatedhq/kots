@@ -90,12 +90,16 @@ mock:
 	mockgen -source=pkg/handlers/interface.go -destination=pkg/handlers/mock/mock.go
 	mockgen -source=pkg/operator/client/client_interface.go -destination=pkg/operator/client/mock/mock.go
 
+.PHONY: dev-deps
+dev-deps:
+	@dev/scripts/dev-deps.sh
+
 .PHONY: dev
-dev:
+dev: dev-deps
 	@dev/scripts/dev.sh
 
 .PHONY: %-up
-%-up:
+%-up: dev-deps
 	@dev/scripts/up.sh $*
 
 .PHONY: %-down
@@ -103,7 +107,7 @@ dev:
 	@dev/scripts/down.sh $*
 
 .PHONY: %-up-ec
-%-up-ec:
+%-up-ec: dev-deps
 	@dev/scripts/up-ec.sh $*
 
 .PHONY: %-down-ec
