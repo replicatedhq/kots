@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -53,6 +54,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -933,7 +935,7 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) 
 	if cm.Data["requires-cluster-upgrade"] == "true" {
 		// wait for cluster upgrade even if the embedded cluster version doesn't match yet
 		// in order to continuously report progress to the user
-		if err := o.waitForClusterUpgrade(cm.Data["app-slug"]); err != nil {
+		if err := o.waitForClusterUpgrade(cm.Data["app-id"], cm.Data["app-slug"]); err != nil {
 			return errors.Wrap(err, "failed to wait for cluster upgrade")
 		}
 	}
@@ -1035,21 +1037,29 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) 
 	return nil
 }
 
-func (o *Operator) waitForClusterUpgrade(appSlug string) error {
-	kbClient, err := k8sutil.GetKubeClient(context.Background())
+func (o *Operator) waitForClusterUpgrade(appID string, appSlug string) error {
+	ctx := context.Background()
+
+	kbClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to get kube client")
 	}
 	logger.Infof("waiting for cluster upgrade to finish")
 	for {
-		ins, err := embeddedcluster.GetCurrentInstallation(context.Background(), kbClient)
+		ins, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
 		if err != nil {
 			return errors.Wrap(err, "failed to wait for embedded cluster installation")
 		}
-		if embeddedcluster.InstallationSucceeded(context.Background(), ins) {
+		if embeddedcluster.InstallationSucceeded(ctx, ins) {
+			if err := o.notifyUpgradeSucceeded(ctx, kbClient, ins, appID); err != nil {
+				logger.Errorf("Failed to notify upgrade succeeded: %v", err)
+			}
 			return nil
 		}
-		if embeddedcluster.InstallationFailed(context.Background(), ins) {
+		if embeddedcluster.InstallationFailed(ctx, ins) {
+			if err := o.notifyUpgradeFailed(ctx, kbClient, ins, appID); err != nil {
+				logger.Errorf("Failed to notify upgrade failed: %v", err)
+			}
 			if err := upgradeservicetask.SetStatusUpgradeFailed(appSlug, ins.Status.Reason); err != nil {
 				return errors.Wrap(err, "failed to set task status to failed")
 			}
@@ -1060,4 +1070,54 @@ func (o *Operator) waitForClusterUpgrade(appSlug string) error {
 		}
 		time.Sleep(5 * time.Second)
 	}
+}
+
+// notifyUpgradeSucceeded sends a metrics event to the api that the upgrade succeeded.
+func (o *Operator) notifyUpgradeSucceeded(ctx context.Context, kbClient kbclient.Client, ins *embeddedclusterv1beta1.Installation, appID string) error {
+	if ins.Spec.AirGap {
+		return nil
+	}
+
+	license, err := o.store.GetLatestLicenseForApp(appID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get latest license for app %s", appID)
+	}
+
+	prev, err := embeddedcluster.GetPreviousInstallation(ctx, kbClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to get previous installation")
+	} else if prev == nil {
+		return errors.New("previous installation not found")
+	}
+
+	err = embeddedcluster.NotifyUpgradeSucceeded(ctx, license.Spec.Endpoint, ins, prev)
+	if err != nil {
+		return errors.Wrap(err, "failed to send event")
+	}
+	return nil
+}
+
+// notifyUpgradeFailed sends a metrics event to the api that the upgrade failed.
+func (o *Operator) notifyUpgradeFailed(ctx context.Context, kbClient kbclient.Client, ins *embeddedclusterv1beta1.Installation, appID string) error {
+	if ins.Spec.AirGap {
+		return nil
+	}
+
+	license, err := o.store.GetLatestLicenseForApp(appID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get latest license for app %s", appID)
+	}
+
+	prev, err := embeddedcluster.GetPreviousInstallation(ctx, kbClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to get previous installation")
+	} else if prev == nil {
+		return errors.New("previous installation not found")
+	}
+
+	err = embeddedcluster.NotifyUpgradeFailed(ctx, license.Spec.Endpoint, ins, prev)
+	if err != nil {
+		return errors.Wrap(err, "failed to send event")
+	}
+	return nil
 }
