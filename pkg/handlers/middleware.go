@@ -99,6 +99,7 @@ func RequireValidSessionQuietMiddleware(kotsStore store.Store) mux.MiddlewareFun
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess, err := requireValidSession(kotsStore, w, r)
 			if err != nil {
+				logger.Errorf("failed validating session: %s", err)
 				return
 			}
 
