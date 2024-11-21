@@ -107,6 +107,7 @@ type KotsKinds struct {
 	IdentityConfig *kotsv1beta1.IdentityConfig
 
 	Backup    *velerov1.Backup
+	Restore   *velerov1.Restore
 	Installer *kurlv1beta1.Installer
 
 	LintConfig *kotsv1beta1.LintConfig
@@ -115,7 +116,7 @@ type KotsKinds struct {
 }
 
 func IsKotsKind(apiVersion string, kind string) bool {
-	if apiVersion == "velero.io/v1" && kind == "Backup" {
+	if apiVersion == "velero.io/v1" && (kind == "Backup" || kind == "Restore") {
 		return true
 	}
 	if apiVersion == "kots.io/v1beta1" {
@@ -439,22 +440,7 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 		if v == "v1" {
 			if k == "Backup" {
 				if o.Backup == nil {
-					if util.IsEmbeddedCluster() {
-						// return the default backup object
-						backup := &velerov1.Backup{
-							TypeMeta: metav1.TypeMeta{
-								APIVersion: "velero.io/v1",
-								Kind:       "Backup",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "backup",
-							},
-						}
-						o.Backup = backup
-					} else {
-						return "", nil
-					}
-
+					return "", nil
 				}
 				var b bytes.Buffer
 				if err := s.Encode(o.Backup, &b); err != nil {
@@ -567,6 +553,8 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 			k.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
 		case "velero.io/v1, Kind=Backup":
 			k.Backup = decoded.(*velerov1.Backup)
+		case "velero.io/v1, Kind=Restore":
+			k.Restore = decoded.(*velerov1.Restore)
 		case "kurl.sh/v1beta1, Kind=Installer", "cluster.kurl.sh/v1beta1, Kind=Installer":
 			k.Installer = decoded.(*kurlv1beta1.Installer)
 		case "app.k8s.io/v1beta1, Kind=Application":
@@ -1083,6 +1071,21 @@ func LoadBackupFromContents(content []byte) (*velerov1.Backup, error) {
 	}
 
 	return obj.(*velerov1.Backup), nil
+}
+
+func LoadRestoreFromContents(content []byte) (*velerov1.Restore, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
+	}
+
+	if gvk.String() != "velero.io/v1, Kind=Restore" {
+		return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+	}
+
+	return obj.(*velerov1.Restore), nil
 }
 
 func LoadApplicationFromContents(content []byte) (*applicationv1beta1.Application, error) {
