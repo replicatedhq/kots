@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -641,6 +642,20 @@ func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *t
 				j--
 			} else if next.Spec.Collectors[i].ClusterResources != nil && next.Spec.Collectors[j].ClusterResources != nil {
 				if reflect.DeepEqual(next.Spec.Collectors[i].ClusterResources.Namespaces, next.Spec.Collectors[j].ClusterResources.Namespaces) {
+					next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
+					j--
+				} else {
+					// if the next spec use all namespaces cluster resources collector, then overwrite the default one
+					if len(next.Spec.Collectors[j].ClusterResources.Namespaces) == 0 {
+						next.Spec.Collectors[i].ClusterResources.Namespaces = []string{}
+					} else {
+						// if the namespaces are different, add the missing namespaces to the default ClusterResources collector
+						for _, ns := range next.Spec.Collectors[j].ClusterResources.Namespaces {
+							if !slices.Contains(next.Spec.Collectors[i].ClusterResources.Namespaces, ns) {
+								next.Spec.Collectors[i].ClusterResources.Namespaces = append(next.Spec.Collectors[i].ClusterResources.Namespaces, ns)
+							}
+						}
+					}
 					next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
 					j--
 				}
