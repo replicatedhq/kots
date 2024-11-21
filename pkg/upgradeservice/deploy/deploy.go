@@ -133,10 +133,6 @@ func Deploy(opts DeployOptions) error {
 		defer close(finishedCh)
 		tasks.StartTicker(task.GetID(opts.Params.AppSlug), finishedCh)
 
-		if err := notifyUpgradeStarted(context.Background(), kbClient, opts); err != nil {
-			logger.Errorf("Failed to notify upgrade started: %v", err)
-		}
-
 		if err := embeddedcluster.StartClusterUpgrade(context.Background(), opts.KotsKinds, opts.RegistrySettings); err != nil {
 			return errors.Wrap(err, "failed to start cluster upgrade")
 		}
@@ -155,31 +151,6 @@ func Deploy(opts DeployOptions) error {
 		return nil
 	}()
 
-	return nil
-}
-
-// notifyUpgradeStarted sends a metrics event to the api that the upgrade started.
-func notifyUpgradeStarted(ctx context.Context, kbClient kbclient.Client, opts DeployOptions) error {
-	ins, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
-	if err != nil {
-		return fmt.Errorf("failed to get current installation: %w", err)
-	}
-
-	if ins.Spec.AirGap {
-		return nil
-	}
-
-	prev, err := embeddedcluster.GetPreviousInstallation(ctx, kbClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to get previous installation")
-	} else if prev == nil {
-		return errors.New("previous installation not found")
-	}
-
-	err = embeddedcluster.NotifyUpgradeStarted(ctx, opts.KotsKinds.License.Spec.Endpoint, ins, prev)
-	if err != nil {
-		return errors.Wrap(err, "failed to send event")
-	}
 	return nil
 }
 
