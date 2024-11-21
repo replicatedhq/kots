@@ -298,6 +298,9 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return nil, errors.Wrap(err, "failed to load backup from contents")
 		}
 
+		// If this is EC and If there is a restore custom resource, dont merge the backup spec
+		// Add EC annotation label and create the backup and exit loop...
+
 		// ** merge app backup info ** //
 		// included namespaces
 		includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
@@ -374,6 +377,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
 	backupAnnotations["kots.io/apps-versions"] = marshalledAppVersions
 	backupAnnotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
+	// Add EC annotation label
 
 	if util.IsEmbeddedCluster() {
 		kbClient, err := k8sutil.GetKubeClient(ctx)

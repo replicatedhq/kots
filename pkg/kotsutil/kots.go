@@ -107,6 +107,7 @@ type KotsKinds struct {
 	IdentityConfig *kotsv1beta1.IdentityConfig
 
 	Backup    *velerov1.Backup
+	Restore   *velerov1.Restore
 	Installer *kurlv1beta1.Installer
 
 	LintConfig *kotsv1beta1.LintConfig
