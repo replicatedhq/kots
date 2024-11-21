@@ -178,6 +178,18 @@ func (mr *MockKOTSHandlerMockRecorder) ConfirmEmbeddedClusterManagement(w, r int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfirmEmbeddedClusterManagement", reflect.TypeOf((*MockKOTSHandler)(nil).ConfirmEmbeddedClusterManagement), w, r)
 }
 
+// ConnectToECWebsocket mocks base method.
+func (m *MockKOTSHandler) ConnectToECWebsocket(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ConnectToECWebsocket", w, r)
+}
+
+// ConnectToECWebsocket indicates an expected call of ConnectToECWebsocket.
+func (mr *MockKOTSHandlerMockRecorder) ConnectToECWebsocket(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectToECWebsocket", reflect.TypeOf((*MockKOTSHandler)(nil).ConnectToECWebsocket), w, r)
+}
+
 // CreateAppFromAirgap mocks base method.
 func (m *MockKOTSHandler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
