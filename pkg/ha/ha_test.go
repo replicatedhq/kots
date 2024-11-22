@@ -313,7 +313,7 @@ func TestEnableHA(t *testing.T) {
 												Name: "rqlite",
 												Args: []string{
 													"-disco-mode=dns",
-													"-disco-config={\"name\":\"kotsadm-rqlite-headless\"}",
+													"-disco-config={\"name\":\"kotsadm-rqlite-headless.default.svc\"}",
 													"-bootstrap-expect=1",
 													"-auth=/auth/config.json",
 													"-join-as=kotsadm",
@@ -333,7 +333,7 @@ func TestEnableHA(t *testing.T) {
 			wantReplicas: 3,
 			wantArgs: []string{
 				"-disco-mode=dns",
-				"-disco-config={\"name\":\"kotsadm-rqlite-headless\"}",
+				"-disco-config={\"name\":\"kotsadm-rqlite-headless.default.svc\"}",
 				"-bootstrap-expect=3",
 				"-auth=/auth/config.json",
 				"-join-as=kotsadm",
@@ -360,7 +360,7 @@ func TestEnableHA(t *testing.T) {
 												Name: "rqlite",
 												Args: []string{
 													"-disco-mode=dns",
-													"-disco-config={\"name\":\"kotsadm-rqlite-headless\"}",
+													"-disco-config={\"name\":\"kotsadm-rqlite-headless.default.svc\"}",
 													"-bootstrap-expect=1",
 													"-auth=/auth/config.json",
 													"-join-as=kotsadm",
@@ -380,7 +380,7 @@ func TestEnableHA(t *testing.T) {
 			wantReplicas: 3,
 			wantArgs: []string{
 				"-disco-mode=dns",
-				"-disco-config={\"name\":\"kotsadm-rqlite-headless\"}",
+				"-disco-config={\"name\":\"kotsadm-rqlite-headless.default.svc\"}",
 				"-bootstrap-expect=3",
 				"-auth=/auth/config.json",
 				"-join-as=kotsadm",
