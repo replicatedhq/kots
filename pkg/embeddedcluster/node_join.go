@@ -77,9 +77,47 @@ func GenerateAddNodeToken(ctx context.Context, client kbclient.Client, nodeRole 
 	return newToken, nil
 }
 
-// GetAllNodeIPAddresses returns the internal IP addresses of all the ready nodes in the cluster grouped by
+// GetendpointsToCheck returns the list of endpoints that should be checked by a node joining the cluster
+// based on the array of roles the node will have
+func GetEndpointsToCheck(ctx context.Context, client kbclient.Client, roles []string) ([]string, error) {
+	controllerRoleName, err := ControllerRoleName(ctx, client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get controller role name: %w", err)
+	}
+
+	isController := false
+	for _, role := range roles {
+		if role == controllerRoleName {
+			isController = true
+			break
+		}
+	}
+	controllerAddr, workerAddr, err := getAllNodeIPAddresses(ctx, client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all node IP addresses: %w", err)
+	}
+
+	endpoints := []string{}
+	for _, addr := range controllerAddr {
+		// any joining node should be able to reach the kube-api port and k0s-api port on all the controllers
+		endpoints = append(endpoints, fmt.Sprintf("%s:6443", addr), fmt.Sprintf("%s:9443", addr))
+		if isController {
+			// controllers should be able to reach the etcd and kubelet ports on the controllers
+			endpoints = append(endpoints, fmt.Sprintf("%s:2380", addr), fmt.Sprintf("%s:10250", addr))
+		}
+	}
+	if isController {
+		for _, addr := range workerAddr {
+			// controllers should be able to reach the kubelet port on the workers
+			endpoints = append(endpoints, fmt.Sprintf("%s:10250", addr))
+		}
+	}
+	return endpoints, nil
+}
+
+// getAllNodeIPAddresses returns the internal IP addresses of all the ready nodes in the cluster grouped by
 // controller and worker nodes respectively
-func GetAllNodeIPAddresses(ctx context.Context, client kbclient.Client) ([]string, []string, error) {
+func getAllNodeIPAddresses(ctx context.Context, client kbclient.Client) ([]string, []string, error) {
 	var nodes corev1.NodeList
 	if err := client.List(ctx, &nodes); err != nil {
 		return nil, nil, fmt.Errorf("failed to list nodes: %w", err)

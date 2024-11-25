@@ -143,14 +143,22 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 			).Build(),
 		},
 		{
-			name:              "controller and worker node IPs are returned",
+			name:              "tcp connections required are returned based on the controller role provided",
 			httpStatus:        http.StatusOK,
 			embeddedClusterID: "cluster-id",
 			validateBody: func(t *testing.T, h *testNodeJoinCommandHarness, r *GetEmbeddedClusterNodeJoinCommandResponse) {
 				req := require.New(t)
 
-				req.Equal([]string{"192.168.0.101"}, r.WorkerNodeIPs)
-				req.Equal([]string{"192.168.0.100"}, r.ControllerNodeIPs)
+				req.Equal([]string{
+					"192.168.0.100:6443",
+					"192.168.0.100:9443",
+					"192.168.0.100:2380",
+					"192.168.0.100:10250",
+					"192.168.0.101:10250",
+				}, r.TCPConnectionsRequired)
+			},
+			getRoles: func(t *testing.T, token string) ([]string, error) {
+				return []string{"controller-role"}, nil
 			},
 			kbClient: fake.NewClientBuilder().WithScheme(scheme).WithObjects(
 				&embeddedclusterv1beta1.Installation{
