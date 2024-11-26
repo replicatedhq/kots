@@ -17,6 +17,7 @@ type UpgradeStartedEvent struct {
 	ClusterID      string `json:"clusterID"`
 	TargetVersion  string `json:"targetVersion"`
 	InitialVersion string `json:"initialVersion"`
+	AppVersion     string `json:"appVersion"`
 }
 
 // UpgradeFailedEvent is send back home when the upgrade fails.
@@ -35,7 +36,7 @@ type UpgradeSucceededEvent struct {
 }
 
 // NotifyUpgradeStarted notifies the metrics server that an upgrade has started.
-func NotifyUpgradeStarted(ctx context.Context, baseURL string, ins, prev *embeddedclusterv1beta1.Installation) error {
+func NotifyUpgradeStarted(ctx context.Context, baseURL string, ins, prev *embeddedclusterv1beta1.Installation, versionLabel string) error {
 	if ins.Spec.AirGap {
 		return nil
 	}
@@ -43,6 +44,7 @@ func NotifyUpgradeStarted(ctx context.Context, baseURL string, ins, prev *embedd
 		ClusterID:      ins.Spec.ClusterID,
 		TargetVersion:  ins.Spec.Config.Version,
 		InitialVersion: prev.Spec.Config.Version,
+		AppVersion:     versionLabel,
 	})
 }
 

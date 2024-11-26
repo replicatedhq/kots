@@ -77,7 +77,7 @@ func startClusterUpgrade(
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 
 	// We cannot notify the upgrade started until the new install is created
-	if err := NotifyUpgradeStarted(ctx, license.Spec.Endpoint, newInstall, current); err != nil {
+	if err := NotifyUpgradeStarted(ctx, license.Spec.Endpoint, newInstall, current, versionLabel); err != nil {
 		logger.Errorf("Failed to notify upgrade started: %v", err)
 	}
 
