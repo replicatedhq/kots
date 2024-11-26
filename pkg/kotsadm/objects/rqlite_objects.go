@@ -1,6 +1,7 @@
 package kotsadm
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -56,6 +57,8 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 	for k, v := range deployOptions.AdditionalLabels {
 		podLabels[k] = v
 	}
+
+	rqliteDiscoveryFlag := fmt.Sprintf(`-disco-config={"name":"kotsadm-rqlite-headless.%s.svc"}`, deployOptions.Namespace)
 
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
@@ -132,7 +135,7 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 							Name:            "rqlite",
 							Args: []string{
 								"-disco-mode=dns",
-								"-disco-config={\"name\":\"kotsadm-rqlite-headless\"}",
+								rqliteDiscoveryFlag,
 								"-bootstrap-expect=1",
 								"-auth=/auth/config.json",
 								"-join-as=kotsadm",
