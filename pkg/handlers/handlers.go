@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/replicatedhq/kots/pkg/handlers/kubeclient"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -20,6 +21,15 @@ import (
 var _ KOTSHandler = (*Handler)(nil)
 
 type Handler struct {
+	// KubeClientBuilder is used to get a kube client. It is useful to mock the client in testing scenarios.
+	kubeclient.KubeClientBuilder
+}
+
+// NewHandler returns a new default Handler
+func NewHandler() *Handler {
+	return &Handler{
+		KubeClientBuilder: &kubeclient.Builder{},
+	}
 }
 
 func init() {

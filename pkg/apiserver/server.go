@@ -157,7 +157,7 @@ func Start(params *APIServerParams) {
 	loggingRouter := r.NewRoute().Subrouter()
 	loggingRouter.Use(handlers.LoggingMiddleware)
 
-	handler := &handlers.Handler{}
+	handler := handlers.NewHandler()
 
 	/**********************************************************************
 	* Unauthenticated routes
