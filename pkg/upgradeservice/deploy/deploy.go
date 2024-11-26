@@ -142,6 +142,8 @@ func Deploy(opts DeployOptions) error {
 			tgzArchiveKey:                tgzArchiveKey,
 			requiresClusterUpgrade:       true,
 		}); err != nil {
+			// The operator is responsible for notifying of upgrade success/failure using the deployment.
+			// If we cannot create the deployment, the operator cannot take over and we need to notify of failure here.
 			if err := notifyClusterUpgradeFailed(context.Background(), kbClient, opts, finalError.Error()); err != nil {
 				logger.Errorf("Failed to notify upgrade failed: %v", err)
 			}
