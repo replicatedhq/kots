@@ -1052,14 +1052,14 @@ func (o *Operator) waitForClusterUpgrade(appID string, appSlug string) error {
 		}
 		if embeddedcluster.InstallationSucceeded(ctx, ins) {
 			logger.Infof("Cluster upgrade succeeded")
-			if err := o.notifyUpgradeSucceeded(ctx, kbClient, ins, appID); err != nil {
+			if err := o.notifyClusterUpgradeSucceeded(ctx, kbClient, ins, appID); err != nil {
 				logger.Errorf("Failed to notify upgrade succeeded: %v", err)
 			}
 			return nil
 		}
 		if embeddedcluster.InstallationFailed(ctx, ins) {
 			logger.Infof("Cluster upgrade failed")
-			if err := o.notifyUpgradeFailed(ctx, kbClient, ins, appID); err != nil {
+			if err := o.notifyClusterUpgradeFailed(ctx, kbClient, ins, appID); err != nil {
 				logger.Errorf("Failed to notify upgrade failed: %v", err)
 			}
 			if err := upgradeservicetask.SetStatusUpgradeFailed(appSlug, ins.Status.Reason); err != nil {
@@ -1074,8 +1074,8 @@ func (o *Operator) waitForClusterUpgrade(appID string, appSlug string) error {
 	}
 }
 
-// notifyUpgradeSucceeded sends a metrics event to the api that the upgrade succeeded.
-func (o *Operator) notifyUpgradeSucceeded(ctx context.Context, kbClient kbclient.Client, ins *embeddedclusterv1beta1.Installation, appID string) error {
+// notifyClusterUpgradeSucceeded sends a metrics event to the api that the upgrade succeeded.
+func (o *Operator) notifyClusterUpgradeSucceeded(ctx context.Context, kbClient kbclient.Client, ins *embeddedclusterv1beta1.Installation, appID string) error {
 	if ins.Spec.AirGap {
 		return nil
 	}
@@ -1099,8 +1099,8 @@ func (o *Operator) notifyUpgradeSucceeded(ctx context.Context, kbClient kbclient
 	return nil
 }
 
-// notifyUpgradeFailed sends a metrics event to the api that the upgrade failed.
-func (o *Operator) notifyUpgradeFailed(ctx context.Context, kbClient kbclient.Client, ins *embeddedclusterv1beta1.Installation, appID string) error {
+// notifyClusterUpgradeFailed sends a metrics event to the api that the upgrade failed.
+func (o *Operator) notifyClusterUpgradeFailed(ctx context.Context, kbClient kbclient.Client, ins *embeddedclusterv1beta1.Installation, appID string) error {
 	if ins.Spec.AirGap {
 		return nil
 	}

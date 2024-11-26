@@ -76,13 +76,16 @@ func startClusterUpgrade(
 
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 
-	// We cannot notify the upgrade started until the new install is created
+	// We cannot notify the upgrade started until the new install is available
 	if err := NotifyUpgradeStarted(ctx, license.Spec.Endpoint, newInstall, current, versionLabel); err != nil {
 		logger.Errorf("Failed to notify upgrade started: %v", err)
 	}
 
 	err = runClusterUpgrade(ctx, k8sClient, newInstall, registrySettings, license, versionLabel)
 	if err != nil {
+		if err := NotifyUpgradeFailed(ctx, license.Spec.Endpoint, newInstall, current, err.Error()); err != nil {
+			logger.Errorf("Failed to notify upgrade failed: %v", err)
+		}
 		return fmt.Errorf("run cluster upgrade: %w", err)
 	}
 

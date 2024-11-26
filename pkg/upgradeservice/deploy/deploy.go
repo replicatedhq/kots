@@ -120,9 +120,6 @@ func Deploy(opts DeployOptions) error {
 	go func() (finalError error) {
 		defer func() {
 			if finalError != nil {
-				if err := notifyUpgradeFailed(context.Background(), kbClient, opts, finalError.Error()); err != nil {
-					logger.Errorf("Failed to notify upgrade failed: %v", err)
-				}
 				if err := task.SetStatusUpgradeFailed(opts.Params.AppSlug, finalError.Error()); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set task status to upgrade failed"))
 				}
@@ -145,6 +142,9 @@ func Deploy(opts DeployOptions) error {
 			tgzArchiveKey:                tgzArchiveKey,
 			requiresClusterUpgrade:       true,
 		}); err != nil {
+			if err := notifyClusterUpgradeFailed(context.Background(), kbClient, opts, finalError.Error()); err != nil {
+				logger.Errorf("Failed to notify upgrade failed: %v", err)
+			}
 			return errors.Wrap(err, "failed to create deployment")
 		}
 
@@ -154,8 +154,8 @@ func Deploy(opts DeployOptions) error {
 	return nil
 }
 
-// notifyUpgradeFailed sends a metrics event to the api that the upgrade failed.
-func notifyUpgradeFailed(ctx context.Context, kbClient kbclient.Client, opts DeployOptions, reason string) error {
+// notifyClusterUpgradeFailed sends a metrics event to the api that the upgrade failed.
+func notifyClusterUpgradeFailed(ctx context.Context, kbClient kbclient.Client, opts DeployOptions, reason string) error {
 	ins, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
 	if err != nil {
 		return fmt.Errorf("failed to get current installation: %w", err)
