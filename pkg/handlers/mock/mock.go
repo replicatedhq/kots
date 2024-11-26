@@ -706,6 +706,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetBackup(w, r interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackup", reflect.TypeOf((*MockKOTSHandler)(nil).GetBackup), w, r)
 }
 
+// GetDebugInfo mocks base method.
+func (m *MockKOTSHandler) GetDebugInfo(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetDebugInfo", w, r)
+}
+
+// GetDebugInfo indicates an expected call of GetDebugInfo.
+func (mr *MockKOTSHandlerMockRecorder) GetDebugInfo(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDebugInfo", reflect.TypeOf((*MockKOTSHandler)(nil).GetDebugInfo), w, r)
+}
+
 // GetDownstreamOutput mocks base method.
 func (m *MockKOTSHandler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
