@@ -166,6 +166,15 @@ func Start(params *APIServerParams) {
 	handlers.RegisterUnauthenticatedRoutes(handler, kotsStore, debugRouter, loggingRouter)
 
 	/**********************************************************************
+	* Websocket routes (only for embedded cluster)
+	**********************************************************************/
+
+	if util.IsEmbeddedCluster() {
+		wsRouter := r.NewRoute().Subrouter()
+		wsRouter.HandleFunc("/ec-ws", handler.ConnectToECWebsocket)
+	}
+
+	/**********************************************************************
 	* KOTS token auth routes
 	**********************************************************************/
 

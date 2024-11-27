@@ -331,6 +331,10 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
 
+	// Debug info
+	r.Name("GetDebugInfo").Path("/api/v1/debug").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetDebugInfo))
+
 	// Upgrade service
 	r.Name("StartUpgradeService").Path("/api/v1/app/{appSlug}/start-upgrade-service").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgradeService))

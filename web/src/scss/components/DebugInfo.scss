@@ -1,0 +1,15 @@
+@import "../variables.scss";
+
+.node-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 100%;
+  margin-right: 4px;
+  display: inline-block;
+  vertical-align: 1px;
+  background-color: #44bb66;
+
+  &.disconnected {
+    background-color: #bc4752;
+  }
+}

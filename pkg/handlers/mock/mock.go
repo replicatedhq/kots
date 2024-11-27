@@ -178,6 +178,18 @@ func (mr *MockKOTSHandlerMockRecorder) ConfirmEmbeddedClusterManagement(w, r int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfirmEmbeddedClusterManagement", reflect.TypeOf((*MockKOTSHandler)(nil).ConfirmEmbeddedClusterManagement), w, r)
 }
 
+// ConnectToECWebsocket mocks base method.
+func (m *MockKOTSHandler) ConnectToECWebsocket(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ConnectToECWebsocket", w, r)
+}
+
+// ConnectToECWebsocket indicates an expected call of ConnectToECWebsocket.
+func (mr *MockKOTSHandlerMockRecorder) ConnectToECWebsocket(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectToECWebsocket", reflect.TypeOf((*MockKOTSHandler)(nil).ConnectToECWebsocket), w, r)
+}
+
 // CreateAppFromAirgap mocks base method.
 func (m *MockKOTSHandler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -692,6 +704,18 @@ func (m *MockKOTSHandler) GetBackup(w http.ResponseWriter, r *http.Request) {
 func (mr *MockKOTSHandlerMockRecorder) GetBackup(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackup", reflect.TypeOf((*MockKOTSHandler)(nil).GetBackup), w, r)
+}
+
+// GetDebugInfo mocks base method.
+func (m *MockKOTSHandler) GetDebugInfo(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetDebugInfo", w, r)
+}
+
+// GetDebugInfo indicates an expected call of GetDebugInfo.
+func (mr *MockKOTSHandlerMockRecorder) GetDebugInfo(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDebugInfo", reflect.TypeOf((*MockKOTSHandler)(nil).GetDebugInfo), w, r)
 }
 
 // GetDownstreamOutput mocks base method.
