@@ -68,6 +68,21 @@ func GetCurrentInstallation(ctx context.Context, kbClient kbclient.Client) (*emb
 	return &installations[0], nil
 }
 
+// GetCurrentInstallation returns the second most recent installation object from the cluster.
+func GetPreviousInstallation(ctx context.Context, kbClient kbclient.Client) (*embeddedclusterv1beta1.Installation, error) {
+	installations, err := ListInstallations(ctx, kbClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list installations: %w", err)
+	}
+	if len(installations) < 2 {
+		return nil, nil
+	}
+	sort.SliceStable(installations, func(i, j int) bool {
+		return installations[j].Name < installations[i].Name
+	})
+	return &installations[1], nil
+}
+
 func ListInstallations(ctx context.Context, kbClient kbclient.Client) ([]embeddedclusterv1beta1.Installation, error) {
 	var installationList embeddedclusterv1beta1.InstallationList
 	if err := kbClient.List(ctx, &installationList, &kbclient.ListOptions{}); err != nil {

@@ -22,6 +22,7 @@ import (
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -75,8 +76,16 @@ func startClusterUpgrade(
 
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 
+	// We cannot notify the upgrade started until the new install is available
+	if err := NotifyUpgradeStarted(ctx, license.Spec.Endpoint, newInstall, current, versionLabel); err != nil {
+		logger.Errorf("Failed to notify upgrade started: %v", err)
+	}
+
 	err = runClusterUpgrade(ctx, k8sClient, newInstall, registrySettings, license, versionLabel)
 	if err != nil {
+		if err := NotifyUpgradeFailed(ctx, license.Spec.Endpoint, newInstall, current, err.Error()); err != nil {
+			logger.Errorf("Failed to notify upgrade failed: %v", err)
+		}
 		return fmt.Errorf("run cluster upgrade: %w", err)
 	}
 

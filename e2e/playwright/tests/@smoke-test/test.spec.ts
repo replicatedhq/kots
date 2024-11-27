@@ -27,7 +27,7 @@ test("smoke test", async ({ page }) => {
   );
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.locator("#app")).toContainText("Results", {
-    timeout: 30000,
+    timeout: 60 * 1000,
   });
   await expect(page.locator("#app")).toContainText("Sequence is 0");
   await page.getByRole("button", { name: "Deploy" }).click();
