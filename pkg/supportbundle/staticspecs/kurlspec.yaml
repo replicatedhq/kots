@@ -5,6 +5,12 @@ metadata:
 spec:
   uri: "https://raw.githubusercontent.com/replicatedhq/kots/main/pkg/supportbundle/staticspecs/kurlspec.yaml"
   collectors:
+    - clusterResources:
+        namespaces:
+        - kube-system
+        - kube-node-lease
+        - kube-public
+        - projectcontour
     - http:
         collectorName: replicated.app-health-check
         get:
