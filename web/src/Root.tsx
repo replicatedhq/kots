@@ -31,6 +31,7 @@ import AppLicense from "@components/apps/AppLicense";
 import AppRegistrySettings from "@components/apps/AppRegistrySettings";
 import AppIdentityServiceSettings from "@components/apps/AppIdentityServiceSettings";
 import TroubleshootContainer from "@components/troubleshoot/TroubleshootContainer";
+import DebugInfo from "@components/DebugInfo";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
@@ -749,6 +750,7 @@ const Root = () => {
                 />
                 <Route path="/crashz" element={<Crashz />} />{" "}
                 <Route path="*" element={<NotFound />} />
+                <Route path="/debug" element={<DebugInfo />} />
                 <Route
                   path="/secure-console"
                   element={

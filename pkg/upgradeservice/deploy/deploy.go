@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type CanDeployOptions struct {
@@ -141,12 +142,42 @@ func Deploy(opts DeployOptions) error {
 			tgzArchiveKey:                tgzArchiveKey,
 			requiresClusterUpgrade:       true,
 		}); err != nil {
+			// The operator is responsible for notifying of upgrade success/failure using the deployment.
+			// If we cannot create the deployment, the operator cannot take over and we need to notify of failure here.
+			if err := notifyClusterUpgradeFailed(context.Background(), kbClient, opts, finalError.Error()); err != nil {
+				logger.Errorf("Failed to notify upgrade failed: %v", err)
+			}
 			return errors.Wrap(err, "failed to create deployment")
 		}
 
 		return nil
 	}()
 
+	return nil
+}
+
+// notifyClusterUpgradeFailed sends a metrics event to the api that the upgrade failed.
+func notifyClusterUpgradeFailed(ctx context.Context, kbClient kbclient.Client, opts DeployOptions, reason string) error {
+	ins, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
+	if err != nil {
+		return fmt.Errorf("failed to get current installation: %w", err)
+	}
+
+	if ins.Spec.AirGap {
+		return nil
+	}
+
+	prev, err := embeddedcluster.GetPreviousInstallation(ctx, kbClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to get previous installation")
+	} else if prev == nil {
+		return errors.New("previous installation not found")
+	}
+
+	err = embeddedcluster.NotifyUpgradeFailed(ctx, opts.KotsKinds.License.Spec.Endpoint, ins, prev, reason)
+	if err != nil {
+		return errors.Wrap(err, "failed to send event")
+	}
 	return nil
 }
 

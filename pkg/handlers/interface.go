@@ -164,7 +164,13 @@ type KOTSHandler interface {
 	// Password change
 	ChangePassword(w http.ResponseWriter, r *http.Request)
 
+	// Debug info
+	GetDebugInfo(w http.ResponseWriter, r *http.Request)
+
 	// Upgrade service
 	StartUpgradeService(w http.ResponseWriter, r *http.Request)
 	GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request)
+
+	// EC Websocket
+	ConnectToECWebsocket(w http.ResponseWriter, r *http.Request)
 }
