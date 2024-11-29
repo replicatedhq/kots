@@ -11,6 +11,9 @@ spec:
         - kube-node-lease
         - kube-public
         - projectcontour
+        - kurl
+        - minio
+        - monitoring
     - http:
         collectorName: replicated.app-health-check
         get:
@@ -47,6 +50,7 @@ spec:
         name: kots/kurl/control-plane
         selector:
           - tier=control-plane
+        namespace: kube-system
     - logs:
         collectorName: kurl-proxy-kotsadm
         name: kots/admin_console
