@@ -99,6 +99,11 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 			namespacesToCollect = append(namespacesToCollect, util.PodNamespace)
 			namespacesToCollect = append(namespacesToCollect, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 		}
+	} else {
+		// re-enable collection of k8s system namespaces
+		namespacesToCollect = append(namespacesToCollect, "kube-system")
+		namespacesToCollect = append(namespacesToCollect, "kube-node-lease")
+		namespacesToCollect = append(namespacesToCollect, "kube-public")
 	}
 
 	// split the default kotsadm support bundle into multiple support bundles
