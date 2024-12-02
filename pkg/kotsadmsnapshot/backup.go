@@ -253,7 +253,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	// appVeleroBackup is only set if usesImprovedDR is true
 	var appVeleroBackup *velerov1.Backup
 
-	appsSequences := map[string]int64{}
+	appSequences := map[string]int64{}
 	appVersions := map[string]string{}
 
 	appNamespace := kotsadmNamespace
@@ -270,6 +270,13 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	}
 	if isKurl {
 		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, "kurl")
+	}
+
+	isKotsadmClusterScoped := k8sutil.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace)
+	if !isKotsadmClusterScoped {
+		// in minimal rbac, a kotsadm role and rolebinding will exist in the velero namespace to give kotsadm access to velero.
+		// we backup and restore those so that restoring to a new cluster won't require that the user provide those permissions again.
+		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotsadmVeleroBackendStorageLocation.Namespace)
 	}
 
 	apps, err := store.GetStore().ListInstalledApps()
@@ -352,15 +359,8 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			}
 		}
 
-		appsSequences[a.Slug] = parentSequence
+		appSequences[a.Slug] = parentSequence
 		appVersions[a.Slug] = kotsKinds.Installation.Spec.VersionLabel
-	}
-
-	isKotsadmClusterScoped := k8sutil.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace)
-	if !isKotsadmClusterScoped {
-		// in minimal rbac, a kotsadm role and rolebinding will exist in the velero namespace to give kotsadm access to velero.
-		// we backup and restore those so that restoring to a new cluster won't require that the user provide those permissions again.
-		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotsadmVeleroBackendStorageLocation.Namespace)
 	}
 
 	kotsadmImage, err := k8sutil.FindKotsadmImage(kotsadmNamespace)
@@ -374,11 +374,11 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	}
 
 	// marshal apps sequences map
-	b, err := json.Marshal(appsSequences)
+	b, err := json.Marshal(appSequences)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal apps sequences")
 	}
-	marshalledAppsSequences := string(b)
+	marshalledAppSequences := string(b)
 
 	// marshal apps versions map
 	b, err = json.Marshal(appVersions)
@@ -390,7 +390,12 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	now := time.Now()
 	backupName := fmt.Sprintf("backup-%d", now.UnixNano())
 
-	addCommonAnnotations := func(annotations map[string]string) map[string]string {
+	numBackups := 1
+	if appVeleroBackup != nil {
+		numBackups = 2
+	}
+
+	appendCommonAnnotations := func(annotations map[string]string) map[string]string {
 		if annotations == nil {
 			annotations = make(map[string]string, 0)
 		}
@@ -399,24 +404,25 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		annotations["kots.io/instance"] = "true"
 		annotations["kots.io/kotsadm-image"] = kotsadmImage
 		annotations["kots.io/kotsadm-deploy-namespace"] = kotsadmNamespace
-		annotations["kots.io/apps-sequences"] = marshalledAppsSequences
+		annotations["kots.io/apps-sequences"] = marshalledAppSequences
 		annotations["kots.io/apps-versions"] = marshalledAppVersions
 		annotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
+		embeddedRegistryHost, _, _ := kotsutil.GetEmbeddedRegistryCreds(clientset)
+		if embeddedRegistryHost != "" {
+			annotations["kots.io/embedded-registry"] = embeddedRegistryHost
+		}
 
 		// Add improved disaster recovery annotation labels
 		annotations[InstanceBackupNameAnnotation] = backupName
-		if appVeleroBackup != nil {
-			annotations[InstanceBackupsExpectedAnnotation] = strconv.Itoa(2)
-		} else {
-			annotations[InstanceBackupsExpectedAnnotation] = strconv.Itoa(1)
-		}
+		annotations[InstanceBackupsExpectedAnnotation] = strconv.Itoa(numBackups)
+
 		return annotations
 	}
 
-	veleroBackup.Annotations = addCommonAnnotations(veleroBackup.Annotations)
+	veleroBackup.Annotations = appendCommonAnnotations(veleroBackup.Annotations)
 	if appVeleroBackup != nil {
 		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeKotsadm
-		appVeleroBackup.Annotations = addCommonAnnotations(appVeleroBackup.Annotations)
+		appVeleroBackup.Annotations = appendCommonAnnotations(appVeleroBackup.Annotations)
 		appVeleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeApp
 	} else {
 		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeCombined
@@ -431,21 +437,19 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		if err != nil {
 			return "", fmt.Errorf("failed to get current installation: %w", err)
 		}
-		ecAnnotations, err := ecBackupAnnotations(ctx, kbClient, installation)
-		if err != nil {
-			return "", fmt.Errorf("failed to get embedded cluster backup annotations: %w", err)
-		}
-		for k, v := range ecAnnotations {
-			veleroBackup.Annotations[k] = v
-		}
+
 		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, ecIncludedNamespaces(installation)...)
-	}
 
-	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(veleroBackup.Spec.IncludedNamespaces)
-
-	embeddedRegistryHost, _, _ := kotsutil.GetEmbeddedRegistryCreds(clientset)
-	if embeddedRegistryHost != "" {
-		veleroBackup.ObjectMeta.Annotations["kots.io/embedded-registry"] = embeddedRegistryHost
+		appVeleroBackup.Annotations, err = appendECAnnotations(ctx, appVeleroBackup.Annotations, kbClient, installation)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to add annotations to backup for embedded cluster")
+		}
+		if appVeleroBackup != nil {
+			appVeleroBackup.Annotations, err = appendECAnnotations(ctx, appVeleroBackup.Annotations, kbClient, installation)
+			if err != nil {
+				return "", errors.Wrap(err, "failed to add annotations to application backup for embedded cluster")
+			}
+		}
 	}
 
 	if cluster.SnapshotTTL != "" {
@@ -456,12 +460,25 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		veleroBackup.Spec.TTL = metav1.Duration{
 			Duration: ttlDuration,
 		}
+		if appVeleroBackup != nil {
+			appVeleroBackup.Spec.TTL = metav1.Duration{
+				Duration: ttlDuration,
+			}
+		}
 	}
 
 	err = excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to exclude shutdown pods from backup"))
 	}
+	if appVeleroBackup != nil {
+		err = excludeShutdownPodsFromBackup(ctx, clientset, appVeleroBackup)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to exclude shutdown pods from application backup"))
+		}
+	}
+
+	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(veleroBackup.Spec.IncludedNamespaces)
 
 	_, err = veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
 	if err != nil {
@@ -1097,13 +1114,15 @@ func mergeLabelSelector(kots metav1.LabelSelector, app metav1.LabelSelector) met
 	return kots
 }
 
-// ecBackupAnnotations returns the annotations that should be added to an embedded cluster backup
-func ecBackupAnnotations(ctx context.Context, kbClient kbclient.Client, in *embeddedclusterv1beta1.Installation) (map[string]string, error) {
-	annotations := map[string]string{}
+// appendECAnnotations appends annotations that should be added to an embedded cluster backup
+func appendECAnnotations(ctx context.Context, annotations map[string]string, kbClient kbclient.Client, in *embeddedclusterv1beta1.Installation) (map[string]string, error) {
+	if annotations == nil {
+		annotations = make(map[string]string, 0)
+	}
 
 	seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, kbClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
+		return annotations, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
 	}
 	if seaweedFSS3ServiceIP != "" {
 		annotations["kots.io/embedded-cluster-seaweedfs-s3-ip"] = seaweedFSS3ServiceIP
