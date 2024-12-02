@@ -249,10 +249,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			},
 		},
 	}
-	// non-supported fields that are intentionally left out cuz they might break full snapshots:
-	// - includedResources
-	// - excludedResources
-	// - labelSelector
 
 	// appVeleroBackup is only set if usesImprovedDR is true
 	var appVeleroBackup *velerov1.Backup
@@ -351,25 +347,8 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 				appVeleroBackup.GenerateName = a.Slug + "-"
 			} else {
 				// ** merge app backup info ** //
-				// included namespaces
-				veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotskindsBackup.Spec.IncludedNamespaces...)
 				veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
-
-				// excluded namespaces
-				veleroBackup.Spec.ExcludedNamespaces = append(veleroBackup.Spec.ExcludedNamespaces, kotskindsBackup.Spec.ExcludedNamespaces...)
-
-				// annotations
-				for k, v := range kotskindsBackup.Annotations {
-					veleroBackup.Annotations[k] = v
-				}
-
-				// ordered resources
-				for k, v := range kotskindsBackup.Spec.OrderedResources {
-					veleroBackup.Spec.OrderedResources[k] = v
-				}
-
-				// backup hooks
-				veleroBackup.Spec.Hooks.Resources = append(veleroBackup.Spec.Hooks.Resources, kotskindsBackup.Spec.Hooks.Resources...)
+				mergeAppBackupSpec(veleroBackup, kotskindsBackup)
 			}
 		}
 
@@ -545,6 +524,33 @@ func getDefaultEmbeddedClusterBackupSpec() *velerov1.Backup {
 			Name: "backup",
 		},
 	}
+}
+
+// mergeAppBackupSpec merges the app backup spec into the velero backup spec when improved DR is
+// disabled. Unsupported fields that are intentionally left out because they might break full
+// snapshots:
+// - includedResources
+// - excludedResources
+// - labelSelector
+func mergeAppBackupSpec(backup, appBackup *velerov1.Backup) {
+	// included namespaces
+	backup.Spec.IncludedNamespaces = append(backup.Spec.IncludedNamespaces, appBackup.Spec.IncludedNamespaces...)
+
+	// excluded namespaces
+	backup.Spec.ExcludedNamespaces = append(backup.Spec.ExcludedNamespaces, appBackup.Spec.ExcludedNamespaces...)
+
+	// annotations
+	for k, v := range appBackup.Annotations {
+		backup.Annotations[k] = v
+	}
+
+	// ordered resources
+	for k, v := range appBackup.Spec.OrderedResources {
+		backup.Spec.OrderedResources[k] = v
+	}
+
+	// backup hooks
+	backup.Spec.Hooks.Resources = append(backup.Spec.Hooks.Resources, appBackup.Spec.Hooks.Resources...)
 }
 
 func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID string) ([]*types.Backup, error) {
