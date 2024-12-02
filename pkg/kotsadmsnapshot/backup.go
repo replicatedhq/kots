@@ -250,9 +250,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		},
 	}
 
-	// appVeleroBackup is only set if usesImprovedDR is true
-	var appVeleroBackup *velerov1.Backup
-
 	appSequences := map[string]int64{}
 	appVersions := map[string]string{}
 
@@ -284,6 +281,11 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to list installed apps")
 	}
 
+	appVeleroBackup, err := getAppInstanceBackup(apps, kotsadmNamespace)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app instance backup")
+	}
+
 	for _, a := range apps {
 		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 		if err != nil {
@@ -308,7 +310,9 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to create temp dir for app %s", a.Slug)
 		}
-		defer os.RemoveAll(archiveDir)
+		defer func() {
+			_ = os.RemoveAll(archiveDir)
+		}()
 
 		err = store.GetStore().GetAppVersionArchive(a.ID, parentSequence, archiveDir)
 		if err != nil {
@@ -320,47 +324,19 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return "", errors.Wrap(err, "failed to load kots kinds from path")
 		}
 
-		backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
-		if err != nil {
-			return "", errors.Wrap(err, "failed to get backup spec from kotskinds")
-		}
-
-		if backupSpec == "" {
-			// If this is Embedded Cluster, backups are always enabled and we will use a default
-			// minimal backup spec
-			if util.IsEmbeddedCluster() {
-				veleroBackup = getDefaultEmbeddedClusterBackupSpec()
-			} else {
-				continue
-			}
-		} else {
-			renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
+		// Don't merge the backup spec if we are using the new improved DR.
+		if appVeleroBackup == nil {
+			err := mergeAppBackupSpec(veleroBackup, kotsKinds, kotsadmNamespace)
 			if err != nil {
-				return "", errors.Wrap(err, "failed to render backup")
-			}
-			kotskindsBackup, err := kotsutil.LoadBackupFromContents(renderedBackup)
-			if err != nil {
-				return "", errors.Wrap(err, "failed to load backup from contents")
-			}
-
-			// If this is EC and it is using the new improved DR (there is a backup and restore custom
-			// resource), dont merge the backup spec.
-			if usesImprovedDR(kotsKinds) {
-				if len(apps) > 0 {
-					return "", errors.New("cannot create backup for Embedded Cluster with multiple apps")
-				}
-				appVeleroBackup = kotskindsBackup
-				appVeleroBackup.Name = ""
-				appVeleroBackup.GenerateName = a.Slug + "-"
-			} else {
-				// ** merge app backup info ** //
-				veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
-				mergeAppBackupSpec(veleroBackup, kotskindsBackup)
+				return "", errors.Wrap(err, "failed to merge app backup spec")
 			}
 		}
 
 		appSequences[a.Slug] = parentSequence
 		appVersions[a.Slug] = kotsKinds.Installation.Spec.VersionLabel
+
+		// optimization as we no longer need the archive dir
+		_ = os.RemoveAll(archiveDir)
 	}
 
 	kotsadmImage, err := k8sutil.FindKotsadmImage(kotsadmNamespace)
@@ -519,14 +495,138 @@ func GetInstanceBackupsExpected(veleroBackup velerov1.Backup) int {
 	return 1
 }
 
-// usesImprovedDR returns true if this is Embedded Cluster and the vendor has defined both a backup
-// and restore custom resource.
-func usesImprovedDR(kotsKinds *kotsutil.KotsKinds) bool {
+// getAppInstanceBackup returns a backup spec only if this is Embedded Cluster and the vendor has
+// defined both a backup and restore custom resource.
+func getAppInstanceBackup(apps []*apptypes.App, kotsadmNamespace string) (*velerov1.Backup, error) {
 	if !util.IsEmbeddedCluster() {
-		return false
+		return nil, nil
 	}
 
-	return kotsKinds.Backup != nil && kotsKinds.Restore != nil
+	for _, a := range apps {
+		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to list downstreams for app %s", a.Slug)
+		}
+
+		if len(downstreams) == 0 {
+			// this is unexpected
+			continue
+		}
+
+		parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get current downstream parent sequence for app %s", a.Slug)
+		}
+		if parentSequence == -1 {
+			// no version is deployed for this app yet
+			continue
+		}
+
+		archiveDir, err := os.MkdirTemp("", "kotsadm")
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to create temp dir for app %s", a.Slug)
+		}
+		defer os.RemoveAll(archiveDir)
+
+		err = store.GetStore().GetAppVersionArchive(a.ID, parentSequence, archiveDir)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get app version archive for app %s", a.Slug)
+		}
+
+		kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load kots kinds from path")
+		}
+
+		// if there is both a backup and a restore spec this is using the new improved DR
+		if kotsKinds.Backup == nil || kotsKinds.Restore == nil {
+			continue
+		}
+
+		if len(apps) > 0 {
+			return nil, errors.New("cannot create backup for Embedded Cluster with multiple apps")
+		}
+
+		backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get backup spec from kotskinds")
+		}
+
+		if backupSpec == "" {
+			return nil, errors.New("backup spec is empty, this is unexpected")
+		}
+
+		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render backup")
+		}
+		appVeleroBackup, err := kotsutil.LoadBackupFromContents(renderedBackup)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load backup from contents")
+		}
+
+		appVeleroBackup.Name = ""
+		appVeleroBackup.GenerateName = a.Slug + "-"
+
+		return appVeleroBackup, nil
+	}
+
+	return nil, nil
+}
+
+// mergeAppBackupSpec merges the app backup spec into the velero backup spec when improved DR is
+// disabled. Unsupported fields that are intentionally left out because they might break full
+// snapshots:
+// - includedResources
+// - excludedResources
+// - labelSelector
+func mergeAppBackupSpec(backup *velerov1.Backup, kotsKinds *kotsutil.KotsKinds, kotsadmNamespace string) error {
+	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
+	if err != nil {
+		return errors.Wrap(err, "failed to get backup spec from kotskinds")
+	}
+
+	var kotskindsBackup *velerov1.Backup
+	if backupSpec == "" {
+		// If this is Embedded Cluster, backups are always enabled and we will use a default
+		// minimal backup spec
+		if util.IsEmbeddedCluster() {
+			kotskindsBackup = getDefaultEmbeddedClusterBackupSpec()
+		} else {
+			return nil
+		}
+	} else {
+		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to render backup")
+		}
+		kotskindsBackup, err = kotsutil.LoadBackupFromContents(renderedBackup)
+		if err != nil {
+			return errors.Wrap(err, "failed to load backup from contents")
+		}
+	}
+
+	// included namespaces
+	backup.Spec.IncludedNamespaces = append(backup.Spec.IncludedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
+	backup.Spec.IncludedNamespaces = append(backup.Spec.IncludedNamespaces, kotskindsBackup.Spec.IncludedNamespaces...)
+
+	// excluded namespaces
+	backup.Spec.ExcludedNamespaces = append(backup.Spec.ExcludedNamespaces, kotskindsBackup.Spec.ExcludedNamespaces...)
+
+	// annotations
+	for k, v := range kotskindsBackup.Annotations {
+		backup.Annotations[k] = v
+	}
+
+	// ordered resources
+	for k, v := range kotskindsBackup.Spec.OrderedResources {
+		backup.Spec.OrderedResources[k] = v
+	}
+
+	// backup hooks
+	backup.Spec.Hooks.Resources = append(backup.Spec.Hooks.Resources, kotskindsBackup.Spec.Hooks.Resources...)
+
+	return nil
 }
 
 // getDefaultEmbeddedClusterBackupSpec returns a default velero backup spec for an embedded
@@ -541,33 +641,6 @@ func getDefaultEmbeddedClusterBackupSpec() *velerov1.Backup {
 			Name: "backup",
 		},
 	}
-}
-
-// mergeAppBackupSpec merges the app backup spec into the velero backup spec when improved DR is
-// disabled. Unsupported fields that are intentionally left out because they might break full
-// snapshots:
-// - includedResources
-// - excludedResources
-// - labelSelector
-func mergeAppBackupSpec(backup, appBackup *velerov1.Backup) {
-	// included namespaces
-	backup.Spec.IncludedNamespaces = append(backup.Spec.IncludedNamespaces, appBackup.Spec.IncludedNamespaces...)
-
-	// excluded namespaces
-	backup.Spec.ExcludedNamespaces = append(backup.Spec.ExcludedNamespaces, appBackup.Spec.ExcludedNamespaces...)
-
-	// annotations
-	for k, v := range appBackup.Annotations {
-		backup.Annotations[k] = v
-	}
-
-	// ordered resources
-	for k, v := range appBackup.Spec.OrderedResources {
-		backup.Spec.OrderedResources[k] = v
-	}
-
-	// backup hooks
-	backup.Spec.Hooks.Resources = append(backup.Spec.Hooks.Resources, appBackup.Spec.Hooks.Resources...)
 }
 
 func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID string) ([]*types.Backup, error) {
