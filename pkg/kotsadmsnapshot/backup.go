@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/utils/ptr"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -229,29 +230,42 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.New("no backup store location found")
 	}
 
-	// appVeleroBackup is only set if usesImprovedDR is true
-	var appVeleroBackup *velerov1.Backup
-
-	appsSequences := map[string]int64{}
-	appVersions := map[string]string{}
-	includedNamespaces := []string{kotsadmNamespace}
-	excludedNamespaces := []string{}
-	backupAnnotations := map[string]string{}
-	backupOrderedResources := map[string]string{}
-	backupHooks := velerov1.BackupHooks{
-		Resources: []velerov1.BackupResourceHookSpec{},
+	// veleroBackup is the kotsadm backup or combined backup if usesImprovedDR is false
+	veleroBackup := &velerov1.Backup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:         "",
+			GenerateName: "instance-",
+			Annotations:  map[string]string{},
+		},
+		Spec: velerov1.BackupSpec{
+			StorageLocation:         "default",
+			IncludedNamespaces:      []string{},
+			ExcludedNamespaces:      []string{},
+			IncludeClusterResources: ptr.To(true),
+			OrLabelSelectors:        instanceBackupLabelSelectors(util.IsEmbeddedCluster()),
+			OrderedResources:        map[string]string{},
+			Hooks: velerov1.BackupHooks{
+				Resources: []velerov1.BackupResourceHookSpec{},
+			},
+		},
 	}
 	// non-supported fields that are intentionally left out cuz they might break full snapshots:
 	// - includedResources
 	// - excludedResources
 	// - labelSelector
 
+	// appVeleroBackup is only set if usesImprovedDR is true
+	var appVeleroBackup *velerov1.Backup
+
+	appsSequences := map[string]int64{}
+	appVersions := map[string]string{}
+
 	appNamespace := kotsadmNamespace
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 	if appNamespace != kotsadmNamespace {
-		includedNamespaces = append(includedNamespaces, appNamespace)
+		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, appNamespace)
 	}
 
 	isKurl, err := kurl.IsKurl(clientset)
@@ -259,7 +273,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 	if isKurl {
-		includedNamespaces = append(includedNamespaces, "kurl")
+		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, "kurl")
 	}
 
 	apps, err := store.GetStore().ListInstalledApps()
@@ -308,7 +322,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return "", errors.Wrap(err, "failed to get backup spec from kotskinds")
 		}
 
-		var veleroBackup *velerov1.Backup
 		if backupSpec == "" {
 			// If this is Embedded Cluster, backups are always enabled and we will use a default
 			// minimal backup spec
@@ -322,7 +335,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			if err != nil {
 				return "", errors.Wrap(err, "failed to render backup")
 			}
-			veleroBackup, err = kotsutil.LoadBackupFromContents(renderedBackup)
+			kotskindsBackup, err := kotsutil.LoadBackupFromContents(renderedBackup)
 			if err != nil {
 				return "", errors.Wrap(err, "failed to load backup from contents")
 			}
@@ -333,32 +346,30 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 				if len(apps) > 0 {
 					return "", errors.New("cannot create backup for Embedded Cluster with multiple apps")
 				}
-				appVeleroBackup = veleroBackup
+				appVeleroBackup = kotskindsBackup
 				appVeleroBackup.Name = ""
 				appVeleroBackup.GenerateName = a.Slug + "-"
-				appVeleroBackup.Namespace = kotsadmVeleroBackendStorageLocation.Namespace
 			} else {
-
 				// ** merge app backup info ** //
 				// included namespaces
-				includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
-				includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
+				veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotskindsBackup.Spec.IncludedNamespaces...)
+				veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
 				// excluded namespaces
-				excludedNamespaces = append(excludedNamespaces, veleroBackup.Spec.ExcludedNamespaces...)
+				veleroBackup.Spec.ExcludedNamespaces = append(veleroBackup.Spec.ExcludedNamespaces, kotskindsBackup.Spec.ExcludedNamespaces...)
 
 				// annotations
-				for k, v := range veleroBackup.Annotations {
-					backupAnnotations[k] = v
+				for k, v := range kotskindsBackup.Annotations {
+					veleroBackup.Annotations[k] = v
 				}
 
 				// ordered resources
-				for k, v := range veleroBackup.Spec.OrderedResources {
-					backupOrderedResources[k] = v
+				for k, v := range kotskindsBackup.Spec.OrderedResources {
+					veleroBackup.Spec.OrderedResources[k] = v
 				}
 
 				// backup hooks
-				backupHooks.Resources = append(backupHooks.Resources, veleroBackup.Spec.Hooks.Resources...)
+				veleroBackup.Spec.Hooks.Resources = append(veleroBackup.Spec.Hooks.Resources, kotskindsBackup.Spec.Hooks.Resources...)
 			}
 		}
 
@@ -370,7 +381,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	if !isKotsadmClusterScoped {
 		// in minimal rbac, a kotsadm role and rolebinding will exist in the velero namespace to give kotsadm access to velero.
 		// we backup and restore those so that restoring to a new cluster won't require that the user provide those permissions again.
-		includedNamespaces = append(includedNamespaces, kotsadmVeleroBackendStorageLocation.Namespace)
+		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotsadmVeleroBackendStorageLocation.Namespace)
 	}
 
 	kotsadmImage, err := k8sutil.FindKotsadmImage(kotsadmNamespace)
@@ -423,13 +434,13 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return annotations
 	}
 
-	backupAnnotations = addCommonAnnotations(backupAnnotations)
+	veleroBackup.Annotations = addCommonAnnotations(veleroBackup.Annotations)
 	if appVeleroBackup != nil {
-		backupAnnotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeKotsadm
+		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeKotsadm
 		appVeleroBackup.Annotations = addCommonAnnotations(appVeleroBackup.Annotations)
 		appVeleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeApp
 	} else {
-		backupAnnotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeCombined
+		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeCombined
 	}
 
 	if util.IsEmbeddedCluster() {
@@ -446,29 +457,12 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return "", fmt.Errorf("failed to get embedded cluster backup annotations: %w", err)
 		}
 		for k, v := range ecAnnotations {
-			backupAnnotations[k] = v
+			veleroBackup.Annotations[k] = v
 		}
-		includedNamespaces = append(includedNamespaces, ecIncludedNamespaces(installation)...)
+		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, ecIncludedNamespaces(installation)...)
 	}
 
-	includeClusterResources := true
-	veleroBackup := &velerov1.Backup{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:         "",
-			GenerateName: "instance-",
-			Namespace:    kotsadmVeleroBackendStorageLocation.Namespace,
-			Annotations:  backupAnnotations,
-		},
-		Spec: velerov1.BackupSpec{
-			StorageLocation:         "default",
-			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces),
-			ExcludedNamespaces:      excludedNamespaces,
-			IncludeClusterResources: &includeClusterResources,
-			OrLabelSelectors:        instanceBackupLabelSelectors(util.IsEmbeddedCluster()),
-			OrderedResources:        backupOrderedResources,
-			Hooks:                   backupHooks,
-		},
-	}
+	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(veleroBackup.Spec.IncludedNamespaces)
 
 	embeddedRegistryHost, _, _ := kotsutil.GetEmbeddedRegistryCreds(clientset)
 	if embeddedRegistryHost != "" {
