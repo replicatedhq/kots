@@ -291,7 +291,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 
 		if len(downstreams) == 0 {
-			logger.Error(errors.Wrapf(err, "no downstreams found for app %s", a.Slug))
+			logger.Errorf("No downstreams found for app %s", a.Slug)
 			continue
 		}
 
@@ -469,12 +469,12 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 
 	err = excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to exclude shutdown pods from backup"))
+		logger.Errorf("Failed to exclude shutdown pods from backup: %v", err)
 	}
 	if appVeleroBackup != nil {
 		err = excludeShutdownPodsFromBackup(ctx, clientset, appVeleroBackup)
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to exclude shutdown pods from application backup"))
+			logger.Errorf("Failed to exclude shutdown pods from application backup: %v", err)
 		}
 	}
 
