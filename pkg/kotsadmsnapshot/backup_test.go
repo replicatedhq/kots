@@ -682,20 +682,24 @@ func Test_instanceBackupLabelSelectors(t *testing.T) {
 	}
 }
 
-func Test_ecBackupAnnotations(t *testing.T) {
+func Test_appendECAnnotations(t *testing.T) {
 	scheme := runtime.NewScheme()
 	corev1.AddToScheme(scheme)
 	embeddedclusterv1beta1.AddToScheme(scheme)
 
 	tests := []struct {
 		name     string
+		prev     map[string]string
 		kbClient kbclient.Client
 		in       *embeddedclusterv1beta1.Installation
 		env      map[string]string
 		want     map[string]string
 	}{
 		{
-			name:     "basic",
+			name: "basic",
+			prev: map[string]string{
+				"prev-key": "prev-value",
+			},
 			kbClient: fakekbclient.NewClientBuilder().WithScheme(scheme).Build(),
 			in:       &embeddedclusterv1beta1.Installation{},
 			env: map[string]string{
@@ -703,6 +707,7 @@ func Test_ecBackupAnnotations(t *testing.T) {
 				"EMBEDDED_CLUSTER_VERSION": "embedded-cluster-version",
 			},
 			want: map[string]string{
+				"prev-key":                         "prev-value",
 				"kots.io/embedded-cluster":         "true",
 				"kots.io/embedded-cluster-id":      "embedded-cluster-id",
 				"kots.io/embedded-cluster-version": "embedded-cluster-version",
@@ -790,7 +795,7 @@ func Test_ecBackupAnnotations(t *testing.T) {
 			for k, v := range tt.env {
 				t.Setenv(k, v)
 			}
-			got, err := ecBackupAnnotations(context.TODO(), tt.kbClient, tt.in)
+			got, err := appendECAnnotations(context.TODO(), tt.prev, tt.kbClient, tt.in)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})
