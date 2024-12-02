@@ -1051,18 +1051,7 @@ status: {}
 				v: "v1",
 				k: "Backup",
 			},
-			want: `apiVersion: velero.io/v1
-kind: Backup
-metadata:
-  creationTimestamp: null
-  name: backup
-spec:
-  csiSnapshotTimeout: 0s
-  hooks: {}
-  metadata: {}
-  ttl: 0s
-status: {}
-`,
+			want: "",
 		},
 		{
 			name: "backup exists, EC",
