@@ -438,13 +438,23 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 
 	if g == "velero.io" {
 		if v == "v1" {
-			if k == "Backup" {
+			switch k {
+			case "Backup":
 				if o.Backup == nil {
 					return "", nil
 				}
 				var b bytes.Buffer
 				if err := s.Encode(o.Backup, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode backup")
+				}
+				return string(b.Bytes()), nil
+			case "Restore":
+				if o.Restore == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.Restore, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode restore")
 				}
 				return string(b.Bytes()), nil
 			}

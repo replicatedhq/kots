@@ -616,7 +616,7 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 	}
 	restoreSpec, err := kotsKinds.Marshal("velero.io", "v1", "Restore")
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal backup spec")
+		return nil, errors.Wrap(err, "failed to marshal restore spec")
 	}
 	identitySpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Identity")
 	if err != nil {
