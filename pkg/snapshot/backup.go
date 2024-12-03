@@ -166,7 +166,6 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 }
 
 func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {
-
 	b, err := ListAllBackups(ctx, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup list")

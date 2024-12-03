@@ -202,6 +202,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 
 type instanceBackupMetadata struct {
 	backupName                     string
+	backupReqestedAt               time.Time
 	kotsadmNamespace               string
 	backupStorageLocationNamespace string
 	apps                           map[string]appInstanceBackupMetadata
@@ -294,8 +295,10 @@ func GetInstanceBackupsExpected(veleroBackup velerov1.Backup) int {
 }
 
 func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
+	now := time.Now().UTC()
 	metadata := instanceBackupMetadata{
-		backupName:       fmt.Sprintf("backup-%d", time.Now().UnixNano()),
+		backupName:       fmt.Sprintf("backup-%d", now.UnixNano()),
+		backupReqestedAt: now,
 		kotsadmNamespace: util.PodNamespace,
 		isScheduled:      isScheduled,
 	}
@@ -369,11 +372,9 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 		_ = os.RemoveAll(archiveDir)
 	}
 
-	if util.IsEmbeddedCluster() {
-		metadata.ec, err = getECInstanceBackupMetadata(ctx)
-		if err != nil {
-			return metadata, errors.Wrap(err, "failed to get embedded cluster metadata")
-		}
+	metadata.ec, err = getECInstanceBackupMetadata(ctx)
+	if err != nil {
+		return metadata, errors.Wrap(err, "failed to get embedded cluster metadata")
 	}
 
 	return metadata, nil
@@ -418,7 +419,7 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 			IncludedNamespaces:      []string{},
 			ExcludedNamespaces:      []string{},
 			IncludeClusterResources: ptr.To(true),
-			OrLabelSelectors:        instanceBackupLabelSelectors(util.IsEmbeddedCluster()),
+			OrLabelSelectors:        instanceBackupLabelSelectors(metadata.ec != nil),
 			OrderedResources:        map[string]string{},
 			Hooks: velerov1.BackupHooks{
 				Resources: []velerov1.BackupResourceHookSpec{},
@@ -452,7 +453,7 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 	for _, appMeta := range metadata.apps {
 		// Don't merge the backup spec if we are using the new improved DR.
 		if !hasAppSpec {
-			err := mergeAppBackupSpec(veleroBackup, appMeta.kotsKinds, appMeta.app, metadata.kotsadmNamespace)
+			err := mergeAppBackupSpec(veleroBackup, appMeta, metadata.kotsadmNamespace, metadata.ec != nil)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to merge app backup spec")
 			}
@@ -492,7 +493,7 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 // getAppInstanceBackup returns a backup spec only if this is Embedded Cluster and the vendor has
 // defined both a backup and restore custom resource.
 func getAppInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (*velerov1.Backup, error) {
-	if !util.IsEmbeddedCluster() {
+	if metadata.ec == nil {
 		return nil, nil
 	}
 
@@ -571,47 +572,55 @@ func getAppInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interfac
 // - includedResources
 // - excludedResources
 // - labelSelector
-func mergeAppBackupSpec(backup *velerov1.Backup, kotsKinds *kotsutil.KotsKinds, app *apptypes.App, kotsadmNamespace string) error {
-	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
+func mergeAppBackupSpec(backup *velerov1.Backup, appMeta appInstanceBackupMetadata, kotsadmNamespace string, isEC bool) error {
+	backupSpec, err := appMeta.kotsKinds.Marshal("velero.io", "v1", "Backup")
 	if err != nil {
 		return errors.Wrap(err, "failed to get backup spec from kotskinds")
 	}
 
-	var kotskindsBackup *velerov1.Backup
 	if backupSpec == "" {
-		// If this is Embedded Cluster, backups are always enabled and we will use a default
-		// minimal backup spec
-		if util.IsEmbeddedCluster() {
-			kotskindsBackup = getDefaultEmbeddedClusterBackupSpec()
-		} else {
-			return nil
+		// If this is Embedded Cluster, backups are always enabled and we must include the
+		// namespace.
+		if isEC {
+			backup.Spec.IncludedNamespaces = append(backup.Spec.IncludedNamespaces, appMeta.kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 		}
-	} else {
-		renderedBackup, err := helper.RenderAppFile(app, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
-		if err != nil {
-			return errors.Wrap(err, "failed to render backup")
-		}
-		kotskindsBackup, err = kotsutil.LoadBackupFromContents(renderedBackup)
-		if err != nil {
-			return errors.Wrap(err, "failed to load backup from contents")
-		}
+		return nil
+	}
+
+	renderedBackup, err := helper.RenderAppFile(appMeta.app, nil, []byte(backupSpec), appMeta.kotsKinds, kotsadmNamespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to render backup")
+	}
+	kotskindsBackup, err := kotsutil.LoadBackupFromContents(renderedBackup)
+	if err != nil {
+		return errors.Wrap(err, "failed to load backup from contents")
 	}
 
 	// included namespaces
-	backup.Spec.IncludedNamespaces = append(backup.Spec.IncludedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
+	backup.Spec.IncludedNamespaces = append(backup.Spec.IncludedNamespaces, appMeta.kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 	backup.Spec.IncludedNamespaces = append(backup.Spec.IncludedNamespaces, kotskindsBackup.Spec.IncludedNamespaces...)
 
 	// excluded namespaces
 	backup.Spec.ExcludedNamespaces = append(backup.Spec.ExcludedNamespaces, kotskindsBackup.Spec.ExcludedNamespaces...)
 
 	// annotations
-	for k, v := range kotskindsBackup.Annotations {
-		backup.Annotations[k] = v
+	if len(kotskindsBackup.ObjectMeta.Annotations) > 0 {
+		if backup.Annotations == nil {
+			backup.Annotations = map[string]string{}
+		}
+		for k, v := range kotskindsBackup.ObjectMeta.Annotations {
+			backup.Annotations[k] = v
+		}
 	}
 
 	// ordered resources
-	for k, v := range kotskindsBackup.Spec.OrderedResources {
-		backup.Spec.OrderedResources[k] = v
+	if len(kotskindsBackup.Spec.OrderedResources) > 0 {
+		if backup.Spec.OrderedResources == nil {
+			backup.Spec.OrderedResources = map[string]string{}
+		}
+		for k, v := range kotskindsBackup.Spec.OrderedResources {
+			backup.Spec.OrderedResources[k] = v
+		}
 	}
 
 	// backup hooks
@@ -620,22 +629,8 @@ func mergeAppBackupSpec(backup *velerov1.Backup, kotsKinds *kotsutil.KotsKinds, 
 	return nil
 }
 
-// getDefaultEmbeddedClusterBackupSpec returns a default velero backup spec for an embedded
-// cluster using the old DR (no backup and restore custom resource).
-func getDefaultEmbeddedClusterBackupSpec() *velerov1.Backup {
-	return &velerov1.Backup{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "velero.io/v1",
-			Kind:       "Backup",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "backup",
-		},
-	}
-}
-
 func appendCommonAnnotations(ctx context.Context, k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata, hasAppSpec bool) (map[string]string, error) {
-	kotsadmImage, err := k8sutil.FindKotsadmImage(metadata.kotsadmNamespace)
+	kotsadmImage, err := k8sutil.FindKotsadmImage(k8sClient, metadata.kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
 	}
@@ -672,13 +667,11 @@ func appendCommonAnnotations(ctx context.Context, k8sClient kubernetes.Interface
 		numBackups = 2
 	}
 
-	now := time.Now() // TODO
-
 	if annotations == nil {
 		annotations = make(map[string]string, 0)
 	}
 	annotations["kots.io/snapshot-trigger"] = snapshotTrigger
-	annotations["kots.io/snapshot-requested"] = now.UTC().Format(time.RFC3339)
+	annotations["kots.io/snapshot-requested"] = metadata.backupReqestedAt.Format(time.RFC3339)
 	annotations["kots.io/instance"] = "true"
 	annotations["kots.io/kotsadm-image"] = kotsadmImage
 	annotations["kots.io/kotsadm-deploy-namespace"] = metadata.kotsadmNamespace
