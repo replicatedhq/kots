@@ -34,6 +34,7 @@ func renderHelmV3(releaseName string, chartPath string, renderOptions *RenderOpt
 	client.ReleaseName = releaseName
 	client.Replace = true
 	client.ClientOnly = true
+	client.SkipSchemaValidation = renderOptions.IsAirgap
 
 	client.Namespace = renderOptions.Namespace
 	if client.Namespace == "" {
