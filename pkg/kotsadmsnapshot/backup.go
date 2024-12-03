@@ -580,7 +580,7 @@ func getAppInstanceBackup(apps []*apptypes.App, kotsadmNamespace string) (*veler
 // - includedResources
 // - excludedResources
 // - labelSelector
-func mergeAppBackupSpec(backup *velerov1.Backup, kotsKinds *kotsutil.KotsKinds, a *apptypes.App, kotsadmNamespace string) error {
+func mergeAppBackupSpec(backup *velerov1.Backup, kotsKinds *kotsutil.KotsKinds, app *apptypes.App, kotsadmNamespace string) error {
 	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
 	if err != nil {
 		return errors.Wrap(err, "failed to get backup spec from kotskinds")
@@ -596,7 +596,7 @@ func mergeAppBackupSpec(backup *velerov1.Backup, kotsKinds *kotsutil.KotsKinds, 
 			return nil
 		}
 	} else {
-		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
+		renderedBackup, err := helper.RenderAppFile(app, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
 		if err != nil {
 			return errors.Wrap(err, "failed to render backup")
 		}
