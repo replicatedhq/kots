@@ -699,7 +699,7 @@ func appendCommonAnnotations(ctx context.Context, k8sClient kubernetes.Interface
 	annotations[InstanceBackupsExpectedAnnotation] = strconv.Itoa(numBackups)
 
 	if metadata.ec != nil {
-		annotations = appendECAnnotations(ctx, annotations, *metadata.ec)
+		annotations = appendECAnnotations(annotations, *metadata.ec)
 	}
 
 	return annotations, nil
@@ -1250,7 +1250,7 @@ func mergeLabelSelector(kots metav1.LabelSelector, app metav1.LabelSelector) met
 }
 
 // appendECAnnotations appends annotations that should be added to an embedded cluster backup
-func appendECAnnotations(ctx context.Context, annotations map[string]string, ecMeta ecInstanceBackupMetadata) map[string]string {
+func appendECAnnotations(annotations map[string]string, ecMeta ecInstanceBackupMetadata) map[string]string {
 	if annotations == nil {
 		annotations = make(map[string]string, 0)
 	}

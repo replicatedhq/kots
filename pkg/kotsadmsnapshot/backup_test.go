@@ -303,7 +303,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 		{
 			name: "expect error when k8s client list pod returns error",
 			args: args{
-				ctx:                  context.TODO(),
+				ctx:                  context.Background(),
 				clientset:            mockGetPodsInANamespaceErrorClient(),
 				namespace:            "test",
 				failedPodListOptions: kotsadmPodListOption,
@@ -313,7 +313,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 		{
 			name: "expect error when k8s client update shutdown pod returns error",
 			args: args{
-				ctx:                  context.TODO(),
+				ctx:                  context.Background(),
 				clientset:            mockUpdateShutdownPodErrorClient(),
 				namespace:            "test",
 				failedPodListOptions: kotsadmPodListOption,
@@ -323,7 +323,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 		{
 			name: "expect no error when no shutdown pods are found",
 			args: args{
-				ctx:                  context.TODO(),
+				ctx:                  context.Background(),
 				clientset:            mockGetRunningPodsClient(),
 				namespace:            "test",
 				failedPodListOptions: kotsadmPodListOption,
@@ -334,7 +334,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 		{
 			name: "expect no error when shutdown pods are found and updated for kotsadm backup label",
 			args: args{
-				ctx:                  context.TODO(),
+				ctx:                  context.Background(),
 				clientset:            mockK8sClientWithShutdownPods(),
 				namespace:            "test",
 				failedPodListOptions: kotsadmPodListOption,
@@ -345,7 +345,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 		{
 			name: "expect no error when shutdown pods are found and updated for no label selector",
 			args: args{
-				ctx:       context.TODO(),
+				ctx:       context.Background(),
 				clientset: mockK8sClientWithShutdownPods(),
 				namespace: "test",
 				failedPodListOptions: metav1.ListOptions{
@@ -358,7 +358,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 		{
 			name: "expect no error when shutdown pods are found and updated for app slug label",
 			args: args{
-				ctx:                  context.TODO(),
+				ctx:                  context.Background(),
 				clientset:            mockK8sClientWithShutdownPods(),
 				namespace:            "test-2",
 				failedPodListOptions: appSlugPodListOption,
@@ -369,7 +369,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 		{
 			name: "expect no error when shutdown pods are found and updated for app slug label with all namespaces",
 			args: args{
-				ctx:                  context.TODO(),
+				ctx:                  context.Background(),
 				clientset:            mockK8sClientWithShutdownPods(),
 				namespace:            "",
 				failedPodListOptions: appSlugPodListOption,
@@ -380,7 +380,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 		{
 			name: "expect no error when shutdown pods are found and updated for kotsadm backup label with all namespaces",
 			args: args{
-				ctx:                  context.TODO(),
+				ctx:                  context.Background(),
 				clientset:            mockK8sClientWithShutdownPods(),
 				namespace:            "",
 				failedPodListOptions: kotsadmPodListOption,
@@ -398,7 +398,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 			foundNumofPodsWithExcludeAnnotation := 0
 			if !tt.wantErr {
 				// get pods in test namespace and check if they have the velero exclude annotation for Shutdown pods
-				pods, err := tt.args.clientset.CoreV1().Pods(tt.args.namespace).List(context.TODO(), tt.args.failedPodListOptions)
+				pods, err := tt.args.clientset.CoreV1().Pods(tt.args.namespace).List(context.Background(), tt.args.failedPodListOptions)
 				if err != nil {
 					t.Errorf("excludeShutdownPodsFromBackupInNamespace() error = %v, wantErr %v", err, tt.wantErr)
 				}
@@ -440,7 +440,7 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 		{
 			name: "expect no error when namespaces are empty",
 			args: args{
-				ctx:       context.TODO(),
+				ctx:       context.Background(),
 				clientset: mockK8sClientWithShutdownPods(),
 				veleroBackup: &velerov1.Backup{
 					Spec: velerov1.BackupSpec{
@@ -454,7 +454,7 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 		{
 			name: "expect no error when pods are running",
 			args: args{
-				ctx:       context.TODO(),
+				ctx:       context.Background(),
 				clientset: mockGetRunningPodsClient(),
 				veleroBackup: &velerov1.Backup{
 					Spec: velerov1.BackupSpec{
@@ -468,7 +468,7 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 		{
 			name: "expect error when k8s client list pods returns error",
 			args: args{
-				ctx:       context.TODO(),
+				ctx:       context.Background(),
 				clientset: mockGetPodsInANamespaceErrorClient(),
 				veleroBackup: &velerov1.Backup{
 					Spec: velerov1.BackupSpec{
@@ -482,7 +482,7 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 		{
 			name: "expect no error when shutdown pods are found and updated for app slug label",
 			args: args{
-				ctx:       context.TODO(),
+				ctx:       context.Background(),
 				clientset: mockK8sClientWithShutdownPods(),
 				veleroBackup: &velerov1.Backup{
 					Spec: velerov1.BackupSpec{
@@ -496,7 +496,7 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 		{
 			name: "expect no error when shutdown pods are found and updated for kotsadm backup label and namespace is *",
 			args: args{
-				ctx:       context.TODO(),
+				ctx:       context.Background(),
 				clientset: mockK8sClientWithShutdownPods(),
 				veleroBackup: &velerov1.Backup{
 					Spec: velerov1.BackupSpec{
@@ -510,7 +510,7 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 		{
 			name: "expect no error when shutdown pods are found and updated for app slug match expression",
 			args: args{
-				ctx:       context.TODO(),
+				ctx:       context.Background(),
 				clientset: mockK8sClientWithShutdownPods(),
 				veleroBackup: &velerov1.Backup{
 					Spec: velerov1.BackupSpec{
@@ -524,7 +524,7 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 		{
 			name: "expect no error when shutdown pods are found and updated for app slug label and no label selector",
 			args: args{
-				ctx:       context.TODO(),
+				ctx:       context.Background(),
 				clientset: mockK8sClientWithShutdownPods(),
 				veleroBackup: &velerov1.Backup{
 					Spec: velerov1.BackupSpec{
@@ -659,11 +659,11 @@ func Test_excludeShutdownPodsFromBackup_check(t *testing.T) {
 			req := require.New(t)
 			mockClient := fake.NewSimpleClientset(tt.resources...)
 
-			err := excludeShutdownPodsFromBackup(context.TODO(), mockClient, tt.args.veleroBackup)
+			err := excludeShutdownPodsFromBackup(context.Background(), mockClient, tt.args.veleroBackup)
 			req.NoError(err)
 
 			// count the number of pods with exclude annotation
-			testPods, err := mockClient.CoreV1().Pods("test").List(context.TODO(), metav1.ListOptions{})
+			testPods, err := mockClient.CoreV1().Pods("test").List(context.Background(), metav1.ListOptions{})
 			req.NoError(err)
 
 			foundExcluded := []string{}
@@ -842,7 +842,7 @@ func Test_appendECAnnotations(t *testing.T) {
 				installation:         tt.in,
 				seaweedFSS3ServiceIP: tt.seaweedFSS3ServiceIP,
 			}
-			got := appendECAnnotations(context.TODO(), tt.prev, ecMeta)
+			got := appendECAnnotations(context.Background(), tt.prev, ecMeta)
 			req.Equal(tt.want, got)
 		})
 	}
@@ -1699,7 +1699,6 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 				},
 			},
 			want: &velerov1.Backup{
-				// TODO: excludeShutdownPodsFromBackup
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "velero.io/v1",
 					Kind:       "Backup",
@@ -1752,7 +1751,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 							},
 						},
 					},
-					TTL: metav1.Duration{24 * time.Hour},
+					TTL: metav1.Duration{Duration: 24 * time.Hour},
 				},
 			},
 		},

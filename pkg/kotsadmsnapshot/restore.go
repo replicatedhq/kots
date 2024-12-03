@@ -127,6 +127,7 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, snap
 		return errors.Wrap(err, "failed to create restore")
 	}
 
+	// TODO
 	// create the kotsKinds.Restore included with the yaml from the vendor
 	// Add the EC annotation
 
