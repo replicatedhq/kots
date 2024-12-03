@@ -314,6 +314,7 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 		backupName:       fmt.Sprintf("backup-%d", now.UnixNano()),
 		backupReqestedAt: now,
 		kotsadmNamespace: util.PodNamespace,
+		apps:             make(map[string]appInstanceBackupMetadata, 0),
 		isScheduled:      isScheduled,
 	}
 
