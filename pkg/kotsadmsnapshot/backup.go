@@ -36,7 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
-	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -208,12 +207,18 @@ type instanceBackupMetadata struct {
 	apps                           map[string]appInstanceBackupMetadata
 	isScheduled                    bool
 	snapshotTTL                    time.Duration
+	ec                             *ecInstanceBackupMetadata
 }
 
 type appInstanceBackupMetadata struct {
 	app            *apptypes.App
 	kotsKinds      *kotsutil.KotsKinds
 	parentSequence int64
+}
+
+type ecInstanceBackupMetadata struct {
+	installation         *embeddedclusterv1beta1.Installation
+	seaweedFSS3ServiceIP string
 }
 
 func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstream, isScheduled bool) (string, error) {
@@ -239,7 +244,12 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to get instance backup metadata")
 	}
 
-	veleroBackup, appVeleroBackup, err := getInstanceBackupSpecs(ctx, k8sClient, metadata)
+	appVeleroBackup, err := getAppInstanceBackupSpec(ctx, k8sClient, metadata)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app instance backup spec")
+	}
+
+	veleroBackup, err := getInstanceBackupSpec(ctx, k8sClient, metadata, appVeleroBackup != nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get instance backup specs")
 	}
@@ -257,6 +267,30 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	}
 
 	return metadata.backupName, nil
+}
+
+func GetBackupName(veleroBackup velerov1.Backup) string {
+	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupNameAnnotation]; ok {
+		return val
+	}
+	return veleroBackup.GetName()
+}
+
+func GetInstanceBackupType(veleroBackup velerov1.Backup) string {
+	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupTypeAnnotation]; ok {
+		return val
+	}
+	return ""
+}
+
+func GetInstanceBackupsExpected(veleroBackup velerov1.Backup) int {
+	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupsExpectedAnnotation]; ok {
+		num, _ := strconv.Atoi(val)
+		if num > 0 {
+			return num
+		}
+	}
+	return 1
 }
 
 func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
@@ -335,12 +369,45 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 		_ = os.RemoveAll(archiveDir)
 	}
 
+	if util.IsEmbeddedCluster() {
+		metadata.ec, err = getECInstanceBackupMetadata(ctx)
+		if err != nil {
+			return metadata, errors.Wrap(err, "failed to get embedded cluster metadata")
+		}
+	}
+
 	return metadata, nil
 }
 
-func getInstanceBackupSpecs(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (veleroBackup *velerov1.Backup, appVeleroBackup *velerov1.Backup, err error) {
+func getECInstanceBackupMetadata(ctx context.Context) (*ecInstanceBackupMetadata, error) {
+	if !util.IsEmbeddedCluster() {
+		return nil, nil
+	}
+
+	kbClient, err := k8sutil.GetKubeClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get kubeclient: %w", err)
+	}
+
+	installation, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current installation: %w", err)
+	}
+
+	seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, kbClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
+	}
+
+	return &ecInstanceBackupMetadata{
+		installation:         installation,
+		seaweedFSS3ServiceIP: seaweedFSS3ServiceIP,
+	}, nil
+}
+
+func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata, hasAppSpec bool) (*velerov1.Backup, error) {
 	// veleroBackup is the kotsadm backup or combined backup if usesImprovedDR is false
-	veleroBackup = &velerov1.Backup{
+	veleroBackup := &velerov1.Backup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:         "",
 			GenerateName: "instance-",
@@ -369,7 +436,7 @@ func getInstanceBackupSpecs(ctx context.Context, k8sClient kubernetes.Interface,
 
 	isKurl, err := kurl.IsKurl(k8sClient)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to check if cluster is kurl")
+		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 	if isKurl {
 		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, "kurl")
@@ -382,122 +449,33 @@ func getInstanceBackupSpecs(ctx context.Context, k8sClient kubernetes.Interface,
 		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, metadata.backupStorageLocationNamespace)
 	}
 
-	appVeleroBackup, err = getAppInstanceBackup(metadata)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to get app instance backup")
-	}
-
-	appSequences := map[string]int64{}
-	appVersions := map[string]string{}
-
-	for slug, appMeta := range metadata.apps {
+	for _, appMeta := range metadata.apps {
 		// Don't merge the backup spec if we are using the new improved DR.
-		if appVeleroBackup == nil {
+		if !hasAppSpec {
 			err := mergeAppBackupSpec(veleroBackup, appMeta.kotsKinds, appMeta.app, metadata.kotsadmNamespace)
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "failed to merge app backup spec")
+				return nil, errors.Wrap(err, "failed to merge app backup spec")
 			}
 		}
-
-		appSequences[slug] = appMeta.parentSequence
-		appVersions[slug] = appMeta.kotsKinds.Installation.Spec.VersionLabel
 	}
 
-	kotsadmImage, err := k8sutil.FindKotsadmImage(metadata.kotsadmNamespace)
+	veleroBackup.Annotations, err = appendCommonAnnotations(ctx, k8sClient, veleroBackup.Annotations, metadata, hasAppSpec)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to find kotsadm image")
+		return nil, errors.Wrap(err, "failed to add annotations to backup")
 	}
-
-	snapshotTrigger := "manual"
-	if metadata.isScheduled {
-		snapshotTrigger = "schedule"
-	}
-
-	// marshal apps sequences map
-	b, err := json.Marshal(appSequences)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to marshal apps sequences")
-	}
-	marshalledAppSequences := string(b)
-
-	// marshal apps versions map
-	b, err = json.Marshal(appVersions)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to marshal apps versions")
-	}
-	marshalledAppVersions := string(b)
-
-	numBackups := 1
-	if appVeleroBackup != nil {
-		numBackups = 2
-	}
-
-	now := time.Now()
-	appendCommonAnnotations := func(annotations map[string]string) map[string]string {
-		if annotations == nil {
-			annotations = make(map[string]string, 0)
-		}
-		annotations["kots.io/snapshot-trigger"] = snapshotTrigger
-		annotations["kots.io/snapshot-requested"] = now.UTC().Format(time.RFC3339)
-		annotations["kots.io/instance"] = "true"
-		annotations["kots.io/kotsadm-image"] = kotsadmImage
-		annotations["kots.io/kotsadm-deploy-namespace"] = metadata.kotsadmNamespace
-		annotations["kots.io/apps-sequences"] = marshalledAppSequences
-		annotations["kots.io/apps-versions"] = marshalledAppVersions
-		annotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
-		embeddedRegistryHost, _, _ := kotsutil.GetEmbeddedRegistryCreds(k8sClient)
-		if embeddedRegistryHost != "" {
-			annotations["kots.io/embedded-registry"] = embeddedRegistryHost
-		}
-
-		// Add improved disaster recovery annotation labels
-		annotations[InstanceBackupNameAnnotation] = metadata.backupName
-		annotations[InstanceBackupsExpectedAnnotation] = strconv.Itoa(numBackups)
-
-		return annotations
-	}
-
-	veleroBackup.Annotations = appendCommonAnnotations(veleroBackup.Annotations)
-	if appVeleroBackup != nil {
+	if hasAppSpec {
 		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeKotsadm
-		appVeleroBackup.Annotations = appendCommonAnnotations(appVeleroBackup.Annotations)
-		appVeleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeApp
 	} else {
 		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeCombined
 	}
 
-	if util.IsEmbeddedCluster() {
-		kbClient, err := k8sutil.GetKubeClient(ctx)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get kubeclient: %w", err)
-		}
-		installation, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get current installation: %w", err)
-		}
-
-		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, ecIncludedNamespaces(installation)...)
-
-		appVeleroBackup.Annotations, err = appendECAnnotations(ctx, appVeleroBackup.Annotations, kbClient, installation)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to add annotations to backup for embedded cluster")
-		}
-		if appVeleroBackup != nil {
-			appVeleroBackup.Annotations, err = appendECAnnotations(ctx, appVeleroBackup.Annotations, kbClient, installation)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "failed to add annotations to application backup for embedded cluster")
-			}
-		}
+	if metadata.ec != nil {
+		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, ecIncludedNamespaces(metadata.ec.installation)...)
 	}
 
 	if metadata.snapshotTTL > 0 {
 		veleroBackup.Spec.TTL = metav1.Duration{
 			Duration: metadata.snapshotTTL,
-		}
-		if appVeleroBackup != nil {
-			appVeleroBackup.Spec.TTL = metav1.Duration{
-				Duration: metadata.snapshotTTL,
-			}
 		}
 	}
 
@@ -505,48 +483,20 @@ func getInstanceBackupSpecs(ctx context.Context, k8sClient kubernetes.Interface,
 	if err != nil {
 		logger.Errorf("Failed to exclude shutdown pods from backup: %v", err)
 	}
-	if appVeleroBackup != nil {
-		err = excludeShutdownPodsFromBackup(ctx, k8sClient, appVeleroBackup)
-		if err != nil {
-			logger.Errorf("Failed to exclude shutdown pods from application backup: %v", err)
-		}
-	}
 
 	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(veleroBackup.Spec.IncludedNamespaces)
 
-	return veleroBackup, appVeleroBackup, nil
-}
-
-func GetBackupName(veleroBackup velerov1.Backup) string {
-	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupNameAnnotation]; ok {
-		return val
-	}
-	return veleroBackup.GetName()
-}
-
-func GetInstanceBackupType(veleroBackup velerov1.Backup) string {
-	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupTypeAnnotation]; ok {
-		return val
-	}
-	return ""
-}
-
-func GetInstanceBackupsExpected(veleroBackup velerov1.Backup) int {
-	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupsExpectedAnnotation]; ok {
-		num, _ := strconv.Atoi(val)
-		if num > 0 {
-			return num
-		}
-	}
-	return 1
+	return veleroBackup, nil
 }
 
 // getAppInstanceBackup returns a backup spec only if this is Embedded Cluster and the vendor has
 // defined both a backup and restore custom resource.
-func getAppInstanceBackup(metadata instanceBackupMetadata) (*velerov1.Backup, error) {
+func getAppInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (*velerov1.Backup, error) {
 	if !util.IsEmbeddedCluster() {
 		return nil, nil
 	}
+
+	var appVeleroBackup *velerov1.Backup
 
 	for slug, appMeta := range metadata.apps {
 		// if there is both a backup and a restore spec this is using the new improved DR
@@ -571,7 +521,7 @@ func getAppInstanceBackup(metadata instanceBackupMetadata) (*velerov1.Backup, er
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render backup")
 		}
-		appVeleroBackup, err := kotsutil.LoadBackupFromContents(renderedBackup)
+		appVeleroBackup, err = kotsutil.LoadBackupFromContents(renderedBackup)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load backup from contents")
 		}
@@ -579,10 +529,40 @@ func getAppInstanceBackup(metadata instanceBackupMetadata) (*velerov1.Backup, er
 		appVeleroBackup.Name = ""
 		appVeleroBackup.GenerateName = slug + "-"
 
-		return appVeleroBackup, nil
+		break
 	}
 
-	return nil, nil
+	if appVeleroBackup == nil {
+		return nil, nil
+	}
+
+	appSequences := map[string]int64{}
+	appVersions := map[string]string{}
+
+	for slug, appMeta := range metadata.apps {
+		appSequences[slug] = appMeta.parentSequence
+		appVersions[slug] = appMeta.kotsKinds.Installation.Spec.VersionLabel
+	}
+
+	var err error
+	appVeleroBackup.Annotations, err = appendCommonAnnotations(ctx, k8sClient, appVeleroBackup.Annotations, metadata, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to add annotations to application backup")
+	}
+	appVeleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeApp
+
+	if metadata.snapshotTTL > 0 {
+		appVeleroBackup.Spec.TTL = metav1.Duration{
+			Duration: metadata.snapshotTTL,
+		}
+	}
+
+	err = excludeShutdownPodsFromBackup(ctx, k8sClient, appVeleroBackup)
+	if err != nil {
+		logger.Errorf("Failed to exclude shutdown pods from application backup: %v", err)
+	}
+
+	return appVeleroBackup, nil
 }
 
 // mergeAppBackupSpec merges the app backup spec into the velero backup spec when improved DR is
@@ -652,6 +632,73 @@ func getDefaultEmbeddedClusterBackupSpec() *velerov1.Backup {
 			Name: "backup",
 		},
 	}
+}
+
+func appendCommonAnnotations(ctx context.Context, k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata, hasAppSpec bool) (map[string]string, error) {
+	kotsadmImage, err := k8sutil.FindKotsadmImage(metadata.kotsadmNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find kotsadm image")
+	}
+
+	snapshotTrigger := "manual"
+	if metadata.isScheduled {
+		snapshotTrigger = "schedule"
+	}
+
+	appSequences := map[string]int64{}
+	appVersions := map[string]string{}
+
+	for slug, appMeta := range metadata.apps {
+		appSequences[slug] = appMeta.parentSequence
+		appVersions[slug] = appMeta.kotsKinds.Installation.Spec.VersionLabel
+	}
+
+	// marshal apps sequences map
+	b, err := json.Marshal(appSequences)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal app sequences")
+	}
+	marshalledAppSequences := string(b)
+
+	// marshal apps versions map
+	b, err = json.Marshal(appVersions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal app versions")
+	}
+	marshalledAppVersions := string(b)
+
+	numBackups := 1
+	if hasAppSpec {
+		numBackups = 2
+	}
+
+	now := time.Now() // TODO
+
+	if annotations == nil {
+		annotations = make(map[string]string, 0)
+	}
+	annotations["kots.io/snapshot-trigger"] = snapshotTrigger
+	annotations["kots.io/snapshot-requested"] = now.UTC().Format(time.RFC3339)
+	annotations["kots.io/instance"] = "true"
+	annotations["kots.io/kotsadm-image"] = kotsadmImage
+	annotations["kots.io/kotsadm-deploy-namespace"] = metadata.kotsadmNamespace
+	annotations["kots.io/apps-sequences"] = marshalledAppSequences
+	annotations["kots.io/apps-versions"] = marshalledAppVersions
+	annotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
+	embeddedRegistryHost, _, _ := kotsutil.GetEmbeddedRegistryCreds(k8sClient)
+	if embeddedRegistryHost != "" {
+		annotations["kots.io/embedded-registry"] = embeddedRegistryHost
+	}
+
+	// Add improved disaster recovery annotation labels
+	annotations[InstanceBackupNameAnnotation] = metadata.backupName
+	annotations[InstanceBackupsExpectedAnnotation] = strconv.Itoa(numBackups)
+
+	if metadata.ec != nil {
+		annotations = appendECAnnotations(ctx, annotations, *metadata.ec)
+	}
+
+	return annotations, nil
 }
 
 func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID string) ([]*types.Backup, error) {
@@ -1199,37 +1246,33 @@ func mergeLabelSelector(kots metav1.LabelSelector, app metav1.LabelSelector) met
 }
 
 // appendECAnnotations appends annotations that should be added to an embedded cluster backup
-func appendECAnnotations(ctx context.Context, annotations map[string]string, kbClient kbclient.Client, in *embeddedclusterv1beta1.Installation) (map[string]string, error) {
+func appendECAnnotations(ctx context.Context, annotations map[string]string, ecMeta ecInstanceBackupMetadata) map[string]string {
 	if annotations == nil {
 		annotations = make(map[string]string, 0)
 	}
 
-	seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, kbClient)
-	if err != nil {
-		return annotations, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
-	}
-	if seaweedFSS3ServiceIP != "" {
-		annotations["kots.io/embedded-cluster-seaweedfs-s3-ip"] = seaweedFSS3ServiceIP
+	if ecMeta.seaweedFSS3ServiceIP != "" {
+		annotations["kots.io/embedded-cluster-seaweedfs-s3-ip"] = ecMeta.seaweedFSS3ServiceIP
 	}
 
 	annotations["kots.io/embedded-cluster"] = "true"
 	annotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
 	annotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()
-	annotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(in.Spec.HighAvailability)
+	annotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(ecMeta.installation.Spec.HighAvailability)
 
-	if in.Spec.Network != nil {
-		annotations["kots.io/embedded-cluster-pod-cidr"] = in.Spec.Network.PodCIDR
-		annotations["kots.io/embedded-cluster-service-cidr"] = in.Spec.Network.ServiceCIDR
+	if ecMeta.installation.Spec.Network != nil {
+		annotations["kots.io/embedded-cluster-pod-cidr"] = ecMeta.installation.Spec.Network.PodCIDR
+		annotations["kots.io/embedded-cluster-service-cidr"] = ecMeta.installation.Spec.Network.ServiceCIDR
 	}
 
-	if in.Spec.RuntimeConfig != nil {
-		rcAnnotations := ecRuntimeConfigToBackupAnnotations(in.Spec.RuntimeConfig)
+	if ecMeta.installation.Spec.RuntimeConfig != nil {
+		rcAnnotations := ecRuntimeConfigToBackupAnnotations(ecMeta.installation.Spec.RuntimeConfig)
 		for k, v := range rcAnnotations {
 			annotations[k] = v
 		}
 	}
 
-	return annotations, nil
+	return annotations
 }
 
 func ecRuntimeConfigToBackupAnnotations(runtimeConfig *embeddedclusterv1beta1.RuntimeConfigSpec) map[string]string {
