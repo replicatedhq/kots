@@ -255,6 +255,18 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to get instance backup specs")
 	}
 
+	err = excludeShutdownPodsFromBackup(ctx, k8sClient, veleroBackup)
+	if err != nil {
+		logger.Errorf("Failed to exclude shutdown pods from backup: %v", err)
+	}
+
+	if appVeleroBackup != nil {
+		err = excludeShutdownPodsFromBackup(ctx, k8sClient, appVeleroBackup)
+		if err != nil {
+			logger.Errorf("Failed to exclude shutdown pods from application backup: %v", err)
+		}
+	}
+
 	_, err = veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create velero backup")
@@ -294,6 +306,8 @@ func GetInstanceBackupsExpected(veleroBackup velerov1.Backup) int {
 	return 1
 }
 
+// getInstanceBackupMetadata returns metadata about the instance backup for use in creating an
+// instance backup.
 func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
 	now := time.Now().UTC()
 	metadata := instanceBackupMetadata{
@@ -380,6 +394,8 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 	return metadata, nil
 }
 
+// getECInstanceBackupMetadata returns metadata about the embedded cluster for use in creating an
+// instance backup.
 func getECInstanceBackupMetadata(ctx context.Context) (*ecInstanceBackupMetadata, error) {
 	if !util.IsEmbeddedCluster() {
 		return nil, nil
@@ -406,6 +422,8 @@ func getECInstanceBackupMetadata(ctx context.Context) (*ecInstanceBackupMetadata
 	}, nil
 }
 
+// getInstanceBackupSpec returns the velero backup spec for the instance backup. This is either the
+// kotsadm backup or the combined backup if this is not using improved DR.
 func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata, hasAppSpec bool) (*velerov1.Backup, error) {
 	// veleroBackup is the kotsadm backup or combined backup if usesImprovedDR is false
 	veleroBackup := &velerov1.Backup{
@@ -480,18 +498,13 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 		}
 	}
 
-	err = excludeShutdownPodsFromBackup(ctx, k8sClient, veleroBackup)
-	if err != nil {
-		logger.Errorf("Failed to exclude shutdown pods from backup: %v", err)
-	}
-
 	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(veleroBackup.Spec.IncludedNamespaces)
 
 	return veleroBackup, nil
 }
 
 // getAppInstanceBackup returns a backup spec only if this is Embedded Cluster and the vendor has
-// defined both a backup and restore custom resource.
+// defined both a backup and restore custom resource (improved DR).
 func getAppInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (*velerov1.Backup, error) {
 	if metadata.ec == nil {
 		return nil, nil
@@ -505,7 +518,7 @@ func getAppInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interfac
 			continue
 		}
 
-		if len(metadata.apps) > 0 {
+		if len(metadata.apps) > 1 {
 			return nil, errors.New("cannot create backup for Embedded Cluster with multiple apps")
 		}
 
@@ -552,15 +565,12 @@ func getAppInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interfac
 	}
 	appVeleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeApp
 
+	appVeleroBackup.Spec.StorageLocation = "default"
+
 	if metadata.snapshotTTL > 0 {
 		appVeleroBackup.Spec.TTL = metav1.Duration{
 			Duration: metadata.snapshotTTL,
 		}
-	}
-
-	err = excludeShutdownPodsFromBackup(ctx, k8sClient, appVeleroBackup)
-	if err != nil {
-		logger.Errorf("Failed to exclude shutdown pods from application backup: %v", err)
 	}
 
 	return appVeleroBackup, nil
@@ -629,6 +639,7 @@ func mergeAppBackupSpec(backup *velerov1.Backup, appMeta appInstanceBackupMetada
 	return nil
 }
 
+// appendCommonAnnotations appends common annotations to the backup annotations
 func appendCommonAnnotations(ctx context.Context, k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata, hasAppSpec bool) (map[string]string, error) {
 	kotsadmImage, err := k8sutil.FindKotsadmImage(k8sClient, metadata.kotsadmNamespace)
 	if err != nil {
@@ -1340,17 +1351,24 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 		labelSets = append(labelSets, orLabelSet...)
 	}
 
-	for _, labelSet := range labelSets {
+	for _, namespace := range veleroBackup.Spec.IncludedNamespaces {
+		if namespace == "*" {
+			namespace = "" // specifying an empty ("") namespace in client-go retrieves resources from all namespaces
+		}
+
 		podListOption := metav1.ListOptions{
-			LabelSelector: labelSet,
 			FieldSelector: fields.SelectorFromSet(selectorMap).String(),
 		}
 
-		for _, namespace := range veleroBackup.Spec.IncludedNamespaces {
-			if namespace == "*" {
-				namespace = "" // specifying an empty ("") namespace in client-go retrieves resources from all namespaces
-			}
+		if len(labelSets) > 0 {
+			for _, labelSet := range labelSets {
+				podListOption.LabelSelector = labelSet
 
+				if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, podListOption); err != nil {
+					return errors.Wrap(err, "failed to exclude shutdown pods from backup")
+				}
+			}
+		} else {
 			if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, podListOption); err != nil {
 				return errors.Wrap(err, "failed to exclude shutdown pods from backup")
 			}

@@ -186,6 +186,17 @@ func mockK8sClientWithShutdownPods() kubernetes.Interface {
 		},
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-shutdown-no-label",
+				Namespace: "test",
+				Labels:    map[string]string{},
+			},
+			Status: corev1.PodStatus{
+				Phase:  "Failed",
+				Reason: "Shutdown",
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-backup-shutdown",
 				Namespace: "test-2",
 				Labels: map[string]string{
@@ -206,6 +217,16 @@ func mockK8sClientWithShutdownPods() kubernetes.Interface {
 					"kots.io/app-slug":       "test-slug",
 					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
 				},
+			},
+			Status: corev1.PodStatus{
+				Phase: "Running",
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-running-no-label",
+				Namespace: "test",
+				Labels:    map[string]string{},
 			},
 			Status: corev1.PodStatus{
 				Phase: "Running",
@@ -320,6 +341,19 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 			},
 			wantErr:                            false,
 			wantNumOfPodsWithExcludeAnnotation: 1,
+		},
+		{
+			name: "expect no error when shutdown pods are found and updated for no label selector",
+			args: args{
+				ctx:       context.TODO(),
+				clientset: mockK8sClientWithShutdownPods(),
+				namespace: "test",
+				failedPodListOptions: metav1.ListOptions{
+					FieldSelector: fields.SelectorFromSet(selectorMap).String(),
+				},
+			},
+			wantErr:                            false,
+			wantNumOfPodsWithExcludeAnnotation: 2,
 		},
 		{
 			name: "expect no error when shutdown pods are found and updated for app slug label",
@@ -482,6 +516,19 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 					Spec: velerov1.BackupSpec{
 						IncludedNamespaces: []string{"test"},
 						LabelSelector:      appSlugMatchExpression,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "expect no error when shutdown pods are found and updated for app slug label and no label selector",
+			args: args{
+				ctx:       context.TODO(),
+				clientset: mockK8sClientWithShutdownPods(),
+				veleroBackup: &velerov1.Backup{
+					Spec: velerov1.BackupSpec{
+						IncludedNamespaces: []string{"test"},
 					},
 				},
 			},
@@ -870,10 +917,6 @@ func Test_ecIncludedNamespaces(t *testing.T) {
 }
 
 func Test_appendCommonAnnotations(t *testing.T) {
-	scheme := runtime.NewScheme()
-	corev1.AddToScheme(scheme)
-	embeddedclusterv1beta1.AddToScheme(scheme)
-
 	kotsadmSts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
@@ -1461,6 +1504,281 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 				require.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, tt.args.backup)
+		})
+	}
+}
+
+func Test_getAppInstanceBackupSpec(t *testing.T) {
+	kotsadmSts := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm",
+			Namespace: "kotsadm",
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "kotsadm",
+							Image: "kotsadm/kotsadm:1.0.0",
+						},
+					},
+				},
+			},
+		},
+	}
+	registryCredsSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "registry-creds",
+			Namespace: "kotsadm",
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{
+			".dockerconfigjson": []byte(`{"auths":{"host":{"username":"kurl","password":"password"}}}`),
+		},
+	}
+
+	type args struct {
+		k8sClient kubernetes.Interface
+		metadata  instanceBackupMetadata
+	}
+	tests := []struct {
+		name    string
+		setup   func(t *testing.T, mockStore *mock_store.MockStore)
+		args    args
+		want    *velerov1.Backup
+		wantErr bool
+	}{
+		{
+			name: "not ec",
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app: &apptypes.App{},
+							kotsKinds: &kotsutil.KotsKinds{
+								Backup:  &velerov1.Backup{},
+								Restore: &velerov1.Restore{},
+							},
+							parentSequence: 1,
+						},
+					},
+					ec: nil,
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "ec, no restore spec",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "backup-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app: &apptypes.App{},
+							kotsKinds: &kotsutil.KotsKinds{
+								Backup: &velerov1.Backup{},
+							},
+							parentSequence: 1,
+						},
+					},
+					isScheduled: true,
+					ec:          &ecInstanceBackupMetadata{},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "ec, improved DR",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+
+				mockStore.EXPECT().GetLatestAppSequence("1", true).Return(int64(1), nil)
+				mockStore.EXPECT().GetRegistryDetailsForApp("1").Return(registrytypes.RegistrySettings{
+					Hostname:   "hostname",
+					Username:   "username",
+					Password:   "password",
+					Namespace:  "namespace",
+					IsReadOnly: true,
+				}, nil)
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "backup-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app: &apptypes.App{
+								ID:       "1",
+								Slug:     "app-1",
+								IsAirgap: true,
+							},
+							kotsKinds: &kotsutil.KotsKinds{
+								KotsApplication: kotsv1beta1.Application{
+									Spec: kotsv1beta1.ApplicationSpec{
+										AdditionalNamespaces: []string{"another-namespace-1", "another-namespace-2"},
+									},
+								},
+								Installation: kotsv1beta1.Installation{
+									Spec: kotsv1beta1.InstallationSpec{
+										VersionLabel: "1.0.1",
+									},
+								},
+								Backup: &velerov1.Backup{
+									TypeMeta: metav1.TypeMeta{
+										APIVersion: "velero.io/v1",
+										Kind:       "Backup",
+									},
+									ObjectMeta: metav1.ObjectMeta{
+										Name: "test-backup",
+										Annotations: map[string]string{
+											"annotation-1": "true",
+											"annotation-2": "false",
+										},
+									},
+									Spec: velerov1.BackupSpec{
+										IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-{{repl IsAirgap }}"},
+										ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+										OrderedResources: map[string]string{
+											"resource-1": "true",
+											"resource-2": "false",
+										},
+										Hooks: velerov1.BackupHooks{
+											Resources: []velerov1.BackupResourceHookSpec{
+												{
+													Name: "hook-1",
+												},
+												{
+													Name: "hook-2",
+												},
+											},
+										},
+									},
+								},
+								Restore: &velerov1.Restore{},
+							},
+							parentSequence: 1,
+						},
+					},
+					isScheduled: true,
+					snapshotTTL: 24 * time.Hour,
+					ec: &ecInstanceBackupMetadata{
+						installation: &embeddedclusterv1beta1.Installation{
+							Spec: embeddedclusterv1beta1.InstallationSpec{
+								HighAvailability: true,
+								Network: &embeddedclusterv1beta1.NetworkSpec{
+									PodCIDR:     "10.128.0.0/20",
+									ServiceCIDR: "10.129.0.0/20",
+								},
+								RuntimeConfig: &embeddedclusterv1beta1.RuntimeConfigSpec{
+									DataDir: "/var/lib/ec",
+									AdminConsole: embeddedclusterv1beta1.AdminConsoleSpec{
+										Port: 30001,
+									},
+									LocalArtifactMirror: embeddedclusterv1beta1.LocalArtifactMirrorSpec{
+										Port: 50001,
+									},
+								},
+							},
+						},
+						seaweedFSS3ServiceIP: "10.96.0.10",
+					},
+				},
+			},
+			want: &velerov1.Backup{
+				// TODO: excludeShutdownPodsFromBackup
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "velero.io/v1",
+					Kind:       "Backup",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:         "",
+					GenerateName: "app-1-",
+					Annotations: map[string]string{
+						"annotation-1":                                        "true",
+						"annotation-2":                                        "false",
+						"kots.io/apps-sequences":                              "{\"app-1\":1}",
+						"kots.io/apps-versions":                               "{\"app-1\":\"1.0.1\"}",
+						"kots.io/embedded-registry":                           "host",
+						"kots.io/instance":                                    "true",
+						"kots.io/is-airgap":                                   "false",
+						"kots.io/kotsadm-deploy-namespace":                    "kotsadm",
+						"kots.io/kotsadm-image":                               "kotsadm/kotsadm:1.0.0",
+						"kots.io/snapshot-requested":                          "2024-01-01T00:00:00Z",
+						"kots.io/snapshot-trigger":                            "schedule",
+						"replicated.com/backup-name":                          "backup-17332487841234",
+						"replicated.com/backup-type":                          "app",
+						"replicated.com/backups-expected":                     "2",
+						"kots.io/embedded-cluster":                            "true",
+						"kots.io/embedded-cluster-id":                         "embedded-cluster-id",
+						"kots.io/embedded-cluster-version":                    "embedded-cluster-version",
+						"kots.io/embedded-cluster-is-ha":                      "true",
+						"kots.io/embedded-cluster-pod-cidr":                   "10.128.0.0/20",
+						"kots.io/embedded-cluster-service-cidr":               "10.129.0.0/20",
+						"kots.io/embedded-cluster-seaweedfs-s3-ip":            "10.96.0.10",
+						"kots.io/embedded-cluster-admin-console-port":         "30001",
+						"kots.io/embedded-cluster-local-artifact-mirror-port": "50001",
+						"kots.io/embedded-cluster-data-dir":                   "/var/lib/ec",
+					},
+				},
+				Spec: velerov1.BackupSpec{
+					StorageLocation:    "default",
+					IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-true"},
+					ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+					OrderedResources: map[string]string{
+						"resource-1": "true",
+						"resource-2": "false",
+					},
+					Hooks: velerov1.BackupHooks{
+						Resources: []velerov1.BackupResourceHookSpec{
+							{
+								Name: "hook-1",
+							},
+							{
+								Name: "hook-2",
+							},
+						},
+					},
+					TTL: metav1.Duration{24 * time.Hour},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockStore := mock_store.NewMockStore(ctrl)
+			store.SetStore(mockStore)
+
+			t.Cleanup(func() {
+				store.SetStore(nil)
+			})
+
+			if tt.setup != nil {
+				tt.setup(t, mockStore)
+			}
+			got, err := getAppInstanceBackupSpec(context.Background(), tt.args.k8sClient, tt.args.metadata)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
