@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
-	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,8 +18,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	coretest "k8s.io/client-go/testing"
-	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakekbclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestPrepareIncludedNamespaces(t *testing.T) {
@@ -688,20 +685,20 @@ func Test_appendECAnnotations(t *testing.T) {
 	embeddedclusterv1beta1.AddToScheme(scheme)
 
 	tests := []struct {
-		name     string
-		prev     map[string]string
-		kbClient kbclient.Client
-		in       *embeddedclusterv1beta1.Installation
-		env      map[string]string
-		want     map[string]string
+		name                 string
+		prev                 map[string]string
+		in                   *embeddedclusterv1beta1.Installation
+		seaweedFSS3ServiceIP string
+		env                  map[string]string
+		want                 map[string]string
 	}{
 		{
 			name: "basic",
 			prev: map[string]string{
 				"prev-key": "prev-value",
 			},
-			kbClient: fakekbclient.NewClientBuilder().WithScheme(scheme).Build(),
-			in:       &embeddedclusterv1beta1.Installation{},
+			in:                   &embeddedclusterv1beta1.Installation{},
+			seaweedFSS3ServiceIP: "",
 			env: map[string]string{
 				"EMBEDDED_CLUSTER_ID":      "embedded-cluster-id",
 				"EMBEDDED_CLUSTER_VERSION": "embedded-cluster-version",
@@ -715,13 +712,13 @@ func Test_appendECAnnotations(t *testing.T) {
 			},
 		},
 		{
-			name:     "online ha",
-			kbClient: fakekbclient.NewClientBuilder().WithScheme(scheme).Build(),
+			name: "online ha",
 			in: &embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
 					HighAvailability: true,
 				},
 			},
+			seaweedFSS3ServiceIP: "",
 			env: map[string]string{
 				"EMBEDDED_CLUSTER_ID":      "embedded-cluster-id",
 				"EMBEDDED_CLUSTER_VERSION": "embedded-cluster-version",
@@ -735,23 +732,13 @@ func Test_appendECAnnotations(t *testing.T) {
 		},
 		{
 			name: "airgap ha",
-			kbClient: fakekbclient.NewClientBuilder().WithScheme(scheme).WithObjects(
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      embeddedcluster.SeaweedfsS3SVCName,
-						Namespace: embeddedcluster.SeaweedfsNamespace,
-					},
-					Spec: corev1.ServiceSpec{
-						ClusterIP: "10.96.0.10",
-					},
-				},
-			).Build(),
 			in: &embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
 					HighAvailability: true,
 					AirGap:           true,
 				},
 			},
+			seaweedFSS3ServiceIP: "10.96.0.10",
 			env: map[string]string{
 				"EMBEDDED_CLUSTER_ID":      "embedded-cluster-id",
 				"EMBEDDED_CLUSTER_VERSION": "embedded-cluster-version",
@@ -765,8 +752,7 @@ func Test_appendECAnnotations(t *testing.T) {
 			},
 		},
 		{
-			name:     "with pod and service cidrs",
-			kbClient: fakekbclient.NewClientBuilder().WithScheme(scheme).Build(),
+			name: "with pod and service cidrs",
 			in: &embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
 					Network: &embeddedclusterv1beta1.NetworkSpec{
@@ -775,6 +761,7 @@ func Test_appendECAnnotations(t *testing.T) {
 					},
 				},
 			},
+			seaweedFSS3ServiceIP: "",
 			env: map[string]string{
 				"EMBEDDED_CLUSTER_ID":      "embedded-cluster-id",
 				"EMBEDDED_CLUSTER_VERSION": "embedded-cluster-version",
@@ -795,8 +782,11 @@ func Test_appendECAnnotations(t *testing.T) {
 			for k, v := range tt.env {
 				t.Setenv(k, v)
 			}
-			got, err := appendECAnnotations(context.TODO(), tt.prev, tt.kbClient, tt.in)
-			req.NoError(err)
+			ecMeta := ecInstanceBackupMetadata{
+				installation:         tt.in,
+				seaweedFSS3ServiceIP: tt.seaweedFSS3ServiceIP,
+			}
+			got := appendECAnnotations(context.TODO(), tt.prev, ecMeta)
 			req.Equal(tt.want, got)
 		})
 	}
