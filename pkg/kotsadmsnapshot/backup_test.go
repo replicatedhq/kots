@@ -842,7 +842,7 @@ func Test_appendECAnnotations(t *testing.T) {
 				installation:         tt.in,
 				seaweedFSS3ServiceIP: tt.seaweedFSS3ServiceIP,
 			}
-			got := appendECAnnotations(context.Background(), tt.prev, ecMeta)
+			got := appendECAnnotations(tt.prev, ecMeta)
 			req.Equal(tt.want, got)
 		})
 	}
