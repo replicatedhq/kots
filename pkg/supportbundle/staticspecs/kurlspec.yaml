@@ -10,10 +10,15 @@ spec:
         - kube-system
         - kube-node-lease
         - kube-public
+        - kube-flannel
         - projectcontour
         - kurl
         - minio
         - monitoring
+        - openebs
+        - rook-ceph
+        - longhorn
+        - velero
     - http:
         collectorName: replicated.app-health-check
         get:
