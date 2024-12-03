@@ -5,6 +5,20 @@ metadata:
 spec:
   uri: "https://raw.githubusercontent.com/replicatedhq/kots/main/pkg/supportbundle/staticspecs/kurlspec.yaml"
   collectors:
+    - clusterResources:
+        namespaces:
+        - kube-system
+        - kube-node-lease
+        - kube-public
+        - kube-flannel
+        - projectcontour
+        - kurl
+        - minio
+        - monitoring
+        - openebs
+        - rook-ceph
+        - longhorn
+        - velero
     - http:
         collectorName: replicated.app-health-check
         get:
@@ -41,6 +55,7 @@ spec:
         name: kots/kurl/control-plane
         selector:
           - tier=control-plane
+        namespace: kube-system
     - logs:
         collectorName: kurl-proxy-kotsadm
         name: kots/admin_console
