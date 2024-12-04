@@ -219,7 +219,7 @@ type appInstanceBackupMetadata struct {
 }
 
 type ecInstanceBackupMetadata struct {
-	installation         *embeddedclusterv1beta1.Installation
+	installation         embeddedclusterv1beta1.Installation
 	seaweedFSS3ServiceIP string
 }
 
@@ -251,7 +251,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to get instance backup metadata")
 	}
 
-	appVeleroBackup, err := getAppInstanceBackupSpec(ctx, k8sClient, metadata)
+	appVeleroBackup, err := getAppInstanceBackupSpec(k8sClient, metadata)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get app instance backup spec")
 	}
@@ -421,7 +421,7 @@ func getECInstanceBackupMetadata(ctx context.Context, ctrlClient ctrlclient.Clie
 	}
 
 	return &ecInstanceBackupMetadata{
-		installation:         installation,
+		installation:         *installation,
 		seaweedFSS3ServiceIP: seaweedFSS3ServiceIP,
 	}, nil
 }
@@ -482,7 +482,7 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 		}
 	}
 
-	veleroBackup.Annotations, err = appendCommonAnnotations(ctx, k8sClient, veleroBackup.Annotations, metadata, hasAppSpec)
+	veleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, veleroBackup.Annotations, metadata, hasAppSpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to backup")
 	}
@@ -509,7 +509,7 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 
 // getAppInstanceBackup returns a backup spec only if this is Embedded Cluster and the vendor has
 // defined both a backup and restore custom resource (improved DR).
-func getAppInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (*velerov1.Backup, error) {
+func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (*velerov1.Backup, error) {
 	if metadata.ec == nil {
 		return nil, nil
 	}
@@ -554,16 +554,8 @@ func getAppInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interfac
 		return nil, nil
 	}
 
-	appSequences := map[string]int64{}
-	appVersions := map[string]string{}
-
-	for slug, appMeta := range metadata.apps {
-		appSequences[slug] = appMeta.parentSequence
-		appVersions[slug] = appMeta.kotsKinds.Installation.Spec.VersionLabel
-	}
-
 	var err error
-	appVeleroBackup.Annotations, err = appendCommonAnnotations(ctx, k8sClient, appVeleroBackup.Annotations, metadata, true)
+	appVeleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, appVeleroBackup.Annotations, metadata, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to application backup")
 	}
@@ -644,7 +636,7 @@ func mergeAppBackupSpec(backup *velerov1.Backup, appMeta appInstanceBackupMetada
 }
 
 // appendCommonAnnotations appends common annotations to the backup annotations
-func appendCommonAnnotations(ctx context.Context, k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata, hasAppSpec bool) (map[string]string, error) {
+func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata, hasAppSpec bool) (map[string]string, error) {
 	kotsadmImage, err := k8sutil.FindKotsadmImage(k8sClient, metadata.kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
@@ -1300,7 +1292,7 @@ func ecRuntimeConfigToBackupAnnotations(runtimeConfig *embeddedclusterv1beta1.Ru
 }
 
 // ecIncludedNamespaces returns the namespaces that should be included in an embedded cluster backup
-func ecIncludedNamespaces(in *embeddedclusterv1beta1.Installation) []string {
+func ecIncludedNamespaces(in embeddedclusterv1beta1.Installation) []string {
 	includedNamespaces := []string{"embedded-cluster", "kube-system", "openebs"}
 	if in.Spec.AirGap {
 		includedNamespaces = append(includedNamespaces, "registry")

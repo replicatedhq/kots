@@ -751,7 +751,7 @@ func Test_appendECAnnotations(t *testing.T) {
 	tests := []struct {
 		name                 string
 		prev                 map[string]string
-		in                   *embeddedclusterv1beta1.Installation
+		in                   embeddedclusterv1beta1.Installation
 		seaweedFSS3ServiceIP string
 		env                  map[string]string
 		want                 map[string]string
@@ -761,7 +761,7 @@ func Test_appendECAnnotations(t *testing.T) {
 			prev: map[string]string{
 				"prev-key": "prev-value",
 			},
-			in:                   &embeddedclusterv1beta1.Installation{},
+			in:                   embeddedclusterv1beta1.Installation{},
 			seaweedFSS3ServiceIP: "",
 			env: map[string]string{
 				"EMBEDDED_CLUSTER_ID":      "embedded-cluster-id",
@@ -777,7 +777,7 @@ func Test_appendECAnnotations(t *testing.T) {
 		},
 		{
 			name: "online ha",
-			in: &embeddedclusterv1beta1.Installation{
+			in: embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
 					HighAvailability: true,
 				},
@@ -796,7 +796,7 @@ func Test_appendECAnnotations(t *testing.T) {
 		},
 		{
 			name: "airgap ha",
-			in: &embeddedclusterv1beta1.Installation{
+			in: embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
 					HighAvailability: true,
 					AirGap:           true,
@@ -817,7 +817,7 @@ func Test_appendECAnnotations(t *testing.T) {
 		},
 		{
 			name: "with pod and service cidrs",
-			in: &embeddedclusterv1beta1.Installation{
+			in: embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
 					Network: &embeddedclusterv1beta1.NetworkSpec{
 						PodCIDR:     "10.128.0.0/20",
@@ -859,12 +859,12 @@ func Test_appendECAnnotations(t *testing.T) {
 func Test_ecIncludedNamespaces(t *testing.T) {
 	tests := []struct {
 		name string
-		in   *embeddedclusterv1beta1.Installation
+		in   embeddedclusterv1beta1.Installation
 		want []string
 	}{
 		{
 			name: "online",
-			in:   &embeddedclusterv1beta1.Installation{},
+			in:   embeddedclusterv1beta1.Installation{},
 			want: []string{
 				"embedded-cluster",
 				"kube-system",
@@ -873,7 +873,7 @@ func Test_ecIncludedNamespaces(t *testing.T) {
 		},
 		{
 			name: "online ha",
-			in: &embeddedclusterv1beta1.Installation{
+			in: embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
 					HighAvailability: true,
 				},
@@ -886,7 +886,7 @@ func Test_ecIncludedNamespaces(t *testing.T) {
 		},
 		{
 			name: "airgap",
-			in: &embeddedclusterv1beta1.Installation{
+			in: embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
 					AirGap: true,
 				},
@@ -900,7 +900,7 @@ func Test_ecIncludedNamespaces(t *testing.T) {
 		},
 		{
 			name: "airgap ha",
-			in: &embeddedclusterv1beta1.Installation{
+			in: embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
 					HighAvailability: true,
 					AirGap:           true,
@@ -1053,7 +1053,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 					},
 					isScheduled: true,
 					ec: &ecInstanceBackupMetadata{
-						installation: &embeddedclusterv1beta1.Installation{
+						installation: embeddedclusterv1beta1.Installation{
 							Spec: embeddedclusterv1beta1.InstallationSpec{
 								HighAvailability: true,
 								Network: &embeddedclusterv1beta1.NetworkSpec{
@@ -1106,7 +1106,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(t)
 			}
-			got, err := appendCommonAnnotations(context.Background(), tt.args.k8sClient, tt.args.annotations, tt.args.metadata, tt.args.hasAppSpec)
+			got, err := appendCommonAnnotations(tt.args.k8sClient, tt.args.annotations, tt.args.metadata, tt.args.hasAppSpec)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -1546,25 +1546,105 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 		},
 	}
 
+	app1 := &apptypes.App{
+		ID:       "1",
+		Slug:     "app-1",
+		IsAirgap: true,
+	}
+
+	app2 := &apptypes.App{
+		ID:       "2",
+		Slug:     "app-2",
+		IsAirgap: true,
+	}
+
+	kotsKinds := &kotsutil.KotsKinds{
+		KotsApplication: kotsv1beta1.Application{
+			Spec: kotsv1beta1.ApplicationSpec{
+				AdditionalNamespaces: []string{"another-namespace-1", "another-namespace-2"},
+			},
+		},
+		Installation: kotsv1beta1.Installation{
+			Spec: kotsv1beta1.InstallationSpec{
+				VersionLabel: "1.0.1",
+			},
+		},
+		Backup: &velerov1.Backup{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "velero.io/v1",
+				Kind:       "Backup",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-backup",
+				Annotations: map[string]string{
+					"annotation-1": "true",
+					"annotation-2": "false",
+				},
+			},
+			Spec: velerov1.BackupSpec{
+				StorageLocation:    "blah",
+				TTL:                metav1.Duration{Duration: 1 * time.Hour},
+				IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-{{repl IsAirgap }}"},
+				ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+				OrderedResources: map[string]string{
+					"resource-1": "true",
+					"resource-2": "false",
+				},
+				Hooks: velerov1.BackupHooks{
+					Resources: []velerov1.BackupResourceHookSpec{
+						{
+							Name: "hook-1",
+						},
+						{
+							Name: "hook-2",
+						},
+					},
+				},
+			},
+		},
+		Restore: &velerov1.Restore{},
+	}
+
+	ecMeta := &ecInstanceBackupMetadata{
+		installation: embeddedclusterv1beta1.Installation{
+			Spec: embeddedclusterv1beta1.InstallationSpec{
+				HighAvailability: true,
+				Network: &embeddedclusterv1beta1.NetworkSpec{
+					PodCIDR:     "10.128.0.0/20",
+					ServiceCIDR: "10.129.0.0/20",
+				},
+				RuntimeConfig: &embeddedclusterv1beta1.RuntimeConfigSpec{
+					DataDir: "/var/lib/ec",
+					AdminConsole: embeddedclusterv1beta1.AdminConsoleSpec{
+						Port: 30001,
+					},
+					LocalArtifactMirror: embeddedclusterv1beta1.LocalArtifactMirrorSpec{
+						Port: 50001,
+					},
+				},
+			},
+		},
+		seaweedFSS3ServiceIP: "10.96.0.10",
+	}
+
 	type args struct {
 		k8sClient kubernetes.Interface
 		metadata  instanceBackupMetadata
 	}
 	tests := []struct {
-		name    string
-		setup   func(t *testing.T, mockStore *mock_store.MockStore)
-		args    args
-		want    *velerov1.Backup
-		wantErr bool
+		name   string
+		setup  func(t *testing.T, mockStore *mock_store.MockStore)
+		args   args
+		assert func(t *testing.T, got *velerov1.Backup, err error)
 	}{
 		{
-			name: "not ec",
+			name: "not ec with backup and restore spec should return nil",
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
 					apps: map[string]appInstanceBackupMetadata{
 						"app-1": {
-							app: &apptypes.App{},
+							app: app1,
 							kotsKinds: &kotsutil.KotsKinds{
 								Backup:  &velerov1.Backup{},
 								Restore: &velerov1.Restore{},
@@ -1575,10 +1655,13 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					ec: nil,
 				},
 			},
-			want: nil,
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				assert.Nil(t, got)
+			},
 		},
 		{
-			name: "ec, no restore spec",
+			name: "ec wihtout restore spec should return nil",
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
@@ -1592,7 +1675,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					backupStorageLocationNamespace: "kotsadm-backups",
 					apps: map[string]appInstanceBackupMetadata{
 						"app-1": {
-							app: &apptypes.App{},
+							app: app1,
 							kotsKinds: &kotsutil.KotsKinds{
 								Backup: &velerov1.Backup{},
 							},
@@ -1600,13 +1683,81 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 						},
 					},
 					isScheduled: true,
-					ec:          &ecInstanceBackupMetadata{},
+					ec:          ecMeta,
 				},
 			},
-			want: nil,
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				assert.Nil(t, got)
+			},
 		},
 		{
-			name: "ec, improved DR",
+			name: "ec with backup and restore spec and multiple apps should return error",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "backup-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app:            app1,
+							kotsKinds:      kotsKinds,
+							parentSequence: 1,
+						},
+						"app-2": {
+							app:            app2,
+							kotsKinds:      kotsKinds,
+							parentSequence: 2,
+						},
+					},
+					isScheduled: true,
+					ec:          ecMeta,
+				},
+			},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.Error(t, err)
+				assert.Nil(t, got)
+			},
+		},
+		{
+			name: "not ec with backup and restore spec and multiple apps should not return error",
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app: app1,
+							kotsKinds: &kotsutil.KotsKinds{
+								Backup:  &velerov1.Backup{},
+								Restore: &velerov1.Restore{},
+							},
+							parentSequence: 1,
+						},
+						"app-2": {
+							app: app2,
+							kotsKinds: &kotsutil.KotsKinds{
+								Backup:  &velerov1.Backup{},
+								Restore: &velerov1.Restore{},
+							},
+							parentSequence: 2,
+						},
+					},
+					ec: nil,
+				},
+			},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				assert.Nil(t, got)
+			},
+		},
+		{
+			name: "ec with backup and restore spec should override name",
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
@@ -1629,138 +1780,180 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					backupStorageLocationNamespace: "kotsadm-backups",
 					apps: map[string]appInstanceBackupMetadata{
 						"app-1": {
-							app: &apptypes.App{
-								ID:       "1",
-								Slug:     "app-1",
-								IsAirgap: true,
-							},
-							kotsKinds: &kotsutil.KotsKinds{
-								KotsApplication: kotsv1beta1.Application{
-									Spec: kotsv1beta1.ApplicationSpec{
-										AdditionalNamespaces: []string{"another-namespace-1", "another-namespace-2"},
-									},
-								},
-								Installation: kotsv1beta1.Installation{
-									Spec: kotsv1beta1.InstallationSpec{
-										VersionLabel: "1.0.1",
-									},
-								},
-								Backup: &velerov1.Backup{
-									TypeMeta: metav1.TypeMeta{
-										APIVersion: "velero.io/v1",
-										Kind:       "Backup",
-									},
-									ObjectMeta: metav1.ObjectMeta{
-										Name: "test-backup",
-										Annotations: map[string]string{
-											"annotation-1": "true",
-											"annotation-2": "false",
-										},
-									},
-									Spec: velerov1.BackupSpec{
-										IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-{{repl IsAirgap }}"},
-										ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
-										OrderedResources: map[string]string{
-											"resource-1": "true",
-											"resource-2": "false",
-										},
-										Hooks: velerov1.BackupHooks{
-											Resources: []velerov1.BackupResourceHookSpec{
-												{
-													Name: "hook-1",
-												},
-												{
-													Name: "hook-2",
-												},
-											},
-										},
-									},
-								},
-								Restore: &velerov1.Restore{},
-							},
+							app:            app1,
+							kotsKinds:      kotsKinds,
+							parentSequence: 1,
+						},
+					},
+					isScheduled: true,
+					ec:          ecMeta,
+				},
+			},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, "", got.Name)
+				assert.Equal(t, "app-1-", got.GenerateName)
+			},
+		},
+		{
+			name: "ec with backup and restore spec should append common annotations",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+
+				mockStore.EXPECT().GetLatestAppSequence("1", true).Times(1).Return(int64(1), nil)
+				mockStore.EXPECT().GetRegistryDetailsForApp("1").Times(1).Return(registrytypes.RegistrySettings{
+					Hostname:   "hostname",
+					Username:   "username",
+					Password:   "password",
+					Namespace:  "namespace",
+					IsReadOnly: true,
+				}, nil)
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "backup-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app:            app1,
+							kotsKinds:      kotsKinds,
+							parentSequence: 1,
+						},
+					},
+					isScheduled: true,
+					ec:          ecMeta,
+				},
+			},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				if assert.Contains(t, got.Annotations, "replicated.com/backup-name") {
+					assert.Equal(t, "backup-17332487841234", got.Annotations["replicated.com/backup-name"])
+				}
+				if assert.Contains(t, got.Annotations, "replicated.com/backup-type") {
+					assert.Equal(t, "app", got.Annotations["replicated.com/backup-type"])
+				}
+				if assert.Contains(t, got.Annotations, "replicated.com/backups-expected") {
+					assert.Equal(t, "2", got.Annotations["replicated.com/backups-expected"])
+				}
+			},
+		},
+		{
+			name: "ec with backup and restore spec overrides storage location",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+
+				mockStore.EXPECT().GetLatestAppSequence("1", true).Times(1).Return(int64(1), nil)
+				mockStore.EXPECT().GetRegistryDetailsForApp("1").Times(1).Return(registrytypes.RegistrySettings{
+					Hostname:   "hostname",
+					Username:   "username",
+					Password:   "password",
+					Namespace:  "namespace",
+					IsReadOnly: true,
+				}, nil)
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "backup-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app:            app1,
+							kotsKinds:      kotsKinds,
+							parentSequence: 1,
+						},
+					},
+					isScheduled: true,
+					ec:          ecMeta,
+				},
+			},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, "default", got.Spec.StorageLocation)
+			},
+		},
+		{
+			name: "ec with backup and restore spec overrides snapshot ttl",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+
+				mockStore.EXPECT().GetLatestAppSequence("1", true).Times(1).Return(int64(1), nil)
+				mockStore.EXPECT().GetRegistryDetailsForApp("1").Times(1).Return(registrytypes.RegistrySettings{
+					Hostname:   "hostname",
+					Username:   "username",
+					Password:   "password",
+					Namespace:  "namespace",
+					IsReadOnly: true,
+				}, nil)
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "backup-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app:            app1,
+							kotsKinds:      kotsKinds,
 							parentSequence: 1,
 						},
 					},
 					isScheduled: true,
 					snapshotTTL: 24 * time.Hour,
-					ec: &ecInstanceBackupMetadata{
-						installation: &embeddedclusterv1beta1.Installation{
-							Spec: embeddedclusterv1beta1.InstallationSpec{
-								HighAvailability: true,
-								Network: &embeddedclusterv1beta1.NetworkSpec{
-									PodCIDR:     "10.128.0.0/20",
-									ServiceCIDR: "10.129.0.0/20",
-								},
-								RuntimeConfig: &embeddedclusterv1beta1.RuntimeConfigSpec{
-									DataDir: "/var/lib/ec",
-									AdminConsole: embeddedclusterv1beta1.AdminConsoleSpec{
-										Port: 30001,
-									},
-									LocalArtifactMirror: embeddedclusterv1beta1.LocalArtifactMirrorSpec{
-										Port: 50001,
-									},
-								},
-							},
-						},
-						seaweedFSS3ServiceIP: "10.96.0.10",
-					},
+					ec:          ecMeta,
 				},
 			},
-			want: &velerov1.Backup{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "velero.io/v1",
-					Kind:       "Backup",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:         "",
-					GenerateName: "app-1-",
-					Annotations: map[string]string{
-						"annotation-1":                                        "true",
-						"annotation-2":                                        "false",
-						"kots.io/apps-sequences":                              "{\"app-1\":1}",
-						"kots.io/apps-versions":                               "{\"app-1\":\"1.0.1\"}",
-						"kots.io/embedded-registry":                           "host",
-						"kots.io/instance":                                    "true",
-						"kots.io/is-airgap":                                   "false",
-						"kots.io/kotsadm-deploy-namespace":                    "kotsadm",
-						"kots.io/kotsadm-image":                               "kotsadm/kotsadm:1.0.0",
-						"kots.io/snapshot-requested":                          "2024-01-01T00:00:00Z",
-						"kots.io/snapshot-trigger":                            "schedule",
-						"replicated.com/backup-name":                          "backup-17332487841234",
-						"replicated.com/backup-type":                          "app",
-						"replicated.com/backups-expected":                     "2",
-						"kots.io/embedded-cluster":                            "true",
-						"kots.io/embedded-cluster-id":                         "embedded-cluster-id",
-						"kots.io/embedded-cluster-version":                    "embedded-cluster-version",
-						"kots.io/embedded-cluster-is-ha":                      "true",
-						"kots.io/embedded-cluster-pod-cidr":                   "10.128.0.0/20",
-						"kots.io/embedded-cluster-service-cidr":               "10.129.0.0/20",
-						"kots.io/embedded-cluster-seaweedfs-s3-ip":            "10.96.0.10",
-						"kots.io/embedded-cluster-admin-console-port":         "30001",
-						"kots.io/embedded-cluster-local-artifact-mirror-port": "50001",
-						"kots.io/embedded-cluster-data-dir":                   "/var/lib/ec",
-					},
-				},
-				Spec: velerov1.BackupSpec{
-					StorageLocation:    "default",
-					IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-true"},
-					ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
-					OrderedResources: map[string]string{
-						"resource-1": "true",
-						"resource-2": "false",
-					},
-					Hooks: velerov1.BackupHooks{
-						Resources: []velerov1.BackupResourceHookSpec{
-							{
-								Name: "hook-1",
-							},
-							{
-								Name: "hook-2",
-							},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, metav1.Duration{Duration: 24 * time.Hour}, got.Spec.TTL)
+			},
+		},
+		{
+			name: "ec with backup and restore spec does not override snapshot ttl if unset",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+
+				mockStore.EXPECT().GetLatestAppSequence("1", true).Times(1).Return(int64(1), nil)
+				mockStore.EXPECT().GetRegistryDetailsForApp("1").Times(1).Return(registrytypes.RegistrySettings{
+					Hostname:   "hostname",
+					Username:   "username",
+					Password:   "password",
+					Namespace:  "namespace",
+					IsReadOnly: true,
+				}, nil)
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "backup-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app:            app1,
+							kotsKinds:      kotsKinds,
+							parentSequence: 1,
 						},
 					},
-					TTL: metav1.Duration{Duration: 24 * time.Hour},
+					isScheduled: true,
+					ec:          ecMeta,
 				},
+			},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, metav1.Duration{Duration: 1 * time.Hour}, got.Spec.TTL)
 			},
 		},
 	}
@@ -1779,13 +1972,8 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(t, mockStore)
 			}
-			got, err := getAppInstanceBackupSpec(context.Background(), tt.args.k8sClient, tt.args.metadata)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-			assert.Equal(t, tt.want, got)
+			got, err := getAppInstanceBackupSpec(tt.args.k8sClient, tt.args.metadata)
+			tt.assert(t, got, err)
 		})
 	}
 }
@@ -1820,7 +2008,7 @@ func Test_getInstanceBackupMetadata(t *testing.T) {
 		},
 	}
 
-	installation := &embeddedclusterv1beta1.Installation{
+	installation := embeddedclusterv1beta1.Installation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "20060102150405",
 		},
@@ -2038,7 +2226,7 @@ spec:
 			args: args{
 				k8sClient: fake.NewSimpleClientset(veleroNamespaceConfigmap, veleroDeployment),
 				ctrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
-					installation,
+					&installation,
 					seaweedFSS3Service,
 				).Build(),
 				veleroClient: velerofake.NewSimpleClientset(testBsl).VeleroV1(),
