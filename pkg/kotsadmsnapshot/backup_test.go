@@ -977,7 +977,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				k8sClient:   fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				annotations: map[string]string{},
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -1021,7 +1021,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				"kots.io/kotsadm-image":            "kotsadm/kotsadm:1.0.0",
 				"kots.io/snapshot-requested":       "2024-01-01T00:00:00Z",
 				"kots.io/snapshot-trigger":         "manual",
-				"replicated.com/backup-name":       "backup-17332487841234",
+				"replicated.com/backup-name":       "instance-17332487841234",
 				"replicated.com/backups-expected":  "1",
 			},
 		},
@@ -1035,7 +1035,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				k8sClient:   fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				annotations: map[string]string{},
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -1087,7 +1087,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				"kots.io/kotsadm-image":                               "kotsadm/kotsadm:1.0.0",
 				"kots.io/snapshot-requested":                          "2024-01-01T00:00:00Z",
 				"kots.io/snapshot-trigger":                            "schedule",
-				"replicated.com/backup-name":                          "backup-17332487841234",
+				"replicated.com/backup-name":                          "instance-17332487841234",
 				"replicated.com/backups-expected":                     "2",
 				"kots.io/embedded-cluster":                            "true",
 				"kots.io/embedded-cluster-id":                         "embedded-cluster-id",
@@ -1153,7 +1153,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:         "",
-						GenerateName: "instance-",
+						GenerateName: "infrastructure-",
 						Annotations: map[string]string{
 							"annotation": "true",
 						},
@@ -1193,7 +1193,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:         "",
-					GenerateName: "instance-",
+					GenerateName: "infrastructure-",
 					Annotations: map[string]string{
 						"annotation": "true",
 					},
@@ -1217,7 +1217,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:         "",
-						GenerateName: "instance-",
+						GenerateName: "infrastructure-",
 						Annotations: map[string]string{
 							"annotation": "true",
 						},
@@ -1287,7 +1287,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:         "",
-					GenerateName: "instance-",
+					GenerateName: "infrastructure-",
 					Annotations: map[string]string{
 						"annotation":   "true",
 						"annotation-1": "true",
@@ -1325,7 +1325,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:         "",
-						GenerateName: "instance-",
+						GenerateName: "infrastructure-",
 						Annotations: map[string]string{
 							"annotation": "true",
 						},
@@ -1365,7 +1365,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:         "",
-					GenerateName: "instance-",
+					GenerateName: "infrastructure-",
 					Annotations: map[string]string{
 						"annotation": "true",
 					},
@@ -1389,7 +1389,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:         "",
-						GenerateName: "instance-",
+						GenerateName: "infrastructure-",
 						Annotations: map[string]string{
 							"annotation": "true",
 						},
@@ -1459,7 +1459,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:         "",
-					GenerateName: "instance-",
+					GenerateName: "infrastructure-",
 					Annotations: map[string]string{
 						"annotation":   "true",
 						"annotation-1": "true",
@@ -1683,7 +1683,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -1714,7 +1714,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -1781,7 +1781,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -1799,7 +1799,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
 				assert.Equal(t, "", got.Name)
-				assert.Equal(t, "app-1-", got.GenerateName)
+				assert.Equal(t, "application-", got.GenerateName)
 			},
 		},
 		{
@@ -1813,7 +1813,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -1831,7 +1831,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
 				if assert.Contains(t, got.Annotations, "replicated.com/backup-name") {
-					assert.Equal(t, "backup-17332487841234", got.Annotations["replicated.com/backup-name"])
+					assert.Equal(t, "instance-17332487841234", got.Annotations["replicated.com/backup-name"])
 				}
 				if assert.Contains(t, got.Annotations, "replicated.com/backup-type") {
 					assert.Equal(t, "app", got.Annotations["replicated.com/backup-type"])
@@ -1852,7 +1852,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -1883,7 +1883,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -1915,7 +1915,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2097,7 +2097,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2132,7 +2132,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 					},
 				}),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2161,7 +2161,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2205,7 +2205,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 					},
 				}),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2237,7 +2237,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2270,7 +2270,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2305,7 +2305,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2337,7 +2337,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2369,7 +2369,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2402,7 +2402,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2434,7 +2434,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
 				metadata: instanceBackupMetadata{
-					backupName:                     "backup-17332487841234",
+					backupName:                     "instance-17332487841234",
 					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					kotsadmNamespace:               "kotsadm",
 					backupStorageLocationNamespace: "kotsadm-backups",
@@ -2616,7 +2616,7 @@ spec:
 				isScheduled: true,
 			},
 			want: instanceBackupMetadata{
-				backupName:                     "backup-17332487841234",
+				backupName:                     "instance-",
 				backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 				kotsadmNamespace:               "test",
 				backupStorageLocationNamespace: "velero",
@@ -2741,7 +2741,7 @@ spec:
 				isScheduled: true,
 			},
 			want: instanceBackupMetadata{
-				backupName:                     "backup-17332487841234",
+				backupName:                     "app-1-",
 				backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 				kotsadmNamespace:               "test",
 				backupStorageLocationNamespace: "velero",
@@ -2808,7 +2808,7 @@ spec:
 				require.NoError(t, err)
 			}
 
-			assert.Regexp(t, "^backup-", got.backupName)
+			assert.Regexp(t, "^"+tt.want.backupName, got.backupName)
 			assert.NotZero(t, got.backupReqestedAt)
 			tt.want.backupName = got.backupName
 			tt.want.backupReqestedAt = got.backupReqestedAt

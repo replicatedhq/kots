@@ -319,7 +319,7 @@ func GetInstanceBackupsExpected(veleroBackup velerov1.Backup) int {
 func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, ctrlClient ctrlclient.Client, veleroClient veleroclientv1.VeleroV1Interface, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
 	now := time.Now().UTC()
 	metadata := instanceBackupMetadata{
-		backupName:       fmt.Sprintf("backup-%d", now.UnixNano()),
+		backupName:       fmt.Sprintf("instance-%d", now.UnixNano()),
 		backupReqestedAt: now,
 		kotsadmNamespace: util.PodNamespace,
 		apps:             make(map[string]appInstanceBackupMetadata, 0),
@@ -391,6 +391,11 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 			parentSequence: parentSequence,
 		}
 
+		// if there's only one app, use the slug as the backup name
+		if len(apps) == 1 && len(metadata.apps) == 1 {
+			metadata.backupName = fmt.Sprintf("%s-%d", app.Slug, now.UnixNano())
+		}
+
 		// optimization as we no longer need the archive dir
 		_ = os.RemoveAll(archiveDir)
 	}
@@ -433,7 +438,7 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 	veleroBackup := &velerov1.Backup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:         "",
-			GenerateName: "instance-",
+			GenerateName: "infrastructure-",
 			Annotations:  map[string]string{},
 		},
 		Spec: velerov1.BackupSpec{
@@ -519,7 +524,7 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 
 	var appVeleroBackup *velerov1.Backup
 
-	for slug, appMeta := range metadata.apps {
+	for _, appMeta := range metadata.apps {
 		// if there is both a backup and a restore spec this is using the new improved DR
 		if appMeta.kotsKinds.Backup == nil || appMeta.kotsKinds.Restore == nil {
 			continue
@@ -548,7 +553,7 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 		}
 
 		appVeleroBackup.Name = ""
-		appVeleroBackup.GenerateName = slug + "-"
+		appVeleroBackup.GenerateName = "application-"
 
 		break
 	}
