@@ -160,6 +160,8 @@ runs:
         kubectl -n $VELERO_NAMESPACE logs daemonset/node-agent
         echo "------previous node-agent logs"
         kubectl -n $VELERO_NAMESPACE logs -p daemonset/node-agent
+        echo "------velero backup details"
+        velero describe backups --details
       shell: bash
 
     - name: Generate support bundle on failure
