@@ -438,7 +438,7 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 		},
 		Spec: velerov1.BackupSpec{
 			StorageLocation:         "default",
-			IncludedNamespaces:      []string{},
+			IncludedNamespaces:      []string{metadata.kotsadmNamespace},
 			ExcludedNamespaces:      []string{},
 			IncludeClusterResources: ptr.To(true),
 			OrLabelSelectors:        instanceBackupLabelSelectors(metadata.ec != nil),
@@ -449,12 +449,8 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 		},
 	}
 
-	appNamespace := metadata.kotsadmNamespace
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
-	if appNamespace != metadata.kotsadmNamespace {
-		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, appNamespace)
+	if util.AppNamespace() != metadata.kotsadmNamespace {
+		veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, util.AppNamespace())
 	}
 
 	isKurl, err := kurl.IsKurl(k8sClient)

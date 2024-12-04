@@ -2087,7 +2087,10 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 		{
 			name: "KOTSADM_TARGET_NAMESPACE should be added to includedNamespaces",
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
-				t.Setenv("KOTSADM_TARGET_NAMESPACE", "kotsadm-target")
+				util.KotsadmTargetNamespace = "kotsadm-target"
+				t.Cleanup(func() {
+					util.KotsadmTargetNamespace = ""
+				})
 
 				mockStoreExpectApp1(mockStore)
 			},
@@ -2112,6 +2115,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
+				assert.Contains(t, got.Spec.IncludedNamespaces, "kotsadm")
 				assert.Contains(t, got.Spec.IncludedNamespaces, "kotsadm-target")
 			},
 		},
