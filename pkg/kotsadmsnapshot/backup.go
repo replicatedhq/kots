@@ -273,21 +273,21 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 	}
 
-	logger.Info("Creating instance backup CR", zap.String("name", veleroBackup.Name))
+	logger.Infof("Creating instance backup CR %s", veleroBackup.Name)
 	backup, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create velero backup")
 	}
 
 	if appVeleroBackup != nil {
-		logger.Info("Creating instance app backup CR", zap.String("name", appVeleroBackup.Name))
+		logger.Infof("Creating instance app backup CR %s", appVeleroBackup.Name)
 		_, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, appVeleroBackup, metav1.CreateOptions{})
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create application velero backup")
 		}
 	}
 
-	return backup.Name, nil // TODO: return metadata.BackupName
+	return backup.Name, nil // TODO(improveddr): return metadata.BackupName
 }
 
 func GetBackupName(veleroBackup velerov1.Backup) string {
@@ -507,9 +507,16 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 	return veleroBackup, nil
 }
 
+var EnableImprovedDR = false
+
 // getAppInstanceBackup returns a backup spec only if this is Embedded Cluster and the vendor has
 // defined both a backup and restore custom resource (improved DR).
 func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (*velerov1.Backup, error) {
+	// TODO(improveddr): remove this once we have fully implemented the improved DR
+	if !EnableImprovedDR {
+		return nil, nil
+	}
+
 	if metadata.ec == nil {
 		return nil, nil
 	}
@@ -739,7 +746,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		}
 
 		backup := types.Backup{
-			Name:   veleroBackup.Name, // TODO: GetBackupName(veleroBackup),
+			Name:   veleroBackup.Name, // TODO(improveddr): GetBackupName(veleroBackup),
 			Status: string(veleroBackup.Status.Phase),
 			AppID:  appID,
 		}
@@ -872,13 +879,13 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			continue
 		}
 
-		// TODO: support for improved DR in UI
+		// TODO(improveddr): support for improved DR in UI
 		if GetInstanceBackupType(veleroBackup) == InstanceBackupTypeApp {
 			continue
 		}
 
 		backup := types.Backup{
-			Name:         veleroBackup.Name, // TODO: GetBackupName(veleroBackup),
+			Name:         veleroBackup.Name, // TODO(improveddr): GetBackupName(veleroBackup),
 			Status:       string(veleroBackup.Status.Phase),
 			IncludedApps: make([]types.App, 0),
 		}
@@ -1160,7 +1167,7 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName st
 	}
 
 	result := &types.BackupDetail{
-		Name:       backup.Name, // TODO: GetBackupName(*backup),
+		Name:       backup.Name, // TODO(improveddr): GetBackupName(*backup),
 		Status:     string(backup.Status.Phase),
 		Namespaces: backup.Spec.IncludedNamespaces,
 		Volumes:    listBackupVolumes(backupVolumes.Items),

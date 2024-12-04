@@ -1515,6 +1515,11 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 }
 
 func Test_getAppInstanceBackupSpec(t *testing.T) {
+	EnableImprovedDR = true
+	t.Cleanup(func() {
+		EnableImprovedDR = false
+	})
+
 	mockStoreExpectApp1 := func(mockStore *mock_store.MockStore) {
 		mockStore.EXPECT().GetLatestAppSequence("1", true).Times(1).Return(int64(1), nil)
 		mockStore.EXPECT().GetRegistryDetailsForApp("1").Times(1).Return(registrytypes.RegistrySettings{
