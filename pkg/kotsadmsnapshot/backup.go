@@ -224,7 +224,7 @@ type ecInstanceBackupMetadata struct {
 }
 
 func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstream, isScheduled bool) (string, error) {
-	logger.Debug("creating instance backup")
+	logger.Info("Creating instance backup")
 
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
@@ -273,12 +273,14 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 	}
 
+	logger.Info("Creating instance backup CR", zap.String("name", veleroBackup.Name))
 	_, err = veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create velero backup")
 	}
 
 	if appVeleroBackup != nil {
+		logger.Info("Creating instance app backup CR", zap.String("name", appVeleroBackup.Name))
 		_, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, appVeleroBackup, metav1.CreateOptions{})
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create application velero backup")
@@ -745,7 +747,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		}
 
 		backup := types.Backup{
-			Name:   veleroBackup.Name,
+			Name:   veleroBackup.Name, // TODO: GetBackupName(veleroBackup),
 			Status: string(veleroBackup.Status.Phase),
 			AppID:  appID,
 		}
@@ -884,7 +886,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		}
 
 		backup := types.Backup{
-			Name:         GetBackupName(veleroBackup),
+			Name:         veleroBackup.Name, // TODO: GetBackupName(veleroBackup),
 			Status:       string(veleroBackup.Status.Phase),
 			IncludedApps: make([]types.App, 0),
 		}
@@ -1166,7 +1168,7 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName st
 	}
 
 	result := &types.BackupDetail{
-		Name:       GetBackupName(*backup),
+		Name:       backup.Name, // TODO: GetBackupName(*backup),
 		Status:     string(backup.Status.Phase),
 		Namespaces: backup.Spec.IncludedNamespaces,
 		Volumes:    listBackupVolumes(backupVolumes.Items),
