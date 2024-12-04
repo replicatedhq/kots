@@ -274,7 +274,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	}
 
 	logger.Info("Creating instance backup CR", zap.String("name", veleroBackup.Name))
-	_, err = veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
+	backup, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create velero backup")
 	}
@@ -287,7 +287,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 	}
 
-	return metadata.backupName, nil
+	return backup.Name, nil // TODO: return metadata.BackupName
 }
 
 func GetBackupName(veleroBackup velerov1.Backup) string {
