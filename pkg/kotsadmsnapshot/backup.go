@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -235,12 +236,17 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to create clientset")
 	}
 
+	ctrlClient, err := k8sutil.GetKubeClient(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get kubeclient: %w", err)
+	}
+
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	metadata, err := getInstanceBackupMetadata(ctx, k8sClient, veleroClient, cluster, isScheduled)
+	metadata, err := getInstanceBackupMetadata(ctx, k8sClient, ctrlClient, veleroClient, cluster, isScheduled)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get instance backup metadata")
 	}
@@ -308,7 +314,7 @@ func GetInstanceBackupsExpected(veleroBackup velerov1.Backup) int {
 
 // getInstanceBackupMetadata returns metadata about the instance backup for use in creating an
 // instance backup.
-func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
+func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, ctrlClient ctrlclient.Client, veleroClient veleroclientv1.VeleroV1Interface, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
 	now := time.Now().UTC()
 	metadata := instanceBackupMetadata{
 		backupName:       fmt.Sprintf("backup-%d", now.UnixNano()),
@@ -387,7 +393,7 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 		_ = os.RemoveAll(archiveDir)
 	}
 
-	metadata.ec, err = getECInstanceBackupMetadata(ctx)
+	metadata.ec, err = getECInstanceBackupMetadata(ctx, ctrlClient)
 	if err != nil {
 		return metadata, errors.Wrap(err, "failed to get embedded cluster metadata")
 	}
@@ -397,22 +403,17 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 
 // getECInstanceBackupMetadata returns metadata about the embedded cluster for use in creating an
 // instance backup.
-func getECInstanceBackupMetadata(ctx context.Context) (*ecInstanceBackupMetadata, error) {
+func getECInstanceBackupMetadata(ctx context.Context, ctrlClient ctrlclient.Client) (*ecInstanceBackupMetadata, error) {
 	if !util.IsEmbeddedCluster() {
 		return nil, nil
 	}
 
-	kbClient, err := k8sutil.GetKubeClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get kubeclient: %w", err)
-	}
-
-	installation, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
+	installation, err := embeddedcluster.GetCurrentInstallation(ctx, ctrlClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current installation: %w", err)
 	}
 
-	seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, kbClient)
+	seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, ctrlClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
 	}

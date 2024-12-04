@@ -2,21 +2,27 @@ package snapshot
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	gomock "github.com/golang/mock/gomock"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerofake "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/fake"
+	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +33,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	coretest "k8s.io/client-go/testing"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlclientfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestPrepareIncludedNamespaces(t *testing.T) {
@@ -1187,8 +1195,8 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 		{
 			name: "has backup spec",
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
-				mockStore.EXPECT().GetLatestAppSequence("1", true).Return(int64(1), nil)
-				mockStore.EXPECT().GetRegistryDetailsForApp("1").Return(registrytypes.RegistrySettings{
+				mockStore.EXPECT().GetLatestAppSequence("1", true).Times(1).Return(int64(1), nil)
+				mockStore.EXPECT().GetRegistryDetailsForApp("1").Times(1).Return(registrytypes.RegistrySettings{
 					Hostname:   "hostname",
 					Username:   "username",
 					Password:   "password",
@@ -1366,8 +1374,8 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 		{
 			name: "ec, has backup spec",
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
-				mockStore.EXPECT().GetLatestAppSequence("1", true).Return(int64(1), nil)
-				mockStore.EXPECT().GetRegistryDetailsForApp("1").Return(registrytypes.RegistrySettings{
+				mockStore.EXPECT().GetLatestAppSequence("1", true).Times(1).Return(int64(1), nil)
+				mockStore.EXPECT().GetRegistryDetailsForApp("1").Times(1).Return(registrytypes.RegistrySettings{
 					Hostname:   "hostname",
 					Username:   "username",
 					Password:   "password",
@@ -1603,8 +1611,8 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
 
-				mockStore.EXPECT().GetLatestAppSequence("1", true).Return(int64(1), nil)
-				mockStore.EXPECT().GetRegistryDetailsForApp("1").Return(registrytypes.RegistrySettings{
+				mockStore.EXPECT().GetLatestAppSequence("1", true).Times(1).Return(int64(1), nil)
+				mockStore.EXPECT().GetRegistryDetailsForApp("1").Times(1).Return(registrytypes.RegistrySettings{
 					Hostname:   "hostname",
 					Username:   "username",
 					Password:   "password",
@@ -1780,4 +1788,352 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func Test_getInstanceBackupMetadata(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	embeddedclusterv1beta1.AddToScheme(scheme)
+
+	testBsl := &velerov1.BackupStorageLocation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "velero",
+		},
+		Spec: velerov1.BackupStorageLocationSpec{
+			Provider: "aws",
+			Default:  true,
+		},
+	}
+	veleroNamespaceConfigmap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kotsadm-velero-namespace",
+		},
+		Data: map[string]string{
+			"veleroNamespace": "velero",
+		},
+	}
+	veleroDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "velero",
+			Namespace: "velero",
+		},
+	}
+
+	installation := &embeddedclusterv1beta1.Installation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "20060102150405",
+		},
+		Spec: embeddedclusterv1beta1.InstallationSpec{
+			BinaryName: "my-app",
+		},
+	}
+	seaweedFSS3Service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ec-seaweedfs-s3",
+			Namespace: "seaweedfs",
+		},
+		Spec: corev1.ServiceSpec{
+			ClusterIP: "10.96.0.10",
+		},
+	}
+
+	type args struct {
+		k8sClient    kubernetes.Interface
+		ctrlClient   ctrlclient.Client
+		veleroClient veleroclientv1.VeleroV1Interface
+		cluster      *downstreamtypes.Downstream
+		isScheduled  bool
+	}
+	tests := []struct {
+		name    string
+		setup   func(t *testing.T, mockStore *mock_store.MockStore)
+		args    args
+		want    instanceBackupMetadata
+		wantErr bool
+	}{
+		{
+			name: "cli install",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				util.PodNamespace = "test"
+				t.Cleanup(func() {
+					util.PodNamespace = ""
+				})
+
+				mockStore.EXPECT().ListInstalledApps().Times(1).Return([]*apptypes.App{
+					{
+						ID:       "1",
+						Name:     "App 1",
+						Slug:     "app-1",
+						IsAirgap: true,
+					},
+					{
+						ID:       "2",
+						Name:     "App 2",
+						Slug:     "app-2",
+						IsAirgap: true,
+					},
+				}, nil)
+				mockStore.EXPECT().ListDownstreamsForApp(gomock.Any()).Times(2).Return([]downstreamtypes.Downstream{
+					{
+						ClusterID:        "cluster-id",
+						ClusterSlug:      "cluster-slug",
+						Name:             "cluster-name",
+						CurrentSequence:  1,
+						SnapshotSchedule: "manual",
+						SnapshotTTL:      "24h",
+					},
+				}, nil)
+				mockStore.EXPECT().GetCurrentParentSequence("1", "cluster-id").Times(1).Return(int64(1), nil)
+				mockStore.EXPECT().GetCurrentParentSequence("2", "cluster-id").Times(1).Return(int64(2), nil)
+				mockStore.EXPECT().GetAppVersionArchive("1", int64(1), gomock.Any()).Times(1).DoAndReturn(func(appID string, sequence int64, archiveDir string) error {
+					err := setupArchiveDirectoriesAndFiles(archiveDir, map[string]string{
+						"upstream/app.yaml": `
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-1
+spec:
+  title: My App 1`,
+					})
+					require.NoError(t, err)
+					return nil
+				})
+				mockStore.EXPECT().GetAppVersionArchive("2", int64(2), gomock.Any()).Times(1).DoAndReturn(func(appID string, sequence int64, archiveDir string) error {
+					err := setupArchiveDirectoriesAndFiles(archiveDir, map[string]string{
+						"upstream/app.yaml": `
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-2
+spec:
+  title: My App 2`,
+					})
+					require.NoError(t, err)
+					return nil
+				})
+			},
+			args: args{
+				k8sClient:    fake.NewSimpleClientset(veleroNamespaceConfigmap, veleroDeployment),
+				ctrlClient:   ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects().Build(),
+				veleroClient: velerofake.NewSimpleClientset(testBsl).VeleroV1(),
+				cluster: &downstreamtypes.Downstream{
+					SnapshotTTL: "24h",
+				},
+				isScheduled: true,
+			},
+			want: instanceBackupMetadata{
+				backupName:                     "backup-17332487841234",
+				backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+				kotsadmNamespace:               "test",
+				backupStorageLocationNamespace: "velero",
+				apps: map[string]appInstanceBackupMetadata{
+					"app-1": {
+						app: &apptypes.App{
+							ID:       "1",
+							Name:     "App 1",
+							Slug:     "app-1",
+							IsAirgap: true,
+						},
+						kotsKinds: &kotsutil.KotsKinds{
+							KotsApplication: kotsv1beta1.Application{
+								TypeMeta: metav1.TypeMeta{
+									APIVersion: "kots.io/v1beta1",
+									Kind:       "Application",
+								},
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "app-1",
+								},
+								Spec: kotsv1beta1.ApplicationSpec{
+									Title: "My App 1",
+								},
+							},
+							Installation: kotsv1beta1.Installation{
+								TypeMeta: metav1.TypeMeta{
+									APIVersion: "kots.io/v1beta1",
+									Kind:       "Installation",
+								},
+							},
+						},
+						parentSequence: 1,
+					},
+					"app-2": {
+						app: &apptypes.App{
+							ID:       "2",
+							Name:     "App 2",
+							Slug:     "app-2",
+							IsAirgap: true,
+						},
+						kotsKinds: &kotsutil.KotsKinds{
+							KotsApplication: kotsv1beta1.Application{
+								TypeMeta: metav1.TypeMeta{
+									APIVersion: "kots.io/v1beta1",
+									Kind:       "Application",
+								},
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "app-2",
+								},
+								Spec: kotsv1beta1.ApplicationSpec{
+									Title: "My App 2",
+								},
+							},
+							Installation: kotsv1beta1.Installation{
+								TypeMeta: metav1.TypeMeta{
+									APIVersion: "kots.io/v1beta1",
+									Kind:       "Installation",
+								},
+							},
+						},
+						parentSequence: 2,
+					},
+				},
+				isScheduled: true,
+				snapshotTTL: 24 * time.Hour,
+				ec:          nil,
+			},
+		},
+		{
+			name: "ec install",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+
+				util.PodNamespace = "test"
+				t.Cleanup(func() {
+					util.PodNamespace = ""
+				})
+
+				mockStore.EXPECT().ListInstalledApps().Times(1).Return([]*apptypes.App{
+					{
+						ID:       "1",
+						Name:     "App 1",
+						Slug:     "app-1",
+						IsAirgap: true,
+					},
+				}, nil)
+				mockStore.EXPECT().ListDownstreamsForApp(gomock.Any()).Times(1).Return([]downstreamtypes.Downstream{
+					{
+						ClusterID:        "cluster-id",
+						ClusterSlug:      "cluster-slug",
+						Name:             "cluster-name",
+						CurrentSequence:  1,
+						SnapshotSchedule: "manual",
+						SnapshotTTL:      "24h",
+					},
+				}, nil)
+				mockStore.EXPECT().GetCurrentParentSequence("1", "cluster-id").Times(1).Return(int64(1), nil)
+				mockStore.EXPECT().GetAppVersionArchive("1", int64(1), gomock.Any()).Times(1).DoAndReturn(func(appID string, sequence int64, archiveDir string) error {
+					err := setupArchiveDirectoriesAndFiles(archiveDir, map[string]string{
+						"upstream/app.yaml": `
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-1
+spec:
+  title: My App 1`,
+					})
+					require.NoError(t, err)
+					return nil
+				})
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(veleroNamespaceConfigmap, veleroDeployment),
+				ctrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
+					installation,
+					seaweedFSS3Service,
+				).Build(),
+				veleroClient: velerofake.NewSimpleClientset(testBsl).VeleroV1(),
+				cluster: &downstreamtypes.Downstream{
+					SnapshotTTL: "24h",
+				},
+				isScheduled: true,
+			},
+			want: instanceBackupMetadata{
+				backupName:                     "backup-17332487841234",
+				backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+				kotsadmNamespace:               "test",
+				backupStorageLocationNamespace: "velero",
+				apps: map[string]appInstanceBackupMetadata{
+					"app-1": {
+						app: &apptypes.App{
+							ID:       "1",
+							Name:     "App 1",
+							Slug:     "app-1",
+							IsAirgap: true,
+						},
+						kotsKinds: &kotsutil.KotsKinds{
+							KotsApplication: kotsv1beta1.Application{
+								TypeMeta: metav1.TypeMeta{
+									APIVersion: "kots.io/v1beta1",
+									Kind:       "Application",
+								},
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "app-1",
+								},
+								Spec: kotsv1beta1.ApplicationSpec{
+									Title: "My App 1",
+								},
+							},
+							Installation: kotsv1beta1.Installation{
+								TypeMeta: metav1.TypeMeta{
+									APIVersion: "kots.io/v1beta1",
+									Kind:       "Installation",
+								},
+							},
+						},
+						parentSequence: 1,
+					},
+				},
+				isScheduled: true,
+				snapshotTTL: 24 * time.Hour,
+				ec: &ecInstanceBackupMetadata{
+					installation:         installation,
+					seaweedFSS3ServiceIP: "10.96.0.10",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockStore := mock_store.NewMockStore(ctrl)
+			store.SetStore(mockStore)
+
+			t.Cleanup(func() {
+				store.SetStore(nil)
+			})
+
+			if tt.setup != nil {
+				tt.setup(t, mockStore)
+			}
+
+			got, err := getInstanceBackupMetadata(context.Background(), tt.args.k8sClient, tt.args.ctrlClient, tt.args.veleroClient, tt.args.cluster, tt.args.isScheduled)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			assert.Regexp(t, "^backup-", got.backupName)
+			assert.NotZero(t, got.backupReqestedAt)
+			tt.want.backupName = got.backupName
+			tt.want.backupReqestedAt = got.backupReqestedAt
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func setupArchiveDirectoriesAndFiles(archiveDir string, files map[string]string) error {
+	for path, content := range files {
+		dir := filepath.Dir(path)
+		if err := os.MkdirAll(filepath.Join(archiveDir, dir), 0744); err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(archiveDir, path), []byte(content), 0644); err != nil {
+			return err
+		}
+	}
+	return nil
 }
