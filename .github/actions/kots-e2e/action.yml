@@ -163,7 +163,7 @@ runs:
       shell: bash
 
     - name: Generate support bundle on failure
-      if: ${{ failure() }}
+      if: ${{ always() }}
       uses: ./.github/actions/generate-support-bundle
       with:
         artifact-name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}-support-bundle
