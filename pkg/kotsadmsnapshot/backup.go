@@ -438,7 +438,7 @@ func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, 
 	veleroBackup := &velerov1.Backup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:         "",
-			GenerateName: "infrastructure-",
+			GenerateName: "instance-",
 			Annotations:  map[string]string{},
 		},
 		Spec: velerov1.BackupSpec{

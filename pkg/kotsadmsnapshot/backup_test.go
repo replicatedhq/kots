@@ -1153,7 +1153,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:         "",
-						GenerateName: "infrastructure-",
+						GenerateName: "instance-",
 						Annotations: map[string]string{
 							"annotation": "true",
 						},
@@ -1193,7 +1193,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:         "",
-					GenerateName: "infrastructure-",
+					GenerateName: "instance-",
 					Annotations: map[string]string{
 						"annotation": "true",
 					},
@@ -1217,7 +1217,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:         "",
-						GenerateName: "infrastructure-",
+						GenerateName: "instance-",
 						Annotations: map[string]string{
 							"annotation": "true",
 						},
@@ -1287,7 +1287,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:         "",
-					GenerateName: "infrastructure-",
+					GenerateName: "instance-",
 					Annotations: map[string]string{
 						"annotation":   "true",
 						"annotation-1": "true",
@@ -1325,7 +1325,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:         "",
-						GenerateName: "infrastructure-",
+						GenerateName: "instance-",
 						Annotations: map[string]string{
 							"annotation": "true",
 						},
@@ -1365,7 +1365,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:         "",
-					GenerateName: "infrastructure-",
+					GenerateName: "instance-",
 					Annotations: map[string]string{
 						"annotation": "true",
 					},
@@ -1389,7 +1389,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:         "",
-						GenerateName: "infrastructure-",
+						GenerateName: "instance-",
 						Annotations: map[string]string{
 							"annotation": "true",
 						},
@@ -1459,7 +1459,7 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:         "",
-					GenerateName: "infrastructure-",
+					GenerateName: "instance-",
 					Annotations: map[string]string{
 						"annotation":   "true",
 						"annotation-1": "true",
