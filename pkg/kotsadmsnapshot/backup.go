@@ -134,6 +134,8 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Errorf("application %s does not have a backup spec", a.Slug)
 	}
 
+	// We have to render the backup spec as older versions of kots stored the unrendered spec in
+	// the database.
 	renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render backup")
@@ -564,11 +566,7 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 			return nil, errors.New("backup spec is empty, this is unexpected")
 		}
 
-		renderedBackup, err := helper.RenderAppFile(appMeta.app, nil, []byte(backupSpec), appMeta.kotsKinds, metadata.kotsadmNamespace)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to render backup")
-		}
-		appVeleroBackup, err = kotsutil.LoadBackupFromContents(renderedBackup)
+		appVeleroBackup, err = kotsutil.LoadBackupFromContents([]byte(backupSpec))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load backup from contents")
 		}
@@ -627,6 +625,8 @@ func mergeAppBackupSpec(backup *velerov1.Backup, appMeta appInstanceBackupMetada
 		return nil
 	}
 
+	// We have to render the backup spec as older versions of kots stored the unrendered spec in
+	// the database.
 	renderedBackup, err := helper.RenderAppFile(appMeta.app, nil, []byte(backupSpec), appMeta.kotsKinds, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to render backup")

@@ -1519,17 +1519,6 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 		EnableImprovedDR = false
 	})
 
-	mockStoreExpectApp1 := func(mockStore *mock_store.MockStore) {
-		mockStore.EXPECT().GetLatestAppSequence("1", true).Times(1).Return(int64(1), nil)
-		mockStore.EXPECT().GetRegistryDetailsForApp("1").Times(1).Return(registrytypes.RegistrySettings{
-			Hostname:   "hostname",
-			Username:   "username",
-			Password:   "password",
-			Namespace:  "namespace",
-			IsReadOnly: true,
-		}, nil)
-	}
-
 	kotsadmSts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
@@ -1597,7 +1586,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			Spec: velerov1.BackupSpec{
 				StorageLocation:    "blah",
 				TTL:                metav1.Duration{Duration: 1 * time.Hour},
-				IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-{{repl IsAirgap }}"},
+				IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2"},
 				ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
 				OrderedResources: map[string]string{
 					"resource-1": "true",
@@ -1774,8 +1763,6 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
-
-				mockStoreExpectApp1(mockStore)
 			},
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
@@ -1806,8 +1793,6 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
-
-				mockStoreExpectApp1(mockStore)
 			},
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
@@ -1839,8 +1824,6 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
-
-				mockStoreExpectApp1(mockStore)
 			},
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
@@ -1875,8 +1858,6 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
-
-				mockStoreExpectApp1(mockStore)
 			},
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
@@ -1906,8 +1887,6 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
-
-				mockStoreExpectApp1(mockStore)
 			},
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
@@ -1938,8 +1917,6 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
-
-				mockStoreExpectApp1(mockStore)
 			},
 			args: args{
 				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
@@ -2519,6 +2496,38 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					}
 				}
 				assert.Equal(t, 1, count, "Duplicate namespace should be removed")
+			},
+		},
+		{
+			name: "should render app backup spec",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+
+				mockStoreExpectApp1(mockStore)
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "app-1-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app:            app1,
+							kotsKinds:      kotsKinds,
+							parentSequence: 1,
+						},
+					},
+					isScheduled: true,
+					ec:          ecMeta,
+				},
+				hasAppBackupSpec: false,
+			},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				assert.Contains(t, got.Spec.IncludedNamespaces, "template-isairgap-true")
 			},
 		},
 	}
