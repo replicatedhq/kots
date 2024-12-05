@@ -1022,7 +1022,6 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				"kots.io/kotsadm-image":            "kotsadm/kotsadm:1.0.0",
 				"kots.io/snapshot-requested":       "2024-01-01T00:00:00Z",
 				"kots.io/snapshot-trigger":         "manual",
-				"replicated.com/backup-count":      "1",
 			},
 		},
 		{
@@ -1087,7 +1086,6 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				"kots.io/kotsadm-image":                               "kotsadm/kotsadm:1.0.0",
 				"kots.io/snapshot-requested":                          "2024-01-01T00:00:00Z",
 				"kots.io/snapshot-trigger":                            "schedule",
-				"replicated.com/backup-count":                         "2",
 				"kots.io/embedded-cluster":                            "true",
 				"kots.io/embedded-cluster-id":                         "embedded-cluster-id",
 				"kots.io/embedded-cluster-version":                    "embedded-cluster-version",
@@ -2091,37 +2089,6 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 		assert func(t *testing.T, got *velerov1.Backup, err error)
 	}{
 		{
-			name: "should append backup name label",
-			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
-				mockStoreExpectApp1(mockStore)
-			},
-			args: args{
-				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
-				metadata: instanceBackupMetadata{
-					backupName:                     "app-1-17332487841234",
-					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-					kotsadmNamespace:               "kotsadm",
-					backupStorageLocationNamespace: "kotsadm-backups",
-					apps: map[string]appInstanceBackupMetadata{
-						"app-1": {
-							app:            app1,
-							kotsKinds:      kotsKinds,
-							parentSequence: 1,
-						},
-					},
-					isScheduled: true,
-					ec:          nil,
-				},
-				hasAppBackup: false,
-			},
-			assert: func(t *testing.T, got *velerov1.Backup, err error) {
-				require.NoError(t, err)
-				if assert.Contains(t, got.Labels, "replicated.com/backup-name") {
-					assert.Equal(t, "app-1-17332487841234", got.Labels["replicated.com/backup-name"])
-				}
-			},
-		},
-		{
 			name: "KOTSADM_TARGET_NAMESPACE should be added to includedNamespaces",
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				util.KotsadmTargetNamespace = "kotsadm-target"
@@ -2293,9 +2260,6 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
 				assert.Contains(t, got.Spec.IncludedNamespaces, "include-namespace-1")
-				if assert.Contains(t, got.Annotations, "replicated.com/backup-type") {
-					assert.Equal(t, "legacy", got.Annotations["replicated.com/backup-type"])
-				}
 			},
 		},
 		{
@@ -2326,8 +2290,77 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
 				assert.NotContains(t, got.Spec.IncludedNamespaces, "include-namespace-1")
+			},
+		},
+		{
+			name: "should not add improved dr metadata when not using improved dr",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+
+				mockStoreExpectApp1(mockStore)
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "app-1-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app:            app1,
+							kotsKinds:      kotsKinds,
+							parentSequence: 1,
+						},
+					},
+					isScheduled: true,
+					ec:          ecMeta,
+				},
+				hasAppBackup: false,
+			},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				assert.NotContains(t, got.Labels, "replicated.com/backup-name")
+				assert.NotContains(t, got.Annotations, "replicated.com/backup-type")
+				assert.NotContains(t, got.Annotations, "replicated.com/backup-count")
+			},
+		},
+		{
+			name: "should add improved dr metadata when not using improved dr",
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
+			},
+			args: args{
+				k8sClient: fake.NewSimpleClientset(kotsadmSts, registryCredsSecret),
+				metadata: instanceBackupMetadata{
+					backupName:                     "app-1-17332487841234",
+					backupReqestedAt:               time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					kotsadmNamespace:               "kotsadm",
+					backupStorageLocationNamespace: "kotsadm-backups",
+					apps: map[string]appInstanceBackupMetadata{
+						"app-1": {
+							app:            app1,
+							kotsKinds:      kotsKinds,
+							parentSequence: 1,
+						},
+					},
+					isScheduled: true,
+					ec:          ecMeta,
+				},
+				hasAppBackup: true,
+			},
+			assert: func(t *testing.T, got *velerov1.Backup, err error) {
+				require.NoError(t, err)
+				if assert.Contains(t, got.Labels, "replicated.com/backup-name") {
+					assert.Equal(t, "app-1-17332487841234", got.Labels["replicated.com/backup-name"])
+				}
 				if assert.Contains(t, got.Annotations, "replicated.com/backup-type") {
 					assert.Equal(t, "infra", got.Annotations["replicated.com/backup-type"])
+				}
+				if assert.Contains(t, got.Annotations, "replicated.com/backup-count") {
+					assert.Equal(t, "2", got.Annotations["replicated.com/backup-count"])
 				}
 			},
 		},

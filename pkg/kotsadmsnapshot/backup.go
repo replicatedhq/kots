@@ -43,25 +43,6 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// InstanceBackupNameLabel is the label used to store the name of the backup for an instance
-	// backup.
-	InstanceBackupNameLabel = "replicated.com/backup-name"
-	// InstanceBackupTypeAnnotation is the annotation used to store the type of backup for an
-	// instance backup.
-	InstanceBackupTypeAnnotation = "replicated.com/backup-type"
-	// InstanceBackupCountAnnotation is the annotation used to store the expected number of backups
-	// for an instance backup.
-	InstanceBackupCountAnnotation = "replicated.com/backup-count"
-
-	// InstanceBackupTypeInfra indicates that the backup is of type infrastructure.
-	InstanceBackupTypeInfra = "infra"
-	// InstanceBackupTypeApp indicates that the backup is of type application.
-	InstanceBackupTypeApp = "app"
-	// InstanceBackupTypeLegacy indicates that the backup is of type legacy (infra + app).
-	InstanceBackupTypeLegacy = "legacy"
-)
-
 func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled bool) (*velerov1.Backup, error) {
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
@@ -307,24 +288,32 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 
 // GetBackupName returns the name of the backup from the velero backup object label.
 func GetBackupName(veleroBackup velerov1.Backup) string {
-	if val, ok := veleroBackup.GetLabels()[InstanceBackupNameLabel]; ok {
+	if val, ok := veleroBackup.GetLabels()[types.InstanceBackupNameLabel]; ok {
 		return val
 	}
 	return veleroBackup.GetName()
 }
 
+// IsInstanceBackup returns true if the backup is an instance backup.
+func IsInstanceBackup(veleroBackup velerov1.Backup) bool {
+	if val, ok := veleroBackup.GetAnnotations()[types.InstanceBackupAnnotation]; ok {
+		return val == "true"
+	}
+	return false
+}
+
 // GetInstanceBackupType returns the type of the backup from the velero backup object annotation.
 func GetInstanceBackupType(veleroBackup velerov1.Backup) string {
-	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupTypeAnnotation]; ok {
+	if val, ok := veleroBackup.GetAnnotations()[types.InstanceBackupTypeAnnotation]; ok {
 		return val
 	}
-	return ""
+	return types.InstanceBackupTypeLegacy
 }
 
 // GetInstanceBackupCount returns the expected number of backups from the velero backup object
 // annotation.
 func GetInstanceBackupCount(veleroBackup velerov1.Backup) int {
-	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupCountAnnotation]; ok {
+	if val, ok := veleroBackup.GetAnnotations()[types.InstanceBackupCountAnnotation]; ok {
 		num, _ := strconv.Atoi(val)
 		if num > 0 {
 			return num
@@ -505,15 +494,14 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to backup")
 	}
-	// Add improved disaster recovery annotations and labels
-	if veleroBackup.Labels == nil {
-		veleroBackup.Labels = map[string]string{}
-	}
-	veleroBackup.Labels[InstanceBackupNameLabel] = metadata.backupName
 	if hasAppBackup {
-		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeInfra
-	} else {
-		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeLegacy
+		// Only add improved disaster recovery annotations and labels if we have an app backup
+		if veleroBackup.Labels == nil {
+			veleroBackup.Labels = map[string]string{}
+		}
+		veleroBackup.Labels[types.InstanceBackupNameLabel] = metadata.backupName
+		veleroBackup.Annotations[types.InstanceBackupTypeAnnotation] = types.InstanceBackupTypeInfra
+		veleroBackup.Annotations[types.InstanceBackupCountAnnotation] = strconv.Itoa(2)
 	}
 
 	if metadata.ec != nil {
@@ -582,8 +570,9 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 	if appVeleroBackup.Labels == nil {
 		appVeleroBackup.Labels = map[string]string{}
 	}
-	appVeleroBackup.Labels[InstanceBackupNameLabel] = metadata.backupName
-	appVeleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeApp
+	appVeleroBackup.Labels[types.InstanceBackupNameLabel] = metadata.backupName
+	appVeleroBackup.Annotations[types.InstanceBackupTypeAnnotation] = types.InstanceBackupTypeApp
+	appVeleroBackup.Annotations[types.InstanceBackupCountAnnotation] = strconv.Itoa(2)
 
 	appVeleroBackup.Spec.StorageLocation = "default"
 
@@ -695,17 +684,12 @@ func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[str
 	}
 	marshalledAppVersions := string(b)
 
-	numBackups := 1
-	if hasAppBackup {
-		numBackups = 2
-	}
-
 	if annotations == nil {
 		annotations = make(map[string]string, 0)
 	}
 	annotations["kots.io/snapshot-trigger"] = snapshotTrigger
 	annotations["kots.io/snapshot-requested"] = metadata.backupReqestedAt.Format(time.RFC3339)
-	annotations["kots.io/instance"] = "true"
+	annotations[types.InstanceBackupAnnotation] = "true"
 	annotations["kots.io/kotsadm-image"] = kotsadmImage
 	annotations["kots.io/kotsadm-deploy-namespace"] = metadata.kotsadmNamespace
 	annotations["kots.io/apps-sequences"] = marshalledAppSequences
@@ -715,9 +699,6 @@ func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[str
 	if embeddedRegistryHost != "" {
 		annotations["kots.io/embedded-registry"] = embeddedRegistryHost
 	}
-
-	// Add improved disaster recovery annotation labels
-	annotations[InstanceBackupCountAnnotation] = strconv.Itoa(numBackups)
 
 	if metadata.ec != nil {
 		annotations = appendECAnnotations(annotations, *metadata.ec)
@@ -893,7 +874,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 
 	for _, veleroBackup := range veleroBackups.Items {
 		// TODO: Enforce version?
-		if veleroBackup.Annotations["kots.io/instance"] != "true" {
+		if !IsInstanceBackup(veleroBackup) {
 			continue
 		}
 
@@ -1080,22 +1061,6 @@ func getBackupNameFromPrefix(appSlug string) string {
 		backupName = backupName[:validation.DNS1035LabelMaxLength-9]
 	}
 	return fmt.Sprintf("%s-%s", backupName, randStr)
-}
-
-func getBackupsFromName(ctx context.Context, veleroClient veleroclientv1.VeleroV1Interface, veleroNamespace string, backupName string) ([]velerov1.Backup, error) {
-	// try to get the restore from the backup name label
-	backups, err := veleroClient.Backups(veleroNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", InstanceBackupNameLabel, velerolabel.GetValidName(backupName)),
-	})
-	if len(backups.Items) > 0 {
-		return backups.Items, nil
-	}
-	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupName, metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get restore")
-	}
-
-	return []velerov1.Backup{*backup}, nil
 }
 
 func DeleteBackup(ctx context.Context, kotsadmNamespace string, backupID string) error {

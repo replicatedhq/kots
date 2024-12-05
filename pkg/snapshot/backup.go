@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
@@ -104,7 +105,7 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 	}
 	defer resp.Body.Close()
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to read server response")
@@ -174,7 +175,7 @@ func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions
 	backups := []velerov1.Backup{}
 
 	for _, backup := range b {
-		if backup.Annotations["kots.io/instance"] != "true" {
+		if backup.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
 			continue
 		}
 
