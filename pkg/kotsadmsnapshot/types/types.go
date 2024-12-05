@@ -13,6 +13,14 @@ type App struct {
 	AppIconURI string `json:"iconUri"`
 }
 
+// ReplicatedBackup holds both the infrastructure and app backups for an EC cluster
+type ReplicatedBackup struct {
+	Name string `json:"name"`
+	// number of backups expected to exist for the ReplicatedBackup to be considered complete
+	ExpectedBackupCount int      `json:"expectedBackupCount"`
+	Backups             []Backup `json:"backups"`
+}
+
 type Backup struct {
 	Name               string     `json:"name"`
 	Status             string     `json:"status"`
