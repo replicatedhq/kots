@@ -58,8 +58,8 @@ const (
 	InstanceBackupTypeInfra = "infra"
 	// InstanceBackupTypeApp indicates that the backup is of type application.
 	InstanceBackupTypeApp = "app"
-	// InstanceBackupTypeCombined indicates that the backup is of type combined (infra + app).
-	InstanceBackupTypeCombined = "combined"
+	// InstanceBackupTypeLegacy indicates that the backup is of type legacy (infra + app).
+	InstanceBackupTypeLegacy = "legacy"
 )
 
 func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled bool) (*velerov1.Backup, error) {
@@ -448,9 +448,9 @@ func getECInstanceBackupMetadata(ctx context.Context, ctrlClient ctrlclient.Clie
 }
 
 // getInfrastructureInstanceBackupSpec returns the velero backup spec for the instance backup. This
-// is either the kotsadm backup or the combined backup if this is not using improved DR.
+// is either the kotsadm backup or the legacy backup if this is not using improved DR.
 func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata, hasAppBackupSpec bool) (*velerov1.Backup, error) {
-	// veleroBackup is the kotsadm backup or combined backup if usesImprovedDR is false
+	// veleroBackup is the kotsadm backup or legacy backup if usesImprovedDR is false
 	veleroBackup := &velerov1.Backup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:         "",
@@ -511,7 +511,7 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 	if hasAppBackupSpec {
 		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeInfra
 	} else {
-		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeCombined
+		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeLegacy
 	}
 
 	if metadata.ec != nil {

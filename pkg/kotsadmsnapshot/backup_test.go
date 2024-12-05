@@ -2317,7 +2317,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 				require.NoError(t, err)
 				assert.Contains(t, got.Spec.IncludedNamespaces, "include-namespace-1")
 				if assert.Contains(t, got.Annotations, "replicated.com/backup-type") {
-					assert.Equal(t, "combined", got.Annotations["replicated.com/backup-type"])
+					assert.Equal(t, "legacy", got.Annotations["replicated.com/backup-type"])
 				}
 			},
 		},
