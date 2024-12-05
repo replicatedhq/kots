@@ -2,14 +2,17 @@ package snapshot
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	units "github.com/docker/go-units"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
@@ -34,18 +37,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	InstanceBackupNameAnnotation      = "replicated.com/backup-name"
-	InstanceBackupTypeAnnotation      = "replicated.com/backup-type"
-	InstanceBackupsExpectedAnnotation = "replicated.com/backups-expected"
+	// InstanceBackupNameLabel is the label used to store the name of the backup for an instance
+	// backup.
+	InstanceBackupNameLabel = "replicated.com/backup-name"
+	// InstanceBackupTypeAnnotation is the annotation used to store the type of backup for an
+	// instance backup.
+	InstanceBackupTypeAnnotation = "replicated.com/backup-type"
+	// InstanceBackupCountAnnotation is the annotation used to store the expected number of backups
+	// for an instance backup.
+	InstanceBackupCountAnnotation = "replicated.com/backup-count"
 
-	InstanceBackupTypeKotsadm  = "kotsadm"
-	InstanceBackupTypeApp      = "app"
+	// InstanceBackupTypeInfra indicates that the backup is of type infrastructure.
+	InstanceBackupTypeInfra = "infra"
+	// InstanceBackupTypeApp indicates that the backup is of type application.
+	InstanceBackupTypeApp = "app"
+	// InstanceBackupTypeCombined indicates that the backup is of type combined (infra + app).
 	InstanceBackupTypeCombined = "combined"
 )
 
@@ -290,13 +303,15 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	return backup.Name, nil // TODO(improveddr): return metadata.BackupName
 }
 
+// GetBackupName returns the name of the backup from the velero backup object label.
 func GetBackupName(veleroBackup velerov1.Backup) string {
-	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupNameAnnotation]; ok {
+	if val, ok := veleroBackup.GetLabels()[InstanceBackupNameLabel]; ok {
 		return val
 	}
 	return veleroBackup.GetName()
 }
 
+// GetInstanceBackupType returns the type of the backup from the velero backup object annotation.
 func GetInstanceBackupType(veleroBackup velerov1.Backup) string {
 	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupTypeAnnotation]; ok {
 		return val
@@ -304,8 +319,10 @@ func GetInstanceBackupType(veleroBackup velerov1.Backup) string {
 	return ""
 }
 
-func GetInstanceBackupsExpected(veleroBackup velerov1.Backup) int {
-	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupsExpectedAnnotation]; ok {
+// GetInstanceBackupCount returns the expected number of backups from the velero backup object
+// annotation.
+func GetInstanceBackupCount(veleroBackup velerov1.Backup) int {
+	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupCountAnnotation]; ok {
 		num, _ := strconv.Atoi(val)
 		if num > 0 {
 			return num
@@ -317,10 +334,9 @@ func GetInstanceBackupsExpected(veleroBackup velerov1.Backup) int {
 // getInstanceBackupMetadata returns metadata about the instance backup for use in creating an
 // instance backup.
 func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, ctrlClient ctrlclient.Client, veleroClient veleroclientv1.VeleroV1Interface, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
-	now := time.Now().UTC()
 	metadata := instanceBackupMetadata{
-		backupName:       fmt.Sprintf("instance-%d", now.UnixNano()),
-		backupReqestedAt: now,
+		backupName:       getBackupNameFromPrefix("instance"),
+		backupReqestedAt: time.Now().UTC(),
 		kotsadmNamespace: util.PodNamespace,
 		apps:             make(map[string]appInstanceBackupMetadata, 0),
 		isScheduled:      isScheduled,
@@ -393,7 +409,7 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 
 		// if there's only one app, use the slug as the backup name
 		if len(apps) == 1 && len(metadata.apps) == 1 {
-			metadata.backupName = fmt.Sprintf("%s-%d", app.Slug, now.UnixNano())
+			metadata.backupName = getBackupNameFromPrefix(app.Slug)
 		}
 
 		// optimization as we no longer need the archive dir
@@ -487,8 +503,13 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to backup")
 	}
+	// Add improved disaster recovery annotations and labels
+	if veleroBackup.Labels == nil {
+		veleroBackup.Labels = map[string]string{}
+	}
+	veleroBackup.Labels[InstanceBackupNameLabel] = metadata.backupName
 	if hasAppSpec {
-		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeKotsadm
+		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeInfra
 	} else {
 		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeCombined
 	}
@@ -567,6 +588,11 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to application backup")
 	}
+	// Add improved disaster recovery annotations and labels
+	if appVeleroBackup.Labels == nil {
+		appVeleroBackup.Labels = map[string]string{}
+	}
+	appVeleroBackup.Labels[InstanceBackupNameLabel] = metadata.backupName
 	appVeleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeApp
 
 	appVeleroBackup.Spec.StorageLocation = "default"
@@ -699,8 +725,7 @@ func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[str
 	}
 
 	// Add improved disaster recovery annotation labels
-	annotations[InstanceBackupNameAnnotation] = metadata.backupName
-	annotations[InstanceBackupsExpectedAnnotation] = strconv.Itoa(numBackups)
+	annotations[InstanceBackupCountAnnotation] = strconv.Itoa(numBackups)
 
 	if metadata.ec != nil {
 		annotations = appendECAnnotations(annotations, *metadata.ec)
@@ -747,7 +772,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		}
 
 		backup := types.Backup{
-			Name:   veleroBackup.Name, // TODO(improveddr): GetBackupName(veleroBackup),
+			Name:   veleroBackup.Name,
 			Status: string(veleroBackup.Status.Phase),
 			AppID:  appID,
 		}
@@ -886,7 +911,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		}
 
 		backup := types.Backup{
-			Name:         veleroBackup.Name, // TODO(improveddr): GetBackupName(veleroBackup),
+			Name:         veleroBackup.Name,
 			Status:       string(veleroBackup.Status.Phase),
 			IncludedApps: make([]types.App, 0),
 		}
@@ -1024,7 +1049,7 @@ func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup
 	return &volumeSummary, nil
 }
 
-func GetBackup(ctx context.Context, kotsadmNamespace string, snapshotName string) (*velerov1.Backup, error) {
+func GetBackup(ctx context.Context, kotsadmNamespace string, backupID string) (*velerov1.Backup, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -1050,8 +1075,7 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, snapshotName string
 
 	veleroNamespace := bsl.Namespace
 
-	// get the backup
-	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, snapshotName, metav1.GetOptions{})
+	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupID, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup")
 	}
@@ -1059,7 +1083,35 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, snapshotName string
 	return backup, nil
 }
 
-func DeleteBackup(ctx context.Context, kotsadmNamespace string, snapshotName string) error {
+func getBackupNameFromPrefix(appSlug string) string {
+	randStr := fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d-%s",
+		time.Now().UnixNano(),
+		strings.Replace(uuid.New().String(), "-", "", 4),
+	))))[:8]
+	backupName := appSlug
+	if len(backupName)+9 > validation.DNS1035LabelMaxLength {
+		backupName = backupName[:validation.DNS1035LabelMaxLength-9]
+	}
+	return fmt.Sprintf("%s-%s", backupName, randStr)
+}
+
+func getBackupsFromName(ctx context.Context, veleroClient veleroclientv1.VeleroV1Interface, veleroNamespace string, backupName string) ([]velerov1.Backup, error) {
+	// try to get the restore from the backup name label
+	backups, err := veleroClient.Backups(veleroNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", InstanceBackupNameLabel, velerolabel.GetValidName(backupName)),
+	})
+	if len(backups.Items) > 0 {
+		return backups.Items, nil
+	}
+	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupName, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get restore")
+	}
+
+	return []velerov1.Backup{*backup}, nil
+}
+
+func DeleteBackup(ctx context.Context, kotsadmNamespace string, backupID string) error {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
@@ -1086,11 +1138,11 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, snapshotName str
 	veleroNamespace := bsl.Namespace
 	veleroDeleteBackupRequest := &velerov1.DeleteBackupRequest{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      snapshotName,
+			Name:      backupID,
 			Namespace: veleroNamespace,
 		},
 		Spec: velerov1.DeleteBackupRequestSpec{
-			BackupName: snapshotName,
+			BackupName: backupID,
 		},
 	}
 
@@ -1132,7 +1184,7 @@ func HasUnfinishedInstanceBackup(ctx context.Context, kotsadmNamespace string) (
 	return false, nil
 }
 
-func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName string) (*types.BackupDetail, error) {
+func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID string) (*types.BackupDetail, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -1155,20 +1207,20 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName st
 
 	veleroNamespace := backendStorageLocation.Namespace
 
-	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupName, metav1.GetOptions{})
+	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupID, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup")
 	}
 
 	backupVolumes, err := veleroClient.PodVolumeBackups(veleroNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(backupName)),
+		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(backupID)),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list volumes")
 	}
 
 	result := &types.BackupDetail{
-		Name:       backup.Name, // TODO(improveddr): GetBackupName(*backup),
+		Name:       backup.Name,
 		Status:     string(backup.Status.Phase),
 		Namespaces: backup.Spec.IncludedNamespaces,
 		Volumes:    listBackupVolumes(backupVolumes.Items),
@@ -1181,7 +1233,7 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName st
 	result.VolumeSizeHuman = units.HumanSize(float64(totalBytesDone)) // TODO: should this be TotalBytes rather than BytesDone?
 
 	if backup.Status.Phase == velerov1.BackupPhaseCompleted || backup.Status.Phase == velerov1.BackupPhasePartiallyFailed || backup.Status.Phase == velerov1.BackupPhaseFailed {
-		errs, warnings, execs, err := downloadBackupLogs(ctx, veleroNamespace, backupName)
+		errs, warnings, execs, err := downloadBackupLogs(ctx, veleroNamespace, backupID)
 		result.Errors = errs
 		result.Warnings = warnings
 		result.Hooks = execs
@@ -1229,8 +1281,8 @@ func listBackupVolumes(backupVolumes []velerov1.PodVolumeBackup) []types.Snapsho
 	return volumes
 }
 
-func downloadBackupLogs(ctx context.Context, veleroNamespace, backupName string) ([]types.SnapshotError, []types.SnapshotError, []*types.SnapshotHook, error) {
-	gzipReader, err := DownloadRequest(ctx, veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
+func downloadBackupLogs(ctx context.Context, veleroNamespace, backupID string) ([]types.SnapshotError, []types.SnapshotError, []*types.SnapshotHook, error) {
+	gzipReader, err := DownloadRequest(ctx, veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupID)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to download backup log")
 	}
