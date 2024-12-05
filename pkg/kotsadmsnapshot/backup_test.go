@@ -1957,7 +1957,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 	}
 }
 
-func Test_getInstanceBackupSpec(t *testing.T) {
+func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 	kotsadmSts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
@@ -2477,7 +2477,7 @@ func Test_getInstanceBackupSpec(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(t, mockStore)
 			}
-			got, err := getInstanceBackupSpec(context.Background(), tt.args.k8sClient, tt.args.metadata, tt.args.hasAppSpec)
+			got, err := getInfrastructureInstanceBackupSpec(context.Background(), tt.args.k8sClient, tt.args.metadata, tt.args.hasAppSpec)
 			tt.assert(t, got, err)
 		})
 	}

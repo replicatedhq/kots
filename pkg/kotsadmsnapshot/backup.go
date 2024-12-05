@@ -256,7 +256,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to get app instance backup spec")
 	}
 
-	veleroBackup, err := getInstanceBackupSpec(ctx, k8sClient, metadata, appVeleroBackup != nil)
+	veleroBackup, err := getInfrastructureInstanceBackupSpec(ctx, k8sClient, metadata, appVeleroBackup != nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get instance backup specs")
 	}
@@ -431,9 +431,9 @@ func getECInstanceBackupMetadata(ctx context.Context, ctrlClient ctrlclient.Clie
 	}, nil
 }
 
-// getInstanceBackupSpec returns the velero backup spec for the instance backup. This is either the
-// kotsadm backup or the combined backup if this is not using improved DR.
-func getInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata, hasAppSpec bool) (*velerov1.Backup, error) {
+// getInfrastructureInstanceBackupSpec returns the velero backup spec for the instance backup. This
+// is either the kotsadm backup or the combined backup if this is not using improved DR.
+func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata, hasAppSpec bool) (*velerov1.Backup, error) {
 	// veleroBackup is the kotsadm backup or combined backup if usesImprovedDR is false
 	veleroBackup := &velerov1.Backup{
 		ObjectMeta: metav1.ObjectMeta{
