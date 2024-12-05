@@ -897,11 +897,6 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			continue
 		}
 
-		// TODO(improveddr): support for improved DR in UI
-		if GetInstanceBackupType(veleroBackup) == InstanceBackupTypeApp {
-			continue
-		}
-
 		backup := types.Backup{
 			Name:         veleroBackup.Name,
 			Status:       string(veleroBackup.Status.Phase),
