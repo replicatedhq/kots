@@ -561,7 +561,7 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 			return nil, errors.New("backup spec is empty, this is unexpected")
 		}
 
-		appVeleroBackup = appMeta.kotsKinds.Backup
+		appVeleroBackup = appMeta.kotsKinds.Backup.DeepCopy()
 
 		appVeleroBackup.Name = ""
 		appVeleroBackup.GenerateName = "application-"
