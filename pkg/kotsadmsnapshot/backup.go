@@ -557,19 +557,11 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 			return nil, errors.New("cannot create backup for Embedded Cluster with multiple apps")
 		}
 
-		backupSpec, err := appMeta.kotsKinds.Marshal("velero.io", "v1", "Backup")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get backup spec from kotskinds")
-		}
-
-		if backupSpec == "" {
+		if appMeta.kotsKinds.Backup == nil {
 			return nil, errors.New("backup spec is empty, this is unexpected")
 		}
 
-		appVeleroBackup, err = kotsutil.LoadBackupFromContents([]byte(backupSpec))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load backup from contents")
-		}
+		appVeleroBackup = appMeta.kotsKinds.Backup
 
 		appVeleroBackup.Name = ""
 		appVeleroBackup.GenerateName = "application-"
