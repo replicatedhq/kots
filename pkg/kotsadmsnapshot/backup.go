@@ -449,7 +449,7 @@ func getECInstanceBackupMetadata(ctx context.Context, ctrlClient ctrlclient.Clie
 
 // getInfrastructureInstanceBackupSpec returns the velero backup spec for the instance backup. This
 // is either the kotsadm backup or the combined backup if this is not using improved DR.
-func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata, hasAppSpec bool) (*velerov1.Backup, error) {
+func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernetes.Interface, metadata instanceBackupMetadata, hasAppBackupSpec bool) (*velerov1.Backup, error) {
 	// veleroBackup is the kotsadm backup or combined backup if usesImprovedDR is false
 	veleroBackup := &velerov1.Backup{
 		ObjectMeta: metav1.ObjectMeta{
@@ -491,7 +491,7 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 
 	for _, appMeta := range metadata.apps {
 		// Don't merge the backup spec if we are using the new improved DR.
-		if !hasAppSpec {
+		if !hasAppBackupSpec {
 			err := mergeAppBackupSpec(veleroBackup, appMeta, metadata.kotsadmNamespace, metadata.ec != nil)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to merge app backup spec")
@@ -499,7 +499,7 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 		}
 	}
 
-	veleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, veleroBackup.Annotations, metadata, hasAppSpec)
+	veleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, veleroBackup.Annotations, metadata, hasAppBackupSpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to backup")
 	}
@@ -508,7 +508,7 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 		veleroBackup.Labels = map[string]string{}
 	}
 	veleroBackup.Labels[InstanceBackupNameLabel] = metadata.backupName
-	if hasAppSpec {
+	if hasAppBackupSpec {
 		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeInfra
 	} else {
 		veleroBackup.Annotations[InstanceBackupTypeAnnotation] = InstanceBackupTypeCombined
@@ -670,7 +670,7 @@ func mergeAppBackupSpec(backup *velerov1.Backup, appMeta appInstanceBackupMetada
 }
 
 // appendCommonAnnotations appends common annotations to the backup annotations
-func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata, hasAppSpec bool) (map[string]string, error) {
+func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata, hasAppBackupSpec bool) (map[string]string, error) {
 	kotsadmImage, err := k8sutil.FindKotsadmImage(k8sClient, metadata.kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
@@ -704,7 +704,7 @@ func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[str
 	marshalledAppVersions := string(b)
 
 	numBackups := 1
-	if hasAppSpec {
+	if hasAppBackupSpec {
 		numBackups = 2
 	}
 

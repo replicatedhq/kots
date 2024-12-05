@@ -957,10 +957,10 @@ func Test_appendCommonAnnotations(t *testing.T) {
 	}
 
 	type args struct {
-		k8sClient   kubernetes.Interface
-		annotations map[string]string
-		metadata    instanceBackupMetadata
-		hasAppSpec  bool
+		k8sClient        kubernetes.Interface
+		annotations      map[string]string
+		metadata         instanceBackupMetadata
+		hasAppBackupSpec bool
 	}
 	tests := []struct {
 		name    string
@@ -1010,7 +1010,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 					snapshotTTL: 24 * time.Hour,
 					ec:          nil,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			want: map[string]string{
 				"kots.io/apps-sequences":           "{\"app-1\":1,\"app-2\":2}",
@@ -1075,7 +1075,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 						seaweedFSS3ServiceIP: "10.96.0.10",
 					},
 				},
-				hasAppSpec: true,
+				hasAppBackupSpec: true,
 			},
 			want: map[string]string{
 				"kots.io/apps-sequences":                              "{\"app-1\":1}",
@@ -1106,7 +1106,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(t)
 			}
-			got, err := appendCommonAnnotations(tt.args.k8sClient, tt.args.annotations, tt.args.metadata, tt.args.hasAppSpec)
+			got, err := appendCommonAnnotations(tt.args.k8sClient, tt.args.annotations, tt.args.metadata, tt.args.hasAppBackupSpec)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -2103,9 +2103,9 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 	}
 
 	type args struct {
-		k8sClient  kubernetes.Interface
-		metadata   instanceBackupMetadata
-		hasAppSpec bool
+		k8sClient        kubernetes.Interface
+		metadata         instanceBackupMetadata
+		hasAppBackupSpec bool
 	}
 	tests := []struct {
 		name   string
@@ -2135,7 +2135,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          nil,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2171,7 +2171,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          nil,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2206,7 +2206,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          nil,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2235,7 +2235,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          nil,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2279,7 +2279,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          nil,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2311,7 +2311,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          ecMeta,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2344,7 +2344,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          ecMeta,
 				},
-				hasAppSpec: true,
+				hasAppBackupSpec: true,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2379,7 +2379,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          ecMeta,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2411,7 +2411,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          ecMeta,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2444,7 +2444,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					snapshotTTL: 24 * time.Hour,
 					ec:          ecMeta,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2476,7 +2476,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          ecMeta,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2508,7 +2508,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					isScheduled: true,
 					ec:          ecMeta,
 				},
-				hasAppSpec: false,
+				hasAppBackupSpec: false,
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
@@ -2537,7 +2537,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(t, mockStore)
 			}
-			got, err := getInfrastructureInstanceBackupSpec(context.Background(), tt.args.k8sClient, tt.args.metadata, tt.args.hasAppSpec)
+			got, err := getInfrastructureInstanceBackupSpec(context.Background(), tt.args.k8sClient, tt.args.metadata, tt.args.hasAppBackupSpec)
 			tt.assert(t, got, err)
 		})
 	}
