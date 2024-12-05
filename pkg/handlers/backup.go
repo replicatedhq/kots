@@ -206,7 +206,7 @@ func (h *Handler) CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 	}
 	c := clusters[0]
 
-	backup, err := snapshot.CreateInstanceBackup(context.TODO(), c, false)
+	backupName, err := snapshot.CreateInstanceBackup(context.TODO(), c, false)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create instance snapshot"))
 		createInstanceBackupResponse.Error = "failed to create instance backup"
@@ -215,7 +215,7 @@ func (h *Handler) CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createInstanceBackupResponse.Success = true
-	createInstanceBackupResponse.BackupName = backup.ObjectMeta.Name
+	createInstanceBackupResponse.BackupName = backupName
 
 	JSON(w, http.StatusOK, createInstanceBackupResponse)
 }

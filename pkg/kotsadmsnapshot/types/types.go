@@ -6,6 +6,29 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
+const (
+	// InstanceBackupNameLabel is the label used to store the name of the backup for an instance
+	// backup.
+	InstanceBackupNameLabel = "replicated.com/backup-name"
+	// InstanceBackupTypeAnnotation is the annotation used to store the type of backup for an
+	// instance backup.
+	InstanceBackupTypeAnnotation = "replicated.com/backup-type"
+	// InstanceBackupCountAnnotation is the annotation used to store the expected number of backups
+	// for an instance backup.
+	InstanceBackupCountAnnotation = "replicated.com/backup-count"
+
+	// InstanceBackupTypeInfra indicates that the backup is of type infrastructure.
+	InstanceBackupTypeInfra = "infra"
+	// InstanceBackupTypeApp indicates that the backup is of type application.
+	InstanceBackupTypeApp = "app"
+	// InstanceBackupTypeLegacy indicates that the backup is of type legacy (infra + app).
+	InstanceBackupTypeLegacy = "legacy"
+
+	// InstanceBackupAnnotation is the annotation used to indicate that a backup is an instance
+	// backup.
+	InstanceBackupAnnotation = "kots.io/instance"
+)
+
 type App struct {
 	Slug       string `json:"slug"`
 	Sequence   int64  `json:"sequence"`
