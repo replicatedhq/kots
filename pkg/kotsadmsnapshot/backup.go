@@ -840,41 +840,42 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 	return backups, nil
 }
 
-func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.Backup, error) {
+func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.Backup, []*types.ReplicatedBackup, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
+		return nil, nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, nil, errors.Wrap(err, "failed to create clientset")
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return nil, nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
 	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
+		return nil, nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
 	if backendStorageLocation == nil {
-		return nil, errors.New("no backup store location found")
+		return nil, nil, errors.New("no backup store location found")
 	}
 
 	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list velero backups")
+		return nil, nil, errors.Wrap(err, "failed to list velero backups")
 	}
 
 	backups := []*types.Backup{}
+	replicatedBackupsMap := map[string]*types.ReplicatedBackup{}
 
 	for _, veleroBackup := range veleroBackups.Items {
 		// TODO: Enforce version?
-		if !IsInstanceBackup(veleroBackup) {
+		if veleroBackup.Annotations["kots.io/instance"] != "true" {
 			continue
 		}
 
@@ -906,7 +907,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		if volumeCountOk {
 			i, err := strconv.Atoi(volumeCount)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-count")
+				return nil, nil, errors.Wrap(err, "failed to convert volume-count")
 			}
 			backup.VolumeCount = i
 		}
@@ -915,7 +916,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		if volumeSuccessCountOk {
 			i, err := strconv.Atoi(volumeSuccessCount)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-success-count")
+				return nil, nil, errors.Wrap(err, "failed to convert volume-success-count")
 			}
 			backup.VolumeSuccessCount = i
 		}
@@ -924,7 +925,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		if volumeBytesOk {
 			i, err := strconv.ParseInt(volumeBytes, 10, 64)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-bytes")
+				return nil, nil, errors.Wrap(err, "failed to convert volume-bytes")
 			}
 			backup.VolumeBytes = i
 			backup.VolumeSizeHuman = units.HumanSize(float64(i))
@@ -934,7 +935,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		if len(appAnnotationStr) > 0 {
 			var apps map[string]int64
 			if err := json.Unmarshal([]byte(appAnnotationStr), &apps); err != nil {
-				return nil, errors.Wrap(err, "failed to unmarshal apps sequences")
+				return nil, nil, errors.Wrap(err, "failed to unmarshal apps sequences")
 			}
 			for slug, sequence := range apps {
 				a, err := store.GetStore().GetAppFromSlug(slug)
@@ -943,7 +944,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 						// app might not exist in current installation
 						continue
 					}
-					return nil, errors.Wrap(err, "failed to get app from slug")
+					return nil, nil, errors.Wrap(err, "failed to get app from slug")
 				}
 
 				backup.IncludedApps = append(backup.IncludedApps, types.App{
@@ -960,7 +961,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 				// save computed summary as annotations if snapshot is finished
 				volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
 				if err != nil {
-					return nil, errors.Wrap(err, "failed to get volume summary")
+					return nil, nil, errors.Wrap(err, "failed to get volume summary")
 				}
 
 				backup.VolumeCount = volumeSummary.VolumeCount
@@ -970,10 +971,28 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			}
 		}
 
-		backups = append(backups, &backup)
+		if GetInstanceBackupType(veleroBackup) == types.InstanceBackupTypeLegacy {
+
+			backups = append(backups, &backup)
+		} else {
+			backupName := GetBackupName(veleroBackup)
+			if _, ok := replicatedBackupsMap[backupName]; !ok {
+				replicatedBackupsMap[backupName] = &types.ReplicatedBackup{
+					Name:                backupName,
+					Backups:             []types.Backup{},
+					ExpectedBackupCount: GetInstanceBackupCount(veleroBackup),
+				}
+			}
+			replicatedBackupsMap[backupName].Backups = append(replicatedBackupsMap[backupName].Backups, backup)
+		}
 	}
 
-	return backups, nil
+	replicatedBackups := []*types.ReplicatedBackup{}
+	for _, rb := range replicatedBackups {
+		replicatedBackups = append(replicatedBackups, rb)
+	}
+
+	return backups, replicatedBackups, nil
 }
 
 func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup) (*types.VolumeSummary, error) {
@@ -1122,12 +1141,20 @@ func HasUnfinishedApplicationBackup(ctx context.Context, kotsadmNamespace string
 }
 
 func HasUnfinishedInstanceBackup(ctx context.Context, kotsadmNamespace string) (bool, error) {
-	backups, err := ListInstanceBackups(ctx, kotsadmNamespace)
+	backups, replicatedBackups, err := ListInstanceBackups(ctx, kotsadmNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list backups")
 	}
+	allBackups := backups
 
-	for _, backup := range backups {
+	for _, replicatedBackup := range replicatedBackups {
+		for _, backup := range replicatedBackup.Backups {
+
+			allBackups = append(allBackups, &backup)
+		}
+	}
+
+	for _, backup := range allBackups {
 		if backup.Status == "New" || backup.Status == "InProgress" {
 			return true, nil
 		}
