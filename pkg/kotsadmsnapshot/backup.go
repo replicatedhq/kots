@@ -875,7 +875,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 
 	for _, veleroBackup := range veleroBackups.Items {
 		// TODO: Enforce version?
-		if veleroBackup.Annotations["kots.io/instance"] != "true" {
+		if !IsInstanceBackup(veleroBackup) {
 			continue
 		}
 
@@ -1149,7 +1149,6 @@ func HasUnfinishedInstanceBackup(ctx context.Context, kotsadmNamespace string) (
 
 	for _, replicatedBackup := range replicatedBackups {
 		for _, backup := range replicatedBackup.Backups {
-
 			allBackups = append(allBackups, &backup)
 		}
 	}
