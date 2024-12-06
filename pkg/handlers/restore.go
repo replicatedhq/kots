@@ -47,6 +47,14 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if snapshot.IsInstanceBackup(*backup) && snapshot.GetInstanceBackupType(*backup) != snapshottypes.InstanceBackupTypeLegacy {
+		err := errors.New("only legacy type instance backups are restorable")
+		logger.Error(err)
+		createRestoreResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
+		return
+	}
+
 	appID := backup.Annotations["kots.io/app-id"]
 	sequence, err := strconv.ParseInt(backup.Annotations["kots.io/app-sequence"], 10, 64)
 	if err != nil {
@@ -149,7 +157,7 @@ func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if backup.Annotations["kots.io/instance"] != "true" {
+	if backup.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
 		err := errors.Errorf("backup %s is not an instance backup", backup.ObjectMeta.Name)
 		logger.Error(err)
 		restoreResponse.Error = err.Error()
@@ -244,7 +252,7 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if backup.Annotations["kots.io/instance"] != "true" {
+	if backup.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
 		err := errors.Errorf("backup %s is not an instance backup", backup.ObjectMeta.Name)
 		logger.Error(err)
 		response.Error = err.Error()

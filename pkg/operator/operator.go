@@ -603,7 +603,7 @@ func (o *Operator) handleUndeployCompleted(a *apptypes.App) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get backup")
 	}
-	if backup.Annotations["kots.io/instance"] == "true" {
+	if snapshot.IsInstanceBackup(*backup) {
 		restoreName = fmt.Sprintf("%s.%s", snapshotName, a.Slug)
 	}
 
@@ -643,7 +643,7 @@ func (o *Operator) checkRestoreComplete(a *apptypes.App, restore *velerov1.Resto
 		}
 
 		var sequence int64 = 0
-		if backupAnnotations["kots.io/instance"] == "true" {
+		if snapshot.IsInstanceBackup(*backup) {
 			b, ok := backupAnnotations["kots.io/apps-sequences"]
 			if !ok || b == "" {
 				return errors.New("instance backup is missing apps sequences annotation")
