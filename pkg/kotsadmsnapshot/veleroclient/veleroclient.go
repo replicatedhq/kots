@@ -26,12 +26,12 @@ func (b *Builder) GetVeleroClient(cfg *rest.Config) (veleroclientv1.VeleroV1Inte
 
 type MockBuilder struct {
 	Client veleroclientv1.VeleroV1Interface
-	err    error
+	Err    error
 }
 
 // GetVeleroClient returns the client that was set in the struct.
 func (b *MockBuilder) GetVeleroClient(cfg *rest.Config) (veleroclientv1.VeleroV1Interface, error) {
-	return b.Client, b.err
+	return b.Client, b.Err
 }
 
 var clientBuilder VeleroClientBuilder

@@ -982,11 +982,10 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			}
 		}
 		replicatedBackupsMap[backupName].Backups = append(replicatedBackupsMap[backupName].Backups, backup)
-
 	}
 
 	replicatedBackups := []*types.ReplicatedBackup{}
-	for _, rb := range replicatedBackups {
+	for _, rb := range replicatedBackupsMap {
 		replicatedBackups = append(replicatedBackups, rb)
 	}
 
