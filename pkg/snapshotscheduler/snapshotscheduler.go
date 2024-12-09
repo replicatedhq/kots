@@ -203,15 +203,15 @@ func handleCluster(c *downstreamtypes.Downstream) error {
 		return nil
 	}
 
-	backup, err := snapshot.CreateInstanceBackup(context.Background(), c, true)
+	backupName, err := snapshot.CreateInstanceBackup(context.Background(), c, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to create instance backup")
 	}
 
-	if err := store.GetStore().UpdateScheduledInstanceSnapshot(next.ID, backup.ObjectMeta.Name); err != nil {
+	if err := store.GetStore().UpdateScheduledInstanceSnapshot(next.ID, backupName); err != nil {
 		return errors.Wrap(err, "failed to update scheduled instance snapshot")
 	}
-	logger.Infof("Created instance backup %s from scheduled instance snapshot %s", backup.ObjectMeta.Name, next.ID)
+	logger.Infof("Created instance backup %s from scheduled instance snapshot %s", backupName, next.ID)
 
 	if len(pending) > 1 {
 		err := store.GetStore().DeletePendingScheduledInstanceSnapshots(c.ClusterID)

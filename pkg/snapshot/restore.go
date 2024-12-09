@@ -72,8 +72,12 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	}
 
 	// make sure this is an instance backup
-	if backup.Annotations["kots.io/instance"] != "true" {
+	if backup.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
 		return errors.Wrap(err, "backup provided is not an instance backup")
+	}
+
+	if getInstanceBackupType(*backup) != snapshottypes.InstanceBackupTypeLegacy {
+		return errors.New("only legacy type instance backups are restorable")
 	}
 
 	kotsadmImage, ok := backup.Annotations["kots.io/kotsadm-image"]
@@ -123,15 +127,15 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 		restore := &velerov1.Restore{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: veleroNamespace,
-				Name:      fmt.Sprintf("%s.kotsadm", options.BackupName),
+				Name:      fmt.Sprintf("%s.kotsadm", backup.Name),
 				Annotations: map[string]string{
-					"kots.io/instance":                 "true",
-					"kots.io/kotsadm-image":            kotsadmImage,
-					"kots.io/kotsadm-deploy-namespace": kotsadmNamespace,
+					snapshottypes.InstanceBackupAnnotation: "true",
+					"kots.io/kotsadm-image":                kotsadmImage,
+					"kots.io/kotsadm-deploy-namespace":     kotsadmNamespace,
 				},
 			},
 			Spec: velerov1.RestoreSpec{
-				BackupName: options.BackupName,
+				BackupName: backup.Name,
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue, // restoring applications is in a separate step after kotsadm spins up
@@ -200,7 +204,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 		}
 
 		// initiate kotsadm applications restore
-		err = initiateKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, log)
+		err = initiateKotsadmApplicationsRestore(backup.Name, kotsadmNamespace, kotsadmPodName, log)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "failed to restore kotsadm applications")
@@ -208,7 +212,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 
 		if options.WaitForApps {
 			// wait for applications restore to finish
-			err = waitForKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, log)
+			err = waitForKotsadmApplicationsRestore(backup.Name, kotsadmNamespace, kotsadmPodName, log)
 			if err != nil {
 				if _, ok := errors.Cause(err).(*kotsadmtypes.ErrorAppsRestore); ok {
 					log.FinishSpinnerWithError()
@@ -282,7 +286,7 @@ func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptio
 	restores := []velerov1.Restore{}
 
 	for _, restore := range r.Items {
-		if restore.Annotations["kots.io/instance"] != "true" {
+		if restore.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
 			continue
 		}
 
@@ -328,7 +332,7 @@ func waitForVeleroRestoreCompleted(ctx context.Context, veleroNamespace string, 
 	}
 }
 
-func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, log *logger.CLILogger) error {
+func initiateKotsadmApplicationsRestore(backupID string, kotsadmNamespace string, kotsadmPodName string, log *logger.CLILogger) error {
 	getPodName := func() (string, error) {
 		return kotsadmPodName, nil
 	}
@@ -361,7 +365,7 @@ func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace stri
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
 	}
 
-	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/%s/restore-apps", localPort, backupName)
+	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/%s/restore-apps", localPort, backupID)
 
 	requestPayload := map[string]interface{}{
 		"restoreAll": true,
@@ -390,7 +394,7 @@ func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace stri
 	return nil
 }
 
-func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, log *logger.CLILogger) error {
+func waitForKotsadmApplicationsRestore(backupID string, kotsadmNamespace string, kotsadmPodName string, log *logger.CLILogger) error {
 	getPodName := func() (string, error) {
 		return kotsadmPodName, nil
 	}
@@ -423,7 +427,7 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
 	}
 
-	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/%s/apps-restore-status", localPort, backupName)
+	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/%s/apps-restore-status", localPort, backupID)
 
 	for {
 		requestPayload := map[string]interface{}{
@@ -500,4 +504,12 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 
 		time.Sleep(time.Second * 2)
 	}
+}
+
+// getInstanceBackupType returns the type of the backup from the velero backup object annotation.
+func getInstanceBackupType(veleroBackup velerov1.Backup) string {
+	if val, ok := veleroBackup.GetAnnotations()[snapshottypes.InstanceBackupTypeAnnotation]; ok {
+		return val
+	}
+	return snapshottypes.InstanceBackupTypeLegacy
 }

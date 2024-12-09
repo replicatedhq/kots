@@ -67,6 +67,8 @@ spec:
         type: text
       - name: backup_spec
         type: text
+      - name: restore_spec
+        type: text
       - name: identity_spec
         type: text
       - name: branding_archive
