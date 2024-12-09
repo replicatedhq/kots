@@ -934,7 +934,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		if len(appAnnotationStr) > 0 {
 			var apps map[string]int64
 			if err := json.Unmarshal([]byte(appAnnotationStr), &apps); err != nil {
-				return nil, nil, errors.Wrap(err, "failed to unmarshal apps sequences")
+				return nil, errors.Wrap(err, "failed to unmarshal apps sequences")
 			}
 			for slug, sequence := range apps {
 				a, err := store.GetStore().GetAppFromSlug(slug)
