@@ -399,7 +399,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 									MountPath: "/.minio/",
 								},
 							},
-							Args: []string{"--quiet", "server", "data"},
+							Args: []string{"server", "data"},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{

@@ -155,7 +155,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 							Command: []string{
 								"/bin/sh",
 								"-ce",
-								"minio -C /home/minio/.minio/ --quiet server /export",
+								"minio -C /home/minio/.minio/ server /export",
 							},
 							Ports: []corev1.ContainerPort{
 								{
