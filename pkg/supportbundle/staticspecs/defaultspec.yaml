@@ -59,6 +59,11 @@ spec:
         selector:
           - app=kotsadm-dex
     - logs:
+        collectorName: kotsadm-minio
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-minio
+    - logs:
         collectorName: kotsadm-fs-minio
         name: kots/admin_console
         selector:
