@@ -26,12 +26,12 @@ func (b *Builder) GetClientset(cfg *rest.Config) (kubernetes.Interface, error) {
 
 type MockBuilder struct {
 	Client kubernetes.Interface
-	err    error
+	Err    error
 }
 
 // GetClientset returns the client that was set in the struct.
 func (b *MockBuilder) GetClientset(cfg *rest.Config) (kubernetes.Interface, error) {
-	return b.Client, b.err
+	return b.Client, b.Err
 }
 
 var clientBuilder K8sClientsetBuilder
