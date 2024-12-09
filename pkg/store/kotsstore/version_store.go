@@ -614,6 +614,10 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal backup spec")
 	}
+	restoreSpec, err := kotsKinds.Marshal("velero.io", "v1", "Restore")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal restore spec")
+	}
 	identitySpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Identity")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal identity spec")
@@ -644,8 +648,8 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 	}
 
 	query := `insert into app_version (app_id, sequence, created_at, version_label, is_required, release_notes, update_cursor, channel_id, channel_name, upstream_released_at, encryption_key,
-		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, identity_spec, branding_archive, embeddedcluster_config)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, restore_spec, identity_spec, branding_archive, embeddedcluster_config)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(app_id, sequence) DO UPDATE SET
 		created_at = EXCLUDED.created_at,
 		version_label = EXCLUDED.version_label,
@@ -666,6 +670,7 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 		config_spec = EXCLUDED.config_spec,
 		config_values = EXCLUDED.config_values,
 		backup_spec = EXCLUDED.backup_spec,
+		restore_spec = EXCLUDED.restore_spec,
 		identity_spec = EXCLUDED.identity_spec,
 		branding_archive = EXCLUDED.branding_archive,
 		embeddedcluster_config = EXCLUDED.embeddedcluster_config`
@@ -694,6 +699,7 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 			configSpec,
 			configValuesSpec,
 			backupSpec,
+			restoreSpec,
 			identitySpec,
 			base64.StdEncoding.EncodeToString(brandingArchive),
 			embeddedClusterConfig,

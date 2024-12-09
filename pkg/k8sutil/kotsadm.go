@@ -21,12 +21,7 @@ const (
 	KotsadmIDConfigMapName = "kotsadm-id"
 )
 
-func FindKotsadmImage(namespace string) (string, error) {
-	clientset, err := GetClientset()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get k8s client set")
-	}
-
+func FindKotsadmImage(clientset kubernetes.Interface, namespace string) (string, error) {
 	var containers []corev1.Container
 	if os.Getenv("POD_OWNER_KIND") == "deployment" {
 		kotsadmDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
