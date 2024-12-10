@@ -9,7 +9,9 @@ import (
 	"github.com/pkg/errors"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	flag "github.com/spf13/pflag"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
@@ -162,6 +164,26 @@ func GetKubeClient(ctx context.Context) (kbclient.Client, error) {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 	kcli, err := kbclient.New(cfg, kbclient.Options{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create kubebuilder client")
+	}
+	return kcli, nil
+}
+
+func GetVeleroKubeClient(ctx context.Context) (kbclient.Client, error) {
+	k8slogger := zap.New(func(o *zap.Options) {
+		o.DestWriter = io.Discard
+	})
+	log.SetLogger(k8slogger)
+	cfg, err := GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+	scheme := runtime.NewScheme()
+	velerov1.AddToScheme(scheme)
+	kcli, err := kbclient.New(cfg, kbclient.Options{
+		Scheme: scheme,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubebuilder client")
 	}
