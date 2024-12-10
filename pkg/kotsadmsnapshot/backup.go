@@ -626,6 +626,9 @@ func mergeAppBackupSpec(backup *velerov1.Backup, appMeta appInstanceBackupMetada
 	// excluded namespaces
 	backup.Spec.ExcludedNamespaces = append(backup.Spec.ExcludedNamespaces, kotskindsBackup.Spec.ExcludedNamespaces...)
 
+	// or label selectors
+	backup.Spec.OrLabelSelectors = append(backup.Spec.OrLabelSelectors, kotskindsBackup.Spec.OrLabelSelectors...)
+
 	// annotations
 	if len(kotskindsBackup.ObjectMeta.Annotations) > 0 {
 		if backup.Annotations == nil {
