@@ -271,14 +271,14 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 	}
 
-	logger.Infof("Creating instance backup CR %s", veleroBackup.Name)
+	logger.Infof("Creating instance backup CR %s", veleroBackup.GenerateName)
 	backup, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create velero backup")
 	}
 
 	if appVeleroBackup != nil {
-		logger.Infof("Creating instance app backup CR %s", appVeleroBackup.Name)
+		logger.Infof("Creating instance app backup CR %s", appVeleroBackup.GenerateName)
 		_, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, appVeleroBackup, metav1.CreateOptions{})
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create application velero backup")
@@ -492,7 +492,7 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 		}
 	}
 
-	veleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, veleroBackup.Annotations, metadata, hasAppBackup)
+	veleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, veleroBackup.Annotations, metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to backup")
 	}
@@ -521,13 +521,11 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 	return veleroBackup, nil
 }
 
-var EnableImprovedDR = false
-
 // getAppInstanceBackup returns a backup spec only if this is Embedded Cluster and the vendor has
 // defined both a backup and restore custom resource (improved DR).
 func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (*velerov1.Backup, error) {
 	// TODO(improveddr): remove this once we have fully implemented the improved DR
-	if !EnableImprovedDR {
+	if os.Getenv("ENABLE_IMPROVED_DR") != "true" {
 		return nil, nil
 	}
 
@@ -564,7 +562,7 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 	}
 
 	var err error
-	appVeleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, appVeleroBackup.Annotations, metadata, true)
+	appVeleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, appVeleroBackup.Annotations, metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to application backup")
 	}
@@ -656,7 +654,7 @@ func mergeAppBackupSpec(backup *velerov1.Backup, appMeta appInstanceBackupMetada
 }
 
 // appendCommonAnnotations appends common annotations to the backup annotations
-func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata, hasAppBackup bool) (map[string]string, error) {
+func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata) (map[string]string, error) {
 	kotsadmImage, err := k8sutil.FindKotsadmImage(k8sClient, metadata.kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kotsadm image")

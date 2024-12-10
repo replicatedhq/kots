@@ -961,10 +961,9 @@ func Test_appendCommonAnnotations(t *testing.T) {
 	}
 
 	type args struct {
-		k8sClient    kubernetes.Interface
-		annotations  map[string]string
-		metadata     instanceBackupMetadata
-		hasAppBackup bool
+		k8sClient   kubernetes.Interface
+		annotations map[string]string
+		metadata    instanceBackupMetadata
 	}
 	tests := []struct {
 		name    string
@@ -1014,7 +1013,6 @@ func Test_appendCommonAnnotations(t *testing.T) {
 					snapshotTTL: 24 * time.Hour,
 					ec:          nil,
 				},
-				hasAppBackup: false,
 			},
 			want: map[string]string{
 				"kots.io/apps-sequences":           "{\"app-1\":1,\"app-2\":2}",
@@ -1078,7 +1076,6 @@ func Test_appendCommonAnnotations(t *testing.T) {
 						seaweedFSS3ServiceIP: "10.96.0.10",
 					},
 				},
-				hasAppBackup: true,
 			},
 			want: map[string]string{
 				"kots.io/apps-sequences":                              "{\"app-1\":1}",
@@ -1108,7 +1105,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(t)
 			}
-			got, err := appendCommonAnnotations(tt.args.k8sClient, tt.args.annotations, tt.args.metadata, tt.args.hasAppBackup)
+			got, err := appendCommonAnnotations(tt.args.k8sClient, tt.args.annotations, tt.args.metadata)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -1544,11 +1541,6 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 }
 
 func Test_getAppInstanceBackupSpec(t *testing.T) {
-	EnableImprovedDR = true
-	t.Cleanup(func() {
-		EnableImprovedDR = false
-	})
-
 	kotsadmSts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
@@ -1974,6 +1966,8 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("ENABLE_IMPROVED_DR", "true")
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 

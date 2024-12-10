@@ -238,7 +238,8 @@ func applicationPullSecretLabels() map[string]string {
 	var secretLabels map[string]string
 	if util.IsEmbeddedCluster() {
 		secretLabels = map[string]string{
-			kotsadmtypes.DisasterRecoveryLabel: kotsadmtypes.DisasterRecoveryLabelValueApp,
+			kotsadmtypes.DisasterRecoveryLabel:      kotsadmtypes.DisasterRecoveryLabelValueInfra,
+			kotsadmtypes.DisasterRecoveryChartLabel: kotsadmtypes.DisasterRecoveryChartValue,
 		}
 	}
 
