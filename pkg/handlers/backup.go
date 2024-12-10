@@ -110,21 +110,21 @@ func (h *Handler) ListBackups(w http.ResponseWriter, r *http.Request) {
 }
 
 type ListInstanceBackupsResponse struct {
-	Error   string                  `json:"error,omitempty"`
-	Backups []*snapshottypes.Backup `json:"backups"`
+	Error   string                            `json:"error,omitempty"`
+	Backups []*snapshottypes.ReplicatedBackup `json:"backups"`
 }
 
 func (h *Handler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
 	listBackupsResponse := ListInstanceBackupsResponse{}
 
-	backups, err := snapshot.ListInstanceBackups(r.Context(), util.PodNamespace)
+	replicatedBackups, err := snapshot.ListInstanceBackups(r.Context(), util.PodNamespace)
 	if err != nil {
 		logger.Error(err)
 		listBackupsResponse.Error = "failed to list instance backups"
 		JSON(w, http.StatusInternalServerError, listBackupsResponse)
 		return
 	}
-	listBackupsResponse.Backups = backups
+	listBackupsResponse.Backups = replicatedBackups
 
 	JSON(w, http.StatusOK, listBackupsResponse)
 }
