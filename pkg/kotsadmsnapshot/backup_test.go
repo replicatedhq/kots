@@ -1259,6 +1259,13 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 							Spec: velerov1.BackupSpec{
 								IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-{{repl IsAirgap }}"},
 								ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+								OrLabelSelectors: []*metav1.LabelSelector{
+									{
+										MatchLabels: map[string]string{
+											"app": "app-1",
+										},
+									},
+								},
 								OrderedResources: map[string]string{
 									"resource-1": "true",
 									"resource-2": "false",
@@ -1299,6 +1306,13 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					StorageLocation:    "default",
 					IncludedNamespaces: []string{"kotsadm", "another-namespace-1", "another-namespace-2", "include-namespace-1", "include-namespace-2", "template-isairgap-true"},
 					ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+					OrLabelSelectors: []*metav1.LabelSelector{
+						{
+							MatchLabels: map[string]string{
+								"app": "app-1",
+							},
+						},
+					},
 					OrderedResources: map[string]string{
 						"resource-1": "true",
 						"resource-2": "false",
@@ -1431,6 +1445,13 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 							Spec: velerov1.BackupSpec{
 								IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-{{repl IsAirgap }}"},
 								ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+								OrLabelSelectors: []*metav1.LabelSelector{
+									{
+										MatchLabels: map[string]string{
+											"app": "app-1",
+										},
+									},
+								},
 								OrderedResources: map[string]string{
 									"resource-1": "true",
 									"resource-2": "false",
@@ -1471,6 +1492,13 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					StorageLocation:    "default",
 					IncludedNamespaces: []string{"kotsadm", "another-namespace-1", "another-namespace-2", "include-namespace-1", "include-namespace-2", "template-isairgap-true"},
 					ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+					OrLabelSelectors: []*metav1.LabelSelector{
+						{
+							MatchLabels: map[string]string{
+								"app": "app-1",
+							},
+						},
+					},
 					OrderedResources: map[string]string{
 						"resource-1": "true",
 						"resource-2": "false",
