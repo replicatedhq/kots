@@ -552,7 +552,8 @@ func TestGetDockerHubPullSecret(t *testing.T) {
 						"helm.sh/hook-weight":    "-9999",
 					},
 					Labels: map[string]string{
-						"replicated.com/disaster-recovery": "app",
+						"replicated.com/disaster-recovery":       "infra",
+						"replicated.com/disaster-recovery-chart": "admin-console",
 					},
 				},
 				Type: corev1.SecretTypeDockerConfigJson,
