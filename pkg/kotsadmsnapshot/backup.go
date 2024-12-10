@@ -523,7 +523,7 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 // defined both a backup and restore custom resource (improved DR).
 func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (*velerov1.Backup, error) {
 	// TODO(improveddr): remove this once we have fully implemented the improved DR
-	if os.Getenv("ENABLE_IMPROVED_DR") == "true" {
+	if os.Getenv("ENABLE_IMPROVED_DR") != "true" {
 		return nil, nil
 	}
 
