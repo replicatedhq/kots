@@ -1509,8 +1509,6 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 }
 
 func Test_getAppInstanceBackupSpec(t *testing.T) {
-	t.Setenv("ENABLE_IMPROVED_DR", "true")
-
 	kotsadmSts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
@@ -1936,6 +1934,8 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("ENABLE_IMPROVED_DR", "true")
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
