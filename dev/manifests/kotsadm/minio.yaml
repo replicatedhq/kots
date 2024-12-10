@@ -70,7 +70,6 @@ spec:
         volumeMounts:
           - mountPath: /data
             name: miniodata  # this is where the data is stored
-
   volumeClaimTemplates:
   - metadata:
       name: miniodata

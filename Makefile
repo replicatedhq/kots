@@ -125,7 +125,7 @@ debug-build:
 
 .PHONY: debug
 debug: debug-build
-	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-debug api
+	LOG_LEVEL=$(LOG_LEVEL) /dlv --listen=:30001 --headless=true --api-version=2 exec ./bin/kotsadm-debug api
 
 .PHONY: web
 web:
