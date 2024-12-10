@@ -82,7 +82,7 @@ func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
 		// if this is a keep resource, don't delete it
 		// e.g. for migration to Helm v1beta2
 		if keep, ok := o.Metadata.Annotations["kots.io/keep"]; ok && keep == "true" {
-			logger.Infof("Skipping deletion of resource %s/%s", o.Kind, o.Metadata.Name)
+			logger.Infof("skipping deletion of resource %s/%s", o.Kind, o.Metadata.Name)
 			delete = false
 		}
 
