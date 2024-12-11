@@ -1885,8 +1885,8 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 				if assert.Contains(t, got.Annotations, types.InstanceBackupCountAnnotation) {
 					assert.Equal(t, "2", got.Annotations[types.InstanceBackupCountAnnotation])
 				}
-				if assert.Contains(t, got.Annotations, types.InstanceBackupResoreSpecAnnotation) {
-					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`, got.Annotations[types.InstanceBackupResoreSpecAnnotation])
+				if assert.Contains(t, got.Annotations, types.InstanceBackupRestoreSpecAnnotation) {
+					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
 				}
 			},
 		},
@@ -3402,7 +3402,7 @@ func TestListInstanceBackups(t *testing.T) {
 	}
 }
 
-func TestGetInstanceBackupResore(t *testing.T) {
+func TestGetInstanceBackupRestore(t *testing.T) {
 	type args struct {
 		veleroBackup velerov1.Backup
 	}
@@ -3431,7 +3431,7 @@ func TestGetInstanceBackupResore(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-backup",
 						Annotations: map[string]string{
-							types.InstanceBackupResoreSpecAnnotation: `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`,
+							types.InstanceBackupRestoreSpecAnnotation: `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`,
 						},
 					},
 				},
@@ -3453,13 +3453,13 @@ func TestGetInstanceBackupResore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetInstanceBackupResore(tt.args.veleroBackup)
+			got, err := GetInstanceBackupRestore(tt.args.veleroBackup)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInstanceBackupResore() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetInstanceBackupRestore() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetInstanceBackupResore() = %v, want %v", got, tt.want)
+				t.Errorf("GetInstanceBackupRestore() = %v, want %v", got, tt.want)
 			}
 		})
 	}

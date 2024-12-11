@@ -16,9 +16,9 @@ const (
 	// InstanceBackupCountAnnotation is the annotation used to store the expected number of backups
 	// for an instance backup.
 	InstanceBackupCountAnnotation = "replicated.com/backup-count"
-	// InstanceBackupResoreSpecAnnotation is the annotation used to store the corresponding restore
+	// InstanceBackupRestoreSpecAnnotation is the annotation used to store the corresponding restore
 	// spec for an instance backup.
-	InstanceBackupResoreSpecAnnotation = "replicated.com/restore-spec"
+	InstanceBackupRestoreSpecAnnotation = "replicated.com/restore-spec"
 
 	// InstanceBackupTypeInfra indicates that the backup is of type infrastructure.
 	InstanceBackupTypeInfra = "infra"

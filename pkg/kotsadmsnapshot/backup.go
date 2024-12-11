@@ -327,10 +327,9 @@ func GetInstanceBackupCount(veleroBackup velerov1.Backup) int {
 	return 1
 }
 
-// GetInstanceBackupCount returns the expected number of backups from the velero backup object
-// annotation.
-func GetInstanceBackupResore(veleroBackup velerov1.Backup) (*velerov1.Restore, error) {
-	restoreSpec := veleroBackup.GetAnnotations()[types.InstanceBackupResoreSpecAnnotation]
+// GetInstanceBackupCount returns the restore CR from the velero backup object annotation.
+func GetInstanceBackupRestore(veleroBackup velerov1.Backup) (*velerov1.Restore, error) {
+	restoreSpec := veleroBackup.GetAnnotations()[types.InstanceBackupRestoreSpecAnnotation]
 	if restoreSpec == "" {
 		return nil, nil
 	}
@@ -603,7 +602,7 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 	appVeleroBackup.Labels[types.InstanceBackupNameLabel] = metadata.backupName
 	appVeleroBackup.Annotations[types.InstanceBackupTypeAnnotation] = types.InstanceBackupTypeApp
 	appVeleroBackup.Annotations[types.InstanceBackupCountAnnotation] = strconv.Itoa(2)
-	appVeleroBackup.Annotations[types.InstanceBackupResoreSpecAnnotation] = restoreSpec
+	appVeleroBackup.Annotations[types.InstanceBackupRestoreSpecAnnotation] = restoreSpec
 
 	appVeleroBackup.Spec.StorageLocation = "default"
 
