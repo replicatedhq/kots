@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
@@ -39,8 +40,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -236,7 +239,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 
 	ctrlClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get kubeclient: %w", err)
+		return "", errors.Wrap(err, "failed to get kubeclient")
 	}
 
 	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
@@ -324,6 +327,31 @@ func GetInstanceBackupCount(veleroBackup velerov1.Backup) int {
 	return 1
 }
 
+// GetInstanceBackupCount returns the expected number of backups from the velero backup object
+// annotation.
+func GetInstanceBackupResore(veleroBackup velerov1.Backup) (*velerov1.Restore, error) {
+	restoreSpec := veleroBackup.GetAnnotations()[types.InstanceBackupResoreSpecAnnotation]
+	if restoreSpec == "" {
+		return nil, nil
+	}
+
+	restore, err := kotsutil.LoadRestoreFromContents([]byte(restoreSpec))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load restore from contents")
+	}
+
+	return restore, nil
+}
+
+func encodeRestoreSpec(restore *velerov1.Restore) (string, error) {
+	var b bytes.Buffer
+	s := serializer.NewSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme, false)
+	if err := s.Encode(restore, &b); err != nil {
+		return "", errors.Wrap(err, "failed to encode restore")
+	}
+	return strings.TrimSpace(b.String()), nil
+}
+
 // getInstanceBackupMetadata returns metadata about the instance backup for use in creating an
 // instance backup.
 func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, ctrlClient ctrlclient.Client, veleroClient veleroclientv1.VeleroV1Interface, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
@@ -391,7 +419,7 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 
 		kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 		if err != nil {
-			return metadata, errors.Wrap(err, "failed to load kots kinds from path")
+			return metadata, errors.Wrapf(err, "failed to load kots kinds from path for app %s", app.Slug)
 		}
 
 		metadata.apps[app.Slug] = appInstanceBackupMetadata{
@@ -426,12 +454,12 @@ func getECInstanceBackupMetadata(ctx context.Context, ctrlClient ctrlclient.Clie
 
 	installation, err := embeddedcluster.GetCurrentInstallation(ctx, ctrlClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current installation: %w", err)
+		return nil, errors.Wrap(err, "failed to get current installation")
 	}
 
 	seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, ctrlClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
+		return nil, errors.Wrap(err, "failed to get seaweedfs s3 service ip")
 	}
 
 	return &ecInstanceBackupMetadata{
@@ -534,6 +562,7 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 	}
 
 	var appVeleroBackup *velerov1.Backup
+	var restore *velerov1.Restore
 
 	for _, appMeta := range metadata.apps {
 		// if there is both a backup and a restore spec this is using the new improved DR
@@ -545,11 +574,8 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 			return nil, errors.New("cannot create backup for Embedded Cluster with multiple apps")
 		}
 
-		if appMeta.kotsKinds.Backup == nil {
-			return nil, errors.New("backup spec is empty, this is unexpected")
-		}
-
 		appVeleroBackup = appMeta.kotsKinds.Backup.DeepCopy()
+		restore = appMeta.kotsKinds.Restore.DeepCopy()
 
 		appVeleroBackup.Name = ""
 		appVeleroBackup.GenerateName = "application-"
@@ -561,7 +587,11 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 		return nil, nil
 	}
 
-	var err error
+	restoreSpec, err := encodeRestoreSpec(restore)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to encode restore spec")
+	}
+
 	appVeleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, appVeleroBackup.Annotations, metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to application backup")
@@ -573,6 +603,7 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 	appVeleroBackup.Labels[types.InstanceBackupNameLabel] = metadata.backupName
 	appVeleroBackup.Annotations[types.InstanceBackupTypeAnnotation] = types.InstanceBackupTypeApp
 	appVeleroBackup.Annotations[types.InstanceBackupCountAnnotation] = strconv.Itoa(2)
+	appVeleroBackup.Annotations[types.InstanceBackupResoreSpecAnnotation] = restoreSpec
 
 	appVeleroBackup.Spec.StorageLocation = "default"
 

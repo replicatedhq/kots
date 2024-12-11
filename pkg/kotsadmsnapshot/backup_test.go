@@ -1626,7 +1626,18 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 				},
 			},
 		},
-		Restore: &velerov1.Restore{},
+		Restore: &velerov1.Restore{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "velero.io/v1",
+				Kind:       "Restore",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-restore",
+			},
+			Spec: velerov1.RestoreSpec{
+				BackupName: "test-backup",
+			},
+		},
 	}
 
 	ecMeta := &ecInstanceBackupMetadata{
@@ -1872,6 +1883,9 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 				}
 				if assert.Contains(t, got.Annotations, "replicated.com/backup-count") {
 					assert.Equal(t, "2", got.Annotations["replicated.com/backup-count"])
+				}
+				if assert.Contains(t, got.Annotations, "replicated.com/restore-spec") {
+					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`, got.Annotations["replicated.com/restore-spec"])
 				}
 			},
 		},
