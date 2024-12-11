@@ -94,6 +94,10 @@ func (s *KOTSStore) IsIdentityServiceSupportedForVersion(appID string, sequence 
 }
 
 func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error) {
+	if util.IsEmbeddedCluster() {
+		return true, nil
+	}
+
 	db := persistence.MustGetDBSession()
 	query := `select backup_spec from app_version where app_id = ? and sequence = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
