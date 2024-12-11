@@ -232,16 +232,16 @@ func responseAppFromApp(ctx context.Context, a *apptypes.App, kcb kubeclient.Kub
 		return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 	}
 
-	// check snapshots for the parent sequence of the deployed version
-	s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
-	}
-
 	var allowSnapshots bool
 	if util.IsEmbeddedCluster() {
-		allowSnapshots = s && license.Spec.IsDisasterRecoverySupported
+		allowSnapshots = license.Spec.IsDisasterRecoverySupported
 	} else {
+		// check snapshots for the parent sequence of the deployed version
+		s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
+		}
+
 		allowSnapshots = s && license.Spec.IsSnapshotSupported
 	}
 
