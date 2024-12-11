@@ -13,7 +13,6 @@ import (
 	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"github.com/vmware-tanzu/velero/pkg/cmd/cli/serverstatus"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	v1 "k8s.io/api/apps/v1"
@@ -21,10 +20,8 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
-	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -358,17 +355,9 @@ NodeAgentFound:
 }
 
 func getVersion(ctx context.Context, namespace string) (string, error) {
-	clientConfig, err := k8sutil.GetClusterConfig()
+	kbClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-	scheme := runtime.NewScheme()
-	velerov1api.AddToScheme(scheme)
-	kbClient, err := kbclient.New(clientConfig, kbclient.Options{
-		Scheme: scheme,
-	})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get velero client")
+		return "", errors.Wrap(err, "failed to get velero kube client")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)

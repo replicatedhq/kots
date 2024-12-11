@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,6 +13,9 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/k8sclient"
+	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
+	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/veleroclient"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -957,10 +961,9 @@ func Test_appendCommonAnnotations(t *testing.T) {
 	}
 
 	type args struct {
-		k8sClient    kubernetes.Interface
-		annotations  map[string]string
-		metadata     instanceBackupMetadata
-		hasAppBackup bool
+		k8sClient   kubernetes.Interface
+		annotations map[string]string
+		metadata    instanceBackupMetadata
 	}
 	tests := []struct {
 		name    string
@@ -1010,7 +1013,6 @@ func Test_appendCommonAnnotations(t *testing.T) {
 					snapshotTTL: 24 * time.Hour,
 					ec:          nil,
 				},
-				hasAppBackup: false,
 			},
 			want: map[string]string{
 				"kots.io/apps-sequences":           "{\"app-1\":1,\"app-2\":2}",
@@ -1074,7 +1076,6 @@ func Test_appendCommonAnnotations(t *testing.T) {
 						seaweedFSS3ServiceIP: "10.96.0.10",
 					},
 				},
-				hasAppBackup: true,
 			},
 			want: map[string]string{
 				"kots.io/apps-sequences":                              "{\"app-1\":1}",
@@ -1104,7 +1105,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(t)
 			}
-			got, err := appendCommonAnnotations(tt.args.k8sClient, tt.args.annotations, tt.args.metadata, tt.args.hasAppBackup)
+			got, err := appendCommonAnnotations(tt.args.k8sClient, tt.args.annotations, tt.args.metadata)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -1255,6 +1256,13 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 							Spec: velerov1.BackupSpec{
 								IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-{{repl IsAirgap }}"},
 								ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+								OrLabelSelectors: []*metav1.LabelSelector{
+									{
+										MatchLabels: map[string]string{
+											"app": "app-1",
+										},
+									},
+								},
 								OrderedResources: map[string]string{
 									"resource-1": "true",
 									"resource-2": "false",
@@ -1295,6 +1303,13 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					StorageLocation:    "default",
 					IncludedNamespaces: []string{"kotsadm", "another-namespace-1", "another-namespace-2", "include-namespace-1", "include-namespace-2", "template-isairgap-true"},
 					ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+					OrLabelSelectors: []*metav1.LabelSelector{
+						{
+							MatchLabels: map[string]string{
+								"app": "app-1",
+							},
+						},
+					},
 					OrderedResources: map[string]string{
 						"resource-1": "true",
 						"resource-2": "false",
@@ -1427,6 +1442,13 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 							Spec: velerov1.BackupSpec{
 								IncludedNamespaces: []string{"include-namespace-1", "include-namespace-2", "template-isairgap-{{repl IsAirgap }}"},
 								ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+								OrLabelSelectors: []*metav1.LabelSelector{
+									{
+										MatchLabels: map[string]string{
+											"app": "app-1",
+										},
+									},
+								},
 								OrderedResources: map[string]string{
 									"resource-1": "true",
 									"resource-2": "false",
@@ -1467,6 +1489,13 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 					StorageLocation:    "default",
 					IncludedNamespaces: []string{"kotsadm", "another-namespace-1", "another-namespace-2", "include-namespace-1", "include-namespace-2", "template-isairgap-true"},
 					ExcludedNamespaces: []string{"exclude-namespace-1", "exclude-namespace-2"},
+					OrLabelSelectors: []*metav1.LabelSelector{
+						{
+							MatchLabels: map[string]string{
+								"app": "app-1",
+							},
+						},
+					},
 					OrderedResources: map[string]string{
 						"resource-1": "true",
 						"resource-2": "false",
@@ -1512,11 +1541,6 @@ func Test_mergeAppBackupSpec(t *testing.T) {
 }
 
 func Test_getAppInstanceBackupSpec(t *testing.T) {
-	EnableImprovedDR = true
-	t.Cleanup(func() {
-		EnableImprovedDR = false
-	})
-
 	kotsadmSts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
@@ -1942,6 +1966,8 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("ENABLE_IMPROVED_DR", "true")
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -2962,6 +2988,401 @@ func Test_getBackupNameFromPrefix(t *testing.T) {
 			got := getBackupNameFromPrefix(tt.args.appSlug)
 			assert.Regexp(t, tt.want, got)
 			assert.LessOrEqual(t, len(got), validation.DNS1035LabelMaxLength)
+		})
+	}
+}
+
+func TestListInstanceBackups(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	embeddedclusterv1beta1.AddToScheme(scheme)
+
+	// setup timestamps
+	startTs := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	completionTs := time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)
+	expirationTs := time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)
+
+	// setup common mock objects
+	kotsadmNamespace := "kotsadm-test"
+	testBsl := &velerov1.BackupStorageLocation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "velero",
+		},
+		Spec: velerov1.BackupStorageLocationSpec{
+			Provider: "aws",
+			Default:  true,
+		},
+	}
+	veleroNamespaceConfigmap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-velero-namespace",
+			Namespace: kotsadmNamespace,
+		},
+		Data: map[string]string{
+			"veleroNamespace": "velero",
+		},
+	}
+	veleroDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "velero",
+			Namespace: "velero",
+		},
+	}
+
+	tests := []struct {
+		name                string
+		setup               func(mockStore *mock_store.MockStore)
+		veleroClientBuilder veleroclient.VeleroClientBuilder
+		k8sClientBuilder    k8sclient.K8sClientsetBuilder
+		expectedBackups     []*types.ReplicatedBackup
+		wantErr             string
+	}{
+		{
+			name: "fails to create k8s clientset",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: nil,
+				Err:    fmt.Errorf("error creating k8s clientset"),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset().VeleroV1(),
+			},
+			wantErr: "failed to create clientset",
+		},
+		{
+			name: "fails to create velero client",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: nil,
+				Err:    fmt.Errorf("error creating velero client"),
+			},
+			wantErr: "failed to create velero clientset",
+		},
+		{
+			name: "fails to find backup storage location",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset().VeleroV1(),
+			},
+			wantErr: "no backup store location found",
+		},
+		{
+			name: "empty backup list",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.ReplicatedBackup{},
+		},
+		{
+			name: "non instance backups are excluded",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "app-backup",
+							Namespace: "velero",
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "instance-backup",
+							Namespace: "velero",
+							Annotations: map[string]string{
+								types.InstanceBackupAnnotation: "true",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.ReplicatedBackup{
+				{
+					Name:                "instance-backup",
+					ExpectedBackupCount: 1,
+					Backups: []types.Backup{
+						{
+							Name:            "instance-backup",
+							Status:          "Completed",
+							IncludedApps:    []types.App{},
+							VolumeSizeHuman: "0B",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "new improved dr backups are part of the same replicated backup",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "infra-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.InstanceBackupAnnotation:      "true",
+								types.InstanceBackupTypeAnnotation:  types.InstanceBackupTypeInfra,
+								types.InstanceBackupCountAnnotation: "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "app-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.InstanceBackupAnnotation:      "true",
+								types.InstanceBackupTypeAnnotation:  types.InstanceBackupTypeApp,
+								types.InstanceBackupCountAnnotation: "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.ReplicatedBackup{
+				{
+					Name:                "aggregated-repl-backup",
+					ExpectedBackupCount: 2,
+					Backups: []types.Backup{
+						{
+							Name:            "app-backup",
+							Status:          "Completed",
+							IncludedApps:    []types.App{},
+							VolumeSizeHuman: "0B",
+						},
+						{
+							Name:            "infra-backup",
+							Status:          "Completed",
+							IncludedApps:    []types.App{},
+							VolumeSizeHuman: "0B",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "included apps are populated ",
+			setup: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().GetAppFromSlug("app-1").Times(1).Return(&apptypes.App{
+					ID:      "1",
+					Name:    "App 1",
+					Slug:    "app-1",
+					IconURI: "https://some-url.com/icon.png",
+				}, nil)
+			},
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "some-backup",
+							Namespace: "velero",
+							Annotations: map[string]string{
+								types.InstanceBackupAnnotation: "true",
+								"kots.io/apps-sequences":       "{\"app-1\":1}",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.ReplicatedBackup{
+				{
+					Name:                "some-backup",
+					ExpectedBackupCount: 1,
+					Backups: []types.Backup{
+						{
+							Name:   "some-backup",
+							Status: "Completed",
+							IncludedApps: []types.App{
+								{
+									Slug:       "app-1",
+									Sequence:   1,
+									Name:       "App 1",
+									AppIconURI: "https://some-url.com/icon.png",
+								},
+							},
+							VolumeSizeHuman: "0B",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "timestamps are populated",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "some-backup",
+							Namespace: "velero",
+							Annotations: map[string]string{
+								types.InstanceBackupAnnotation: "true",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase:               velerov1.BackupPhaseCompleted,
+							StartTimestamp:      &metav1.Time{Time: startTs},
+							CompletionTimestamp: &metav1.Time{Time: completionTs},
+							Expiration:          &metav1.Time{Time: expirationTs},
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.ReplicatedBackup{
+				{
+					Name:                "some-backup",
+					ExpectedBackupCount: 1,
+					Backups: []types.Backup{
+						{
+							Name:            "some-backup",
+							Status:          "Completed",
+							StartedAt:       &startTs,
+							FinishedAt:      &completionTs,
+							ExpiresAt:       &expirationTs,
+							IncludedApps:    []types.App{},
+							VolumeSizeHuman: "0B",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "volume info is populated",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "some-backup-with-volumes",
+							Namespace: "velero",
+							Annotations: map[string]string{
+								types.InstanceBackupAnnotation:          "true",
+								"kots.io/snapshot-trigger":              "manual",
+								"kots.io/snapshot-volume-count":         "2",
+								"kots.io/snapshot-volume-success-count": "1",
+								"kots.io/snapshot-volume-bytes":         "1000",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.ReplicatedBackup{
+				{
+					Name:                "some-backup-with-volumes",
+					ExpectedBackupCount: 1,
+					Backups: []types.Backup{
+						{
+							Name:               "some-backup-with-volumes",
+							Status:             "Completed",
+							Trigger:            "manual",
+							VolumeSizeHuman:    "1kB",
+							VolumeBytes:        1000,
+							VolumeSuccessCount: 1,
+							VolumeCount:        2,
+							IncludedApps:       []types.App{},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			asrt := assert.New(t)
+			// setup mock clients
+			k8sclient.SetBuilder(test.k8sClientBuilder)
+			veleroclient.SetBuilder(test.veleroClientBuilder)
+			// setup mock store
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			mockStore := mock_store.NewMockStore(ctrl)
+			store.SetStore(mockStore)
+
+			t.Cleanup(func() {
+				store.SetStore(nil)
+			})
+
+			if test.setup != nil {
+				test.setup(mockStore)
+			}
+
+			backups, err := ListInstanceBackups(context.Background(), kotsadmNamespace)
+
+			if test.wantErr != "" {
+				asrt.Error(err)
+				asrt.Contains(err.Error(), test.wantErr)
+			} else {
+				asrt.NoError(err)
+			}
+			asrt.Equal(test.expectedBackups, backups)
 		})
 	}
 }

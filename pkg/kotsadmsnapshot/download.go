@@ -12,8 +12,6 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"github.com/vmware-tanzu/velero/pkg/cmd/util/downloadrequest"
 	pkgresults "github.com/vmware-tanzu/velero/pkg/util/results"
-	"k8s.io/apimachinery/pkg/runtime"
-	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func DownloadRestoreResults(ctx context.Context, veleroNamespace, restoreName string) ([]types.SnapshotError, []types.SnapshotError, error) {
@@ -83,18 +81,9 @@ func DownloadRestoreResults(ctx context.Context, veleroNamespace, restoreName st
 }
 
 func DownloadRequest(ctx context.Context, veleroNamespace string, kind velerov1.DownloadTargetKind, name string) (io.ReadCloser, error) {
-	clientConfig, err := k8sutil.GetClusterConfig()
+	kbClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	scheme := runtime.NewScheme()
-	velerov1.AddToScheme(scheme)
-	kbClient, err := kbclient.New(clientConfig, kbclient.Options{
-		Scheme: scheme,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kubebuilder client")
+		return nil, errors.Wrap(err, "failed to get velero kube client")
 	}
 
 	pr, pw := io.Pipe()

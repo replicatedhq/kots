@@ -21,7 +21,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/k8sclient"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
+	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/veleroclient"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -81,12 +83,12 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8sclient.GetBuilder().GetClientset(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -227,7 +229,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to get cluster config")
 	}
 
-	k8sClient, err := kubernetes.NewForConfig(cfg)
+	k8sClient, err := k8sclient.GetBuilder().GetClientset(cfg)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create clientset")
 	}
@@ -237,7 +239,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", fmt.Errorf("failed to get kubeclient: %w", err)
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -269,14 +271,14 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 	}
 
-	logger.Infof("Creating instance backup CR %s", veleroBackup.Name)
+	logger.Infof("Creating instance backup CR %s", veleroBackup.GenerateName)
 	backup, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create velero backup")
 	}
 
 	if appVeleroBackup != nil {
-		logger.Infof("Creating instance app backup CR %s", appVeleroBackup.Name)
+		logger.Infof("Creating instance app backup CR %s", appVeleroBackup.GenerateName)
 		_, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, appVeleroBackup, metav1.CreateOptions{})
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create application velero backup")
@@ -490,7 +492,7 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 		}
 	}
 
-	veleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, veleroBackup.Annotations, metadata, hasAppBackup)
+	veleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, veleroBackup.Annotations, metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to backup")
 	}
@@ -519,13 +521,11 @@ func getInfrastructureInstanceBackupSpec(ctx context.Context, k8sClient kubernet
 	return veleroBackup, nil
 }
 
-var EnableImprovedDR = false
-
 // getAppInstanceBackup returns a backup spec only if this is Embedded Cluster and the vendor has
 // defined both a backup and restore custom resource (improved DR).
 func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceBackupMetadata) (*velerov1.Backup, error) {
 	// TODO(improveddr): remove this once we have fully implemented the improved DR
-	if !EnableImprovedDR {
+	if os.Getenv("ENABLE_IMPROVED_DR") != "true" {
 		return nil, nil
 	}
 
@@ -562,7 +562,7 @@ func getAppInstanceBackupSpec(k8sClient kubernetes.Interface, metadata instanceB
 	}
 
 	var err error
-	appVeleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, appVeleroBackup.Annotations, metadata, true)
+	appVeleroBackup.Annotations, err = appendCommonAnnotations(k8sClient, appVeleroBackup.Annotations, metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add annotations to application backup")
 	}
@@ -624,6 +624,9 @@ func mergeAppBackupSpec(backup *velerov1.Backup, appMeta appInstanceBackupMetada
 	// excluded namespaces
 	backup.Spec.ExcludedNamespaces = append(backup.Spec.ExcludedNamespaces, kotskindsBackup.Spec.ExcludedNamespaces...)
 
+	// or label selectors
+	backup.Spec.OrLabelSelectors = append(backup.Spec.OrLabelSelectors, kotskindsBackup.Spec.OrLabelSelectors...)
+
 	// annotations
 	if len(kotskindsBackup.ObjectMeta.Annotations) > 0 {
 		if backup.Annotations == nil {
@@ -651,7 +654,7 @@ func mergeAppBackupSpec(backup *velerov1.Backup, appMeta appInstanceBackupMetada
 }
 
 // appendCommonAnnotations appends common annotations to the backup annotations
-func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata, hasAppBackup bool) (map[string]string, error) {
+func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[string]string, metadata instanceBackupMetadata) (map[string]string, error) {
 	kotsadmImage, err := k8sutil.FindKotsadmImage(k8sClient, metadata.kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
@@ -713,12 +716,12 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8sclient.GetBuilder().GetClientset(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -840,18 +843,18 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 	return backups, nil
 }
 
-func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.Backup, error) {
+func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.ReplicatedBackup, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8sclient.GetBuilder().GetClientset(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -870,7 +873,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		return nil, errors.Wrap(err, "failed to list velero backups")
 	}
 
-	backups := []*types.Backup{}
+	replicatedBackupsMap := map[string]*types.ReplicatedBackup{}
 
 	for _, veleroBackup := range veleroBackups.Items {
 		// TODO: Enforce version?
@@ -970,10 +973,24 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			}
 		}
 
-		backups = append(backups, &backup)
+		// group the velero backups by the name we present to the user
+		backupName := GetBackupName(veleroBackup)
+		if _, ok := replicatedBackupsMap[backupName]; !ok {
+			replicatedBackupsMap[backupName] = &types.ReplicatedBackup{
+				Name:                backupName,
+				Backups:             []types.Backup{},
+				ExpectedBackupCount: GetInstanceBackupCount(veleroBackup),
+			}
+		}
+		replicatedBackupsMap[backupName].Backups = append(replicatedBackupsMap[backupName].Backups, backup)
 	}
 
-	return backups, nil
+	replicatedBackups := []*types.ReplicatedBackup{}
+	for _, rb := range replicatedBackupsMap {
+		replicatedBackups = append(replicatedBackups, rb)
+	}
+
+	return replicatedBackups, nil
 }
 
 func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup) (*types.VolumeSummary, error) {
@@ -982,7 +999,7 @@ func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
@@ -1023,12 +1040,12 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, backupID string) (*
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8sclient.GetBuilder().GetClientset(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -1069,12 +1086,12 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, backupID string)
 		return errors.Wrap(err, "failed to get cluster config")
 	}
 
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8sclient.GetBuilder().GetClientset(cfg)
 	if err != nil {
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -1122,14 +1139,16 @@ func HasUnfinishedApplicationBackup(ctx context.Context, kotsadmNamespace string
 }
 
 func HasUnfinishedInstanceBackup(ctx context.Context, kotsadmNamespace string) (bool, error) {
-	backups, err := ListInstanceBackups(ctx, kotsadmNamespace)
+	replicatedBackups, err := ListInstanceBackups(ctx, kotsadmNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list backups")
 	}
 
-	for _, backup := range backups {
-		if backup.Status == "New" || backup.Status == "InProgress" {
-			return true, nil
+	for _, replicatedBackup := range replicatedBackups {
+		for _, backup := range replicatedBackup.Backups {
+			if backup.Status == "New" || backup.Status == "InProgress" {
+				return true, nil
+			}
 		}
 	}
 
@@ -1142,12 +1161,12 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID stri
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8sclient.GetBuilder().GetClientset(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
