@@ -1135,19 +1135,38 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, backupID string)
 	}
 
 	veleroNamespace := bsl.Namespace
-	veleroDeleteBackupRequest := &velerov1.DeleteBackupRequest{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      backupID,
-			Namespace: veleroNamespace,
-		},
-		Spec: velerov1.DeleteBackupRequestSpec{
-			BackupName: backupID,
-		},
+	// Default legacy behaviour is to delete the backup whose name matches the backupID
+	backupsToDelete := []string{backupID}
+
+	listOptions := metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", types.InstanceBackupNameLabel, backupID)}
+	veleroBackups, err := veleroClient.Backups(veleroNamespace).List(ctx, listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list velero backups for deletion")
 	}
 
-	_, err = veleroClient.DeleteBackupRequests(veleroNamespace).Create(context.TODO(), veleroDeleteBackupRequest, metav1.CreateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to create delete backup request")
+	// If the backupID is a replicated backup, delete all backups with the same name
+	if len(veleroBackups.Items) > 0 {
+		backupsToDelete = make([]string, len(veleroBackups.Items))
+		for i, veleroBackup := range veleroBackups.Items {
+			backupsToDelete[i] = veleroBackup.Name
+		}
+	}
+
+	for _, backupToDelete := range backupsToDelete {
+		veleroDeleteBackupRequest := &velerov1.DeleteBackupRequest{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      backupToDelete,
+				Namespace: veleroNamespace,
+			},
+			Spec: velerov1.DeleteBackupRequestSpec{
+				BackupName: backupToDelete,
+			},
+		}
+
+		_, err = veleroClient.DeleteBackupRequests(veleroNamespace).Create(ctx, veleroDeleteBackupRequest, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to create delete backup request for backup %s", backupToDelete))
+		}
 	}
 
 	return nil
