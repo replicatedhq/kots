@@ -12,6 +12,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -83,12 +84,56 @@ func GetPreviousInstallation(ctx context.Context, kbClient kbclient.Client) (*em
 	return &installations[1], nil
 }
 
-func ListInstallations(ctx context.Context, kbClient kbclient.Client) ([]embeddedclusterv1beta1.Installation, error) {
+func ListCMInstallations(ctx context.Context, kbClient kbclient.Client) ([]embeddedclusterv1beta1.Installation, error) {
+	opts := &kbclient.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			labels.Set{"replicated.com/installation": "embedded-cluster"},
+		),
+	}
+	var cmList corev1.ConfigMapList
+	if err := kbClient.List(ctx, &cmList, opts); err != nil {
+		return nil, fmt.Errorf("list configmaps: %w", err)
+	}
+
+	installs := []embeddedclusterv1beta1.Installation{}
+	for _, cm := range cmList.Items {
+		var install embeddedclusterv1beta1.Installation
+		data, ok := cm.Data["installation"]
+		if !ok {
+			return nil, fmt.Errorf("installation data not found in configmap %s/%s", cm.Namespace, cm.Name)
+		}
+		if err := json.Unmarshal([]byte(data), &install); err != nil {
+			return nil, fmt.Errorf("unmarshal installation from configmap: %w", err)
+		}
+		installs = append(installs, install)
+	}
+
+	return installs, nil
+}
+
+func ListCRDInstallations(ctx context.Context, kbClient kbclient.Client) ([]embeddedclusterv1beta1.Installation, error) {
 	var installationList embeddedclusterv1beta1.InstallationList
 	if err := kbClient.List(ctx, &installationList, &kbclient.ListOptions{}); err != nil {
-		return nil, fmt.Errorf("failed to list installations: %w", err)
+		return nil, fmt.Errorf("list installations: %w", err)
 	}
 	return installationList.Items, nil
+}
+
+func ListInstallations(ctx context.Context, kbClient kbclient.Client) ([]embeddedclusterv1beta1.Installation, error) {
+	installs, err := ListCMInstallations(ctx, kbClient)
+	if err != nil {
+		return nil, fmt.Errorf("list cm installations: %w", err)
+	}
+	if len(installs) > 0 {
+		return installs, nil
+	}
+
+	// fall back to CRD-based installations
+	installs, err = ListCRDInstallations(ctx, kbClient)
+	if err != nil {
+		return nil, fmt.Errorf("list crd installations: %w", err)
+	}
+	return installs, nil
 }
 
 func InstallationSucceeded(ctx context.Context, ins *embeddedclusterv1beta1.Installation) bool {
