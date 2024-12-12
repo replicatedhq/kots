@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -1626,7 +1627,18 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 				},
 			},
 		},
-		Restore: &velerov1.Restore{},
+		Restore: &velerov1.Restore{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "velero.io/v1",
+				Kind:       "Restore",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-restore",
+			},
+			Spec: velerov1.RestoreSpec{
+				BackupName: "test-backup",
+			},
+		},
 	}
 
 	ecMeta := &ecInstanceBackupMetadata{
@@ -1836,8 +1848,8 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
-				if assert.Contains(t, got.Labels, "replicated.com/backup-name") {
-					assert.Equal(t, "app-1-17332487841234", got.Labels["replicated.com/backup-name"])
+				if assert.Contains(t, got.Labels, types.InstanceBackupNameLabel) {
+					assert.Equal(t, "app-1-17332487841234", got.Labels[types.InstanceBackupNameLabel])
 				}
 			},
 		},
@@ -1867,11 +1879,14 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
-				if assert.Contains(t, got.Annotations, "replicated.com/backup-type") {
-					assert.Equal(t, "app", got.Annotations["replicated.com/backup-type"])
+				if assert.Contains(t, got.Annotations, types.InstanceBackupTypeAnnotation) {
+					assert.Equal(t, types.InstanceBackupTypeApp, got.Annotations[types.InstanceBackupTypeAnnotation])
 				}
-				if assert.Contains(t, got.Annotations, "replicated.com/backup-count") {
-					assert.Equal(t, "2", got.Annotations["replicated.com/backup-count"])
+				if assert.Contains(t, got.Annotations, types.InstanceBackupCountAnnotation) {
+					assert.Equal(t, "2", got.Annotations[types.InstanceBackupCountAnnotation])
+				}
+				if assert.Contains(t, got.Annotations, types.InstanceBackupRestoreSpecAnnotation) {
+					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
 				}
 			},
 		},
@@ -2347,9 +2362,9 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
-				assert.NotContains(t, got.Labels, "replicated.com/backup-name")
-				assert.NotContains(t, got.Annotations, "replicated.com/backup-type")
-				assert.NotContains(t, got.Annotations, "replicated.com/backup-count")
+				assert.NotContains(t, got.Labels, types.InstanceBackupNameLabel)
+				assert.NotContains(t, got.Annotations, types.InstanceBackupTypeAnnotation)
+				assert.NotContains(t, got.Annotations, types.InstanceBackupCountAnnotation)
 			},
 		},
 		{
@@ -2379,14 +2394,14 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
-				if assert.Contains(t, got.Labels, "replicated.com/backup-name") {
-					assert.Equal(t, "app-1-17332487841234", got.Labels["replicated.com/backup-name"])
+				if assert.Contains(t, got.Labels, types.InstanceBackupNameLabel) {
+					assert.Equal(t, "app-1-17332487841234", got.Labels[types.InstanceBackupNameLabel])
 				}
-				if assert.Contains(t, got.Annotations, "replicated.com/backup-type") {
-					assert.Equal(t, "infra", got.Annotations["replicated.com/backup-type"])
+				if assert.Contains(t, got.Annotations, types.InstanceBackupTypeAnnotation) {
+					assert.Equal(t, types.InstanceBackupTypeInfra, got.Annotations[types.InstanceBackupTypeAnnotation])
 				}
-				if assert.Contains(t, got.Annotations, "replicated.com/backup-count") {
-					assert.Equal(t, "2", got.Annotations["replicated.com/backup-count"])
+				if assert.Contains(t, got.Annotations, types.InstanceBackupCountAnnotation) {
+					assert.Equal(t, "2", got.Annotations[types.InstanceBackupCountAnnotation])
 				}
 			},
 		},
@@ -3383,6 +3398,69 @@ func TestListInstanceBackups(t *testing.T) {
 				asrt.NoError(err)
 			}
 			asrt.Equal(test.expectedBackups, backups)
+		})
+	}
+}
+
+func TestGetInstanceBackupRestore(t *testing.T) {
+	type args struct {
+		veleroBackup velerov1.Backup
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *velerov1.Restore
+		wantErr bool
+	}{
+		{
+			name: "no restore spec",
+			args: args{
+				veleroBackup: velerov1.Backup{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-backup",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "with restore spec",
+			args: args{
+				veleroBackup: velerov1.Backup{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-backup",
+						Annotations: map[string]string{
+							types.InstanceBackupRestoreSpecAnnotation: `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`,
+						},
+					},
+				},
+			},
+			want: &velerov1.Restore{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "velero.io/v1",
+					Kind:       "Restore",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-restore",
+				},
+				Spec: velerov1.RestoreSpec{
+					BackupName: "test-backup",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetInstanceBackupRestore(tt.args.veleroBackup)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetInstanceBackupRestore() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetInstanceBackupRestore() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
