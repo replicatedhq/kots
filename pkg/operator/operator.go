@@ -26,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
+	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
@@ -603,7 +604,7 @@ func (o *Operator) handleUndeployCompleted(a *apptypes.App) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get backup")
 	}
-	if snapshot.IsInstanceBackup(*backup) {
+	if snapshottypes.IsInstanceBackup(*backup) {
 		restoreName = fmt.Sprintf("%s.%s", snapshotName, a.Slug)
 	}
 
@@ -643,7 +644,7 @@ func (o *Operator) checkRestoreComplete(a *apptypes.App, restore *velerov1.Resto
 		}
 
 		var sequence int64 = 0
-		if snapshot.IsInstanceBackup(*backup) {
+		if snapshottypes.IsInstanceBackup(*backup) {
 			b, ok := backupAnnotations["kots.io/apps-sequences"]
 			if !ok || b == "" {
 				return errors.New("instance backup is missing apps sequences annotation")
