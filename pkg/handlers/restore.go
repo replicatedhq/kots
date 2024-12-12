@@ -47,7 +47,7 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if snapshot.IsInstanceBackup(*backup) && snapshot.GetInstanceBackupType(*backup) != snapshottypes.InstanceBackupTypeLegacy {
+	if snapshottypes.IsInstanceBackup(*backup) && snapshottypes.GetInstanceBackupType(*backup) != snapshottypes.InstanceBackupTypeLegacy {
 		err := errors.New("only legacy type instance backups are restorable")
 		logger.Error(err)
 		createRestoreResponse.Error = err.Error()
@@ -157,7 +157,7 @@ func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if backup.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
+	if !snapshottypes.IsInstanceBackup(*backup) {
 		err := errors.Errorf("backup %s is not an instance backup", backup.ObjectMeta.Name)
 		logger.Error(err)
 		restoreResponse.Error = err.Error()
@@ -252,7 +252,7 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if backup.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
+	if !snapshottypes.IsInstanceBackup(*backup) {
 		err := errors.Errorf("backup %s is not an instance backup", backup.ObjectMeta.Name)
 		logger.Error(err)
 		response.Error = err.Error()

@@ -175,7 +175,7 @@ func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions
 	backups := []velerov1.Backup{}
 
 	for _, backup := range b {
-		if backup.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
+		if !snapshottypes.IsInstanceBackup(backup) {
 			continue
 		}
 

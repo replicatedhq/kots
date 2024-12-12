@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strconv"
 	"time"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -27,9 +28,18 @@ const (
 	// InstanceBackupTypeLegacy indicates that the backup is of type legacy (infra + app).
 	InstanceBackupTypeLegacy = "legacy"
 
-	// InstanceBackupAnnotation is the annotation used to indicate that a backup is an instance
-	// backup.
+	// InstanceBackupAnnotation is the annotation used to indicate that a backup is a legacy
+	// instance backup.
 	InstanceBackupAnnotation = "kots.io/instance"
+
+	// InstanceBackupVersionAnnotation is the annotation used to store the version of the backup
+	// for an instance (DR) backup.
+	InstanceBackupVersionAnnotation = "replicated.com/disaster-recovery-version"
+	// InstanceBackupVersion1 indicates that the backup is of version 1.
+	InstanceBackupVersion1 = "1"
+	// InstanceBackupVersionCurrent is the current backup version. When future breaking changes are
+	// introduced, we can increment this number on backup creation.
+	InstanceBackupVersionCurrent = InstanceBackupVersion1
 )
 
 type App struct {
@@ -168,4 +178,52 @@ type ScheduledInstanceSnapshot struct {
 	ScheduledTimestamp time.Time `json:"scheduledTimestamp"`
 	// name of Backup CR will be set once scheduled
 	BackupName string `json:"backupName,omitempty"`
+}
+
+// GetBackupName returns the name of the backup from the velero backup object label.
+func GetBackupName(veleroBackup velerov1.Backup) string {
+	if val, ok := veleroBackup.GetLabels()[InstanceBackupNameLabel]; ok {
+		return val
+	}
+	return veleroBackup.GetName()
+}
+
+// IsInstanceBackup returns true if the backup is an instance backup.
+func IsInstanceBackup(veleroBackup velerov1.Backup) bool {
+	if GetInstanceBackupVersion(veleroBackup) != "" {
+		return true
+	}
+	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupAnnotation]; ok {
+		return val == "true"
+	}
+	return false
+}
+
+// GetInstanceBackupVersion returns the version of the backup from the velero backup object
+// annotation.
+func GetInstanceBackupVersion(veleroBackup velerov1.Backup) string {
+	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupVersionAnnotation]; ok {
+		return val
+	}
+	return ""
+}
+
+// GetInstanceBackupType returns the type of the backup from the velero backup object annotation.
+func GetInstanceBackupType(veleroBackup velerov1.Backup) string {
+	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupTypeAnnotation]; ok {
+		return val
+	}
+	return InstanceBackupTypeLegacy
+}
+
+// GetInstanceBackupCount returns the expected number of backups from the velero backup object
+// annotation.
+func GetInstanceBackupCount(veleroBackup velerov1.Backup) int {
+	if val, ok := veleroBackup.GetAnnotations()[InstanceBackupCountAnnotation]; ok {
+		num, _ := strconv.Atoi(val)
+		if num > 0 {
+			return num
+		}
+	}
+	return 1
 }

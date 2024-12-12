@@ -1019,7 +1019,6 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				"kots.io/apps-sequences":           "{\"app-1\":1,\"app-2\":2}",
 				"kots.io/apps-versions":            "{\"app-1\":\"1.0.1\",\"app-2\":\"1.0.2\"}",
 				"kots.io/embedded-registry":        "host",
-				"kots.io/instance":                 "true",
 				"kots.io/is-airgap":                "true",
 				"kots.io/kotsadm-deploy-namespace": "kotsadm",
 				"kots.io/kotsadm-image":            "kotsadm/kotsadm:1.0.0",
@@ -1082,7 +1081,6 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				"kots.io/apps-sequences":                              "{\"app-1\":1}",
 				"kots.io/apps-versions":                               "{\"app-1\":\"1.0.1\"}",
 				"kots.io/embedded-registry":                           "host",
-				"kots.io/instance":                                    "true",
 				"kots.io/is-airgap":                                   "false",
 				"kots.io/kotsadm-deploy-namespace":                    "kotsadm",
 				"kots.io/kotsadm-image":                               "kotsadm/kotsadm:1.0.0",
@@ -1879,6 +1877,9 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 			},
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
+				if assert.Contains(t, got.Annotations, types.InstanceBackupVersionAnnotation) {
+					assert.Equal(t, types.InstanceBackupVersionCurrent, got.Annotations[types.InstanceBackupVersionAnnotation])
+				}
 				if assert.Contains(t, got.Annotations, types.InstanceBackupTypeAnnotation) {
 					assert.Equal(t, types.InstanceBackupTypeApp, got.Annotations[types.InstanceBackupTypeAnnotation])
 				}
@@ -2363,12 +2364,15 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 			assert: func(t *testing.T, got *velerov1.Backup, err error) {
 				require.NoError(t, err)
 				assert.NotContains(t, got.Labels, types.InstanceBackupNameLabel)
+				if assert.Contains(t, got.Annotations, types.InstanceBackupAnnotation) {
+					assert.Equal(t, "true", got.Annotations[types.InstanceBackupAnnotation])
+				}
 				assert.NotContains(t, got.Annotations, types.InstanceBackupTypeAnnotation)
 				assert.NotContains(t, got.Annotations, types.InstanceBackupCountAnnotation)
 			},
 		},
 		{
-			name: "should add improved dr metadata when not using improved dr",
+			name: "should add improved dr metadata when using improved dr",
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "embedded-cluster-id")
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "embedded-cluster-version")
@@ -2396,6 +2400,9 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 				require.NoError(t, err)
 				if assert.Contains(t, got.Labels, types.InstanceBackupNameLabel) {
 					assert.Equal(t, "app-1-17332487841234", got.Labels[types.InstanceBackupNameLabel])
+				}
+				if assert.Contains(t, got.Annotations, types.InstanceBackupVersionAnnotation) {
+					assert.Equal(t, types.InstanceBackupVersionCurrent, got.Annotations[types.InstanceBackupVersionAnnotation])
 				}
 				if assert.Contains(t, got.Annotations, types.InstanceBackupTypeAnnotation) {
 					assert.Equal(t, types.InstanceBackupTypeInfra, got.Annotations[types.InstanceBackupTypeAnnotation])
@@ -3168,9 +3175,10 @@ func TestListInstanceBackups(t *testing.T) {
 								types.InstanceBackupNameLabel: "aggregated-repl-backup",
 							},
 							Annotations: map[string]string{
-								types.InstanceBackupAnnotation:      "true",
-								types.InstanceBackupTypeAnnotation:  types.InstanceBackupTypeInfra,
-								types.InstanceBackupCountAnnotation: "2",
+								types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+								types.InstanceBackupAnnotation:        "true",
+								types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeInfra,
+								types.InstanceBackupCountAnnotation:   "2",
 							},
 						},
 						Status: velerov1.BackupStatus{
@@ -3185,9 +3193,10 @@ func TestListInstanceBackups(t *testing.T) {
 								types.InstanceBackupNameLabel: "aggregated-repl-backup",
 							},
 							Annotations: map[string]string{
-								types.InstanceBackupAnnotation:      "true",
-								types.InstanceBackupTypeAnnotation:  types.InstanceBackupTypeApp,
-								types.InstanceBackupCountAnnotation: "2",
+								types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+								types.InstanceBackupAnnotation:        "true",
+								types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeApp,
+								types.InstanceBackupCountAnnotation:   "2",
 							},
 						},
 						Status: velerov1.BackupStatus{

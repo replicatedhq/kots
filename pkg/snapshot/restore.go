@@ -72,11 +72,11 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	}
 
 	// make sure this is an instance backup
-	if backup.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
+	if !snapshottypes.IsInstanceBackup(*backup) {
 		return errors.Wrap(err, "backup provided is not an instance backup")
 	}
 
-	if getInstanceBackupType(*backup) != snapshottypes.InstanceBackupTypeLegacy {
+	if snapshottypes.GetInstanceBackupType(*backup) != snapshottypes.InstanceBackupTypeLegacy {
 		return errors.New("only legacy type instance backups are restorable")
 	}
 
@@ -504,12 +504,4 @@ func waitForKotsadmApplicationsRestore(backupID string, kotsadmNamespace string,
 
 		time.Sleep(time.Second * 2)
 	}
-}
-
-// getInstanceBackupType returns the type of the backup from the velero backup object annotation.
-func getInstanceBackupType(veleroBackup velerov1.Backup) string {
-	if val, ok := veleroBackup.GetAnnotations()[snapshottypes.InstanceBackupTypeAnnotation]; ok {
-		return val
-	}
-	return snapshottypes.InstanceBackupTypeLegacy
 }
