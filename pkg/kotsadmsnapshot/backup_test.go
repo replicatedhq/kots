@@ -3473,3 +3473,203 @@ func TestGetInstanceBackupRestore(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteBackup(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	embeddedclusterv1beta1.AddToScheme(scheme)
+
+	// setup common mock objects
+	kotsadmNamespace := "kotsadm-test"
+	testBsl := &velerov1.BackupStorageLocation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "velero",
+		},
+		Spec: velerov1.BackupStorageLocationSpec{
+			Provider: "aws",
+			Default:  true,
+		},
+	}
+	veleroNamespaceConfigmap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-velero-namespace",
+			Namespace: kotsadmNamespace,
+		},
+		Data: map[string]string{
+			"veleroNamespace": "velero",
+		},
+	}
+	veleroDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "velero",
+			Namespace: "velero",
+		},
+	}
+
+	tests := []struct {
+		name                         string
+		backupToDelete               string
+		veleroClientBuilder          veleroclient.VeleroClientBuilder
+		k8sClientBuilder             k8sclient.K8sClientsetBuilder
+		expectedDeleteBackupRequests []velerov1.DeleteBackupRequest
+		wantErr                      string
+	}{
+		{
+			name: "fails to create k8s clientset",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: nil,
+				Err:    fmt.Errorf("error creating k8s clientset"),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset().VeleroV1(),
+			},
+			wantErr: "failed to create clientset",
+		},
+		{
+			name: "fails to create velero client",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: nil,
+				Err:    fmt.Errorf("error creating velero client"),
+			},
+			wantErr: "failed to create velero clientset",
+		},
+		{
+			name: "fails to find backup storage location",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset().VeleroV1(),
+			},
+			wantErr: "no backup store location found",
+		},
+		{
+			name:           "should issue a single delete backup request for the provided id if no backups with label name exist",
+			backupToDelete: "test-backup",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+				).VeleroV1(),
+			},
+			expectedDeleteBackupRequests: []velerov1.DeleteBackupRequest{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-backup",
+						Namespace: "velero",
+					},
+					Spec: velerov1.DeleteBackupRequestSpec{
+						BackupName: "test-backup",
+					},
+				},
+			},
+		},
+		{
+			name:           "should issue two delete backup requests for the provided id if two backups with label name exist",
+			backupToDelete: "aggregated-repl-backup",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "infra-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.InstanceBackupAnnotation:      "true",
+								types.InstanceBackupTypeAnnotation:  types.InstanceBackupTypeInfra,
+								types.InstanceBackupCountAnnotation: "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "app-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.InstanceBackupAnnotation:      "true",
+								types.InstanceBackupTypeAnnotation:  types.InstanceBackupTypeApp,
+								types.InstanceBackupCountAnnotation: "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedDeleteBackupRequests: []velerov1.DeleteBackupRequest{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "app-backup",
+						Namespace: "velero",
+					},
+					Spec: velerov1.DeleteBackupRequestSpec{
+						BackupName: "app-backup",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "infra-backup",
+						Namespace: "velero",
+					},
+					Spec: velerov1.DeleteBackupRequestSpec{
+						BackupName: "infra-backup",
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			asrt := assert.New(t)
+			req := require.New(t)
+			// setup mock clients
+			k8sclient.SetBuilder(test.k8sClientBuilder)
+			veleroclient.SetBuilder(test.veleroClientBuilder)
+
+			err := DeleteBackup(context.Background(), kotsadmNamespace, test.backupToDelete)
+
+			if test.wantErr != "" {
+				asrt.Error(err)
+				asrt.Contains(err.Error(), test.wantErr)
+			} else {
+				asrt.NoError(err)
+			}
+
+			if test.expectedDeleteBackupRequests != nil {
+				// verify delete backup requests
+				veleroClient, err := test.veleroClientBuilder.GetVeleroClient(nil)
+				req.NoError(err)
+
+				requests, err := veleroClient.DeleteBackupRequests("velero").List(context.Background(), metav1.ListOptions{})
+				req.NoError(err)
+				asrt.Equal(test.expectedDeleteBackupRequests, requests.Items)
+			}
+		})
+	}
+}
