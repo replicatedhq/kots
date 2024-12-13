@@ -107,8 +107,8 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, back
 		},
 	}
 
-	if IsInstanceBackup(*backup) {
-		if GetInstanceBackupType(*backup) != types.InstanceBackupTypeLegacy {
+	if types.IsInstanceBackup(*backup) {
+		if types.GetInstanceBackupType(*backup) != types.InstanceBackupTypeLegacy {
 			return errors.New("only legacy type instance backups are restorable")
 		}
 
