@@ -19,25 +19,12 @@ environment:
       - go
       - nodejs
       - yarn
-      - make
 
 pipeline:
   - runs: |
       set -x
       export DESTDIR="${{targets.destdir}}"
       mkdir -p "${DESTDIR}"
-
-      # Build Helm from PR 13439
-      # to be removed later when latest Helm supports --take-ownership flag
-      git clone --depth 1 https://github.com/helm/helm.git
-      cd helm
-      git fetch --depth 1 origin pull/13439/head:pr-13439
-      git checkout pr-13439
-      make
-      chmod a+x bin/helm
-      mv bin/helm "${DESTDIR}/usr/local/bin/"
-      cd ..
-      rm -rf helm
 
       # Scripts etc.
       mv deploy/assets "${DESTDIR}/scripts"
@@ -61,5 +48,6 @@ pipeline:
       mv bin/kotsadm "${DESTDIR}/kotsadm"
       mv bin/kots "${DESTDIR}/kots"
 
+      ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm
       ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize
       ln -s /usr/bin/kubectl ${DESTDIR}/usr/local/bin/kubectl
