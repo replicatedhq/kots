@@ -1,9 +1,11 @@
 package types
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
+	units "github.com/docker/go-units"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
@@ -40,6 +42,19 @@ const (
 	// InstanceBackupVersionCurrent is the current backup version. When future breaking changes are
 	// introduced, we can increment this number on backup creation.
 	InstanceBackupVersionCurrent = InstanceBackupVersion1
+	// BackupTriggerAnnotation is the annotation used to store the trigger of the backup.
+	BackupTriggerAnnotation = "kots.io/snapshot-trigger"
+	// BackupTriggerManual indicates that the backup was triggered manually.
+	BackupTriggerManual = "manual"
+	// BackupTriggerSchedule indicates that the backup was triggered by a schedule.
+	BackupTriggerSchedule = "schedule"
+	// BackupVolumeCountAnnotation is the annotation used to store the number of volumes in the backup.
+	BackupVolumeCountAnnotation = "kots.io/snapshot-volume-count"
+	// BackupVolumeSuccessCountAnnotation is the annotation used to store the number of successfully backed up volumes.
+	BackupVolumeSuccessCountAnnotation = "kots.io/snapshot-volume-success-count"
+	// BackupVolumeBytesAnnotation is the annotation used to store the total size of the backup in bytes.
+	BackupVolumeBytesAnnotation   = "kots.io/snapshot-volume-bytes"
+	BackupAppsSequencesAnnotation = "kots.io/apps-sequences"
 )
 
 type App struct {
@@ -226,4 +241,55 @@ func GetInstanceBackupCount(veleroBackup velerov1.Backup) int {
 		}
 	}
 	return 1
+}
+
+// GetBackupVolumeCount returns the number of volumes in the backup from the velero backup object
+// annotation.
+func GetBackupVolumeCount(veleroBackup velerov1.Backup) (int, error) {
+	volumeCount, volumeCountOk := veleroBackup.Annotations[BackupVolumeCountAnnotation]
+	if volumeCountOk {
+		i, err := strconv.Atoi(volumeCount)
+		if err != nil {
+			return -1, fmt.Errorf("failed to convert volume-count: %w", err)
+		}
+		return i, nil
+	}
+	return 0, nil
+}
+
+// GetBackupVolumeSuccessCount returns the number of volumes successfully backed up velero backup
+// object annotation.
+func GetBackupVolumeSuccessCount(veleroBackup velerov1.Backup) (int, error) {
+	volumeSucessCount, volumeSucessCountOk := veleroBackup.Annotations[BackupVolumeSuccessCountAnnotation]
+	if volumeSucessCountOk {
+		i, err := strconv.Atoi(volumeSucessCount)
+		if err != nil {
+			return -1, fmt.Errorf("failed to convert volume-success-count: %w", err)
+		}
+		return i, nil
+	}
+	return 0, nil
+}
+
+// GetBackupVolumeBytes returns the total size of the backup in bytes from the velero backup object
+// annotation, in both int and human-readable (string) format.
+func GetBackupVolumeBytes(veleroBackup velerov1.Backup) (int64, string, error) {
+	volumeBytes, volumeBytesOk := veleroBackup.Annotations[BackupVolumeBytesAnnotation]
+	value := int64(0)
+	if volumeBytesOk {
+		i, err := strconv.ParseInt(volumeBytes, 10, 64)
+		if err != nil {
+			return -1, "", fmt.Errorf("failed to convert volume-bytes: %w", err)
+		}
+		value = i
+	}
+	return value, units.HumanSize(float64(value)), nil
+}
+
+// GetBackupFromVeleroBackups returns a `Backup` struct, consisting of Replicated's representation of a backup
+// from a list of Velero backups.
+func GetBackupFromVeleroBackups(veleroBackups []velerov1.Backup) (*Backup, error) {
+	result := &Backup{}
+	//TODO
+	return result, nil
 }
