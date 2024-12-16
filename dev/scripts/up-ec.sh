@@ -21,6 +21,11 @@ fi
 # Build and load the image into the embedded cluster
 ec_build_and_load "$component"
 
+# Use the dev image for kotsadm migrations
+if [ "$component" == "kotsadm" ]; then
+  ec_build_and_load "kotsadm-migrations"
+fi
+
 # The kotsadm dev image does not have a web component, and kotsadm-web service does not exist in embedded cluster.
 # Deploy kotsadm-web service instead of shipping a web component in the kotsadm dev image so
 # we can achieve a faster dev experience with hot reloading.
