@@ -41,8 +41,8 @@ pipeline:
       mv deploy/assets/postgres "${DESTDIR}/postgres"
 
       # kotsadm and kots binaries
-      export VERSION=${{package.version}}
-      export GIT_TAG=${{package.version}}
+      export VERSION=${GIT_TAG}
+      export GIT_TAG=${GIT_TAG}
 
       # Set environment variables from repository
       source .image.env
