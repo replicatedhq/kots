@@ -93,16 +93,6 @@ function ec_patch() {
   rm dev/patches/$1-up-ec.yaml.tmp
 }
 
-# Loads a component image into the embedded cluster
-function ec_load() {
-  if docker exec $(ec_node) k0s ctr images ls | grep -q "$(image $1)"; then
-    echo "$(image $1) image already loaded in embedded cluster, skipping import..."
-  else
-    echo "Loading "$(image $1)" image into embedded cluster..."
-    docker save "$(image $1)" | docker exec -i $(ec_node) k0s ctr images import -
-  fi
-}
-
 function ec_build_and_load() {
   # Build the image
   if docker images | grep -q "$(image $1)"; then
@@ -114,7 +104,12 @@ function ec_build_and_load() {
   fi
 
   # Load the image into the embedded cluster
-  ec_load $1
+  if docker exec $(ec_node) k0s ctr images ls | grep -q "$(image $1)"; then
+    echo "$(image $1) image already loaded in embedded cluster, skipping import..."
+  else
+    echo "Loading "$(image $1)" image into embedded cluster..."
+    docker save "$(image $1)" | docker exec -i $(ec_node) k0s ctr images import -
+  fi
 }
 
 function up() {
