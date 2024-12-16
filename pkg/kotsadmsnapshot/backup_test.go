@@ -3329,7 +3329,7 @@ func TestListInstanceBackups(t *testing.T) {
 			},
 		},
 		{
-			name: "volume info is populated",
+			name: "volume info is populated from velero backup annotations",
 			k8sClientBuilder: &k8sclient.MockBuilder{
 				Client: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
@@ -3370,6 +3370,66 @@ func TestListInstanceBackups(t *testing.T) {
 							VolumeBytes:        1000,
 							VolumeSuccessCount: 1,
 							VolumeCount:        2,
+							IncludedApps:       []types.App{},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "volume info is populated from pod volume backups if there's no velero backup annoations",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "some-backup-with-volumes",
+							Namespace: "velero",
+							Annotations: map[string]string{
+								types.InstanceBackupAnnotation: "true",
+								"kots.io/snapshot-trigger":     "manual",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+					&velerov1.PodVolumeBackup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "some-backup-with-volumes-pod-volume-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								"velero.io/backup-name": "some-backup-with-volumes",
+							},
+						},
+						Status: velerov1.PodVolumeBackupStatus{
+							Phase: velerov1.PodVolumeBackupPhaseCompleted,
+							Progress: velerov1.PodVolumeOperationProgress{
+								BytesDone: 2000,
+							},
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.ReplicatedBackup{
+				{
+					Name:                "some-backup-with-volumes",
+					ExpectedBackupCount: 1,
+					Backups: []types.Backup{
+						{
+							Name:               "some-backup-with-volumes",
+							Status:             "Completed",
+							Trigger:            "manual",
+							VolumeSizeHuman:    "2kB",
+							VolumeBytes:        2000,
+							VolumeSuccessCount: 1,
+							VolumeCount:        1,
 							IncludedApps:       []types.App{},
 						},
 					},
