@@ -143,9 +143,9 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 
 	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces)
 
-	snapshotTrigger := "manual"
+	snapshotTrigger := types.BackupTriggerManual
 	if isScheduled {
-		snapshotTrigger = "schedule"
+		snapshotTrigger = types.BackupTriggerSchedule
 	}
 
 	veleroBackup.Name = ""
@@ -156,7 +156,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	if veleroBackup.Annotations == nil {
 		veleroBackup.Annotations = make(map[string]string, 0)
 	}
-	veleroBackup.Annotations["kots.io/snapshot-trigger"] = snapshotTrigger
+	veleroBackup.Annotations[types.BackupTriggerAnnotation] = snapshotTrigger
 	veleroBackup.Annotations["kots.io/app-id"] = a.ID
 	veleroBackup.Annotations["kots.io/app-sequence"] = strconv.FormatInt(parentSequence, 10)
 	veleroBackup.Annotations["kots.io/snapshot-requested"] = time.Now().UTC().Format(time.RFC3339)
@@ -659,9 +659,9 @@ func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[str
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
 	}
 
-	snapshotTrigger := "manual"
+	snapshotTrigger := types.BackupTriggerManual
 	if metadata.isScheduled {
-		snapshotTrigger = "schedule"
+		snapshotTrigger = types.BackupTriggerSchedule
 	}
 
 	appSequences := map[string]int64{}
@@ -689,11 +689,11 @@ func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[str
 	if annotations == nil {
 		annotations = make(map[string]string, 0)
 	}
-	annotations["kots.io/snapshot-trigger"] = snapshotTrigger
+	annotations[types.BackupTriggerAnnotation] = snapshotTrigger
 	annotations["kots.io/snapshot-requested"] = metadata.backupReqestedAt.Format(time.RFC3339)
 	annotations["kots.io/kotsadm-image"] = kotsadmImage
 	annotations["kots.io/kotsadm-deploy-namespace"] = metadata.kotsadmNamespace
-	annotations["kots.io/apps-sequences"] = marshalledAppSequences
+	annotations[types.BackupAppsSequencesAnnotation] = marshalledAppSequences
 	annotations["kots.io/apps-versions"] = marshalledAppVersions
 	annotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
 	embeddedRegistryHost, _, _ := kotsutil.GetEmbeddedRegistryCreds(k8sClient)
@@ -773,7 +773,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			backup.Status = "New"
 		}
 
-		trigger, ok := veleroBackup.Annotations["kots.io/snapshot-trigger"]
+		trigger, ok := veleroBackup.Annotations[types.BackupTriggerAnnotation]
 		if ok {
 			backup.Trigger = trigger
 		}
@@ -783,7 +783,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			backup.SupportBundleID = supportBundleID
 		}
 
-		volumeCount, volumeCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-count"]
+		volumeCount, volumeCountOk := veleroBackup.Annotations[types.BackupVolumeCountAnnotation]
 		if volumeCountOk {
 			i, err := strconv.Atoi(volumeCount)
 			if err != nil {
@@ -792,7 +792,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			backup.VolumeCount = i
 		}
 
-		volumeSuccessCount, volumeSuccessCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-success-count"]
+		volumeSuccessCount, volumeSuccessCountOk := veleroBackup.Annotations[types.BackupVolumeSuccessCountAnnotation]
 		if volumeSuccessCountOk {
 			i, err := strconv.Atoi(volumeSuccessCount)
 			if err != nil {
@@ -801,7 +801,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			backup.VolumeSuccessCount = i
 		}
 
-		volumeBytes, volumeBytesOk := veleroBackup.Annotations["kots.io/snapshot-volume-bytes"]
+		volumeBytes, volumeBytesOk := veleroBackup.Annotations[types.BackupVolumeBytesAnnotation]
 		if volumeBytesOk {
 			i, err := strconv.ParseInt(volumeBytes, 10, 64)
 			if err != nil {
@@ -825,9 +825,9 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 				backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
 
 				// This is failing with "the server could not find the requested resource (put backups.velero.io scheduled-1586536961)"
-				// veleroBackup.Annotations["kots.io/snapshot-volume-count"] = strconv.Itoa(backup.VolumeCount)
-				// veleroBackup.Annotations["kots.io/snapshot-volume-success-count"] = strconv.Itoa(backup.VolumeSuccessCount)
-				// veleroBackup.Annotations["kots.io/snapshot-volume-bytes"] = strconv.FormatInt(backup.VolumeBytes, 10)
+				// veleroBackup.Annotations[types.BackupVolumeCountAnnotation] = strconv.Itoa(backup.VolumeCount)
+				// veleroBackup.Annotations[types.BackupVolumeSuccessCountAnnotation] = strconv.Itoa(backup.VolumeSuccessCount)
+				// veleroBackup.Annotations[types.BackupVolumeBytesAnnotation] = strconv.FormatInt(backup.VolumeBytes, 10)
 
 				// if _, err = veleroClient.Backups(backendStorageLocation.Namespace).UpdateStatus(&veleroBackup); err != nil {
 				// 	return nil, errors.Wrap(err, "failed to update velero backup")
@@ -898,12 +898,12 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			backup.Status = "New"
 		}
 
-		trigger, ok := veleroBackup.Annotations["kots.io/snapshot-trigger"]
+		trigger, ok := veleroBackup.Annotations[types.BackupTriggerAnnotation]
 		if ok {
 			backup.Trigger = trigger
 		}
 
-		volumeCount, volumeCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-count"]
+		volumeCount, volumeCountOk := veleroBackup.Annotations[types.BackupVolumeCountAnnotation]
 		if volumeCountOk {
 			i, err := strconv.Atoi(volumeCount)
 			if err != nil {
@@ -912,7 +912,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			backup.VolumeCount = i
 		}
 
-		volumeSuccessCount, volumeSuccessCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-success-count"]
+		volumeSuccessCount, volumeSuccessCountOk := veleroBackup.Annotations[types.BackupVolumeSuccessCountAnnotation]
 		if volumeSuccessCountOk {
 			i, err := strconv.Atoi(volumeSuccessCount)
 			if err != nil {
@@ -921,7 +921,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			backup.VolumeSuccessCount = i
 		}
 
-		volumeBytes, volumeBytesOk := veleroBackup.Annotations["kots.io/snapshot-volume-bytes"]
+		volumeBytes, volumeBytesOk := veleroBackup.Annotations[types.BackupVolumeBytesAnnotation]
 		if volumeBytesOk {
 			i, err := strconv.ParseInt(volumeBytes, 10, 64)
 			if err != nil {
@@ -931,7 +931,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			backup.VolumeSizeHuman = units.HumanSize(float64(i))
 		}
 
-		appAnnotationStr, _ := veleroBackup.Annotations["kots.io/apps-sequences"]
+		appAnnotationStr, _ := veleroBackup.Annotations[types.BackupAppsSequencesAnnotation]
 		if len(appAnnotationStr) > 0 {
 			var apps map[string]int64
 			if err := json.Unmarshal([]byte(appAnnotationStr), &apps); err != nil {
