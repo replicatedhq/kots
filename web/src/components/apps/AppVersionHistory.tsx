@@ -1523,7 +1523,7 @@ class AppVersionHistory extends Component<Props, State> {
       },
     });
     const appSlug = this.props.params.slug;
-    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/ec2-deploy`, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

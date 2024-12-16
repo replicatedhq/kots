@@ -1124,3 +1124,70 @@ func (o *Operator) notifyClusterUpgradeFailed(ctx context.Context, kbClient kbcl
 	}
 	return nil
 }
+
+type DeployEC2AppOptions struct {
+	AppID                        string
+	AppSlug                      string
+	AppVersionArchive            string
+	BaseSequence                 int64
+	VersionLabel                 string
+	Source                       string
+	IsAirgap                     bool
+	ChannelID                    string
+	UpdateCursor                 string
+	SkipPreflights               bool
+	ContinueWithFailedPreflights bool
+	PreflightResult              string
+}
+
+// app deploy method for EC install2 workflow
+func (o *Operator) DeployEC2App(opts DeployEC2AppOptions) (finalError error) {
+	if err := upgradeservicetask.SetStatusUpgradingApp(opts.AppSlug, ""); err != nil {
+		return errors.Wrap(err, "failed to set task status to upgrading app")
+	}
+
+	defer func() {
+		if finalError == nil {
+			if err := upgradeservicetask.ClearStatus(opts.AppSlug); err != nil {
+				logger.Error(errors.Wrap(err, "failed to clear task status"))
+			}
+		} else {
+			if err := upgradeservicetask.SetStatusUpgradeFailed(opts.AppSlug, finalError.Error()); err != nil {
+				logger.Error(errors.Wrap(err, "failed to set task status to failed"))
+			}
+		}
+	}()
+
+	sequence, err := o.store.CreateAppVersion(opts.AppID, &opts.BaseSequence, opts.AppVersionArchive, opts.Source, false, false, "", opts.SkipPreflights, render.Renderer{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create app version")
+	}
+
+	if opts.IsAirgap {
+		if err := update.RemoveAirgapUpdate(opts.AppSlug, opts.ChannelID, opts.UpdateCursor); err != nil {
+			return errors.Wrap(err, "failed to remove airgap update")
+		}
+	}
+
+	if err := filestore.GetStore().DeleteArchive(opts.AppVersionArchive); err != nil {
+		return errors.Wrap(err, "failed to delete deployment archive")
+	}
+
+	if opts.PreflightResult != "" {
+		if err := o.store.SetPreflightResults(opts.AppID, sequence, []byte(opts.PreflightResult)); err != nil {
+			return errors.Wrap(err, "failed to set preflight results")
+		}
+	}
+
+	if err := o.store.SetAppChannelChanged(opts.AppID, false); err != nil {
+		return errors.Wrap(err, "failed to reset channel changed flag")
+	}
+
+	if err := o.store.MarkAsCurrentDownstreamVersion(opts.AppID, sequence); err != nil {
+		return errors.Wrap(err, "failed to mark as current downstream version")
+	}
+
+	go o.DeployApp(opts.AppID, sequence)
+
+	return nil
+}

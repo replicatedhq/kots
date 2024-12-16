@@ -1440,6 +1440,19 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 		},
 	},
 
+	// endpoint for EC install2 workflow
+	"DeployEC2AppVersion": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.DeployEC2AppVersion(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+
 	// Upgrade Service
 	"StartUpgradeService": {
 		{

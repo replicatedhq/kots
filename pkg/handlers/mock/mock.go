@@ -334,6 +334,18 @@ func (mr *MockKOTSHandlerMockRecorder) DeployAppVersion(w, r interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).DeployAppVersion), w, r)
 }
 
+// DeployEC2AppVersion mocks base method.
+func (m *MockKOTSHandler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeployEC2AppVersion", w, r)
+}
+
+// DeployEC2AppVersion indicates an expected call of DeployEC2AppVersion.
+func (mr *MockKOTSHandlerMockRecorder) DeployEC2AppVersion(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployEC2AppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).DeployEC2AppVersion), w, r)
+}
+
 // DisableAppGitOps mocks base method.
 func (m *MockKOTSHandler) DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
