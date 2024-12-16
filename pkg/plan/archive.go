@@ -12,7 +12,6 @@ import (
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/plan/types"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/update"
@@ -20,8 +19,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func pullAppArchive(in types.PlanStepInputAppUpgrade) (appArchive string, baseSequence int64, finalError error) {
-	a, err := store.GetStore().GetAppFromSlug(in.AppSlug)
+func pullAppArchive(appSlug, versionLabel, updateCursor, channelID string) (appArchive string, baseSequence int64, finalError error) {
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		return "", -1, errors.Wrap(err, "get app from slug")
 	}
@@ -31,7 +30,7 @@ func pullAppArchive(in types.PlanStepInputAppUpgrade) (appArchive string, baseSe
 		return "", -1, errors.Wrap(err, "get registry details for app")
 	}
 
-	baseArchive, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(a.ID, in.VersionLabel)
+	baseArchive, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(a.ID, versionLabel)
 	if err != nil {
 		return "", -1, errors.Wrap(err, "get app version base archive")
 	}
@@ -48,7 +47,7 @@ func pullAppArchive(in types.PlanStepInputAppUpgrade) (appArchive string, baseSe
 
 	airgapBundle := ""
 	if a.IsAirgap {
-		au, err := update.GetAirgapUpdate(a.Slug, in.ChannelID, in.UpdateCursor)
+		au, err := update.GetAirgapUpdate(a.Slug, channelID, updateCursor)
 		if err != nil {
 			return "", -1, errors.Wrap(err, "get airgap update")
 		}
@@ -72,7 +71,8 @@ func pullAppArchive(in types.PlanStepInputAppUpgrade) (appArchive string, baseSe
 	} else {
 		pullOptions = pull.PullOptions{
 			IsGitOps: a.IsGitOps,
-			// ReportingInfo: params.ReportingInfo, TODO NOW
+			// TODO (@salah)
+			// ReportingInfo: params.ReportingInfo,
 		}
 	}
 
@@ -110,7 +110,7 @@ func pullAppArchive(in types.PlanStepInputAppUpgrade) (appArchive string, baseSe
 	pullOptions.ConfigFile = filepath.Join(baseArchive, "upstream", "userdata", "config.yaml")
 	pullOptions.InstallationFile = filepath.Join(baseArchive, "upstream", "userdata", "installation.yaml")
 	pullOptions.IdentityConfigFile = identityConfigFile
-	pullOptions.UpdateCursor = in.UpdateCursor
+	pullOptions.UpdateCursor = updateCursor
 	pullOptions.RootDir = baseArchive
 	pullOptions.Downstreams = []string{"this-cluster"}
 	pullOptions.ExcludeKotsKinds = true

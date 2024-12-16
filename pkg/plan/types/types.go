@@ -1,5 +1,9 @@
 package types
 
+import (
+	ecv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
+)
+
 type Plan struct {
 	Steps []PlanStep
 }
@@ -17,7 +21,9 @@ type PlanStep struct {
 type PlanStepType string
 
 const (
-	StepTypeAppUpgrade PlanStepType = "app_upgrade"
+	StepTypeUpgradeService PlanStepType = "upgrade_service"
+	StepTypeAppUpgrade     PlanStepType = "app_upgrade"
+	StepTypeECUpgrade      PlanStepType = "ec_upgrade"
 )
 
 type PlanStepStatus string
@@ -29,12 +35,28 @@ const (
 type PlanStepOwner string
 
 const (
-	StepOwnerKOTS PlanStepOwner = "kots"
+	StepOwnerKOTS      PlanStepOwner = "kots"
+	StepOwnerECManager PlanStepOwner = "manager"
 )
+
+type PlanStepInputUpgradeService struct {
+	AppSlug      string
+	VersionLabel string
+	UpdateCursor string
+	ChannelID    string
+}
 
 type PlanStepInputAppUpgrade struct {
 	AppSlug      string
 	VersionLabel string
 	UpdateCursor string
 	ChannelID    string
+	AppArchive   string
+	BaseSequence int64
+}
+
+type PlanStepInputECUpgrade struct {
+	AppSlug   string
+	Artifacts *ecv1beta1.ArtifactsLocation
+	ECConfig  *ecv1beta1.ConfigSpec
 }
