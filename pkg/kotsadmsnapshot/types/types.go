@@ -76,6 +76,7 @@ type Backup struct {
 
 type BackupDetail struct {
 	Name            string           `json:"name"`
+	Type            string           `json:"type"`
 	Status          string           `json:"status"`
 	VolumeSizeHuman string           `json:"volumeSizeHuman"`
 	Namespaces      []string         `json:"namespaces"`
