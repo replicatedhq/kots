@@ -8,6 +8,9 @@ import (
 )
 
 const (
+	// BackupIsECAnnotation is the annotation used to store if the backup is from an EC install.
+	BackupIsECAnnotation = "kots.io/embedded-cluster"
+
 	// InstanceBackupNameLabel is the label used to store the name of the backup for an instance
 	// backup.
 	InstanceBackupNameLabel = "replicated.com/backup-name"
