@@ -40,6 +40,13 @@ const (
 	// InstanceBackupVersionCurrent is the current backup version. When future breaking changes are
 	// introduced, we can increment this number on backup creation.
 	InstanceBackupVersionCurrent = InstanceBackupVersion1
+	// BackupTriggerAnnotation is the annotation used to store the trigger of the backup.
+	BackupTriggerAnnotation = "kots.io/snapshot-trigger"
+	// BackupTriggerManual indicates that the backup was triggered manually.
+	BackupTriggerManual = "manual"
+	// BackupTriggerSchedule indicates that the backup was triggered by a schedule.
+	BackupTriggerSchedule         = "schedule"
+	BackupAppsSequencesAnnotation = "kots.io/apps-sequences"
 )
 
 type App struct {

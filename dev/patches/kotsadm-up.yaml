@@ -17,6 +17,11 @@ spec:
                 values:
                 - {{ .Env.EC_NODE }}
 {{- end  }}
+      initContainers:
+      - name: schemahero-plan
+        image: kotsadm-migrations-dev
+      - name: schemahero-apply
+        image: kotsadm-migrations-dev
       containers:
       - name: kotsadm
         image: kotsadm-api-dev
