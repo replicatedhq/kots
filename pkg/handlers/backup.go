@@ -130,10 +130,9 @@ func (h *Handler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetBackupResponse struct {
-	BackupDetails           []snapshottypes.BackupDetail `json:"backupDetails"`
-	Deprecated_BackupDetail *snapshottypes.BackupDetail  `json:"backupDetail"`
-	Success                 bool                         `json:"success"`
-	Error                   string                       `json:"error,omitempty"`
+	BackupDetails []snapshottypes.BackupDetail `json:"backupDetails"`
+	Success       bool                         `json:"success"`
+	Error         string                       `json:"error,omitempty"`
 }
 
 func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
@@ -147,10 +146,6 @@ func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	getBackupResponse.BackupDetails = backups
-
-	if len(backups) == 1 {
-		getBackupResponse.Deprecated_BackupDetail = &backups[0]
-	}
 
 	getBackupResponse.Success = true
 

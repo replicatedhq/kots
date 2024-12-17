@@ -158,7 +158,7 @@ class SnapshotDetails extends Component {
       }
       const response = await res.json();
 
-      const snapshotDetails = response.backupDetail;
+      const snapshotDetails = response.backupDetails?.[0];
 
       let series = [];
       if (!isEmpty(snapshotDetails?.volumes)) {
