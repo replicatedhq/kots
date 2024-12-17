@@ -40,6 +40,7 @@ runs:
           echo "image-exists=false" >> "$GITHUB_OUTPUT"
         fi
 
+    # pin to work around https://github.com/chainguard-images/actions/issues/160
     - uses: chainguard-images/actions/apko-publish@49e3bc2feb790da6c3a7f749b38c769174c4ad54
       if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
       with:
