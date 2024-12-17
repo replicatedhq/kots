@@ -16,7 +16,7 @@ import (
 
 func mockClientsetK8sVersion(expectedMajor string, expectedMinor string) kubernetes.Interface {
 	clientset := fake.NewSimpleClientset(
-		// add a service
+		// Defaul backend service and endpoint
 		&v1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "default-http-backend",
@@ -47,6 +47,82 @@ func mockClientsetK8sVersion(expectedMajor string, expectedMinor string) kuberne
 					Addresses: []v1.EndpointAddress{
 						{
 							IP: "192.0.0.2",
+						},
+					},
+				},
+			},
+		},
+
+		// LoadBalancer service and endpoint
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "app-lb",
+				Namespace: "",
+			},
+			Spec: v1.ServiceSpec{
+				Type: v1.ServiceTypeLoadBalancer,
+				Ports: []v1.ServicePort{
+					{
+						Name: "http",
+						Port: 8080,
+					},
+				},
+			},
+		},
+		&v1.Endpoints{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "app-lb",
+				Namespace: "",
+			},
+			Subsets: []v1.EndpointSubset{
+				{
+					Ports: []v1.EndpointPort{
+						{
+							Name: "http",
+							Port: 8080,
+						},
+					},
+					Addresses: []v1.EndpointAddress{
+						{
+							IP: "172.0.0.2",
+						},
+					},
+				},
+			},
+		},
+
+		// NodePort service and endpoint
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "app-nodeport",
+				Namespace: "",
+			},
+			Spec: v1.ServiceSpec{
+				Type: v1.ServiceTypeNodePort,
+				Ports: []v1.ServicePort{
+					{
+						Name: "http",
+						Port: 8080,
+					},
+				},
+			},
+		},
+		&v1.Endpoints{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "app-nodeport",
+				Namespace: "",
+			},
+			Subsets: []v1.EndpointSubset{
+				{
+					Ports: []v1.EndpointPort{
+						{
+							Name: "http",
+							Port: 8080,
+						},
+					},
+					Addresses: []v1.EndpointAddress{
+						{
+							IP: "172.0.0.2",
 						},
 					},
 				},
@@ -88,22 +164,30 @@ func TestCalculateIngressState(t *testing.T) {
 				},
 			},
 			want: types.StateReady,
-		},
-		{
-			name: "expect unavailable state when ingress with k8s version > 1.22 and no default backend",
-			args: args{
-				clientset: mockClientsetK8sVersion("1", "23"),
-				r: &networkingv1.Ingress{
-					Spec: networkingv1.IngressSpec{},
-				},
-			},
-			want: types.StateUnavailable,
 		}, {
-			name: "expect ready state when ingress with k8s version > 1.22 and no default backend and with load balancer status",
+			name: "expect ready state when there is a load balancer and an IP address",
 			args: args{
 				clientset: mockClientsetK8sVersion("1", "23"),
 				r: &networkingv1.Ingress{
-					Spec: networkingv1.IngressSpec{},
+					Spec: networkingv1.IngressSpec{
+						Rules: []networkingv1.IngressRule{
+							{
+								IngressRuleValue: networkingv1.IngressRuleValue{
+									HTTP: &networkingv1.HTTPIngressRuleValue{
+										Paths: []networkingv1.HTTPIngressPath{
+											{
+												Backend: networkingv1.IngressBackend{
+													Service: &networkingv1.IngressServiceBackend{
+														Name: "app-lb",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 					Status: networkingv1.IngressStatus{
 						LoadBalancer: networkingv1.IngressLoadBalancerStatus{
 							Ingress: []networkingv1.IngressLoadBalancerIngress{
@@ -116,6 +200,61 @@ func TestCalculateIngressState(t *testing.T) {
 				},
 			},
 			want: types.StateReady,
+		}, {
+			name: "expect ready state when there is no LoadBalancer and no address is assigned",
+			args: args{
+				clientset: mockClientsetK8sVersion("1", "23"),
+				r: &networkingv1.Ingress{
+					Spec: networkingv1.IngressSpec{
+						Rules: []networkingv1.IngressRule{
+							{
+								IngressRuleValue: networkingv1.IngressRuleValue{
+									HTTP: &networkingv1.HTTPIngressRuleValue{
+										Paths: []networkingv1.HTTPIngressPath{
+											{
+												Backend: networkingv1.IngressBackend{
+													Service: &networkingv1.IngressServiceBackend{
+														Name: "app-nodeport",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Status: networkingv1.IngressStatus{},
+				},
+			},
+			want: types.StateReady,
+		}, {
+			name: "expect unavailable state when there is a LoadBalancer but no address is assigned",
+			args: args{
+				clientset: mockClientsetK8sVersion("1", "23"),
+				r: &networkingv1.Ingress{
+					Spec: networkingv1.IngressSpec{
+						Rules: []networkingv1.IngressRule{
+							{
+								IngressRuleValue: networkingv1.IngressRuleValue{
+									HTTP: &networkingv1.HTTPIngressRuleValue{
+										Paths: []networkingv1.HTTPIngressPath{
+											{
+												Backend: networkingv1.IngressBackend{
+													Service: &networkingv1.IngressServiceBackend{
+														Name: "app-lb",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: types.StateUnavailable,
 		},
 	}
 	for _, tt := range tests {
