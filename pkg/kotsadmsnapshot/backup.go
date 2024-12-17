@@ -783,56 +783,16 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			backup.SupportBundleID = supportBundleID
 		}
 
-		volumeCount, volumeCountOk := veleroBackup.Annotations[types.BackupVolumeCountAnnotation]
-		if volumeCountOk {
-			i, err := strconv.Atoi(volumeCount)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-count")
-			}
-			backup.VolumeCount = i
-		}
-
-		volumeSuccessCount, volumeSuccessCountOk := veleroBackup.Annotations[types.BackupVolumeSuccessCountAnnotation]
-		if volumeSuccessCountOk {
-			i, err := strconv.Atoi(volumeSuccessCount)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-success-count")
-			}
-			backup.VolumeSuccessCount = i
-		}
-
-		volumeBytes, volumeBytesOk := veleroBackup.Annotations[types.BackupVolumeBytesAnnotation]
-		if volumeBytesOk {
-			i, err := strconv.ParseInt(volumeBytes, 10, 64)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-bytes")
-			}
-			backup.VolumeBytes = i
-			backup.VolumeSizeHuman = units.HumanSize(float64(i))
-		}
-
 		if backup.Status != "New" && backup.Status != "InProgress" {
-			if !volumeBytesOk || !volumeSuccessCountOk {
-				// save computed summary as annotations if snapshot is finished
-				volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to get volume summary")
-				}
-
-				backup.VolumeCount = volumeSummary.VolumeCount
-				backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
-				backup.VolumeBytes = volumeSummary.VolumeBytes
-				backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
-
-				// This is failing with "the server could not find the requested resource (put backups.velero.io scheduled-1586536961)"
-				// veleroBackup.Annotations[types.BackupVolumeCountAnnotation] = strconv.Itoa(backup.VolumeCount)
-				// veleroBackup.Annotations[types.BackupVolumeSuccessCountAnnotation] = strconv.Itoa(backup.VolumeSuccessCount)
-				// veleroBackup.Annotations[types.BackupVolumeBytesAnnotation] = strconv.FormatInt(backup.VolumeBytes, 10)
-
-				// if _, err = veleroClient.Backups(backendStorageLocation.Namespace).UpdateStatus(&veleroBackup); err != nil {
-				// 	return nil, errors.Wrap(err, "failed to update velero backup")
-				// }
+			volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get volume summary")
 			}
+
+			backup.VolumeCount = volumeSummary.VolumeCount
+			backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
+			backup.VolumeBytes = volumeSummary.VolumeBytes
+			backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
 		}
 
 		backups = append(backups, &backup)
@@ -903,34 +863,6 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			backup.Trigger = trigger
 		}
 
-		volumeCount, volumeCountOk := veleroBackup.Annotations[types.BackupVolumeCountAnnotation]
-		if volumeCountOk {
-			i, err := strconv.Atoi(volumeCount)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-count")
-			}
-			backup.VolumeCount = i
-		}
-
-		volumeSuccessCount, volumeSuccessCountOk := veleroBackup.Annotations[types.BackupVolumeSuccessCountAnnotation]
-		if volumeSuccessCountOk {
-			i, err := strconv.Atoi(volumeSuccessCount)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-success-count")
-			}
-			backup.VolumeSuccessCount = i
-		}
-
-		volumeBytes, volumeBytesOk := veleroBackup.Annotations[types.BackupVolumeBytesAnnotation]
-		if volumeBytesOk {
-			i, err := strconv.ParseInt(volumeBytes, 10, 64)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-bytes")
-			}
-			backup.VolumeBytes = i
-			backup.VolumeSizeHuman = units.HumanSize(float64(i))
-		}
-
 		appAnnotationStr, _ := veleroBackup.Annotations[types.BackupAppsSequencesAnnotation]
 		if len(appAnnotationStr) > 0 {
 			var apps map[string]int64
@@ -956,19 +888,17 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 			}
 		}
 
+		// get volume information
 		if backup.Status != "New" && backup.Status != "InProgress" {
-			if !volumeBytesOk || !volumeSuccessCountOk {
-				// save computed summary as annotations if snapshot is finished
-				volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to get volume summary")
-				}
-
-				backup.VolumeCount = volumeSummary.VolumeCount
-				backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
-				backup.VolumeBytes = volumeSummary.VolumeBytes
-				backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
+			volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get volume summary")
 			}
+
+			backup.VolumeCount = volumeSummary.VolumeCount
+			backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
+			backup.VolumeBytes = volumeSummary.VolumeBytes
+			backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
 		}
 
 		// group the velero backups by the name we present to the user

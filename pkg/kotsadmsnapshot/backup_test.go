@@ -3212,50 +3212,7 @@ func TestListBackupsForApp(t *testing.T) {
 			},
 		},
 		{
-			name:  "volume info is populated from velero backup annotations",
-			appID: "app-1",
-			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
-					veleroNamespaceConfigmap,
-					veleroDeployment,
-				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
-					testBsl,
-					&velerov1.Backup{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "app-backup-app-1",
-							Namespace: "velero",
-							Annotations: map[string]string{
-								"kots.io/app-id":                        "app-1",
-								"kots.io/snapshot-trigger":              "manual",
-								"kots.io/snapshot-volume-count":         "2",
-								"kots.io/snapshot-volume-success-count": "1",
-								"kots.io/snapshot-volume-bytes":         "1000",
-							},
-						},
-						Status: velerov1.BackupStatus{
-							Phase: velerov1.BackupPhaseCompleted,
-						},
-					},
-				).VeleroV1(),
-			},
-			expectedBackups: []*types.Backup{
-				{
-					AppID:              "app-1",
-					Name:               "app-backup-app-1",
-					Status:             "Completed",
-					Trigger:            "manual",
-					VolumeSizeHuman:    "1kB",
-					VolumeBytes:        1000,
-					VolumeSuccessCount: 1,
-					VolumeCount:        2,
-				},
-			},
-		},
-		{
-			name:  "volume info is populated from pod volume backups if there's no velero backup annotations",
+			name:  "volume info is populated from pod volume backups",
 			appID: "app-1",
 			k8sClientBuilder: &k8sclient.MockBuilder{
 				Client: fake.NewSimpleClientset(
@@ -3646,55 +3603,7 @@ func TestListInstanceBackups(t *testing.T) {
 			},
 		},
 		{
-			name: "volume info is populated from velero backup annotations",
-			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
-					veleroNamespaceConfigmap,
-					veleroDeployment,
-				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
-					testBsl,
-					&velerov1.Backup{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "some-backup-with-volumes",
-							Namespace: "velero",
-							Annotations: map[string]string{
-								types.InstanceBackupAnnotation:          "true",
-								"kots.io/snapshot-trigger":              "manual",
-								"kots.io/snapshot-volume-count":         "2",
-								"kots.io/snapshot-volume-success-count": "1",
-								"kots.io/snapshot-volume-bytes":         "1000",
-							},
-						},
-						Status: velerov1.BackupStatus{
-							Phase: velerov1.BackupPhaseCompleted,
-						},
-					},
-				).VeleroV1(),
-			},
-			expectedBackups: []*types.ReplicatedBackup{
-				{
-					Name:                "some-backup-with-volumes",
-					ExpectedBackupCount: 1,
-					Backups: []types.Backup{
-						{
-							Name:               "some-backup-with-volumes",
-							Status:             "Completed",
-							Trigger:            "manual",
-							VolumeSizeHuman:    "1kB",
-							VolumeBytes:        1000,
-							VolumeSuccessCount: 1,
-							VolumeCount:        2,
-							IncludedApps:       []types.App{},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "volume info is populated from pod volume backups if there's no velero backup annoations",
+			name: "volume info is populated from pod volume backups",
 			k8sClientBuilder: &k8sclient.MockBuilder{
 				Client: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
