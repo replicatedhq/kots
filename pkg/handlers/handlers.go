@@ -397,6 +397,7 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 	loggingRouter.Path("/api/v1/embedded-cluster/join").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterNodeJoinCommand)
 
 	// TODO (@salah): make this authed
+	// endpoints for EC install2 workflow
 	loggingRouter.Path("/api/v1/app/{appSlug}/plan/{stepID}").Methods("PUT").HandlerFunc(handler.UpdatePlanStep)
 }
 

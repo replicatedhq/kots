@@ -7,6 +7,7 @@ type Plan struct {
 	VersionLabel string
 	UpdateCursor string
 	ChannelID    string
+	ECVersion    string
 	Steps        []*PlanStep
 }
 
@@ -35,6 +36,7 @@ const (
 	StepStatusPending  PlanStepStatus = "pending"
 	StepStatusRunning  PlanStepStatus = "running"
 	StepStatusComplete PlanStepStatus = "complete"
+	StepStatusFailed   PlanStepStatus = "failed"
 )
 
 type PlanStepOwner string

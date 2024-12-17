@@ -37,7 +37,11 @@ func executeECUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error 
 		return errors.Wrap(err, "get current installation")
 	}
 
-	appArchive, err := getAppArchive(p)
+	ausOutput, err := getAppUpgradeServiceOutput(p)
+	if err != nil {
+		return errors.Wrap(err, "get app upgrade service output")
+	}
+	appArchive, err := getAppArchive(ausOutput["app-version-archive"])
 	if err != nil {
 		return errors.Wrap(err, "get app archive")
 	}
@@ -65,7 +69,7 @@ func executeECUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error 
 	newInstall.Spec.Config = &kotsKinds.EmbeddedClusterConfig.Spec
 	newInstall.Spec.LicenseInfo = &ecv1beta1.LicenseInfo{IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported}
 
-	if err := websocket.UpgradeCluster(newInstall); err != nil {
+	if err := websocket.UpgradeCluster(newInstall, a.Slug, p.VersionLabel, step.ID); err != nil {
 		return errors.Wrap(err, "upgrade cluster")
 	}
 

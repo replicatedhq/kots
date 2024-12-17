@@ -37,7 +37,7 @@ func (s *KOTSStore) GetPlan(appID, versionLabel string) (*types.Plan, error) {
 	return plan, nil
 }
 
-func (s *KOTSStore) UpsertPlan(appID string, versionLabel string, plan *types.Plan) error {
+func (s *KOTSStore) UpsertPlan(p *types.Plan) error {
 	db := persistence.MustGetDBSession()
 
 	query := `
@@ -47,14 +47,14 @@ func (s *KOTSStore) UpsertPlan(appID string, versionLabel string, plan *types.Pl
 		DO UPDATE SET plan = excluded.plan
 	`
 
-	marshalled, err := yaml.Marshal(plan)
+	marshalled, err := yaml.Marshal(p)
 	if err != nil {
 		return errors.Wrap(err, "marshal")
 	}
 
 	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
-		Arguments: []interface{}{appID, versionLabel, string(marshalled)},
+		Arguments: []interface{}{p.AppID, p.VersionLabel, string(marshalled)},
 	})
 	if err != nil {
 		return fmt.Errorf("write: %v: %v", err, wr.Err)

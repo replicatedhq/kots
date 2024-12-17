@@ -40,16 +40,8 @@ func (h *Handler) UpdatePlanStep(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	stepID := mux.Vars(r)["stepID"]
 
-	a, err := store.GetStore().GetAppFromSlug(appSlug)
-	if err != nil {
-		response.Error = "failed to get app from slug"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
 	opts := plan.UpdateStepOptions{
-		AppID:             a.ID,
+		AppSlug:           appSlug,
 		VersionLabel:      request.VersionLabel,
 		StepID:            stepID,
 		Status:            request.Status,

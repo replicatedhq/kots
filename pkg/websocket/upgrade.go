@@ -10,7 +10,7 @@ import (
 )
 
 // UpgradeCluster sends an upgrade command to the first available websocket from the active ones
-func UpgradeCluster(installation *ecv1beta1.Installation) error {
+func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel, stepID string) error {
 	wsMutex.Lock()
 	defer wsMutex.Unlock()
 
@@ -28,7 +28,17 @@ func UpgradeCluster(installation *ecv1beta1.Installation) error {
 		break
 	}
 
-	data, err := k8syaml.Marshal(installation)
+	marshalledInst, err := k8syaml.Marshal(installation)
+	if err != nil {
+		return errors.Wrap(err, "marshal installation")
+	}
+
+	data, err := k8syaml.Marshal(map[string]string{
+		"installation": string(marshalledInst),
+		"appSlug":      appSlug,
+		"versionLabel": versionLabel,
+		"stepID":       stepID,
+	})
 	if err != nil {
 		return errors.Wrap(err, "marshal installation")
 	}

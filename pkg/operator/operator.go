@@ -1125,83 +1125,63 @@ func (o *Operator) notifyClusterUpgradeFailed(ctx context.Context, kbClient kbcl
 	return nil
 }
 
+type DeployEC2AppOptions struct {
+	AppID           string
+	AppSlug         string
+	AppArchive      string
+	BaseSequence    int64
+	Source          string
+	IsAirgap        bool
+	ChannelID       string
+	UpdateCursor    string
+	SkipPreflights  bool
+	PreflightResult string
+}
+
 // app deploy method for EC install2 workflow
-func (o *Operator) DeployEC2App(opts map[string]string) (finalError error) {
-	if err := upgradeservicetask.SetStatusUpgradingApp(opts["app-slug"], ""); err != nil {
+func (o *Operator) DeployEC2App(opts DeployEC2AppOptions) (finalError error) {
+	if err := upgradeservicetask.SetStatusUpgradingApp(opts.AppSlug, ""); err != nil {
 		return errors.Wrap(err, "set task status to upgrading app")
 	}
 
 	defer func() {
 		if finalError == nil {
-			if err := upgradeservicetask.ClearStatus(opts["app-slug"]); err != nil {
+			if err := upgradeservicetask.ClearStatus(opts.AppSlug); err != nil {
 				logger.Error(errors.Wrap(err, "clear task status"))
 			}
 		} else {
-			if err := upgradeservicetask.SetStatusUpgradeFailed(opts["app-slug"], finalError.Error()); err != nil {
+			if err := upgradeservicetask.SetStatusUpgradeFailed(opts.AppSlug, finalError.Error()); err != nil {
 				logger.Error(errors.Wrap(err, "set task status to failed"))
 			}
 		}
 	}()
 
-	appID := opts["app-id"]
-	source := opts["source"]
-
-	baseSequence, err := strconv.ParseInt(opts["base-sequence"], 10, 64)
-	if err != nil {
-		return errors.Wrap(err, "parse base sequence")
-	}
-
-	skipPreflights, err := strconv.ParseBool(opts["skip-preflights"])
-	if err != nil {
-		return errors.Wrap(err, "parse is skip preflights")
-	}
-
-	tgzArchive, err := filestore.GetStore().ReadArchive(opts["app-version-archive"])
-	if err != nil {
-		return errors.Wrap(err, "read archive")
-	}
-	defer os.RemoveAll(tgzArchive)
-
-	archiveDir, err := os.MkdirTemp("", "kotsadm")
-	if err != nil {
-		return errors.Wrap(err, "create temp dir")
-	}
-	defer os.RemoveAll(archiveDir)
-
-	if err := util.ExtractTGZArchive(tgzArchive, archiveDir); err != nil {
-		return errors.Wrap(err, "extract app archive")
-	}
-
-	sequence, err := o.store.CreateAppVersion(appID, &baseSequence, archiveDir, source, false, false, "", skipPreflights, render.Renderer{})
+	sequence, err := o.store.CreateAppVersion(opts.AppID, &opts.BaseSequence, opts.AppArchive, opts.Source, false, false, "", opts.SkipPreflights, render.Renderer{})
 	if err != nil {
 		return errors.Wrap(err, "create app version")
 	}
 
-	if opts["is-airgap"] == "true" {
-		if err := update.RemoveAirgapUpdate(opts["app-slug"], opts["channel-id"], opts["update-cursor"]); err != nil {
+	if opts.IsAirgap {
+		if err := update.RemoveAirgapUpdate(opts.AppSlug, opts.ChannelID, opts.UpdateCursor); err != nil {
 			return errors.Wrap(err, "remove airgap update")
 		}
 	}
 
-	if err := filestore.GetStore().DeleteArchive(opts["app-version-archive"]); err != nil {
-		return errors.Wrap(err, "delete deployment archive")
-	}
-
-	if pr := opts["preflight-result"]; pr != "" {
-		if err := o.store.SetPreflightResults(appID, sequence, []byte(pr)); err != nil {
+	if opts.PreflightResult != "" {
+		if err := o.store.SetPreflightResults(opts.AppID, sequence, []byte(opts.PreflightResult)); err != nil {
 			return errors.Wrap(err, "set preflight results")
 		}
 	}
 
-	if err := o.store.SetAppChannelChanged(appID, false); err != nil {
+	if err := o.store.SetAppChannelChanged(opts.AppID, false); err != nil {
 		return errors.Wrap(err, "reset channel changed flag")
 	}
 
-	if err := o.store.MarkAsCurrentDownstreamVersion(appID, sequence); err != nil {
+	if err := o.store.MarkAsCurrentDownstreamVersion(opts.AppID, sequence); err != nil {
 		return errors.Wrap(err, "mark as current downstream version")
 	}
 
-	go o.DeployApp(appID, sequence)
+	go o.DeployApp(opts.AppID, sequence)
 
 	return nil
 }

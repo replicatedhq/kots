@@ -5,10 +5,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/plan/types"
-	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
@@ -29,13 +27,7 @@ func PlanUpgrade(s store.Store, opts PlanUpgradeOptions) (*types.Plan, error) {
 		return nil, errors.Wrap(err, "get app from slug")
 	}
 
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
-	if err != nil {
-		return nil, errors.Wrap(err, "parse app license")
-	}
-
-	// TODO (@salah): get from airgap update in airgap
-	ecVersion, err := replicatedapp.GetECVersionForRelease(license, opts.VersionLabel)
+	ecVersion, err := getECVersionForRelease(a, opts.VersionLabel, opts.ChannelID, opts.UpdateCursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "get kots version for release")
 	}
@@ -47,6 +39,7 @@ func PlanUpgrade(s store.Store, opts PlanUpgradeOptions) (*types.Plan, error) {
 		VersionLabel: opts.VersionLabel,
 		UpdateCursor: opts.UpdateCursor,
 		ChannelID:    opts.ChannelID,
+		ECVersion:    ecVersion,
 		Steps:        []*types.PlanStep{},
 	}
 
@@ -88,6 +81,10 @@ func PlanUpgrade(s store.Store, opts PlanUpgradeOptions) (*types.Plan, error) {
 func Execute(s store.Store, p *types.Plan) error {
 	if p == nil {
 		return nil
+	}
+
+	if err := s.UpsertPlan(p); err != nil {
+		return errors.Wrap(err, "upsert plan")
 	}
 
 	stopCh := make(chan struct{})
@@ -157,13 +154,16 @@ func waitForStep(s store.Store, p *types.Plan, stepID string) error {
 		if p.Steps[stepIndex].Status == types.StepStatusComplete {
 			return nil
 		}
+		if p.Steps[stepIndex].Status == types.StepStatusFailed {
+			return errors.Errorf("step failed: %s", p.Steps[stepIndex].StatusDescription)
+		}
 
 		time.Sleep(time.Second * 2)
 	}
 }
 
 type UpdateStepOptions struct {
-	AppID             string
+	AppSlug           string
 	VersionLabel      string
 	StepID            string
 	Status            types.PlanStepStatus
@@ -175,7 +175,12 @@ func UpdateStep(s store.Store, opts UpdateStepOptions) error {
 	planMutex.Lock()
 	defer planMutex.Unlock()
 
-	p, err := s.GetPlan(opts.AppID, opts.VersionLabel)
+	a, err := s.GetAppFromSlug(opts.AppSlug)
+	if err != nil {
+		return errors.Wrap(err, "get app from slug")
+	}
+
+	p, err := s.GetPlan(a.ID, opts.VersionLabel)
 	if err != nil {
 		return errors.Wrap(err, "get plan")
 	}
@@ -195,7 +200,7 @@ func UpdateStep(s store.Store, opts UpdateStepOptions) error {
 	p.Steps[stepIndex].StatusDescription = opts.StatusDescription
 	p.Steps[stepIndex].Output = opts.Output
 
-	if err := s.UpsertPlan(p.AppID, p.VersionLabel, p); err != nil {
+	if err := s.UpsertPlan(p); err != nil {
 		return errors.Wrap(err, "update plan")
 	}
 

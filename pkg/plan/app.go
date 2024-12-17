@@ -1,9 +1,9 @@
 package plan
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/plan/types"
-	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/tasks"
@@ -57,9 +56,34 @@ func executeAppUpgrade(p *types.Plan, step *types.PlanStep) error {
 	if err != nil {
 		return errors.Wrap(err, "get app upgrade service output")
 	}
+	appArchive, err := getAppArchive(ausOutput["app-version-archive"])
+	if err != nil {
+		return errors.Wrap(err, "get app archive")
+	}
+	defer os.RemoveAll(appArchive)
 
-	if err := operator.MustGetOperator().DeployEC2App(ausOutput); err != nil {
+	baseSequence, err := strconv.ParseInt(ausOutput["base-sequence"], 10, 64)
+	if err != nil {
+		return errors.Wrap(err, "parse base sequence")
+	}
+
+	if err := operator.MustGetOperator().DeployEC2App(operator.DeployEC2AppOptions{
+		AppID:           ausOutput["app-id"],
+		AppSlug:         ausOutput["app-slug"],
+		AppArchive:      appArchive,
+		BaseSequence:    baseSequence,
+		Source:          ausOutput["source"],
+		IsAirgap:        ausOutput["is-airgap"] == "true",
+		ChannelID:       ausOutput["channel-id"],
+		UpdateCursor:    ausOutput["update-cursor"],
+		SkipPreflights:  ausOutput["skip-preflights"] == "true",
+		PreflightResult: ausOutput["preflight-result"],
+	}); err != nil {
 		return errors.Wrap(err, "deploy app")
+	}
+
+	if err := filestore.GetStore().DeleteArchive(ausOutput["app-version-archive"]); err != nil {
+		return errors.Wrap(err, "delete archive")
 	}
 	return nil
 }
@@ -90,12 +114,6 @@ func getAppUpgradeServiceParams(s store.Store, p *types.Plan, stepID string) (*u
 		source = "Airgap Update"
 	}
 
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
-	if err != nil {
-		return nil, errors.Wrap(err, "parse app license")
-	}
-
-	var updateECVersion string
 	var updateKOTSBin string
 	var updateAirgapBundle string
 
@@ -110,11 +128,6 @@ func getAppUpgradeServiceParams(s store.Store, p *types.Plan, stepID string) (*u
 			return nil, errors.Wrap(err, "get kots binary from airgap bundle")
 		}
 		updateKOTSBin = kb
-		ecv, err := kotsutil.GetECVersionFromAirgapBundle(au)
-		if err != nil {
-			return nil, errors.Wrap(err, "get kots version from binary")
-		}
-		updateECVersion = ecv
 	} else {
 		// TODO (@salah): revert this
 		// TODO (@salah): no need to download if the kots version did not change?
@@ -124,11 +137,6 @@ func getAppUpgradeServiceParams(s store.Store, p *types.Plan, stepID string) (*u
 		// 	return nil, errors.Wrap(err, "download kots binary")
 		// }
 		updateKOTSBin = kotsutil.GetKOTSBinPath()
-		ecv, err := replicatedapp.GetECVersionForRelease(license, p.VersionLabel)
-		if err != nil {
-			return nil, errors.Wrap(err, "get kots version for release")
-		}
-		updateECVersion = ecv
 	}
 
 	port, err := freeport.GetFreePort()
@@ -155,7 +163,7 @@ func getAppUpgradeServiceParams(s store.Store, p *types.Plan, stepID string) (*u
 		UpdateVersionLabel: p.VersionLabel,
 		UpdateCursor:       p.UpdateCursor,
 		UpdateChannelID:    p.ChannelID,
-		UpdateECVersion:    updateECVersion,
+		UpdateECVersion:    p.ECVersion,
 		UpdateKOTSBin:      updateKOTSBin,
 		UpdateAirgapBundle: updateAirgapBundle,
 
@@ -169,56 +177,4 @@ func getAppUpgradeServiceParams(s store.Store, p *types.Plan, stepID string) (*u
 
 		ReportingInfo: reporting.GetReportingInfo(a.ID),
 	}, nil
-}
-
-func getAppUpgradeServiceOutput(p *types.Plan) (map[string]string, error) {
-	var ausOutput map[string]string
-	for _, s := range p.Steps {
-		if s.Type != types.StepTypeAppUpgradeService {
-			continue
-		}
-		output := s.Output.(string)
-		if output == "" {
-			return nil, errors.New("app upgrade service step output not found")
-		}
-		if err := json.Unmarshal([]byte(output), &ausOutput); err != nil {
-			return nil, errors.Wrap(err, "unmarshal app upgrade service step output")
-		}
-		break
-	}
-	if ausOutput == nil {
-		return nil, errors.New("app upgrade service step output not found")
-	}
-	return ausOutput, nil
-}
-
-// getAppArchive returns the archive created by the app upgrade service step.
-// the caller is responsible for deleting the archive.
-func getAppArchive(p *types.Plan) (string, error) {
-	ausOutput, err := getAppUpgradeServiceOutput(p)
-	if err != nil {
-		return "", errors.Wrap(err, "get app upgrade service output")
-	}
-
-	path, ok := ausOutput["app-version-archive"]
-	if !ok || path == "" {
-		return "", errors.New("app version archive not found in app upgrade service step output")
-	}
-
-	tgzArchive, err := filestore.GetStore().ReadArchive(path)
-	if err != nil {
-		return "", errors.Wrap(err, "read archive")
-	}
-	defer os.RemoveAll(tgzArchive)
-
-	archiveDir, err := os.MkdirTemp("", "kotsadm")
-	if err != nil {
-		return "", errors.Wrap(err, "create temp dir")
-	}
-
-	if err := util.ExtractTGZArchive(tgzArchive, archiveDir); err != nil {
-		return "", errors.Wrap(err, "extract app archive")
-	}
-
-	return archiveDir, nil
 }
