@@ -10,7 +10,8 @@ async function postDeployAppVersion({
   sequence: string;
 }) {
   const response = await fetch(
-    `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/deploy`,
+    // TODO (@salah): revert this
+    `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/ec2-deploy`,
     {
       headers: {
         "Content-Type": "application/json",

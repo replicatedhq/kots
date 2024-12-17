@@ -13,6 +13,7 @@ import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
+	plantypes "github.com/replicatedhq/kots/pkg/plan/types"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
@@ -46,6 +47,7 @@ type Store interface {
 	EmbeddedStore
 	BrandingStore
 	EmbeddedClusterStore
+	PlanStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -244,4 +246,9 @@ type BrandingStore interface {
 type EmbeddedClusterStore interface {
 	SetEmbeddedClusterInstallCommandRoles(roles []string) (string, error)
 	GetEmbeddedClusterInstallCommandRoles(token string) ([]string, error)
+}
+
+type PlanStore interface {
+	GetPlan(appID, versionLabel string) (*plantypes.Plan, error)
+	UpsertPlan(appID string, versionLabel string, plan *plantypes.Plan) error
 }

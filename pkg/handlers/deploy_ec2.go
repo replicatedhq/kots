@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/plan"
+	"github.com/replicatedhq/kots/pkg/store"
 	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 )
 
@@ -37,9 +38,17 @@ func (h *Handler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
 
 	appSlug := mux.Vars(r)["appSlug"]
 
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		response.Error = "failed to get app from slug"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
 	// TODO (@salah): implement canStartUpgradeService logic here
 
-	p, err := plan.PlanUpgrade(r.Context(), plan.PlanUpgradeOptions{
+	p, err := plan.PlanUpgrade(store.GetStore(), plan.PlanUpgradeOptions{
 		AppSlug:      appSlug,
 		VersionLabel: request.VersionLabel,
 		UpdateCursor: request.UpdateCursor,
@@ -52,7 +61,14 @@ func (h *Handler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO NOW: move this somewhere else?
+	if err := store.GetStore().UpsertPlan(a.ID, request.VersionLabel, p); err != nil {
+		response.Error = "failed to create plan"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	// TODO NOW: is this step needed? use plan step status instead? upgrade service can update status via api
 	if err := upgradeservicetask.SetStatusStarting(appSlug, "Preparing..."); err != nil {
 		response.Error = "failed to set task status"
 		logger.Error(errors.Wrap(err, response.Error))
@@ -61,7 +77,7 @@ func (h *Handler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := plan.Execute(r.Context(), p); err != nil {
+		if err := plan.Execute(store.GetStore(), p); err != nil {
 			logger.Error(errors.Wrap(err, "failed to execute upgrade plan"))
 		}
 	}()

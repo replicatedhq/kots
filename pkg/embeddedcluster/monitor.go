@@ -50,7 +50,7 @@ func RequiresClusterUpgrade(ctx context.Context, kbClient kbclient.Client, kotsK
 
 func StartClusterUpgrade(ctx context.Context, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) error {
 	spec := kotsKinds.EmbeddedClusterConfig.Spec
-	artifacts := getArtifactsFromInstallation(kotsKinds.Installation)
+	artifacts := GetArtifactsFromInstallation(kotsKinds.Installation)
 
 	if err := startClusterUpgrade(ctx, spec, artifacts, registrySettings, *kotsKinds.License, kotsKinds.Installation.Spec.VersionLabel); err != nil {
 		return fmt.Errorf("failed to start cluster upgrade: %w", err)

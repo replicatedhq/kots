@@ -1,0 +1,25 @@
+apiVersion: schemas.schemahero.io/v1alpha4
+kind: Table
+metadata:
+  name: plan
+spec:
+  name: plan
+  schema:
+    rqlite:
+      strict: true
+      primaryKey:
+      - app_id
+      - version_label
+      columns:
+      - name: app_id
+        type: text
+        constraints:
+          notNull: true
+      - name: version_label
+        type: text
+        constraints:
+          notNull: true
+      - name: plan
+        type: text
+        constraints:
+          notNull: true

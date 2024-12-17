@@ -40,6 +40,7 @@ func RegisterAPIRoutes(r *mux.Router, handler UpgradeServiceHandler) {
 	subRouter.Path("/preflight/result").Methods("GET").HandlerFunc(handler.GetPreflightResult)
 
 	subRouter.Path("/deploy").Methods("POST").HandlerFunc(handler.Deploy)
+	subRouter.Path("/ec2-deploy").Methods("POST").HandlerFunc(handler.DeployEC2)
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

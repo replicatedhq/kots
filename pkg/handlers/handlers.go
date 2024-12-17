@@ -335,7 +335,7 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("GetDebugInfo").Path("/api/v1/debug").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetDebugInfo))
 
-	// endpoint for EC install2 workflow
+	// endpoints for EC install2 workflow
 	r.Name("DeployEC2AppVersion").Path("/api/v1/app/{appSlug}/ec2-deploy").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.DeployEC2AppVersion))
 
@@ -395,6 +395,9 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 
 	// This handler requires a valid token in the query
 	loggingRouter.Path("/api/v1/embedded-cluster/join").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterNodeJoinCommand)
+
+	// TODO (@salah): make this authed
+	loggingRouter.Path("/api/v1/app/{appSlug}/plan/{stepID}").Methods("PUT").HandlerFunc(handler.UpdatePlanStep)
 }
 
 func StreamJSON(c *websocket.Conn, payload interface{}) {

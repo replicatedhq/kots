@@ -53,18 +53,6 @@ func Stop(appSlug string) {
 	delete(upgradeServiceMap, appSlug)
 }
 
-// Wait waits for the upgrade service process to exit
-func Wait(appSlug string) error {
-	upgradeServiceMtx.Lock()
-	defer upgradeServiceMtx.Unlock()
-
-	svc, _ := upgradeServiceMap[appSlug]
-	if svc == nil {
-		return errors.New("upgrade service not found")
-	}
-	return svc.wait()
-}
-
 // Proxy proxies the request to the app's upgrade service.
 func Proxy(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
@@ -142,13 +130,6 @@ func (s *UpgradeService) stop() {
 	if err := s.cmd.Process.Signal(os.Interrupt); err != nil {
 		logger.Errorf("Failed to stop upgrade service on port %s: %v", s.port, err)
 	}
-}
-
-func (s *UpgradeService) wait() error {
-	if !s.isRunning() {
-		return nil
-	}
-	return s.cmd.Wait()
 }
 
 func (s *UpgradeService) isRunning() bool {
