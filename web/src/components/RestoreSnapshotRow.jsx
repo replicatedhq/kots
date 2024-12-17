@@ -32,7 +32,7 @@ class RestoreSnapshotRow extends Component {
         if (result.success) {
           this.setState({
             isLoadingBackupInfo: false,
-            backupInfo: result.backupDetail,
+            backupInfo: result.backupDetails?.[0],
             backupInfoMsg: "",
           });
         } else {
