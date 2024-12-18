@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
 func TestRollupStatus(t *testing.T) {
@@ -96,6 +97,48 @@ func TestRollupStatus(t *testing.T) {
 			// Reverse the order of the statuses and check if the result is the same
 			slices.Reverse(test.backupStatuses)
 			assert.Equal(t, test.expected, RollupStatus(test.backupStatuses))
+		})
+	}
+}
+
+func TestGetStatusFromBackupPhase(t *testing.T) {
+	tests := []struct {
+		phase    string
+		expected BackupStatus
+	}{
+		{
+			phase:    string(velerov1.BackupPhaseNew),
+			expected: BackupStatusInProgress,
+		},
+		{
+			phase:    string(velerov1.BackupPhaseInProgress),
+			expected: BackupStatusInProgress,
+		},
+		{
+			phase:    string(velerov1.BackupPhaseCompleted),
+			expected: BackupStatusCompleted,
+		},
+		{
+			phase:    string(velerov1.BackupPhaseFailed),
+			expected: BackupStatusFailed,
+		},
+		{
+			phase:    "SomeNewFailState",
+			expected: BackupStatusFailed,
+		},
+		{
+			phase:    string(velerov1.BackupPhaseDeleting),
+			expected: BackupStatusDeleting,
+		},
+		{
+			phase:    "SomeUnknownNewState",
+			expected: BackupStatusInProgress,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.phase, func(t *testing.T) {
+			assert.Equal(t, test.expected, GetStatusFromBackupPhase(velerov1.BackupPhase(test.phase)))
 		})
 	}
 }
