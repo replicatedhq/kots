@@ -11,9 +11,12 @@ interface Props {
   closeModal: () => void;
   connectionTerminated: boolean;
   setTerminatedState: (terminated: boolean) => void;
+  isEC2Install: boolean;
 }
 
 const UpgradeStatusModal = (props: Props) => {
+  const failedStatus = props.isEC2Install ? "failed" : "upgrade-failed";
+
   const ping = async () => {
     await fetch(`${process.env.API_ENDPOINT}/ping`, {
       headers: {
@@ -40,14 +43,14 @@ const UpgradeStatusModal = (props: Props) => {
     const interval = setInterval(() => {
       if (props.connectionTerminated) {
         ping();
-      } else if (props.status !== "upgrade-failed") {
+      } else if (props.status !== failedStatus) {
         props.refetchStatus(props.appSlug);
       }
     }, 10000);
     return () => clearInterval(interval);
   }, [props.connectionTerminated, props.status]);
 
-  if (props.status === "upgrade-failed") {
+  if (props.status === failedStatus) {
     return (
       <div className="u-padding--25 tw-flex tw-flex-col tw-justify-center tw-items-center">
         <span className="icon redWarningIcon flex-auto" />
@@ -78,11 +81,13 @@ const UpgradeStatusModal = (props: Props) => {
     );
   }
 
-  let status;
+  let message;
   if (props.status === "upgrading-cluster") {
-    status = Utilities.humanReadableClusterState(props.message);
+    message = Utilities.humanReadableClusterState(props.message);
   } else if (props.status === "upgrading-app") {
-    status = "Almost done";
+    message = "Almost done";
+  } else {
+    message = props.message;
   }
 
   return (
@@ -103,7 +108,7 @@ const UpgradeStatusModal = (props: Props) => {
           The page will automatically refresh when the update is complete.
           <br />
           <br />
-          Status: {status}
+          Status: {message}
         </p>
       )}
     </div>

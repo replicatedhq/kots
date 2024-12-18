@@ -147,15 +147,9 @@ func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError
 		}
 	}()
 
-	// check status of step
 	switch step.Status {
-	case types.StepStatusRunning:
-		logger.Infof("Step %q of plan %q is already running. Waiting for it to finish...", step.Name, p.ID)
-		if err := waitForStep(s, p, step.ID); err != nil {
-			return errors.Wrap(err, "wait for step")
-		}
 	case types.StepStatusFailed:
-		return errors.Errorf("plan has already failed. status: %q. description: %q", step.Status, step.StatusDescription)
+		return errors.Errorf("step has already failed. status: %q. description: %q", step.Status, step.StatusDescription)
 	case types.StepStatusComplete:
 		logger.Infof("Skipping step %q of plan %q because it already completed", step.Name, p.ID)
 		return nil
@@ -165,25 +159,32 @@ func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError
 
 	switch step.Type {
 	case types.StepTypeAppUpgradeService:
+		if step.Status != types.StepStatusPending {
+			return errors.Errorf("step %q cannot be resumed", step.Name, p.ID)
+		}
 		if err := executeAppUpgradeService(s, p, step); err != nil {
 			return errors.Wrap(err, "execute app upgrade service")
 		}
+		if err := waitForStep(s, p, step.ID); err != nil {
+			return errors.Wrap(err, "wait for upgrade service")
+		}
 
 	case types.StepTypeECUpgrade:
-		if err := executeECUpgrade(s, p, step); err != nil {
-			return errors.Wrap(err, "execute embedded cluster upgrade")
+		if step.Status == types.StepStatusPending {
+			if err := executeECUpgrade(s, p, step); err != nil {
+				return errors.Wrap(err, "execute embedded cluster upgrade")
+			}
+		}
+		if err := waitForStep(s, p, step.ID); err != nil {
+			return errors.Wrap(err, "wait for embedded cluster upgrade")
 		}
 
 	case types.StepTypeAppUpgrade:
-		if err := executeAppUpgrade(p, step); err != nil {
+		if err := executeAppUpgrade(s, p, step); err != nil {
 			return errors.Wrap(err, "execute app upgrade")
 		}
 	default:
 		return errors.Errorf("unknown step type %q", step.Type)
-	}
-
-	if err := waitForStep(s, p, step.ID); err != nil {
-		return errors.Wrap(err, "wait for step")
 	}
 
 	logger.Infof("Step %q of plan %q completed", step.Name, p.ID)

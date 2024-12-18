@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/plan/types"
+	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/update"
@@ -51,7 +52,16 @@ func executeAppUpgradeService(s store.Store, p *types.Plan, step *types.PlanStep
 	return nil
 }
 
-func executeAppUpgrade(p *types.Plan, step *types.PlanStep) error {
+func executeAppUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error {
+	if err := UpdateStep(s, UpdateStepOptions{
+		AppSlug:      p.AppSlug,
+		VersionLabel: p.VersionLabel,
+		StepID:       step.ID,
+		Status:       types.StepStatusRunning,
+	}); err != nil {
+		return errors.Wrap(err, "update step status")
+	}
+
 	ausOutput, err := getAppUpgradeServiceOutput(p)
 	if err != nil {
 		return errors.Wrap(err, "get app upgrade service output")
@@ -67,24 +77,51 @@ func executeAppUpgrade(p *types.Plan, step *types.PlanStep) error {
 		return errors.Wrap(err, "parse base sequence")
 	}
 
-	if err := operator.MustGetOperator().DeployEC2App(operator.DeployEC2AppOptions{
-		AppID:           ausOutput["app-id"],
-		AppSlug:         ausOutput["app-slug"],
-		AppArchive:      appArchive,
-		BaseSequence:    baseSequence,
-		Source:          ausOutput["source"],
-		IsAirgap:        ausOutput["is-airgap"] == "true",
-		ChannelID:       ausOutput["channel-id"],
-		UpdateCursor:    ausOutput["update-cursor"],
-		SkipPreflights:  ausOutput["skip-preflights"] == "true",
-		PreflightResult: ausOutput["preflight-result"],
-	}); err != nil {
-		return errors.Wrap(err, "deploy app")
+	skipPreflights, err := strconv.ParseBool(ausOutput["skip-preflights"])
+	if err != nil {
+		return errors.Wrap(err, "failed to parse is skip preflights")
+	}
+
+	sequence, err := s.CreateAppVersion(ausOutput["app-id"], &baseSequence, appArchive, ausOutput["source"], false, false, "", skipPreflights, render.Renderer{})
+	if err != nil {
+		return errors.Wrap(err, "create app version")
+	}
+
+	if ausOutput["is-airgap"] == "true" {
+		if err := update.RemoveAirgapUpdate(ausOutput["app-slug"], ausOutput["channel-id"], ausOutput["update-cursor"]); err != nil {
+			return errors.Wrap(err, "remove airgap update")
+		}
 	}
 
 	if err := filestore.GetStore().DeleteArchive(ausOutput["app-version-archive"]); err != nil {
 		return errors.Wrap(err, "delete archive")
 	}
+
+	if ausOutput["preflight-result"] != "" {
+		if err := s.SetPreflightResults(ausOutput["app-id"], sequence, []byte(ausOutput["preflight-result"])); err != nil {
+			return errors.Wrap(err, "set preflight results")
+		}
+	}
+
+	if err := s.SetAppChannelChanged(ausOutput["app-id"], false); err != nil {
+		return errors.Wrap(err, "reset channel changed flag")
+	}
+
+	if err := s.MarkAsCurrentDownstreamVersion(ausOutput["app-id"], sequence); err != nil {
+		return errors.Wrap(err, "mark as current downstream version")
+	}
+
+	go operator.MustGetOperator().DeployApp(ausOutput["app-id"], sequence)
+
+	if err := UpdateStep(s, UpdateStepOptions{
+		AppSlug:      p.AppSlug,
+		VersionLabel: p.VersionLabel,
+		StepID:       step.ID,
+		Status:       types.StepStatusComplete,
+	}); err != nil {
+		return errors.Wrap(err, "update step status")
+	}
+
 	return nil
 }
 

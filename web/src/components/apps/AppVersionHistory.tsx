@@ -1031,7 +1031,7 @@ class AppVersionHistory extends Component<Props, State> {
     return new Promise<void>((resolve, reject) => {
       let url = `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`;
       if (adminConsoleMetadata?.isEC2Install) {
-        url = `${process.env.API_ENDPOINT}/app/${app?.slug}/ec2-plan-status?stepType=app_upgrade_service`;
+        url = `${process.env.API_ENDPOINT}/app/${app?.slug}/ec2-deploy/status`;
       }
       fetch(
         url,
@@ -1048,7 +1048,7 @@ class AppVersionHistory extends Component<Props, State> {
 
           let stopPolling = response.status !== "starting";
           if (adminConsoleMetadata?.isEC2Install) {
-            stopPolling = response.status !== "pending" && response.status !== "starting";
+            stopPolling = response.step !== "app-upgrade-service" || (response.status !== "pending" && response.status !== "starting");
           }
 
           if (stopPolling) {

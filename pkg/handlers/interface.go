@@ -169,7 +169,7 @@ type KOTSHandler interface {
 
 	// endpoints for EC install2 workflow
 	DeployEC2AppVersion(w http.ResponseWriter, r *http.Request)
-	GetCurrentPlanStatus(w http.ResponseWriter, r *http.Request)
+	GetEC2DeployStatus(w http.ResponseWriter, r *http.Request)
 	UpdatePlanStep(w http.ResponseWriter, r *http.Request)
 
 	// Upgrade service

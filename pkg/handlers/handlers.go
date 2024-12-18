@@ -338,8 +338,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	// endpoints for EC install2 workflow
 	r.Name("DeployEC2AppVersion").Path("/api/v1/app/{appSlug}/ec2-deploy").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.DeployEC2AppVersion))
-	r.Name("GetCurrentPlanStatus").Path("/api/v1/app/{appSlug}/ec2-plan-status").Methods("GET").
-		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.GetCurrentPlanStatus))
+	r.Name("GetEC2DeployStatus").Path("/api/v1/app/{appSlug}/ec2-deploy/status").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.GetEC2DeployStatus))
 
 	// Upgrade service
 	r.Name("StartUpgradeService").Path("/api/v1/app/{appSlug}/start-upgrade-service").Methods("POST").

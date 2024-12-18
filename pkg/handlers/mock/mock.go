@@ -718,18 +718,6 @@ func (mr *MockKOTSHandlerMockRecorder) GetBackup(w, r interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackup", reflect.TypeOf((*MockKOTSHandler)(nil).GetBackup), w, r)
 }
 
-// GetCurrentPlanStatus mocks base method.
-func (m *MockKOTSHandler) GetCurrentPlanStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetCurrentPlanStatus", w, r)
-}
-
-// GetCurrentPlanStatus indicates an expected call of GetCurrentPlanStatus.
-func (mr *MockKOTSHandlerMockRecorder) GetCurrentPlanStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentPlanStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetCurrentPlanStatus), w, r)
-}
-
 // GetDebugInfo mocks base method.
 func (m *MockKOTSHandler) GetDebugInfo(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -752,6 +740,18 @@ func (m *MockKOTSHandler) GetDownstreamOutput(w http.ResponseWriter, r *http.Req
 func (mr *MockKOTSHandlerMockRecorder) GetDownstreamOutput(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstreamOutput", reflect.TypeOf((*MockKOTSHandler)(nil).GetDownstreamOutput), w, r)
+}
+
+// GetEC2DeployStatus mocks base method.
+func (m *MockKOTSHandler) GetEC2DeployStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetEC2DeployStatus", w, r)
+}
+
+// GetEC2DeployStatus indicates an expected call of GetEC2DeployStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetEC2DeployStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEC2DeployStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetEC2DeployStatus), w, r)
 }
 
 // GetEmbeddedClusterNode mocks base method.

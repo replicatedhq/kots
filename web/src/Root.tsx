@@ -278,8 +278,11 @@ const Root = () => {
 
   const fetchUpgradeStatus = async (appSlug) => {
     try {
-      const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`,
+      let url = `${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`;
+      if (state.adminConsoleMetadata?.isEC2Install) {
+        url = `${process.env.API_ENDPOINT}/app/${appSlug}/ec2-deploy/status`;
+      }
+      const res = await fetch(url,
         {
           headers: {
             "Content-Type": "application/json",
@@ -301,11 +304,14 @@ const Root = () => {
       }
       const response = await res.json();
       const status = response.status;
-      if (
-        status === "upgrading-cluster" ||
-        status === "upgrading-app" ||
-        status === "upgrade-failed"
-      ) {
+
+      let showModal = false;
+      if (state.adminConsoleMetadata?.isEC2Install) {
+        showModal = status !== "" && status !== "complete" && response.step !== "app-upgrade-service"; 
+      } else {
+        showModal = status === "upgrading-cluster" || status === "upgrading-app" || status === "upgrade-failed";
+      }
+      if (showModal) {
         setState({
           showUpgradeStatusModal: true,
           upgradeStatus: status,
@@ -1204,7 +1210,8 @@ const Root = () => {
           isOpen={state.showUpgradeStatusModal}
           onRequestClose={() => {
             // cannot close the modal while upgrading
-            if (state.upgradeStatus === "upgrade-failed") {
+            const failedStatus = state.adminConsoleMetadata?.isEC2Install ? "failed" : "upgrade-failed";
+            if (state.upgradeStatus === failedStatus) {
               setState({ showUpgradeStatusModal: false });
             }
           }}
@@ -1223,6 +1230,7 @@ const Root = () => {
             setTerminatedState={(status: boolean) =>
               setState({ connectionTerminated: status })
             }
+            isEC2Install={state.adminConsoleMetadata?.isEC2Install}
           />
         </Modal>
       ) : (

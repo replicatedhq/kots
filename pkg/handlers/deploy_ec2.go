@@ -40,9 +40,10 @@ type UpdatePlanStepResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-type GetCurrentPlanStatusResponse struct {
-	CurrentMessage string `json:"currentMessage"`
+type GetEC2DeployStatusResponse struct {
+	Step           string `json:"step"`
 	Status         string `json:"status"`
+	CurrentMessage string `json:"currentMessage"`
 }
 
 func (h *Handler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
@@ -203,7 +204,7 @@ func (h *Handler) UpdatePlanStep(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-func (h *Handler) GetCurrentPlanStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetEC2DeployStatus(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -220,28 +221,15 @@ func (h *Handler) GetCurrentPlanStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if p == nil || time.Since(*updatedAt) > time.Minute {
-		JSON(w, http.StatusOK, GetCurrentPlanStatusResponse{})
+		JSON(w, http.StatusOK, GetEC2DeployStatusResponse{})
 		return
 	}
 
-	stepType := r.URL.Query().Get("stepType")
+	currStep := p.CurrentStep()
 
-	if stepType == "" {
-		status, description := p.GetStatus()
-		JSON(w, http.StatusOK, GetCurrentPlanStatusResponse{
-			CurrentMessage: description,
-			Status:         string(status),
-		})
-		return
-	}
-
-	for _, s := range p.Steps {
-		if s.Type == plantypes.PlanStepType(stepType) {
-			JSON(w, http.StatusOK, GetCurrentPlanStatusResponse{
-				CurrentMessage: s.StatusDescription,
-				Status:         string(s.Status),
-			})
-			return
-		}
-	}
+	JSON(w, http.StatusOK, GetEC2DeployStatusResponse{
+		Step:           string(currStep.Type),
+		Status:         string(currStep.Status),
+		CurrentMessage: currStep.StatusDescription,
+	})
 }

@@ -25,9 +25,9 @@ type PlanStep struct {
 type PlanStepType string
 
 const (
-	StepTypeAppUpgradeService PlanStepType = "app_upgrade_service"
-	StepTypeAppUpgrade        PlanStepType = "app_upgrade"
-	StepTypeECUpgrade         PlanStepType = "ec_upgrade"
+	StepTypeAppUpgradeService PlanStepType = "app-upgrade-service"
+	StepTypeAppUpgrade        PlanStepType = "app-upgrade"
+	StepTypeECUpgrade         PlanStepType = "ec-upgrade"
 )
 
 type PlanStepStatus string
@@ -48,35 +48,39 @@ const (
 )
 
 func (p *Plan) HasEnded() bool {
-	status, _ := p.GetStatus()
+	status := p.GetStatus()
 	return status == StepStatusFailed || status == StepStatusComplete
 }
 
-func (p *Plan) GetStatus() (PlanStepStatus, string) {
-	return minStatus(p.Steps)
+func (p *Plan) GetStatus() PlanStepStatus {
+	return p.CurrentStep().Status
 }
 
-func minStatus(steps []*PlanStep) (PlanStepStatus, string) {
-	var min PlanStepStatus
-	var description string
-
-	for _, s := range steps {
-		if s.Status == StepStatusFailed || min == StepStatusFailed {
-			return StepStatusFailed, s.StatusDescription
-		} else if s.Status == StepStatusStarting || min == StepStatusStarting {
-			min = StepStatusStarting
-			description = s.StatusDescription
-		} else if s.Status == StepStatusRunning || min == StepStatusRunning {
-			min = StepStatusRunning
-			description = s.StatusDescription
-		} else if s.Status == StepStatusPending || min == StepStatusPending {
-			min = StepStatusPending
-			description = s.StatusDescription
-		} else if s.Status == StepStatusComplete || min == StepStatusComplete {
-			min = StepStatusComplete
-			description = s.StatusDescription
+func (p *Plan) CurrentStep() *PlanStep {
+	for _, s := range p.Steps {
+		if s.Status == StepStatusFailed {
+			return s
 		}
 	}
-
-	return min, description
+	for _, s := range p.Steps {
+		if s.Status == StepStatusStarting {
+			return s
+		}
+	}
+	for _, s := range p.Steps {
+		if s.Status == StepStatusRunning {
+			return s
+		}
+	}
+	for _, s := range p.Steps {
+		if s.Status == StepStatusPending {
+			return s
+		}
+	}
+	for _, s := range p.Steps {
+		if s.Status == StepStatusComplete {
+			return s
+		}
+	}
+	return &PlanStep{}
 }

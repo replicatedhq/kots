@@ -51,8 +51,6 @@ func (s *KOTSStore) UpsertPlan(p *types.Plan) error {
 			plan = excluded.plan
 	`
 
-	status, _ := p.GetStatus()
-
 	marshalled, err := yaml.Marshal(p)
 	if err != nil {
 		return errors.Wrap(err, "marshal")
@@ -65,7 +63,7 @@ func (s *KOTSStore) UpsertPlan(p *types.Plan) error {
 			p.VersionLabel,
 			time.Now().Unix(),
 			time.Now().Unix(),
-			status,
+			p.GetStatus(),
 			string(marshalled),
 		},
 	})
