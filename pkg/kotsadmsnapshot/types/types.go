@@ -2,6 +2,7 @@ package types
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -56,29 +57,38 @@ type App struct {
 	AppIconURI string `json:"iconUri"`
 }
 
-// ReplicatedBackup holds both the infrastructure and app backups for an EC cluster
-type ReplicatedBackup struct {
-	Name string `json:"name"`
-	// number of backups expected to exist for the ReplicatedBackup to be considered complete
-	ExpectedBackupCount int      `json:"expectedBackupCount"`
-	Backups             []Backup `json:"backups"`
-}
+// BackupStatus represents the status of a backup
+type BackupStatus string
 
+const (
+	// BackupStatusInProgress indicates that the backup is currently in progress
+	BackupStatusInProgress BackupStatus = "InProgress"
+	// BackupStatusCompleted indicates that the backup has been completed successfully
+	BackupStatusCompleted BackupStatus = "Completed"
+	// BackupStatusFailed indicates that the backup has failed
+	BackupStatusFailed BackupStatus = "Failed"
+	// BackupStatusDeleting indicates that the backup is being deleted
+	BackupStatusDeleting BackupStatus = "Deleting"
+)
+
+// Backup represnts a replicated backup working as an abstraction layer between Replicated and
+// Velero backups. These can be either infrastructure/instance, app backups or both.
 type Backup struct {
-	Name               string     `json:"name"`
-	Status             string     `json:"status"`
-	Trigger            string     `json:"trigger"`
-	AppID              string     `json:"appID"`    // TODO: remove with app backups
-	Sequence           int64      `json:"sequence"` // TODO: remove with app backups
-	StartedAt          *time.Time `json:"startedAt,omitempty"`
-	FinishedAt         *time.Time `json:"finishedAt,omitempty"`
-	ExpiresAt          *time.Time `json:"expiresAt,omitempty"`
-	VolumeCount        int        `json:"volumeCount"`
-	VolumeSuccessCount int        `json:"volumeSuccessCount"`
-	VolumeBytes        int64      `json:"volumeBytes"`
-	VolumeSizeHuman    string     `json:"volumeSizeHuman"`
-	SupportBundleID    string     `json:"supportBundleId,omitempty"`
-	IncludedApps       []App      `json:"includedApps,omitempty"`
+	Name            string       `json:"name"`
+	Status          BackupStatus `json:"status"`
+	Trigger         string       `json:"trigger"`
+	AppID           string       `json:"appID"`    // TODO: remove with app backups
+	Sequence        int64        `json:"sequence"` // TODO: remove with app backups
+	StartedAt       *time.Time   `json:"startedAt,omitempty"`
+	FinishedAt      *time.Time   `json:"finishedAt,omitempty"`
+	ExpiresAt       *time.Time   `json:"expiresAt,omitempty"`
+	SupportBundleID string       `json:"supportBundleId,omitempty"`
+	IncludedApps    []App        `json:"includedApps,omitempty"`
+	// number of velero backups expected to exist for the Backup to be considered done
+	ExpectedBackupCount int `json:"expectedBackupCount"`
+	// number of velero backups that actually exist
+	BackupCount int `json:"backupCount"`
+	VolumeSummary
 }
 
 type BackupDetail struct {
@@ -233,4 +243,46 @@ func GetInstanceBackupCount(veleroBackup velerov1.Backup) int {
 		}
 	}
 	return 1
+}
+
+// GetBackupTrigger returns the trigger of the backup from the velero backup object annotation.
+func GetBackupTrigger(veleroBackup velerov1.Backup) string {
+	if val, ok := veleroBackup.GetAnnotations()[BackupTriggerAnnotation]; ok {
+		return val
+	}
+	return ""
+}
+
+// GetStatusFromBackupPhase returns our backup status from the velero backup phase.
+func GetStatusFromBackupPhase(phase velerov1.BackupPhase) BackupStatus {
+	switch {
+	case phase == velerov1.BackupPhaseNew || phase == velerov1.BackupPhaseInProgress:
+		return BackupStatusInProgress
+	case phase == velerov1.BackupPhaseCompleted:
+		return BackupStatusCompleted
+	case strings.Contains(strings.ToLower(string(phase)), "fail"):
+		return BackupStatusFailed
+	case phase == velerov1.BackupPhaseDeleting:
+		return BackupStatusDeleting
+	default:
+		return BackupStatusInProgress
+	}
+}
+
+// RollupStatus returns the overall status of a list of backup statuses. This is particularly useful when we have multiple
+// velero backups for a single Replicated backup.
+func RollupStatus(backupStatuses []BackupStatus) BackupStatus {
+	result := BackupStatusCompleted
+
+	for _, backupStatus := range backupStatuses {
+		switch {
+		case backupStatus == BackupStatusInProgress:
+			return BackupStatusInProgress
+		case backupStatus == BackupStatusDeleting:
+			result = BackupStatusDeleting
+		case backupStatus == BackupStatusFailed:
+			result = BackupStatusFailed
+		}
+	}
+	return result
 }

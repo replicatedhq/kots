@@ -3163,10 +3163,12 @@ func TestListBackupsForApp(t *testing.T) {
 			},
 			expectedBackups: []*types.Backup{
 				{
-					AppID:           "app-1",
-					Name:            "app-backup-app-1",
-					Status:          "Completed",
-					VolumeSizeHuman: "0B",
+					AppID:  "app-1",
+					Name:   "app-backup-app-1",
+					Status: "Completed",
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman: "0B",
+					},
 				},
 			},
 		},
@@ -3201,13 +3203,15 @@ func TestListBackupsForApp(t *testing.T) {
 			},
 			expectedBackups: []*types.Backup{
 				{
-					AppID:           "app-1",
-					Name:            "app-backup-app-1",
-					Status:          "Completed",
-					StartedAt:       &startTs,
-					FinishedAt:      &completionTs,
-					ExpiresAt:       &expirationTs,
-					VolumeSizeHuman: "0B",
+					AppID:      "app-1",
+					Name:       "app-backup-app-1",
+					Status:     "Completed",
+					StartedAt:  &startTs,
+					FinishedAt: &completionTs,
+					ExpiresAt:  &expirationTs,
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman: "0B",
+					},
 				},
 			},
 		},
@@ -3255,14 +3259,16 @@ func TestListBackupsForApp(t *testing.T) {
 			},
 			expectedBackups: []*types.Backup{
 				{
-					AppID:              "app-1",
-					Name:               "app-backup-app-1",
-					Status:             "Completed",
-					Trigger:            "schedule",
-					VolumeSizeHuman:    "2kB",
-					VolumeBytes:        2000,
-					VolumeSuccessCount: 1,
-					VolumeCount:        1,
+					AppID:   "app-1",
+					Name:    "app-backup-app-1",
+					Status:  "Completed",
+					Trigger: "schedule",
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman:    "2kB",
+						VolumeBytes:        2000,
+						VolumeSuccessCount: 1,
+						VolumeCount:        1,
+					},
 				},
 			},
 		},
@@ -3331,7 +3337,7 @@ func TestListInstanceBackups(t *testing.T) {
 		setup               func(mockStore *mock_store.MockStore)
 		veleroClientBuilder veleroclient.VeleroClientBuilder
 		k8sClientBuilder    k8sclient.K8sClientsetBuilder
-		expectedBackups     []*types.ReplicatedBackup
+		expectedBackups     []*types.Backup
 		wantErr             string
 	}{
 		{
@@ -3379,7 +3385,7 @@ func TestListInstanceBackups(t *testing.T) {
 					testBsl,
 				).VeleroV1(),
 			},
-			expectedBackups: []*types.ReplicatedBackup{},
+			expectedBackups: []*types.Backup{},
 		},
 		{
 			name: "non instance backups are excluded",
@@ -3415,17 +3421,15 @@ func TestListInstanceBackups(t *testing.T) {
 					},
 				).VeleroV1(),
 			},
-			expectedBackups: []*types.ReplicatedBackup{
+			expectedBackups: []*types.Backup{
 				{
 					Name:                "instance-backup",
 					ExpectedBackupCount: 1,
-					Backups: []types.Backup{
-						{
-							Name:            "instance-backup",
-							Status:          "Completed",
-							IncludedApps:    []types.App{},
-							VolumeSizeHuman: "0B",
-						},
+					BackupCount:         1,
+					Status:              "Completed",
+					IncludedApps:        []types.App{},
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman: "0B",
 					},
 				},
 			},
@@ -3479,23 +3483,15 @@ func TestListInstanceBackups(t *testing.T) {
 					},
 				).VeleroV1(),
 			},
-			expectedBackups: []*types.ReplicatedBackup{
+			expectedBackups: []*types.Backup{
 				{
 					Name:                "aggregated-repl-backup",
 					ExpectedBackupCount: 2,
-					Backups: []types.Backup{
-						{
-							Name:            "app-backup",
-							Status:          "Completed",
-							IncludedApps:    []types.App{},
-							VolumeSizeHuman: "0B",
-						},
-						{
-							Name:            "infra-backup",
-							Status:          "Completed",
-							IncludedApps:    []types.App{},
-							VolumeSizeHuman: "0B",
-						},
+					BackupCount:         2,
+					Status:              "Completed",
+					IncludedApps:        []types.App{},
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman: "0B",
 					},
 				},
 			},
@@ -3534,24 +3530,22 @@ func TestListInstanceBackups(t *testing.T) {
 					},
 				).VeleroV1(),
 			},
-			expectedBackups: []*types.ReplicatedBackup{
+			expectedBackups: []*types.Backup{
 				{
 					Name:                "some-backup",
+					Status:              "Completed",
 					ExpectedBackupCount: 1,
-					Backups: []types.Backup{
+					BackupCount:         1,
+					IncludedApps: []types.App{
 						{
-							Name:   "some-backup",
-							Status: "Completed",
-							IncludedApps: []types.App{
-								{
-									Slug:       "app-1",
-									Sequence:   1,
-									Name:       "App 1",
-									AppIconURI: "https://some-url.com/icon.png",
-								},
-							},
-							VolumeSizeHuman: "0B",
+							Slug:       "app-1",
+							Sequence:   1,
+							Name:       "App 1",
+							AppIconURI: "https://some-url.com/icon.png",
 						},
+					},
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman: "0B",
 					},
 				},
 			},
@@ -3584,20 +3578,18 @@ func TestListInstanceBackups(t *testing.T) {
 					},
 				).VeleroV1(),
 			},
-			expectedBackups: []*types.ReplicatedBackup{
+			expectedBackups: []*types.Backup{
 				{
 					Name:                "some-backup",
 					ExpectedBackupCount: 1,
-					Backups: []types.Backup{
-						{
-							Name:            "some-backup",
-							Status:          "Completed",
-							StartedAt:       &startTs,
-							FinishedAt:      &completionTs,
-							ExpiresAt:       &expirationTs,
-							IncludedApps:    []types.App{},
-							VolumeSizeHuman: "0B",
-						},
+					BackupCount:         1,
+					Status:              "Completed",
+					StartedAt:           &startTs,
+					FinishedAt:          &completionTs,
+					ExpiresAt:           &expirationTs,
+					IncludedApps:        []types.App{},
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman: "0B",
 					},
 				},
 			},
@@ -3643,22 +3635,20 @@ func TestListInstanceBackups(t *testing.T) {
 					},
 				).VeleroV1(),
 			},
-			expectedBackups: []*types.ReplicatedBackup{
+			expectedBackups: []*types.Backup{
 				{
 					Name:                "some-backup-with-volumes",
 					ExpectedBackupCount: 1,
-					Backups: []types.Backup{
-						{
-							Name:               "some-backup-with-volumes",
-							Status:             "Completed",
-							Trigger:            "manual",
-							VolumeSizeHuman:    "2kB",
-							VolumeBytes:        2000,
-							VolumeSuccessCount: 1,
-							VolumeCount:        1,
-							IncludedApps:       []types.App{},
-						},
+					BackupCount:         1,
+					Status:              "Completed",
+					Trigger:             "manual",
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman:    "2kB",
+						VolumeBytes:        2000,
+						VolumeSuccessCount: 1,
+						VolumeCount:        1,
 					},
+					IncludedApps: []types.App{},
 				},
 			},
 		},

@@ -747,7 +747,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 
 		backup := types.Backup{
 			Name:   veleroBackup.Name,
-			Status: string(veleroBackup.Status.Phase),
+			Status: types.GetStatusFromBackupPhase(veleroBackup.Status.Phase),
 			AppID:  appID,
 		}
 
@@ -770,7 +770,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			backup.Sequence = s
 		}
 		if backup.Status == "" {
-			backup.Status = "New"
+			backup.Status = types.BackupStatusInProgress
 		}
 
 		trigger, ok := veleroBackup.Annotations[types.BackupTriggerAnnotation]
@@ -783,7 +783,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			backup.SupportBundleID = supportBundleID
 		}
 
-		if backup.Status != "New" && backup.Status != "InProgress" {
+		if backup.Status != types.BackupStatusInProgress {
 			volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get volume summary")
@@ -801,7 +801,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 	return backups, nil
 }
 
-func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.ReplicatedBackup, error) {
+func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.Backup, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -831,94 +831,113 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		return nil, errors.Wrap(err, "failed to list velero backups")
 	}
 
-	replicatedBackupsMap := map[string]*types.ReplicatedBackup{}
+	return getBackupsFromVeleroBackups(ctx, veleroBackups.Items)
+}
 
-	for _, veleroBackup := range veleroBackups.Items {
-		// TODO: Enforce version?
+// getBackupsFromVeleroBackups returns an array of `Backup` structs, consisting of Replicated's representation of a backup
+// from an array of Velero backups `VolumeSummary`'s and .
+func getBackupsFromVeleroBackups(ctx context.Context, veleroBackups []velerov1.Backup) ([]*types.Backup, error) {
+	result := make(map[string]*types.Backup, 0)
+
+	for _, veleroBackup := range veleroBackups {
+		// filter out non instance backups
 		if !types.IsInstanceBackup(veleroBackup) {
 			continue
 		}
-
-		backup := types.Backup{
-			Name:         veleroBackup.Name,
-			Status:       string(veleroBackup.Status.Phase),
-			IncludedApps: make([]types.App, 0),
-		}
-
-		if veleroBackup.Status.StartTimestamp != nil {
-			backup.StartedAt = &veleroBackup.Status.StartTimestamp.Time
-		}
-		if veleroBackup.Status.CompletionTimestamp != nil {
-			backup.FinishedAt = &veleroBackup.Status.CompletionTimestamp.Time
-		}
-		if veleroBackup.Status.Expiration != nil {
-			backup.ExpiresAt = &veleroBackup.Status.Expiration.Time
-		}
-		if backup.Status == "" {
-			backup.Status = "New"
-		}
-
-		trigger, ok := veleroBackup.Annotations[types.BackupTriggerAnnotation]
-		if ok {
-			backup.Trigger = trigger
-		}
-
-		appAnnotationStr, _ := veleroBackup.Annotations[types.BackupAppsSequencesAnnotation]
-		if len(appAnnotationStr) > 0 {
-			var apps map[string]int64
-			if err := json.Unmarshal([]byte(appAnnotationStr), &apps); err != nil {
-				return nil, errors.Wrap(err, "failed to unmarshal apps sequences")
-			}
-			for slug, sequence := range apps {
-				a, err := store.GetStore().GetAppFromSlug(slug)
-				if err != nil {
-					if store.GetStore().IsNotFound(err) {
-						// app might not exist in current installation
-						continue
-					}
-					return nil, errors.Wrap(err, "failed to get app from slug")
-				}
-
-				backup.IncludedApps = append(backup.IncludedApps, types.App{
-					Slug:       slug,
-					Sequence:   sequence,
-					Name:       a.Name,
-					AppIconURI: a.IconURI,
-				})
+		veleroStatus := veleroBackup.Status
+		backupName := types.GetBackupName(veleroBackup)
+		if _, ok := result[backupName]; !ok {
+			result[backupName] = &types.Backup{
+				Name:                backupName,
+				Status:              types.GetStatusFromBackupPhase(veleroStatus.Phase),
+				Trigger:             types.GetBackupTrigger(veleroBackup),
+				ExpectedBackupCount: types.GetInstanceBackupCount(veleroBackup),
+				IncludedApps:        []types.App{},
 			}
 		}
+		backup := result[backupName]
+		backup.BackupCount++
+		// backup uses the oldest velero backup start time as its start time
+		if veleroStatus.StartTimestamp != nil {
+			if backup.StartedAt == nil || veleroStatus.StartTimestamp.Time.Before(*backup.StartedAt) {
+				backup.StartedAt = &veleroStatus.StartTimestamp.Time
+			}
+		}
+
+		// backup uses the first expiration date as its expiration timestamp
+		if veleroStatus.Expiration != nil {
+			if backup.ExpiresAt == nil || veleroStatus.Expiration.Time.Before(*backup.ExpiresAt) {
+				backup.ExpiresAt = &veleroStatus.Expiration.Time
+			}
+		}
+
+		// backup uses the most recent completion date as its completion timestamp
+		if veleroStatus.CompletionTimestamp != nil {
+			if backup.FinishedAt == nil || veleroStatus.CompletionTimestamp.Time.After(*backup.FinishedAt) {
+				backup.FinishedAt = &veleroStatus.CompletionTimestamp.Time
+			}
+		}
+
+		backup.Status = types.RollupStatus([]types.BackupStatus{backup.Status, types.GetStatusFromBackupPhase(veleroStatus.Phase)})
 
 		// get volume information
-		if backup.Status != "New" && backup.Status != "InProgress" {
-			volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
+		volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get volume summary for backup %s: %w", backupName, err)
+		}
+
+		backup.VolumeCount += volumeSummary.VolumeCount
+		backup.VolumeSuccessCount += volumeSummary.VolumeSuccessCount
+		backup.VolumeBytes += volumeSummary.VolumeBytes
+		backup.VolumeSizeHuman = units.HumanSize(float64(backup.VolumeBytes))
+
+		apps, err := getAppsFromAppSequences(veleroBackup)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get apps from app sequences for backup %s: %w", backupName, err)
+		}
+		backup.IncludedApps = append(backup.IncludedApps, apps...)
+	}
+
+	backups := []*types.Backup{}
+	for _, backup := range result {
+		// we consider a backup to have failed if the number of backups that actually exist is less than the expected number
+		if backup.ExpectedBackupCount != backup.BackupCount {
+			backup.Status = types.BackupStatusFailed
+		}
+		backups = append(backups, backup)
+	}
+
+	return backups, nil
+}
+
+// getAppsFromAppSequences returns a list of `App` structs from the backup sequence annotation.
+func getAppsFromAppSequences(veleroBackup velerov1.Backup) ([]types.App, error) {
+	apps := []types.App{}
+	appAnnotationStr, _ := veleroBackup.Annotations[types.BackupAppsSequencesAnnotation]
+	if len(appAnnotationStr) > 0 {
+		var appsSequences map[string]int64
+		if err := json.Unmarshal([]byte(appAnnotationStr), &appsSequences); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal apps sequences: %w", err)
+		}
+		for slug, sequence := range appsSequences {
+			a, err := store.GetStore().GetAppFromSlug(slug)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to get volume summary")
+				if store.GetStore().IsNotFound(err) {
+					// app might not exist in current installation
+					continue
+				}
+				return nil, fmt.Errorf("failed to get app from slug: %w", err)
 			}
 
-			backup.VolumeCount = volumeSummary.VolumeCount
-			backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
-			backup.VolumeBytes = volumeSummary.VolumeBytes
-			backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
+			apps = append(apps, types.App{
+				Slug:       slug,
+				Sequence:   sequence,
+				Name:       a.Name,
+				AppIconURI: a.IconURI,
+			})
 		}
-
-		// group the velero backups by the name we present to the user
-		backupName := types.GetBackupName(veleroBackup)
-		if _, ok := replicatedBackupsMap[backupName]; !ok {
-			replicatedBackupsMap[backupName] = &types.ReplicatedBackup{
-				Name:                backupName,
-				Backups:             []types.Backup{},
-				ExpectedBackupCount: types.GetInstanceBackupCount(veleroBackup),
-			}
-		}
-		replicatedBackupsMap[backupName].Backups = append(replicatedBackupsMap[backupName].Backups, backup)
 	}
-
-	replicatedBackups := []*types.ReplicatedBackup{}
-	for _, rb := range replicatedBackupsMap {
-		replicatedBackups = append(replicatedBackups, rb)
-	}
-
-	return replicatedBackups, nil
+	return apps, nil
 }
 
 func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup) (*types.VolumeSummary, error) {
@@ -1077,7 +1096,7 @@ func HasUnfinishedApplicationBackup(ctx context.Context, kotsadmNamespace string
 	}
 
 	for _, backup := range backups {
-		if backup.Status == "New" || backup.Status == "InProgress" {
+		if backup.Status == types.BackupStatusInProgress {
 			return true, nil
 		}
 	}
@@ -1086,16 +1105,14 @@ func HasUnfinishedApplicationBackup(ctx context.Context, kotsadmNamespace string
 }
 
 func HasUnfinishedInstanceBackup(ctx context.Context, kotsadmNamespace string) (bool, error) {
-	replicatedBackups, err := ListInstanceBackups(ctx, kotsadmNamespace)
+	backups, err := ListInstanceBackups(ctx, kotsadmNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list backups")
 	}
 
-	for _, replicatedBackup := range replicatedBackups {
-		for _, backup := range replicatedBackup.Backups {
-			if backup.Status == "New" || backup.Status == "InProgress" {
-				return true, nil
-			}
+	for _, backup := range backups {
+		if backup.Status == types.BackupStatusInProgress {
+			return true, nil
 		}
 	}
 
