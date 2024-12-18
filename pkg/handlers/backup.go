@@ -110,8 +110,8 @@ func (h *Handler) ListBackups(w http.ResponseWriter, r *http.Request) {
 }
 
 type ListInstanceBackupsResponse struct {
-	Error   string                            `json:"error,omitempty"`
-	Backups []*snapshottypes.ReplicatedBackup `json:"backups"`
+	Error   string                  `json:"error,omitempty"`
+	Backups []*snapshottypes.Backup `json:"backups"`
 }
 
 func (h *Handler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
