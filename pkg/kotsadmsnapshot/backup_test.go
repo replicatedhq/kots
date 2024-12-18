@@ -4436,3 +4436,191 @@ func TestDeleteBackup(t *testing.T) {
 		})
 	}
 }
+
+func TestGetBackupDetail(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	velerov1.AddToScheme(scheme)
+
+	objects := []runtime.Object{
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "kotsadm-velero-namespace",
+			},
+			Data: map[string]string{
+				"veleroNamespace": "velero",
+			},
+		},
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "velero",
+				Namespace: "velero",
+			},
+		},
+	}
+
+	veleroObjects := []runtime.Object{
+		&velerov1.BackupStorageLocation{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "default",
+				Namespace: "velero",
+			},
+			Spec: velerov1.BackupStorageLocationSpec{
+				Provider: "aws",
+				Default:  true,
+			},
+		},
+		&velerov1.Backup{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Backup",
+				APIVersion: "velero.io/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "instance-abcd",
+				Namespace: "velero",
+				Labels: map[string]string{
+					types.InstanceBackupNameLabel: "app-slug-abcd",
+				},
+				Annotations: map[string]string{
+					types.BackupIsECAnnotation:            "true",
+					types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+					types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeInfra,
+					types.InstanceBackupCountAnnotation:   "2",
+				},
+				CreationTimestamp: metav1.Time{Time: time.Date(2022, 1, 3, 0, 0, 0, 0, time.Local)},
+			},
+			Spec: velerov1.BackupSpec{
+				StorageLocation:    "default",
+				IncludedNamespaces: []string{"*"},
+			},
+			Status: velerov1.BackupStatus{
+				Phase: velerov1.BackupPhaseInProgress,
+			},
+		},
+		&velerov1.Backup{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Backup",
+				APIVersion: "velero.io/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "application-abcd",
+				Namespace: "velero",
+				Labels: map[string]string{
+					types.InstanceBackupNameLabel: "app-slug-abcd",
+				},
+				Annotations: map[string]string{
+					types.BackupIsECAnnotation:            "true",
+					types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+					types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeApp,
+					types.InstanceBackupCountAnnotation:   "2",
+				},
+				CreationTimestamp: metav1.Time{Time: time.Date(2022, 1, 4, 0, 0, 0, 0, time.Local)},
+			},
+			Spec: velerov1.BackupSpec{
+				StorageLocation:    "default",
+				IncludedNamespaces: []string{"*"},
+			},
+			Status: velerov1.BackupStatus{
+				Phase: velerov1.BackupPhaseInProgress,
+			},
+		},
+		&velerov1.Backup{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Backup",
+				APIVersion: "velero.io/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "instance-efgh",
+				Namespace: "velero",
+				Annotations: map[string]string{
+					types.BackupIsECAnnotation:     "true",
+					types.InstanceBackupAnnotation: "true",
+					// legacy backups do not have the InstanceBackupTypeAnnotation
+				},
+				CreationTimestamp: metav1.Time{Time: time.Date(2022, 1, 2, 0, 0, 0, 0, time.Local)},
+			},
+			Spec: velerov1.BackupSpec{
+				StorageLocation:    "default",
+				IncludedNamespaces: []string{"*"},
+			},
+			Status: velerov1.BackupStatus{
+				Phase: velerov1.BackupPhaseInProgress,
+			},
+		},
+	}
+
+	type args struct {
+		backupName string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []types.BackupDetail
+		wantErr bool
+	}{
+		{
+			name: "legacy backup by name should return a single backup from metadata.name",
+			args: args{
+				backupName: "instance-efgh",
+			},
+			want: []types.BackupDetail{
+				{
+					Name:            "instance-efgh",
+					Type:            types.InstanceBackupTypeLegacy,
+					Status:          "InProgress",
+					Namespaces:      []string{"*"},
+					VolumeSizeHuman: "0B",
+					Volumes:         []types.SnapshotVolume{},
+				},
+			},
+		},
+		{
+			name: "new backup by name label should return multiple backups",
+			args: args{
+				backupName: "app-slug-abcd",
+			},
+			want: []types.BackupDetail{
+				{
+					Name:            "application-abcd",
+					Type:            types.InstanceBackupTypeApp,
+					Status:          "InProgress",
+					Namespaces:      []string{"*"},
+					VolumeSizeHuman: "0B",
+					Volumes:         []types.SnapshotVolume{},
+				},
+				{
+					Name:            "instance-abcd",
+					Type:            types.InstanceBackupTypeInfra,
+					Status:          "InProgress",
+					Namespaces:      []string{"*"},
+					VolumeSizeHuman: "0B",
+					Volumes:         []types.SnapshotVolume{},
+				},
+			},
+		},
+		{
+			name: "not found should return an error",
+			args: args{
+				backupName: "not-exists",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			k8sclient.SetBuilder(&k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(objects...),
+			})
+			veleroclient.SetBuilder(&veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(veleroObjects...).VeleroV1(),
+			})
+			got, err := GetBackupDetail(context.Background(), "velero", tt.args.backupName)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

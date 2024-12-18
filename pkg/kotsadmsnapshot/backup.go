@@ -1119,7 +1119,7 @@ func HasUnfinishedInstanceBackup(ctx context.Context, kotsadmNamespace string) (
 	return false, nil
 }
 
-func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID string) (*types.BackupDetail, error) {
+func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName string) ([]types.BackupDetail, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -1142,20 +1142,59 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID stri
 
 	veleroNamespace := backendStorageLocation.Namespace
 
-	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupID, metav1.GetOptions{})
+	backups, err := listBackupsByName(ctx, veleroClient, veleroNamespace, backupName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup")
 	}
 
+	results := []types.BackupDetail{}
+
+	for _, backup := range backups {
+		result, err := getBackupDetailForBackup(ctx, veleroClient, veleroNamespace, backup)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get backup detail for backup %s: %w", backup.Name, err)
+		}
+
+		results = append(results, *result)
+	}
+
+	return results, nil
+}
+
+// listBackupsByName returns a list of backups for the specified backup name. First it tries to get
+// the backup by the replicated.com/backup-name label, and if that fails, it tries to get the
+// backup by the metadata name.
+func listBackupsByName(ctx context.Context, veleroClient veleroclientv1.VeleroV1Interface, veleroNamespace string, backupName string) ([]velerov1.Backup, error) {
+	// first try to get the backup from the backup-name label
+	backupList, err := veleroClient.Backups(veleroNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", types.InstanceBackupNameLabel, velerolabel.GetValidName(backupName)),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list backups by label: %w", err)
+	}
+	if len(backupList.Items) > 0 {
+		return backupList.Items, nil
+	}
+	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get backup by name: %w", err)
+	}
+
+	return []velerov1.Backup{*backup}, nil
+}
+
+// getBackupDetailForBackup returns a BackupDetail object for the specified backup.
+func getBackupDetailForBackup(ctx context.Context, veleroClient veleroclientv1.VeleroV1Interface, veleroNamespace string, backup velerov1.Backup) (*types.BackupDetail, error) {
 	backupVolumes, err := veleroClient.PodVolumeBackups(veleroNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(backupID)),
+		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(backup.Name)),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list volumes")
 	}
 
-	result := &types.BackupDetail{
+	result := types.BackupDetail{
 		Name:       backup.Name,
+		Type:       types.GetInstanceBackupType(backup),
 		Status:     string(backup.Status.Phase),
 		Namespaces: backup.Spec.IncludedNamespaces,
 		Volumes:    listBackupVolumes(backupVolumes.Items),
@@ -1168,7 +1207,7 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID stri
 	result.VolumeSizeHuman = units.HumanSize(float64(totalBytesDone)) // TODO: should this be TotalBytes rather than BytesDone?
 
 	if backup.Status.Phase == velerov1.BackupPhaseCompleted || backup.Status.Phase == velerov1.BackupPhasePartiallyFailed || backup.Status.Phase == velerov1.BackupPhaseFailed {
-		errs, warnings, execs, err := downloadBackupLogs(ctx, veleroNamespace, backupID)
+		errs, warnings, execs, err := downloadBackupLogs(ctx, veleroNamespace, backup.Name)
 		result.Errors = errs
 		result.Warnings = warnings
 		result.Hooks = execs
@@ -1178,7 +1217,7 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID stri
 		}
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 func listBackupVolumes(backupVolumes []velerov1.PodVolumeBackup) []types.SnapshotVolume {
