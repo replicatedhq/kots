@@ -280,7 +280,7 @@ func RollupStatus(backupStatuses []BackupStatus) BackupStatus {
 			return BackupStatusInProgress
 		case backupStatus == BackupStatusDeleting:
 			result = BackupStatusDeleting
-		case backupStatus == BackupStatusFailed:
+		case backupStatus == BackupStatusFailed && result != BackupStatusDeleting:
 			result = BackupStatusFailed
 		}
 	}
