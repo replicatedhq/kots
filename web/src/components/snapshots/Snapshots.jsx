@@ -108,12 +108,8 @@ class Snapshots extends Component {
       }
       const response = await res.json();
 
-      const snapshots = response.backups?.flatMap(
-        (replBackup) => replBackup?.backups
-      );
-
       this.setState({
-        snapshots: snapshots?.sort((a, b) =>
+        snapshots: response.backups?.sort((a, b) =>
           b.startedAt
             ? new Date(b.startedAt) - new Date(a.startedAt)
             : -99999999
