@@ -3497,7 +3497,7 @@ func TestListInstanceBackups(t *testing.T) {
 			},
 		},
 		{
-			name: "included apps are populated ",
+			name: "included apps are populated",
 			setup: func(mockStore *mock_store.MockStore) {
 				mockStore.EXPECT().GetAppFromSlug("app-1").Times(1).Return(&apptypes.App{
 					ID:      "1",
@@ -3551,6 +3551,97 @@ func TestListInstanceBackups(t *testing.T) {
 			},
 		},
 		{
+			name: "if improved dr, included apps are populated from the included backups",
+			setup: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().GetAppFromSlug("app-1").Times(1).Return(&apptypes.App{
+					ID:      "1",
+					Name:    "App 1",
+					Slug:    "app-1",
+					IconURI: "https://some-url.com/icon.png",
+				}, nil)
+				mockStore.EXPECT().GetAppFromSlug("app-2").Times(1).Return(&apptypes.App{
+					ID:      "2",
+					Name:    "App 2",
+					Slug:    "app-2",
+					IconURI: "https://some-url.com/icon.png",
+				}, nil)
+			},
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "infra-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.BackupAppsSequencesAnnotation:   "{\"app-1\":1}",
+								types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+								types.InstanceBackupAnnotation:        "true",
+								types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeInfra,
+								types.InstanceBackupCountAnnotation:   "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "app-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.BackupAppsSequencesAnnotation:   "{\"app-2\":1}",
+								types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+								types.InstanceBackupAnnotation:        "true",
+								types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeApp,
+								types.InstanceBackupCountAnnotation:   "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.Backup{
+				{
+					Name:                "aggregated-repl-backup",
+					Status:              "Completed",
+					ExpectedBackupCount: 2,
+					BackupCount:         2,
+					IncludedApps: []types.App{
+						{
+							Slug:       "app-2",
+							Sequence:   1,
+							Name:       "App 2",
+							AppIconURI: "https://some-url.com/icon.png",
+						},
+						{
+							Slug:       "app-1",
+							Sequence:   1,
+							Name:       "App 1",
+							AppIconURI: "https://some-url.com/icon.png",
+						},
+					},
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman: "0B",
+					},
+				},
+			},
+		},
+		{
 			name: "timestamps are populated",
 			k8sClientBuilder: &k8sclient.MockBuilder{
 				Client: fake.NewSimpleClientset(
@@ -3583,6 +3674,77 @@ func TestListInstanceBackups(t *testing.T) {
 					Name:                "some-backup",
 					ExpectedBackupCount: 1,
 					BackupCount:         1,
+					Status:              "Completed",
+					StartedAt:           &startTs,
+					FinishedAt:          &completionTs,
+					ExpiresAt:           &expirationTs,
+					IncludedApps:        []types.App{},
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman: "0B",
+					},
+				},
+			},
+		},
+		{
+			name: "if improved dr, timestamps are populated based on the timestamps of the included backups",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "infra-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+								types.InstanceBackupAnnotation:        "true",
+								types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeInfra,
+								types.InstanceBackupCountAnnotation:   "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase:               velerov1.BackupPhaseCompleted,
+							StartTimestamp:      &metav1.Time{Time: startTs},
+							CompletionTimestamp: &metav1.Time{Time: completionTs.Add(-1 * time.Minute)},
+							Expiration:          &metav1.Time{Time: expirationTs.Add(1 * time.Minute)},
+						},
+					},
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "app-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+								types.InstanceBackupAnnotation:        "true",
+								types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeApp,
+								types.InstanceBackupCountAnnotation:   "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase:               velerov1.BackupPhaseCompleted,
+							StartTimestamp:      &metav1.Time{Time: startTs.Add(1 * time.Minute)},
+							CompletionTimestamp: &metav1.Time{Time: completionTs},
+							Expiration:          &metav1.Time{Time: expirationTs},
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.Backup{
+				{
+					Name:                "aggregated-repl-backup",
+					ExpectedBackupCount: 2,
+					BackupCount:         2,
 					Status:              "Completed",
 					StartedAt:           &startTs,
 					FinishedAt:          &completionTs,
@@ -3647,6 +3809,101 @@ func TestListInstanceBackups(t *testing.T) {
 						VolumeBytes:        2000,
 						VolumeSuccessCount: 1,
 						VolumeCount:        1,
+					},
+					IncludedApps: []types.App{},
+				},
+			},
+		},
+		{
+			name: "if improved dr, volume info is populated from pod volume backups from both backups",
+			k8sClientBuilder: &k8sclient.MockBuilder{
+				Client: fake.NewSimpleClientset(
+					veleroNamespaceConfigmap,
+					veleroDeployment,
+				),
+			},
+			veleroClientBuilder: &veleroclient.MockBuilder{
+				Client: velerofake.NewSimpleClientset(
+					testBsl,
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "infra-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+								types.InstanceBackupAnnotation:        "true",
+								types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeInfra,
+								types.InstanceBackupCountAnnotation:   "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+					&velerov1.Backup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "app-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								types.InstanceBackupNameLabel: "aggregated-repl-backup",
+							},
+							Annotations: map[string]string{
+								types.InstanceBackupVersionAnnotation: types.InstanceBackupVersionCurrent,
+								types.InstanceBackupAnnotation:        "true",
+								types.InstanceBackupTypeAnnotation:    types.InstanceBackupTypeApp,
+								types.InstanceBackupCountAnnotation:   "2",
+							},
+						},
+						Status: velerov1.BackupStatus{
+							Phase: velerov1.BackupPhaseCompleted,
+						},
+					},
+					&velerov1.PodVolumeBackup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "app-backup-pod-volume-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								"velero.io/backup-name": "app-backup",
+							},
+						},
+						Status: velerov1.PodVolumeBackupStatus{
+							Phase: velerov1.PodVolumeBackupPhaseCompleted,
+							Progress: velerov1.PodVolumeOperationProgress{
+								BytesDone: 2000,
+							},
+						},
+					},
+					&velerov1.PodVolumeBackup{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "infra-backup-pod-volume-backup",
+							Namespace: "velero",
+							Labels: map[string]string{
+								"velero.io/backup-name": "infra-backup",
+							},
+						},
+						Status: velerov1.PodVolumeBackupStatus{
+							Phase: velerov1.PodVolumeBackupPhaseCompleted,
+							Progress: velerov1.PodVolumeOperationProgress{
+								BytesDone: 3000,
+							},
+						},
+					},
+				).VeleroV1(),
+			},
+			expectedBackups: []*types.Backup{
+				{
+					Name:                "aggregated-repl-backup",
+					ExpectedBackupCount: 2,
+					BackupCount:         2,
+					Status:              "Completed",
+					VolumeSummary: types.VolumeSummary{
+						VolumeSizeHuman:    "5kB",
+						VolumeBytes:        5000,
+						VolumeSuccessCount: 2,
+						VolumeCount:        2,
 					},
 					IncludedApps: []types.App{},
 				},
