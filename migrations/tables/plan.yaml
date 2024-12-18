@@ -19,6 +19,18 @@ spec:
         type: text
         constraints:
           notNull: true
+      - name: created_at
+        type: integer
+        constraints:
+          notNull: true
+      - name: updated_at
+        type: integer
+        constraints:
+          notNull: true
+      - name: status
+        type: text
+        constraints:
+          notNull: true
       - name: plan
         type: text
         constraints:

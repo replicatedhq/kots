@@ -718,6 +718,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetBackup(w, r interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackup", reflect.TypeOf((*MockKOTSHandler)(nil).GetBackup), w, r)
 }
 
+// GetCurrentPlanStatus mocks base method.
+func (m *MockKOTSHandler) GetCurrentPlanStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetCurrentPlanStatus", w, r)
+}
+
+// GetCurrentPlanStatus indicates an expected call of GetCurrentPlanStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetCurrentPlanStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentPlanStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetCurrentPlanStatus), w, r)
+}
+
 // GetDebugInfo mocks base method.
 func (m *MockKOTSHandler) GetDebugInfo(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -1544,6 +1556,18 @@ func (m *MockKOTSHandler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r 
 func (mr *MockKOTSHandlerMockRecorder) UpdateGlobalSnapshotSettings(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateGlobalSnapshotSettings", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateGlobalSnapshotSettings), w, r)
+}
+
+// UpdatePlanStep mocks base method.
+func (m *MockKOTSHandler) UpdatePlanStep(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdatePlanStep", w, r)
+}
+
+// UpdatePlanStep indicates an expected call of UpdatePlanStep.
+func (mr *MockKOTSHandlerMockRecorder) UpdatePlanStep(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePlanStep", reflect.TypeOf((*MockKOTSHandler)(nil).UpdatePlanStep), w, r)
 }
 
 // UpdateRedact mocks base method.

@@ -1018,6 +1018,7 @@ const Root = () => {
                       refetchUpgradeStatus={fetchUpgradeStatus}
                       snapshotInProgressApps={state.snapshotInProgressApps}
                       ping={ping}
+                      adminConsoleMetadata={state.adminConsoleMetadata}
                       isEmbeddedCluster={Boolean(
                         state.adminConsoleMetadata?.isEmbeddedCluster
                       )}

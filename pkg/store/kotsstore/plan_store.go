@@ -2,6 +2,7 @@ package kotsstore
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -41,11 +42,16 @@ func (s *KOTSStore) UpsertPlan(p *types.Plan) error {
 	db := persistence.MustGetDBSession()
 
 	query := `
-		INSERT INTO plan (app_id, version_label, plan)
-		VALUES (?, ?, ?)
+		INSERT INTO plan (app_id, version_label, created_at, updated_at, status, plan)
+		VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT (app_id, version_label)
-		DO UPDATE SET plan = excluded.plan
+		DO UPDATE SET
+			updated_at = excluded.updated_at,
+			status = excluded.status,
+			plan = excluded.plan
 	`
+
+	status, _ := p.GetStatus()
 
 	marshalled, err := yaml.Marshal(p)
 	if err != nil {
@@ -53,12 +59,47 @@ func (s *KOTSStore) UpsertPlan(p *types.Plan) error {
 	}
 
 	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
-		Query:     query,
-		Arguments: []interface{}{p.AppID, p.VersionLabel, string(marshalled)},
+		Query: query,
+		Arguments: []interface{}{
+			p.AppID,
+			p.VersionLabel,
+			time.Now().Unix(),
+			time.Now().Unix(),
+			status,
+			string(marshalled),
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("write: %v: %v", err, wr.Err)
 	}
 
 	return err
+}
+
+func (s *KOTSStore) GetCurrentPlan(appID string) (*types.Plan, *time.Time, error) {
+	db := persistence.MustGetDBSession()
+	query := `SELECT plan, updated_at FROM plan WHERE app_id = ? ORDER BY updated_at DESC LIMIT 1`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return nil, nil, nil
+	}
+
+	var marshalled string
+	var updatedAt time.Time
+	if err := rows.Scan(&marshalled, &updatedAt); err != nil {
+		return nil, nil, errors.Wrap(err, "scan")
+	}
+
+	var plan *types.Plan
+	if err := yaml.Unmarshal([]byte(marshalled), &plan); err != nil {
+		return nil, nil, errors.Wrap(err, "unmarshal")
+	}
+
+	return plan, &updatedAt, nil
 }

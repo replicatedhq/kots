@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -57,4 +58,52 @@ func (h *Handler) UpdatePlanStep(w http.ResponseWriter, r *http.Request) {
 
 	response.Success = true
 	JSON(w, http.StatusOK, response)
+}
+
+type GetCurrentPlanStatusResponse struct {
+	CurrentMessage string `json:"currentMessage"`
+	Status         string `json:"status"`
+}
+
+func (h *Handler) GetCurrentPlanStatus(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error(errors.Wrap(err, "failed to get app"))
+		return
+	}
+
+	p, updatedAt, err := store.GetStore().GetCurrentPlan(a.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error(errors.Wrap(err, "failed to get active plan"))
+		return
+	}
+	if p == nil || time.Since(*updatedAt) > time.Minute {
+		JSON(w, http.StatusOK, GetCurrentPlanStatusResponse{})
+		return
+	}
+
+	stepType := r.URL.Query().Get("stepType")
+
+	if stepType == "" {
+		status, description := p.GetStatus()
+		JSON(w, http.StatusOK, GetCurrentPlanStatusResponse{
+			CurrentMessage: description,
+			Status:         string(status),
+		})
+		return
+	}
+
+	for _, s := range p.Steps {
+		if s.Type == types.PlanStepType(stepType) {
+			JSON(w, http.StatusOK, GetCurrentPlanStatusResponse{
+				CurrentMessage: s.StatusDescription,
+				Status:         string(s.Status),
+			})
+			return
+		}
+	}
 }

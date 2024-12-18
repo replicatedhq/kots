@@ -13,7 +13,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/update"
-	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 )
 
 type DeployEC2AppVersionRequest struct {
@@ -77,9 +76,8 @@ func (h *Handler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO NOW: is this step needed? use plan step status instead? upgrade service can update status via api
-	if err := upgradeservicetask.SetStatusStarting(appSlug, "Preparing..."); err != nil {
-		response.Error = "failed to set task status"
+	if err := store.GetStore().UpsertPlan(p); err != nil {
+		response.Error = "failed to upsert plan"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return

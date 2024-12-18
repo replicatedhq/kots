@@ -78,13 +78,48 @@ func PlanUpgrade(s store.Store, opts PlanUpgradeOptions) (*types.Plan, error) {
 	return &plan, nil
 }
 
-func Execute(s store.Store, p *types.Plan) error {
+func Resume(s store.Store) error {
+	apps, err := s.ListInstalledApps()
+	if err != nil {
+		return errors.Wrap(err, "list installed apps")
+	}
+	if len(apps) == 0 {
+		return nil
+	}
+	if len(apps) > 1 {
+		return errors.New("more than one app is installed")
+	}
+
+	p, _, err := s.GetCurrentPlan(apps[0].ID)
+	if err != nil {
+		return errors.Wrap(err, "get active plan")
+	}
 	if p == nil {
 		return nil
 	}
 
-	if err := s.UpsertPlan(p); err != nil {
-		return errors.Wrap(err, "upsert plan")
+	if p.HasEnded() {
+		return nil
+	}
+
+	go func() {
+		if err := Execute(s, p); err != nil {
+			logger.Error(errors.Wrap(err, "execute plan"))
+		}
+	}()
+
+	return nil
+}
+
+// TODO (@salah): make each step report status
+func Execute(s store.Store, p *types.Plan) (finalError error) {
+	if p == nil {
+		return errors.New("plan is nil")
+	}
+
+	if p.HasEnded() {
+		status, description := p.GetStatus()
+		return errors.Errorf("plan has already ended. status: %q. description: %q", status, description)
 	}
 
 	stopCh := make(chan struct{})
@@ -92,50 +127,80 @@ func Execute(s store.Store, p *types.Plan) error {
 	go startPlanMonitor(s, p, stopCh)
 
 	for _, step := range p.Steps {
-		logger.Infof("Executing step %q of plan %q", step.Name, p.ID)
-
-		switch step.Type {
-		case types.StepTypeAppUpgradeService:
-			if err := executeAppUpgradeService(s, p, step); err != nil {
-				return errors.Wrap(err, "execute app upgrade service")
-			}
-
-		case types.StepTypeECUpgrade:
-			if err := executeECUpgrade(s, p, step); err != nil {
-				return errors.Wrap(err, "execute embedded cluster upgrade")
-			}
-
-		case types.StepTypeAppUpgrade:
-			if err := executeAppUpgrade(p, step); err != nil {
-				return errors.Wrap(err, "execute app upgrade")
-			}
-		default:
-			return errors.Errorf("unknown step type %q", step.Type)
+		if err := executeStep(s, p, step); err != nil {
+			return errors.Wrap(err, "execute step")
 		}
-
-		if err := waitForStep(s, p, step.ID); err != nil {
-			return errors.Wrap(err, "wait for step")
-		}
-
-		logger.Infof("Step %q of plan %q completed", step.Name, p.ID)
 	}
 
 	return nil
 }
 
-func startPlanMonitor(s store.Store, p *types.Plan, stopCh chan struct{}) error {
+func startPlanMonitor(s store.Store, p *types.Plan, stopCh chan struct{}) {
 	for {
 		select {
 		case <-stopCh:
-			return nil
+			return
 		case <-time.After(time.Second * 2):
 			updated, err := s.GetPlan(p.AppID, p.VersionLabel)
 			if err != nil {
-				return errors.Wrap(err, "get plan")
+				logger.Error(errors.Wrap(err, "get plan"))
+				continue
 			}
 			*p = *updated
 		}
 	}
+}
+
+func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError error) {
+	defer func() {
+		if finalError != nil {
+			if err := markStepFailed(s, p, step.ID, finalError); err != nil {
+				logger.Error(errors.Wrap(err, "mark step failed"))
+			}
+		}
+	}()
+
+	// check status of step
+	switch step.Status {
+	case types.StepStatusRunning:
+		logger.Infof("Step %q of plan %q is already running. Waiting for it to finish...", step.Name, p.ID)
+		if err := waitForStep(s, p, step.ID); err != nil {
+			return errors.Wrap(err, "wait for step")
+		}
+	case types.StepStatusFailed:
+		return errors.Errorf("plan has already failed. status: %q. description: %q", step.Status, step.StatusDescription)
+	case types.StepStatusComplete:
+		logger.Infof("Skipping step %q of plan %q because it already completed", step.Name, p.ID)
+		return nil
+	}
+
+	logger.Infof("Executing step %q of plan %q", step.Name, p.ID)
+
+	switch step.Type {
+	case types.StepTypeAppUpgradeService:
+		if err := executeAppUpgradeService(s, p, step); err != nil {
+			return errors.Wrap(err, "execute app upgrade service")
+		}
+
+	case types.StepTypeECUpgrade:
+		if err := executeECUpgrade(s, p, step); err != nil {
+			return errors.Wrap(err, "execute embedded cluster upgrade")
+		}
+
+	case types.StepTypeAppUpgrade:
+		if err := executeAppUpgrade(p, step); err != nil {
+			return errors.Wrap(err, "execute app upgrade")
+		}
+	default:
+		return errors.Errorf("unknown step type %q", step.Type)
+	}
+
+	if err := waitForStep(s, p, step.ID); err != nil {
+		return errors.Wrap(err, "wait for step")
+	}
+
+	logger.Infof("Step %q of plan %q completed", step.Name, p.ID)
+	return nil
 }
 
 func waitForStep(s store.Store, p *types.Plan, stepID string) error {
@@ -160,6 +225,16 @@ func waitForStep(s store.Store, p *types.Plan, stepID string) error {
 
 		time.Sleep(time.Second * 2)
 	}
+}
+
+func markStepFailed(s store.Store, p *types.Plan, stepID string, err error) error {
+	return UpdateStep(s, UpdateStepOptions{
+		AppSlug:           p.AppSlug,
+		VersionLabel:      p.VersionLabel,
+		StepID:            stepID,
+		Status:            types.StepStatusFailed,
+		StatusDescription: err.Error(),
+	})
 }
 
 type UpdateStepOptions struct {

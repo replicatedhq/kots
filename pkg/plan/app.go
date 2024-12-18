@@ -9,35 +9,26 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/filestore"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/plan/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
-	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func executeAppUpgradeService(s store.Store, p *types.Plan, step *types.PlanStep) (finalError error) {
-	// TODO NOW: is this step needed? use plan step status instead? upgrade service can update status via api
-	if err := upgradeservicetask.SetStatusStarting(p.AppSlug, "Preparing..."); err != nil {
-		return errors.Wrap(err, "set app upgrade service task status")
+	if err := UpdateStep(s, UpdateStepOptions{
+		AppSlug:           p.AppSlug,
+		VersionLabel:      p.VersionLabel,
+		StepID:            step.ID,
+		Status:            types.StepStatusStarting,
+		StatusDescription: "Preparing...",
+	}); err != nil {
+		return errors.Wrap(err, "update step status")
 	}
-
-	finishedChan := make(chan error)
-	defer close(finishedChan)
-
-	tasks.StartTaskMonitor(upgradeservicetask.GetID(p.AppSlug), finishedChan)
-	defer func() {
-		if finalError != nil {
-			logger.Error(finalError)
-		}
-		finishedChan <- finalError
-	}()
 
 	// TODO (@salah): don't run as separate process if kots version did not change?
 	params, err := getAppUpgradeServiceParams(s, p, step.ID)
@@ -46,6 +37,15 @@ func executeAppUpgradeService(s store.Store, p *types.Plan, step *types.PlanStep
 	}
 	if err := upgradeservice.Start(*params); err != nil {
 		return errors.Wrap(err, "start app upgrade service")
+	}
+
+	if err := UpdateStep(s, UpdateStepOptions{
+		AppSlug:      p.AppSlug,
+		VersionLabel: p.VersionLabel,
+		StepID:       step.ID,
+		Status:       types.StepStatusRunning,
+	}); err != nil {
+		return errors.Wrap(err, "update step status")
 	}
 
 	return nil

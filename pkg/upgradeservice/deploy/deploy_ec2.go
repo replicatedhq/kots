@@ -1,11 +1,9 @@
 package deploy
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/apparchive"
@@ -13,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	plantypes "github.com/replicatedhq/kots/pkg/plan/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/upgradeservice/plan"
 	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
@@ -100,31 +99,8 @@ func DeployEC2(opts DeployEC2Options) error {
 		return errors.Wrap(err, "marshal data")
 	}
 
-	body, err := json.Marshal(map[string]string{
-		"versionLabel": opts.Params.UpdateVersionLabel,
-		"status":       string(plantypes.StepStatusComplete),
-		"output":       string(stepOutput),
-	})
-	if err != nil {
-		return errors.Wrap(err, "marshal request body")
-	}
-
-	url := fmt.Sprintf("http://localhost:3000/api/v1/app/%s/plan/%s", opts.Params.AppSlug, opts.Params.PlanStepID)
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(body))
-	if err != nil {
-		return errors.Wrap(err, "create request")
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return errors.Wrap(err, "send request")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("send request, status code: %d", resp.StatusCode)
+	if err := plan.UpdateStepStatus(opts.Params, plantypes.StepStatusComplete, "", string(stepOutput)); err != nil {
+		return errors.Wrap(err, "update step status")
 	}
 
 	return nil

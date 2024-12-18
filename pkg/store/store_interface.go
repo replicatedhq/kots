@@ -251,4 +251,5 @@ type EmbeddedClusterStore interface {
 type PlanStore interface {
 	GetPlan(appID, versionLabel string) (*plantypes.Plan, error)
 	UpsertPlan(plan *plantypes.Plan) error
+	GetCurrentPlan(appID string) (*plantypes.Plan, *time.Time, error)
 }

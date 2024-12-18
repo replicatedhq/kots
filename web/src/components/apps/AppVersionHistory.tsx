@@ -63,6 +63,7 @@ type Props = {
       isAirgap: boolean;
       isKurl: boolean;
       isEmbeddedCluster: boolean;
+      isEC2Install: boolean;
     };
     app: App;
     displayErrorModal: boolean;
@@ -1024,12 +1025,16 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   onCheckForUpgradeServiceStatus = async () => {
-    const { app } = this.props.outletContext;
+    const { app, adminConsoleMetadata } = this.props.outletContext;
 
     this.setState({ isStartingUpgradeService: true });
     return new Promise<void>((resolve, reject) => {
+      let url = `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`;
+      if (adminConsoleMetadata?.isEC2Install) {
+        url = `${process.env.API_ENDPOINT}/app/${app?.slug}/ec2-plan-status?stepType=app_upgrade_service`;
+      }
       fetch(
-        `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`,
+        url,
         {
           headers: {
             "Content-Type": "application/json",
@@ -1040,7 +1045,13 @@ class AppVersionHistory extends Component<Props, State> {
       )
         .then(async (res) => {
           const response = await res.json();
-          if (response.status !== "starting") {
+
+          let stopPolling = response.status !== "starting";
+          if (adminConsoleMetadata?.isEC2Install) {
+            stopPolling = response.status !== "pending" && response.status !== "starting";
+          }
+
+          if (stopPolling) {
             this.state.upgradeServiceChecker.stop();
             this.setState({
               isStartingUpgradeService: false,
@@ -1522,8 +1533,14 @@ class AppVersionHistory extends Component<Props, State> {
         error: "",
       },
     });
+
     const appSlug = this.props.params.slug;
-    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/ec2-deploy`, {
+    let url = `${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`;
+    if (this.props.outletContext.adminConsoleMetadata?.isEC2Install) {
+      url = `${process.env.API_ENDPOINT}/app/${appSlug}/ec2-deploy`;
+    }
+
+    fetch(url, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -1879,7 +1896,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       this.handleViewLogs(
                                         currentDownstreamVersion,
                                         currentDownstreamVersion?.status ===
-                                          "failed"
+                                        "failed"
                                       )
                                     }
                                     data-tip="View deploy logs"
@@ -1940,19 +1957,17 @@ class AppVersionHistory extends Component<Props, State> {
               )}
 
               <div
-                className={`flex-column flex1 alignSelf--start ${
-                  gitopsIsConnected ? "gitops-enabled" : ""
-                }`}
+                className={`flex-column flex1 alignSelf--start ${gitopsIsConnected ? "gitops-enabled" : ""
+                  }`}
               >
                 <div
-                  className={`flex-column flex1 version ${
-                    showDiffOverlay ? "u-visibility--hidden" : ""
-                  }`}
+                  className={`flex-column flex1 version ${showDiffOverlay ? "u-visibility--hidden" : ""
+                    }`}
                 >
                   {(versionHistory.length === 0 && gitopsIsConnected) ||
-                  versionHistory?.length > 0 ||
-                  (this.state.availableUpdates &&
-                    this.state.availableUpdates?.length > 0) ? (
+                    versionHistory?.length > 0 ||
+                    (this.state.availableUpdates &&
+                      this.state.availableUpdates?.length > 0) ? (
                     <div>
                       {gitopsIsConnected && (
                         <div
@@ -2007,8 +2022,8 @@ class AppVersionHistory extends Component<Props, State> {
                                   ) : (
                                     <div className="flex alignItems--center">
                                       {checkingForUpdates &&
-                                      !this.props.outletContext
-                                        .isBundleUploading ? (
+                                        !this.props.outletContext
+                                          .isBundleUploading ? (
                                         <div className="flex alignItems--center u-marginRight--20">
                                           <Loader
                                             className="u-marginRight--5"
@@ -2075,23 +2090,20 @@ class AppVersionHistory extends Component<Props, State> {
                             )}
                             {(this.state.numOfSkippedVersions > 0 ||
                               this.state.numOfRemainingVersions > 0) && (
-                              <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
-                                {this.state.numOfSkippedVersions > 0
-                                  ? `${
-                                      this.state.numOfSkippedVersions
-                                    } version${
-                                      this.state.numOfSkippedVersions > 1
-                                        ? "s"
-                                        : ""
-                                    } will be skipped in upgrading to ${
-                                      versionHistory[0].versionLabel
+                                <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
+                                  {this.state.numOfSkippedVersions > 0
+                                    ? `${this.state.numOfSkippedVersions
+                                    } version${this.state.numOfSkippedVersions > 1
+                                      ? "s"
+                                      : ""
+                                    } will be skipped in upgrading to ${versionHistory[0].versionLabel
                                     }. `
-                                  : ""}
-                                {this.state.numOfRemainingVersions > 0
-                                  ? "Additional versions are available after you deploy this required version."
-                                  : ""}
-                              </p>
-                            )}
+                                    : ""}
+                                  {this.state.numOfRemainingVersions > 0
+                                    ? "Additional versions are available after you deploy this required version."
+                                    : ""}
+                                </p>
+                              )}
                           </div>
                         )}
 
