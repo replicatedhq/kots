@@ -94,11 +94,7 @@ func Resume(s store.Store) error {
 	if err != nil {
 		return errors.Wrap(err, "get active plan")
 	}
-	if p == nil {
-		return nil
-	}
-
-	if p.HasEnded() {
+	if p == nil || p.HasEnded() {
 		return nil
 	}
 
@@ -113,15 +109,6 @@ func Resume(s store.Store) error {
 
 // TODO (@salah): make each step report status
 func Execute(s store.Store, p *types.Plan) (finalError error) {
-	if p == nil {
-		return errors.New("plan is nil")
-	}
-
-	if p.HasEnded() {
-		status, description := p.GetStatus()
-		return errors.Errorf("plan has already ended. status: %q. description: %q", status, description)
-	}
-
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 	go startPlanMonitor(s, p, stopCh)

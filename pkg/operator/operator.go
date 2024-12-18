@@ -1140,6 +1140,7 @@ type DeployEC2AppOptions struct {
 
 // app deploy method for EC install2 workflow
 func (o *Operator) DeployEC2App(opts DeployEC2AppOptions) (finalError error) {
+	// TODO (@salah): don't use upgrade service task status, update plan status instead
 	if err := upgradeservicetask.SetStatusUpgradingApp(opts.AppSlug, ""); err != nil {
 		return errors.Wrap(err, "set task status to upgrading app")
 	}
