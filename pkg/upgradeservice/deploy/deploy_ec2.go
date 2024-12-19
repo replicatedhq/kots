@@ -81,19 +81,11 @@ func DeployEC2(opts DeployEC2Options) error {
 	}
 
 	stepOutput, err := json.Marshal(map[string]string{
-		"app-id":                          opts.Params.AppID,
-		"app-slug":                        opts.Params.AppSlug,
 		"app-version-archive":             tgzArchiveKey,
-		"base-sequence":                   fmt.Sprintf("%d", opts.Params.BaseSequence),
-		"version-label":                   opts.Params.UpdateVersionLabel,
 		"source":                          opts.Params.Source,
-		"is-airgap":                       fmt.Sprintf("%t", opts.Params.AppIsAirgap),
-		"channel-id":                      opts.Params.UpdateChannelID,
-		"update-cursor":                   opts.Params.UpdateCursor,
 		"skip-preflights":                 fmt.Sprintf("%t", opts.IsSkipPreflights),
 		"continue-with-failed-preflights": fmt.Sprintf("%t", opts.ContinueWithFailedPreflights),
 		"preflight-result":                preflightResult,
-		"embedded-cluster-version":        opts.Params.UpdateECVersion,
 	})
 	if err != nil {
 		return errors.Wrap(err, "marshal data")

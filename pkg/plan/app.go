@@ -21,6 +21,11 @@ import (
 )
 
 func executeAppUpgradeService(s store.Store, p *types.Plan, step *types.PlanStep) (finalError error) {
+	in, ok := step.Input.(types.PlanStepInputAppUpgradeService)
+	if !ok {
+		return errors.New("invalid input for app upgrade service step")
+	}
+
 	if err := UpdateStep(s, UpdateStepOptions{
 		AppSlug:           p.AppSlug,
 		VersionLabel:      p.VersionLabel,
@@ -32,11 +37,7 @@ func executeAppUpgradeService(s store.Store, p *types.Plan, step *types.PlanStep
 	}
 
 	// TODO (@salah): don't run as separate process if kots version did not change?
-	params, err := getAppUpgradeServiceParams(s, p, step.ID)
-	if err != nil {
-		return err
-	}
-	if err := upgradeservice.Start(*params); err != nil {
+	if err := upgradeservice.Start(in.Params); err != nil {
 		return errors.Wrap(err, "start app upgrade service")
 	}
 
@@ -72,23 +73,18 @@ func executeAppUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error
 	}
 	defer os.RemoveAll(appArchive)
 
-	baseSequence, err := strconv.ParseInt(ausOutput["base-sequence"], 10, 64)
-	if err != nil {
-		return errors.Wrap(err, "parse base sequence")
-	}
-
 	skipPreflights, err := strconv.ParseBool(ausOutput["skip-preflights"])
 	if err != nil {
 		return errors.Wrap(err, "failed to parse is skip preflights")
 	}
 
-	sequence, err := s.CreateAppVersion(ausOutput["app-id"], &baseSequence, appArchive, ausOutput["source"], false, false, "", skipPreflights, render.Renderer{})
+	sequence, err := s.CreateAppVersion(p.AppID, &p.BaseSequence, appArchive, ausOutput["source"], false, false, "", skipPreflights, render.Renderer{})
 	if err != nil {
 		return errors.Wrap(err, "create app version")
 	}
 
-	if ausOutput["is-airgap"] == "true" {
-		if err := update.RemoveAirgapUpdate(ausOutput["app-slug"], ausOutput["channel-id"], ausOutput["update-cursor"]); err != nil {
+	if p.IsAirgap {
+		if err := update.RemoveAirgapUpdate(p.AppSlug, p.ChannelID, p.UpdateCursor); err != nil {
 			return errors.Wrap(err, "remove airgap update")
 		}
 	}
@@ -98,20 +94,20 @@ func executeAppUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error
 	}
 
 	if ausOutput["preflight-result"] != "" {
-		if err := s.SetPreflightResults(ausOutput["app-id"], sequence, []byte(ausOutput["preflight-result"])); err != nil {
+		if err := s.SetPreflightResults(p.AppID, sequence, []byte(ausOutput["preflight-result"])); err != nil {
 			return errors.Wrap(err, "set preflight results")
 		}
 	}
 
-	if err := s.SetAppChannelChanged(ausOutput["app-id"], false); err != nil {
+	if err := s.SetAppChannelChanged(p.AppID, false); err != nil {
 		return errors.Wrap(err, "reset channel changed flag")
 	}
 
-	if err := s.MarkAsCurrentDownstreamVersion(ausOutput["app-id"], sequence); err != nil {
+	if err := s.MarkAsCurrentDownstreamVersion(p.AppID, sequence); err != nil {
 		return errors.Wrap(err, "mark as current downstream version")
 	}
 
-	go operator.MustGetOperator().DeployApp(ausOutput["app-id"], sequence)
+	go operator.MustGetOperator().DeployApp(p.AppID, sequence)
 
 	if err := UpdateStep(s, UpdateStepOptions{
 		AppSlug:      p.AppSlug,
@@ -125,7 +121,7 @@ func executeAppUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error
 	return nil
 }
 
-func getAppUpgradeServiceParams(s store.Store, p *types.Plan, stepID string) (*upgradeservicetypes.UpgradeServiceParams, error) {
+func getAppUpgradeServiceInput(s store.Store, p *types.Plan, stepID string) (*types.PlanStepInputAppUpgradeService, error) {
 	a, err := s.GetAppFromSlug(p.AppSlug)
 	if err != nil {
 		return nil, errors.Wrap(err, "get app from slug")
@@ -181,7 +177,7 @@ func getAppUpgradeServiceParams(s store.Store, p *types.Plan, stepID string) (*u
 		return nil, errors.Wrap(err, "get free port")
 	}
 
-	return &upgradeservicetypes.UpgradeServiceParams{
+	ausParams := upgradeservicetypes.UpgradeServiceParams{
 		Port:       fmt.Sprintf("%d", port),
 		PlanStepID: stepID,
 
@@ -200,7 +196,7 @@ func getAppUpgradeServiceParams(s store.Store, p *types.Plan, stepID string) (*u
 		UpdateVersionLabel: p.VersionLabel,
 		UpdateCursor:       p.UpdateCursor,
 		UpdateChannelID:    p.ChannelID,
-		UpdateECVersion:    p.ECVersion,
+		UpdateECVersion:    p.NewECVersion,
 		UpdateKOTSBin:      updateKOTSBin,
 		UpdateAirgapBundle: updateAirgapBundle,
 
@@ -213,5 +209,9 @@ func getAppUpgradeServiceParams(s store.Store, p *types.Plan, stepID string) (*u
 		RegistryIsReadOnly: registrySettings.IsReadOnly,
 
 		ReportingInfo: reporting.GetReportingInfo(a.ID),
+	}
+
+	return &types.PlanStepInputAppUpgradeService{
+		Params: ausParams,
 	}, nil
 }

@@ -5,35 +5,35 @@ import (
 )
 
 type UpgradeServiceParams struct {
-	Port       string `yaml:"port"`
-	PlanStepID string `yaml:"planStepID"`
+	Port       string `yaml:"port" json:"port"`
+	PlanStepID string `yaml:"planStepID" json:"planStepID"`
 
-	AppID       string `yaml:"appId"`
-	AppSlug     string `yaml:"appSlug"`
-	AppName     string `yaml:"appName"`
-	AppIsAirgap bool   `yaml:"appIsAirgap"`
-	AppIsGitOps bool   `yaml:"appIsGitOps"`
-	AppLicense  string `yaml:"appLicense"`
-	AppArchive  string `yaml:"appArchive"`
+	AppID       string `yaml:"appId" json:"appId"`
+	AppSlug     string `yaml:"appSlug" json:"appSlug"`
+	AppName     string `yaml:"appName" json:"appName"`
+	AppIsAirgap bool   `yaml:"appIsAirgap" json:"appIsAirgap"`
+	AppIsGitOps bool   `yaml:"appIsGitOps" json:"appIsGitOps"`
+	AppLicense  string `yaml:"appLicense" json:"appLicense"`
+	AppArchive  string `yaml:"appArchive" json:"appArchive"`
 
-	Source       string `yaml:"source"`
-	BaseSequence int64  `yaml:"baseSequence"`
-	NextSequence int64  `yaml:"nextSequence"`
+	Source       string `yaml:"source" json:"source"`
+	BaseSequence int64  `yaml:"baseSequence" json:"baseSequence"`
+	NextSequence int64  `yaml:"nextSequence" json:"nextSequence"`
 
-	UpdateVersionLabel string `yaml:"updateVersionLabel"`
-	UpdateCursor       string `yaml:"updateCursor"`
-	UpdateChannelID    string `yaml:"updateChannelID"`
-	UpdateECVersion    string `yaml:"updateECVersion"`
-	UpdateKOTSBin      string `yaml:"updateKotsBin"`
-	UpdateAirgapBundle string `yaml:"updateAirgapBundle"`
+	UpdateVersionLabel string `yaml:"updateVersionLabel" json:"updateVersionLabel"`
+	UpdateCursor       string `yaml:"updateCursor" json:"updateCursor"`
+	UpdateChannelID    string `yaml:"updateChannelID" json:"updateChannelID"`
+	UpdateECVersion    string `yaml:"updateECVersion" json:"updateECVersion"`
+	UpdateKOTSBin      string `yaml:"updateKotsBin" json:"updateKotsBin"`
+	UpdateAirgapBundle string `yaml:"updateAirgapBundle" json:"updateAirgapBundle"`
 
-	CurrentECVersion string `yaml:"currentECVersion"`
+	CurrentECVersion string `yaml:"currentECVersion" json:"currentECVersion"`
 
-	RegistryEndpoint   string `yaml:"registryEndpoint"`
-	RegistryUsername   string `yaml:"registryUsername"`
-	RegistryPassword   string `yaml:"registryPassword"`
-	RegistryNamespace  string `yaml:"registryNamespace"`
-	RegistryIsReadOnly bool   `yaml:"registryIsReadOnly"`
+	RegistryEndpoint   string `yaml:"registryEndpoint" json:"registryEndpoint"`
+	RegistryUsername   string `yaml:"registryUsername" json:"registryUsername"`
+	RegistryPassword   string `yaml:"registryPassword" json:"registryPassword"`
+	RegistryNamespace  string `yaml:"registryNamespace" json:"registryNamespace"`
+	RegistryIsReadOnly bool   `yaml:"registryIsReadOnly" json:"registryIsReadOnly"`
 
-	ReportingInfo *reportingtypes.ReportingInfo `yaml:"reportingInfo"`
+	ReportingInfo *reportingtypes.ReportingInfo `yaml:"reportingInfo" json:"reportingInfo"`
 }

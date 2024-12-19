@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var planMutex sync.Mutex
@@ -21,65 +22,83 @@ type PlanUpgradeOptions struct {
 	ChannelID    string
 }
 
-func PlanUpgrade(s store.Store, opts PlanUpgradeOptions) (*types.Plan, error) {
+func PlanUpgrade(s store.Store, kcli kbclient.Client, opts PlanUpgradeOptions) (*types.Plan, error) {
 	a, err := s.GetAppFromSlug(opts.AppSlug)
 	if err != nil {
 		return nil, errors.Wrap(err, "get app from slug")
 	}
 
-	ecVersion, err := getECVersionForRelease(a, opts.VersionLabel, opts.ChannelID, opts.UpdateCursor)
+	manifests, err := getReleaseManifests(a, opts.VersionLabel, opts.ChannelID, opts.UpdateCursor)
 	if err != nil {
-		return nil, errors.Wrap(err, "get kots version for release")
+		return nil, errors.Wrap(err, "get release manifests")
 	}
 
-	plan := types.Plan{
-		ID:           ksuid.New().String(),
-		AppID:        a.ID,
-		AppSlug:      opts.AppSlug,
-		VersionLabel: opts.VersionLabel,
-		UpdateCursor: opts.UpdateCursor,
-		ChannelID:    opts.ChannelID,
-		ECVersion:    ecVersion,
-		Steps:        []*types.PlanStep{},
+	newECConfigSpec, err := findECConfigSpecInRelease(manifests)
+	if err != nil {
+		return nil, errors.Wrap(err, "find embedded cluster config in release")
+	}
+
+	p := types.Plan{
+		ID:               ksuid.New().String(),
+		AppID:            a.ID,
+		AppSlug:          opts.AppSlug,
+		VersionLabel:     opts.VersionLabel,
+		UpdateCursor:     opts.UpdateCursor,
+		ChannelID:        opts.ChannelID,
+		CurrentECVersion: util.EmbeddedClusterVersion(),
+		NewECVersion:     newECConfigSpec.Version,
+		IsAirgap:         a.IsAirgap,
+		Steps:            []*types.PlanStep{},
 	}
 
 	// app upgrade service
-	plan.Steps = append(plan.Steps, &types.PlanStep{
-		ID:                ksuid.New().String(),
+	ausInput, err := getAppUpgradeServiceInput(s, &p, ksuid.New().String())
+	if err != nil {
+		return nil, errors.Wrap(err, "get app upgrade service input")
+	}
+	p.Steps = append(p.Steps, &types.PlanStep{
+		ID:                ausInput.Params.PlanStepID,
 		Name:              "App Upgrade Service",
 		Type:              types.StepTypeAppUpgradeService,
 		Status:            types.StepStatusPending,
 		StatusDescription: "Pending",
 		Owner:             types.StepOwnerKOTS,
+		Input:             *ausInput,
 	})
 
-	// TODO (@salah): add a step to upgrade kots here
-	// to make sure later steps are executed by the new version,
-	// as old kots might not be able to parse new kots kinds (and EC config)
-
 	// embedded cluster upgrade
-	if ecVersion != util.EmbeddedClusterVersion() {
-		plan.Steps = append(plan.Steps, &types.PlanStep{
+	requiresECUpgrade, err := requiresECUpgrade(kcli, newECConfigSpec)
+	if err != nil {
+		return nil, errors.Wrap(err, "check if requires ec upgrade")
+	}
+	if requiresECUpgrade {
+		in, err := getECUpgradeInput(s, kcli, a, opts.VersionLabel, newECConfigSpec)
+		if err != nil {
+			return nil, errors.Wrap(err, "get ec upgrade input")
+		}
+		p.Steps = append(p.Steps, &types.PlanStep{
 			ID:                ksuid.New().String(),
 			Name:              "Embedded Cluster Upgrade",
 			Type:              types.StepTypeECUpgrade,
 			Status:            types.StepStatusPending,
 			StatusDescription: "Pending embedded cluster upgrade",
+			Input:             *in,
 			Owner:             types.StepOwnerECManager,
 		})
 	}
 
 	// app upgrade
-	plan.Steps = append(plan.Steps, &types.PlanStep{
+	p.Steps = append(p.Steps, &types.PlanStep{
 		ID:                ksuid.New().String(),
 		Name:              "Application Upgrade",
 		Type:              types.StepTypeAppUpgrade,
 		Status:            types.StepStatusPending,
 		StatusDescription: "Pending application upgrade",
 		Owner:             types.StepOwnerKOTS,
+		// the input here is the app upgrade service output
 	})
 
-	return &plan, nil
+	return &p, nil
 }
 
 func Resume(s store.Store) error {
@@ -112,7 +131,7 @@ func Resume(s store.Store) error {
 }
 
 // TODO (@salah): make each step report better status
-func Execute(s store.Store, p *types.Plan) (finalError error) {
+func Execute(s store.Store, p *types.Plan) error {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 	go startPlanMonitor(s, p, stopCh)

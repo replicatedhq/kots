@@ -1,14 +1,25 @@
 package types
 
+import (
+	ecv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
+	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+)
+
 type Plan struct {
-	ID           string      `json:"id" yaml:"id"`
-	AppID        string      `json:"appId" yaml:"appId"`
-	AppSlug      string      `json:"appSlug" yaml:"appSlug"`
-	VersionLabel string      `json:"versionLabel" yaml:"versionLabel"`
-	UpdateCursor string      `json:"updateCursor" yaml:"updateCursor"`
-	ChannelID    string      `json:"channelId" yaml:"channelId"`
-	ECVersion    string      `json:"ecVersion" yaml:"ecVersion"`
-	Steps        []*PlanStep `json:"steps" yaml:"steps"`
+	ID               string      `json:"id" yaml:"id"`
+	AppID            string      `json:"appId" yaml:"appId"`
+	AppSlug          string      `json:"appSlug" yaml:"appSlug"`
+	VersionLabel     string      `json:"versionLabel" yaml:"versionLabel"`
+	UpdateCursor     string      `json:"updateCursor" yaml:"updateCursor"`
+	ChannelID        string      `json:"channelId" yaml:"channelId"`
+	CurrentECVersion string      `json:"currentECVersion" yaml:"currentECVersion"`
+	NewECVersion     string      `json:"newECVersion" yaml:"newECVersion"`
+	IsAirgap         bool        `json:"isAirgap" yaml:"isAirgap"`
+	BaseSequence     int64       `json:"baseSequence" yaml:"baseSequence"`
+	NextSequence     int64       `json:"nextSequence" yaml:"nextSequence"`
+	Source           string      `json:"source" yaml:"source"`
+	Steps            []*PlanStep `json:"steps" yaml:"steps"`
 }
 
 type PlanStep struct {
@@ -19,6 +30,7 @@ type PlanStep struct {
 	StatusDescription string         `json:"statusDescription" yaml:"statusDescription"`
 	Owner             PlanStepOwner  `json:"owner" yaml:"owner"`
 	OwnerHost         string         `json:"ownerHost" yaml:"ownerHost"`
+	Input             interface{}    `json:"input" yaml:"input"`
 	Output            interface{}    `json:"output" yaml:"output"`
 }
 
@@ -46,6 +58,17 @@ const (
 	StepOwnerKOTS      PlanStepOwner = "kots"
 	StepOwnerECManager PlanStepOwner = "manager"
 )
+
+type PlanStepInputAppUpgradeService struct {
+	Params upgradeservicetypes.UpgradeServiceParams `json:"params" yaml:"params"`
+}
+
+type PlanStepInputECUpgrade struct {
+	CurrentECInstallation       ecv1beta1.Installation   `json:"currentECInstallation" yaml:"currentECInstallation"`
+	CurrentKOTSInstallation     kotsv1beta1.Installation `json:"currentKOTSInstallation" yaml:"currentKOTSInstallation"`
+	NewECConfigSpec             ecv1beta1.ConfigSpec     `json:"newECConfigSpec" yaml:"newECConfigSpec"`
+	IsDisasterRecoverySupported bool                     `json:"isDisasterRecoverySupported" yaml:"isDisasterRecoverySupported"`
+}
 
 func (p *Plan) HasEnded() bool {
 	status := p.GetStatus()

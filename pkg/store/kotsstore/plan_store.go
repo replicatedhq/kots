@@ -1,6 +1,7 @@
 package kotsstore
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -8,7 +9,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/plan/types"
 	"github.com/rqlite/gorqlite"
-	"gopkg.in/yaml.v3"
 )
 
 func (s *KOTSStore) GetPlan(appID, versionLabel string) (*types.Plan, error) {
@@ -31,7 +31,7 @@ func (s *KOTSStore) GetPlan(appID, versionLabel string) (*types.Plan, error) {
 	}
 
 	var plan *types.Plan
-	if err := yaml.Unmarshal([]byte(marshalled), &plan); err != nil {
+	if err := json.Unmarshal([]byte(marshalled), &plan); err != nil {
 		return nil, errors.Wrap(err, "unmarshal")
 	}
 
@@ -51,7 +51,7 @@ func (s *KOTSStore) UpsertPlan(p *types.Plan) error {
 			plan = excluded.plan
 	`
 
-	marshalled, err := yaml.Marshal(p)
+	marshalled, err := json.Marshal(p)
 	if err != nil {
 		return errors.Wrap(err, "marshal")
 	}
@@ -95,7 +95,7 @@ func (s *KOTSStore) GetCurrentPlan(appID string) (*types.Plan, *time.Time, error
 	}
 
 	var plan *types.Plan
-	if err := yaml.Unmarshal([]byte(marshalled), &plan); err != nil {
+	if err := json.Unmarshal([]byte(marshalled), &plan); err != nil {
 		return nil, nil, errors.Wrap(err, "unmarshal")
 	}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/plan"
@@ -83,7 +84,15 @@ func (h *Handler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err := plan.PlanUpgrade(store.GetStore(), plan.PlanUpgradeOptions{
+	kbClient, err := k8sutil.GetKubeClient(r.Context())
+	if err != nil {
+		response.Error = "failed to get kube client"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	p, err := plan.PlanUpgrade(store.GetStore(), kbClient, plan.PlanUpgradeOptions{
 		AppSlug:      appSlug,
 		VersionLabel: request.VersionLabel,
 		UpdateCursor: request.UpdateCursor,

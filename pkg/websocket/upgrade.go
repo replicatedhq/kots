@@ -1,12 +1,13 @@
 package websocket
 
 import (
+	"encoding/json"
+
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	ecv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/websocket/types"
-	k8syaml "sigs.k8s.io/yaml"
 )
 
 // UpgradeCluster sends an upgrade command to the first available websocket from the active ones
@@ -28,12 +29,12 @@ func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel,
 		break
 	}
 
-	marshalledInst, err := k8syaml.Marshal(installation)
+	marshalledInst, err := json.Marshal(installation)
 	if err != nil {
 		return errors.Wrap(err, "marshal installation")
 	}
 
-	data, err := k8syaml.Marshal(map[string]string{
+	data, err := json.Marshal(map[string]string{
 		"installation": string(marshalledInst),
 		"appSlug":      appSlug,
 		"versionLabel": versionLabel,
@@ -43,7 +44,7 @@ func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel,
 		return errors.Wrap(err, "marshal installation")
 	}
 
-	message, err := k8syaml.Marshal(map[string]interface{}{
+	message, err := json.Marshal(map[string]interface{}{
 		"command": "upgrade-cluster",
 		"data":    string(data),
 	})
