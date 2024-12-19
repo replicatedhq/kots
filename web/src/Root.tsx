@@ -305,6 +305,7 @@ const Root = () => {
 
       let showModal = false;
       if (state.adminConsoleMetadata?.isEC2Install) {
+        // TODO (@salah): don't show modal if it's only an app upgrade
         showModal =
           status !== "" &&
           status !== "complete" &&

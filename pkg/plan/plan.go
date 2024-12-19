@@ -107,7 +107,7 @@ func Resume(s store.Store) error {
 	return nil
 }
 
-// TODO (@salah): make each step report status
+// TODO (@salah): make each step report better status
 func Execute(s store.Store, p *types.Plan) (finalError error) {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
