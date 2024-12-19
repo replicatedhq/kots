@@ -110,8 +110,8 @@ func (h *Handler) ListBackups(w http.ResponseWriter, r *http.Request) {
 }
 
 type ListInstanceBackupsResponse struct {
-	Error   string                            `json:"error,omitempty"`
-	Backups []*snapshottypes.ReplicatedBackup `json:"backups"`
+	Error   string                  `json:"error,omitempty"`
+	Backups []*snapshottypes.Backup `json:"backups"`
 }
 
 func (h *Handler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
@@ -130,22 +130,22 @@ func (h *Handler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetBackupResponse struct {
-	BackupDetail *snapshottypes.BackupDetail `json:"backupDetail"`
-	Success      bool                        `json:"success"`
-	Error        string                      `json:"error,omitempty"`
+	BackupDetails []snapshottypes.BackupDetail `json:"backupDetails"`
+	Success       bool                         `json:"success"`
+	Error         string                       `json:"error,omitempty"`
 }
 
 func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 	getBackupResponse := GetBackupResponse{}
 
-	backup, err := snapshot.GetBackupDetail(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
+	backups, err := snapshot.GetBackupDetail(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
 	if err != nil {
 		logger.Error(err)
 		getBackupResponse.Error = "failed to get backup detail"
 		JSON(w, 500, getBackupResponse)
 		return
 	}
-	getBackupResponse.BackupDetail = backup
+	getBackupResponse.BackupDetails = backups
 
 	getBackupResponse.Success = true
 

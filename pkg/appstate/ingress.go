@@ -7,6 +7,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -118,6 +119,7 @@ func makeIngressResourceState(r *networkingv1.Ingress, state types.State) types.
 }
 
 func CalculateIngressState(clientset kubernetes.Interface, r *networkingv1.Ingress) types.State {
+	ctx := context.TODO()
 	ns := r.Namespace
 	backend := r.Spec.DefaultBackend
 
@@ -139,30 +141,43 @@ func CalculateIngressState(clientset kubernetes.Interface, r *networkingv1.Ingre
 		ns = metav1.NamespaceSystem
 	}
 
-	var states []types.State
+	services := []*v1.Service{} // includes nils which are mapped to unavailable
 	if backend != nil {
-		states = append(states, ingressGetStateFromBackend(clientset, ns, *backend))
+		service, _ := clientset.CoreV1().Services(ns).Get(ctx, backend.Service.Name, metav1.GetOptions{})
+		services = append(services, service)
 	}
 
 	for _, rules := range r.Spec.Rules {
 		for _, path := range rules.HTTP.Paths {
-			states = append(states, ingressGetStateFromBackend(clientset, r.Namespace, path.Backend))
+			service, _ := clientset.CoreV1().Services(r.Namespace).Get(ctx, path.Backend.Service.Name, metav1.GetOptions{})
+			services = append(services, service)
 		}
 	}
-	// https://github.com/kubernetes/kubernetes/blob/badcd4af3f592376ce891b7c1b7a43ed6a18a348/pkg/printers/internalversion/printers.go#L1067
-	states = append(states, ingressGetStateFromExternalIP(r))
-	return types.MinState(states...)
-}
 
-func ingressGetStateFromBackend(clientset kubernetes.Interface, namespace string, backend networkingv1.IngressBackend) (minState types.State) {
-	if backend.Service == nil {
-		return types.StateUnavailable
+	hasLoadBalancer := false
+	for _, service := range services {
+		if service != nil && service.Spec.Type == v1.ServiceTypeLoadBalancer {
+			hasLoadBalancer = true
+			break
+		}
 	}
-	service, _ := clientset.CoreV1().Services(namespace).Get(context.TODO(), backend.Service.Name, metav1.GetOptions{})
-	if service == nil {
-		return types.StateUnavailable
+
+	var states []types.State
+	for _, service := range services {
+		if service == nil {
+			states = append(states, types.StateUnavailable)
+		} else {
+			states = append(states, serviceGetStateFromEndpoints(clientset, service))
+		}
 	}
-	return serviceGetStateFromEndpoints(clientset, service)
+
+	// An ingress will have an IP associated with it if it's type is LoadBalancer.
+	if hasLoadBalancer {
+		// https://github.com/kubernetes/kubernetes/blob/badcd4af3f592376ce891b7c1b7a43ed6a18a348/pkg/printers/internalversion/printers.go#L1067
+		states = append(states, ingressGetStateFromExternalIP(r))
+	}
+
+	return types.MinState(states...)
 }
 
 func ingressGetStateFromExternalIP(ing *networkingv1.Ingress) types.State {

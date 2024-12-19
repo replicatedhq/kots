@@ -47,8 +47,10 @@ runs:
         export GIT_TAG=${{ inputs.git-tag }}
         envsubst '${GIT_TAG}' < ${{ inputs.context }}/apko.yaml.tmpl > ${{ inputs.context }}/apko.yaml
 
-    - uses: chainguard-images/actions/apko-publish@main
+    # pin to work around https://github.com/chainguard-images/actions/issues/160
+    - uses: chainguard-images/actions/apko-publish@49e3bc2feb790da6c3a7f749b38c769174c4ad54
       with:
+        apko-image: ghcr.io/wolfi-dev/sdk@sha256:b3c690e2aff7a6e6259632047b5d6133169204f7011b9936731cf3f403d5a8c1
         config: ${{ inputs.context }}/apko.yaml
         archs: amd64,arm64
         tag: ${{ inputs.image-name }}

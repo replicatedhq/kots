@@ -143,9 +143,9 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 
 	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces)
 
-	snapshotTrigger := "manual"
+	snapshotTrigger := types.BackupTriggerManual
 	if isScheduled {
-		snapshotTrigger = "schedule"
+		snapshotTrigger = types.BackupTriggerSchedule
 	}
 
 	veleroBackup.Name = ""
@@ -156,7 +156,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	if veleroBackup.Annotations == nil {
 		veleroBackup.Annotations = make(map[string]string, 0)
 	}
-	veleroBackup.Annotations["kots.io/snapshot-trigger"] = snapshotTrigger
+	veleroBackup.Annotations[types.BackupTriggerAnnotation] = snapshotTrigger
 	veleroBackup.Annotations["kots.io/app-id"] = a.ID
 	veleroBackup.Annotations["kots.io/app-sequence"] = strconv.FormatInt(parentSequence, 10)
 	veleroBackup.Annotations["kots.io/snapshot-requested"] = time.Now().UTC().Format(time.RFC3339)
@@ -659,9 +659,9 @@ func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[str
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
 	}
 
-	snapshotTrigger := "manual"
+	snapshotTrigger := types.BackupTriggerManual
 	if metadata.isScheduled {
-		snapshotTrigger = "schedule"
+		snapshotTrigger = types.BackupTriggerSchedule
 	}
 
 	appSequences := map[string]int64{}
@@ -689,11 +689,11 @@ func appendCommonAnnotations(k8sClient kubernetes.Interface, annotations map[str
 	if annotations == nil {
 		annotations = make(map[string]string, 0)
 	}
-	annotations["kots.io/snapshot-trigger"] = snapshotTrigger
+	annotations[types.BackupTriggerAnnotation] = snapshotTrigger
 	annotations["kots.io/snapshot-requested"] = metadata.backupReqestedAt.Format(time.RFC3339)
 	annotations["kots.io/kotsadm-image"] = kotsadmImage
 	annotations["kots.io/kotsadm-deploy-namespace"] = metadata.kotsadmNamespace
-	annotations["kots.io/apps-sequences"] = marshalledAppSequences
+	annotations[types.BackupAppsSequencesAnnotation] = marshalledAppSequences
 	annotations["kots.io/apps-versions"] = marshalledAppVersions
 	annotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
 	embeddedRegistryHost, _, _ := kotsutil.GetEmbeddedRegistryCreds(k8sClient)
@@ -747,7 +747,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 
 		backup := types.Backup{
 			Name:   veleroBackup.Name,
-			Status: string(veleroBackup.Status.Phase),
+			Status: types.GetStatusFromBackupPhase(veleroBackup.Status.Phase),
 			AppID:  appID,
 		}
 
@@ -770,10 +770,10 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			backup.Sequence = s
 		}
 		if backup.Status == "" {
-			backup.Status = "New"
+			backup.Status = types.BackupStatusInProgress
 		}
 
-		trigger, ok := veleroBackup.Annotations["kots.io/snapshot-trigger"]
+		trigger, ok := veleroBackup.Annotations[types.BackupTriggerAnnotation]
 		if ok {
 			backup.Trigger = trigger
 		}
@@ -783,56 +783,16 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			backup.SupportBundleID = supportBundleID
 		}
 
-		volumeCount, volumeCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-count"]
-		if volumeCountOk {
-			i, err := strconv.Atoi(volumeCount)
+		if backup.Status != types.BackupStatusInProgress {
+			volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-count")
+				return nil, errors.Wrap(err, "failed to get volume summary")
 			}
-			backup.VolumeCount = i
-		}
 
-		volumeSuccessCount, volumeSuccessCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-success-count"]
-		if volumeSuccessCountOk {
-			i, err := strconv.Atoi(volumeSuccessCount)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-success-count")
-			}
-			backup.VolumeSuccessCount = i
-		}
-
-		volumeBytes, volumeBytesOk := veleroBackup.Annotations["kots.io/snapshot-volume-bytes"]
-		if volumeBytesOk {
-			i, err := strconv.ParseInt(volumeBytes, 10, 64)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-bytes")
-			}
-			backup.VolumeBytes = i
-			backup.VolumeSizeHuman = units.HumanSize(float64(i))
-		}
-
-		if backup.Status != "New" && backup.Status != "InProgress" {
-			if !volumeBytesOk || !volumeSuccessCountOk {
-				// save computed summary as annotations if snapshot is finished
-				volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to get volume summary")
-				}
-
-				backup.VolumeCount = volumeSummary.VolumeCount
-				backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
-				backup.VolumeBytes = volumeSummary.VolumeBytes
-				backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
-
-				// This is failing with "the server could not find the requested resource (put backups.velero.io scheduled-1586536961)"
-				// veleroBackup.Annotations["kots.io/snapshot-volume-count"] = strconv.Itoa(backup.VolumeCount)
-				// veleroBackup.Annotations["kots.io/snapshot-volume-success-count"] = strconv.Itoa(backup.VolumeSuccessCount)
-				// veleroBackup.Annotations["kots.io/snapshot-volume-bytes"] = strconv.FormatInt(backup.VolumeBytes, 10)
-
-				// if _, err = veleroClient.Backups(backendStorageLocation.Namespace).UpdateStatus(&veleroBackup); err != nil {
-				// 	return nil, errors.Wrap(err, "failed to update velero backup")
-				// }
-			}
+			backup.VolumeCount = volumeSummary.VolumeCount
+			backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
+			backup.VolumeBytes = volumeSummary.VolumeBytes
+			backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
 		}
 
 		backups = append(backups, &backup)
@@ -841,7 +801,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 	return backups, nil
 }
 
-func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.ReplicatedBackup, error) {
+func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.Backup, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -871,124 +831,113 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		return nil, errors.Wrap(err, "failed to list velero backups")
 	}
 
-	replicatedBackupsMap := map[string]*types.ReplicatedBackup{}
+	return getBackupsFromVeleroBackups(ctx, veleroBackups.Items)
+}
 
-	for _, veleroBackup := range veleroBackups.Items {
-		// TODO: Enforce version?
+// getBackupsFromVeleroBackups returns an array of `Backup` structs, consisting of Replicated's representation of a backup
+// from an array of Velero backups `VolumeSummary`'s and .
+func getBackupsFromVeleroBackups(ctx context.Context, veleroBackups []velerov1.Backup) ([]*types.Backup, error) {
+	result := make(map[string]*types.Backup, 0)
+
+	for _, veleroBackup := range veleroBackups {
+		// filter out non instance backups
 		if !types.IsInstanceBackup(veleroBackup) {
 			continue
 		}
-
-		backup := types.Backup{
-			Name:         veleroBackup.Name,
-			Status:       string(veleroBackup.Status.Phase),
-			IncludedApps: make([]types.App, 0),
-		}
-
-		if veleroBackup.Status.StartTimestamp != nil {
-			backup.StartedAt = &veleroBackup.Status.StartTimestamp.Time
-		}
-		if veleroBackup.Status.CompletionTimestamp != nil {
-			backup.FinishedAt = &veleroBackup.Status.CompletionTimestamp.Time
-		}
-		if veleroBackup.Status.Expiration != nil {
-			backup.ExpiresAt = &veleroBackup.Status.Expiration.Time
-		}
-		if backup.Status == "" {
-			backup.Status = "New"
-		}
-
-		trigger, ok := veleroBackup.Annotations["kots.io/snapshot-trigger"]
-		if ok {
-			backup.Trigger = trigger
-		}
-
-		volumeCount, volumeCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-count"]
-		if volumeCountOk {
-			i, err := strconv.Atoi(volumeCount)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-count")
-			}
-			backup.VolumeCount = i
-		}
-
-		volumeSuccessCount, volumeSuccessCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-success-count"]
-		if volumeSuccessCountOk {
-			i, err := strconv.Atoi(volumeSuccessCount)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-success-count")
-			}
-			backup.VolumeSuccessCount = i
-		}
-
-		volumeBytes, volumeBytesOk := veleroBackup.Annotations["kots.io/snapshot-volume-bytes"]
-		if volumeBytesOk {
-			i, err := strconv.ParseInt(volumeBytes, 10, 64)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to convert volume-bytes")
-			}
-			backup.VolumeBytes = i
-			backup.VolumeSizeHuman = units.HumanSize(float64(i))
-		}
-
-		appAnnotationStr, _ := veleroBackup.Annotations["kots.io/apps-sequences"]
-		if len(appAnnotationStr) > 0 {
-			var apps map[string]int64
-			if err := json.Unmarshal([]byte(appAnnotationStr), &apps); err != nil {
-				return nil, errors.Wrap(err, "failed to unmarshal apps sequences")
-			}
-			for slug, sequence := range apps {
-				a, err := store.GetStore().GetAppFromSlug(slug)
-				if err != nil {
-					if store.GetStore().IsNotFound(err) {
-						// app might not exist in current installation
-						continue
-					}
-					return nil, errors.Wrap(err, "failed to get app from slug")
-				}
-
-				backup.IncludedApps = append(backup.IncludedApps, types.App{
-					Slug:       slug,
-					Sequence:   sequence,
-					Name:       a.Name,
-					AppIconURI: a.IconURI,
-				})
-			}
-		}
-
-		if backup.Status != "New" && backup.Status != "InProgress" {
-			if !volumeBytesOk || !volumeSuccessCountOk {
-				// save computed summary as annotations if snapshot is finished
-				volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to get volume summary")
-				}
-
-				backup.VolumeCount = volumeSummary.VolumeCount
-				backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
-				backup.VolumeBytes = volumeSummary.VolumeBytes
-				backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
-			}
-		}
-
-		// group the velero backups by the name we present to the user
+		veleroStatus := veleroBackup.Status
 		backupName := types.GetBackupName(veleroBackup)
-		if _, ok := replicatedBackupsMap[backupName]; !ok {
-			replicatedBackupsMap[backupName] = &types.ReplicatedBackup{
+		if _, ok := result[backupName]; !ok {
+			result[backupName] = &types.Backup{
 				Name:                backupName,
-				Backups:             []types.Backup{},
+				Status:              types.GetStatusFromBackupPhase(veleroStatus.Phase),
+				Trigger:             types.GetBackupTrigger(veleroBackup),
 				ExpectedBackupCount: types.GetInstanceBackupCount(veleroBackup),
+				IncludedApps:        []types.App{},
 			}
 		}
-		replicatedBackupsMap[backupName].Backups = append(replicatedBackupsMap[backupName].Backups, backup)
+		backup := result[backupName]
+		backup.BackupCount++
+		// backup uses the oldest velero backup start time as its start time
+		if veleroStatus.StartTimestamp != nil {
+			if backup.StartedAt == nil || veleroStatus.StartTimestamp.Time.Before(*backup.StartedAt) {
+				backup.StartedAt = &veleroStatus.StartTimestamp.Time
+			}
+		}
+
+		// backup uses the first expiration date as its expiration timestamp
+		if veleroStatus.Expiration != nil {
+			if backup.ExpiresAt == nil || veleroStatus.Expiration.Time.Before(*backup.ExpiresAt) {
+				backup.ExpiresAt = &veleroStatus.Expiration.Time
+			}
+		}
+
+		// backup uses the most recent completion date as its completion timestamp
+		if veleroStatus.CompletionTimestamp != nil {
+			if backup.FinishedAt == nil || veleroStatus.CompletionTimestamp.Time.After(*backup.FinishedAt) {
+				backup.FinishedAt = &veleroStatus.CompletionTimestamp.Time
+			}
+		}
+
+		backup.Status = types.RollupStatus([]types.BackupStatus{backup.Status, types.GetStatusFromBackupPhase(veleroStatus.Phase)})
+
+		// get volume information
+		volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get volume summary for backup %s: %w", backupName, err)
+		}
+
+		backup.VolumeCount += volumeSummary.VolumeCount
+		backup.VolumeSuccessCount += volumeSummary.VolumeSuccessCount
+		backup.VolumeBytes += volumeSummary.VolumeBytes
+		backup.VolumeSizeHuman = units.HumanSize(float64(backup.VolumeBytes))
+
+		apps, err := getAppsFromAppSequences(veleroBackup)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get apps from app sequences for backup %s: %w", backupName, err)
+		}
+		backup.IncludedApps = append(backup.IncludedApps, apps...)
 	}
 
-	replicatedBackups := []*types.ReplicatedBackup{}
-	for _, rb := range replicatedBackupsMap {
-		replicatedBackups = append(replicatedBackups, rb)
+	backups := []*types.Backup{}
+	for _, backup := range result {
+		// we consider a backup to have failed if the number of backups that actually exist is less than the expected number
+		if backup.ExpectedBackupCount != backup.BackupCount {
+			backup.Status = types.BackupStatusFailed
+		}
+		backups = append(backups, backup)
 	}
 
-	return replicatedBackups, nil
+	return backups, nil
+}
+
+// getAppsFromAppSequences returns a list of `App` structs from the backup sequence annotation.
+func getAppsFromAppSequences(veleroBackup velerov1.Backup) ([]types.App, error) {
+	apps := []types.App{}
+	appAnnotationStr, _ := veleroBackup.Annotations[types.BackupAppsSequencesAnnotation]
+	if len(appAnnotationStr) > 0 {
+		var appsSequences map[string]int64
+		if err := json.Unmarshal([]byte(appAnnotationStr), &appsSequences); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal apps sequences: %w", err)
+		}
+		for slug, sequence := range appsSequences {
+			a, err := store.GetStore().GetAppFromSlug(slug)
+			if err != nil {
+				if store.GetStore().IsNotFound(err) {
+					// app might not exist in current installation
+					continue
+				}
+				return nil, fmt.Errorf("failed to get app from slug: %w", err)
+			}
+
+			apps = append(apps, types.App{
+				Slug:       slug,
+				Sequence:   sequence,
+				Name:       a.Name,
+				AppIconURI: a.IconURI,
+			})
+		}
+	}
+	return apps, nil
 }
 
 func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup) (*types.VolumeSummary, error) {
@@ -1147,7 +1096,7 @@ func HasUnfinishedApplicationBackup(ctx context.Context, kotsadmNamespace string
 	}
 
 	for _, backup := range backups {
-		if backup.Status == "New" || backup.Status == "InProgress" {
+		if backup.Status == types.BackupStatusInProgress {
 			return true, nil
 		}
 	}
@@ -1156,23 +1105,21 @@ func HasUnfinishedApplicationBackup(ctx context.Context, kotsadmNamespace string
 }
 
 func HasUnfinishedInstanceBackup(ctx context.Context, kotsadmNamespace string) (bool, error) {
-	replicatedBackups, err := ListInstanceBackups(ctx, kotsadmNamespace)
+	backups, err := ListInstanceBackups(ctx, kotsadmNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list backups")
 	}
 
-	for _, replicatedBackup := range replicatedBackups {
-		for _, backup := range replicatedBackup.Backups {
-			if backup.Status == "New" || backup.Status == "InProgress" {
-				return true, nil
-			}
+	for _, backup := range backups {
+		if backup.Status == types.BackupStatusInProgress {
+			return true, nil
 		}
 	}
 
 	return false, nil
 }
 
-func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID string) (*types.BackupDetail, error) {
+func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName string) ([]types.BackupDetail, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -1195,20 +1142,59 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID stri
 
 	veleroNamespace := backendStorageLocation.Namespace
 
-	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupID, metav1.GetOptions{})
+	backups, err := listBackupsByName(ctx, veleroClient, veleroNamespace, backupName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup")
 	}
 
+	results := []types.BackupDetail{}
+
+	for _, backup := range backups {
+		result, err := getBackupDetailForBackup(ctx, veleroClient, veleroNamespace, backup)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get backup detail for backup %s: %w", backup.Name, err)
+		}
+
+		results = append(results, *result)
+	}
+
+	return results, nil
+}
+
+// listBackupsByName returns a list of backups for the specified backup name. First it tries to get
+// the backup by the replicated.com/backup-name label, and if that fails, it tries to get the
+// backup by the metadata name.
+func listBackupsByName(ctx context.Context, veleroClient veleroclientv1.VeleroV1Interface, veleroNamespace string, backupName string) ([]velerov1.Backup, error) {
+	// first try to get the backup from the backup-name label
+	backupList, err := veleroClient.Backups(veleroNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", types.InstanceBackupNameLabel, velerolabel.GetValidName(backupName)),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list backups by label: %w", err)
+	}
+	if len(backupList.Items) > 0 {
+		return backupList.Items, nil
+	}
+	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get backup by name: %w", err)
+	}
+
+	return []velerov1.Backup{*backup}, nil
+}
+
+// getBackupDetailForBackup returns a BackupDetail object for the specified backup.
+func getBackupDetailForBackup(ctx context.Context, veleroClient veleroclientv1.VeleroV1Interface, veleroNamespace string, backup velerov1.Backup) (*types.BackupDetail, error) {
 	backupVolumes, err := veleroClient.PodVolumeBackups(veleroNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(backupID)),
+		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(backup.Name)),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list volumes")
 	}
 
-	result := &types.BackupDetail{
+	result := types.BackupDetail{
 		Name:       backup.Name,
+		Type:       types.GetInstanceBackupType(backup),
 		Status:     string(backup.Status.Phase),
 		Namespaces: backup.Spec.IncludedNamespaces,
 		Volumes:    listBackupVolumes(backupVolumes.Items),
@@ -1221,7 +1207,7 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID stri
 	result.VolumeSizeHuman = units.HumanSize(float64(totalBytesDone)) // TODO: should this be TotalBytes rather than BytesDone?
 
 	if backup.Status.Phase == velerov1.BackupPhaseCompleted || backup.Status.Phase == velerov1.BackupPhasePartiallyFailed || backup.Status.Phase == velerov1.BackupPhaseFailed {
-		errs, warnings, execs, err := downloadBackupLogs(ctx, veleroNamespace, backupID)
+		errs, warnings, execs, err := downloadBackupLogs(ctx, veleroNamespace, backup.Name)
 		result.Errors = errs
 		result.Warnings = warnings
 		result.Hooks = execs
@@ -1231,7 +1217,7 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupID stri
 		}
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 func listBackupVolumes(backupVolumes []velerov1.PodVolumeBackup) []types.SnapshotVolume {
