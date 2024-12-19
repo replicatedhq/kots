@@ -105,7 +105,7 @@ func (h *Handler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		if err := plan.Execute(store.GetStore(), p); err != nil {
-			logger.Error(errors.Wrap(err, "failed to execute upgrade plan"))
+			logger.Error(errors.Wrapf(err, "failed to execute plan %s", p.ID))
 		}
 	}()
 

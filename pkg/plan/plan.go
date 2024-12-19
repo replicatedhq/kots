@@ -100,7 +100,7 @@ func Resume(s store.Store) error {
 
 	go func() {
 		if err := Execute(s, p); err != nil {
-			logger.Error(errors.Wrap(err, "execute plan"))
+			logger.Error(errors.Wrapf(err, "failed to execute plan %s", p.ID))
 		}
 	}()
 
@@ -160,7 +160,7 @@ func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError
 	switch step.Type {
 	case types.StepTypeAppUpgradeService:
 		if step.Status != types.StepStatusPending {
-			return errors.Errorf("step %q cannot be resumed", step.Name, p.ID)
+			return errors.Errorf("step %q cannot be resumed", step.Name)
 		}
 		if err := executeAppUpgradeService(s, p, step); err != nil {
 			return errors.Wrap(err, "execute app upgrade service")
@@ -201,7 +201,7 @@ func waitForStep(s store.Store, p *types.Plan, stepID string) error {
 			}
 		}
 		if stepIndex == -1 {
-			return errors.Errorf("step %s not found in plan", stepID)
+			return errors.Errorf("step %s not found in plan %s", stepID, p.ID)
 		}
 
 		if p.Steps[stepIndex].Status == types.StepStatusComplete {
