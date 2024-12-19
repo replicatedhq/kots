@@ -167,6 +167,11 @@ type KOTSHandler interface {
 	// Debug info
 	GetDebugInfo(w http.ResponseWriter, r *http.Request)
 
+	// endpoints for EC install2 workflow
+	DeployEC2AppVersion(w http.ResponseWriter, r *http.Request)
+	GetEC2DeployStatus(w http.ResponseWriter, r *http.Request)
+	UpdatePlanStep(w http.ResponseWriter, r *http.Request)
+
 	// Upgrade service
 	StartUpgradeService(w http.ResponseWriter, r *http.Request)
 	GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request)

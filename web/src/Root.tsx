@@ -278,16 +278,17 @@ const Root = () => {
 
   const fetchUpgradeStatus = async (appSlug) => {
     try {
-      const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          method: "GET",
-        }
-      );
+      let url = `${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`;
+      if (state.adminConsoleMetadata?.isEC2Install) {
+        url = `${process.env.API_ENDPOINT}/app/${appSlug}/ec2-deploy/status`;
+      }
+      const res = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        method: "GET",
+      });
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -301,11 +302,21 @@ const Root = () => {
       }
       const response = await res.json();
       const status = response.status;
-      if (
-        status === "upgrading-cluster" ||
-        status === "upgrading-app" ||
-        status === "upgrade-failed"
-      ) {
+
+      let showModal = false;
+      if (state.adminConsoleMetadata?.isEC2Install) {
+        // TODO (@salah): don't show modal if it's only an app upgrade
+        showModal =
+          status !== "" &&
+          status !== "complete" &&
+          response.step !== "app-upgrade-service";
+      } else {
+        showModal =
+          status === "upgrading-cluster" ||
+          status === "upgrading-app" ||
+          status === "upgrade-failed";
+      }
+      if (showModal) {
         setState({
           showUpgradeStatusModal: true,
           upgradeStatus: status,
@@ -1018,6 +1029,7 @@ const Root = () => {
                       refetchUpgradeStatus={fetchUpgradeStatus}
                       snapshotInProgressApps={state.snapshotInProgressApps}
                       ping={ping}
+                      adminConsoleMetadata={state.adminConsoleMetadata}
                       isEmbeddedCluster={Boolean(
                         state.adminConsoleMetadata?.isEmbeddedCluster
                       )}
@@ -1203,7 +1215,10 @@ const Root = () => {
           isOpen={state.showUpgradeStatusModal}
           onRequestClose={() => {
             // cannot close the modal while upgrading
-            if (state.upgradeStatus === "upgrade-failed") {
+            const failedStatus = state.adminConsoleMetadata?.isEC2Install
+              ? "failed"
+              : "upgrade-failed";
+            if (state.upgradeStatus === failedStatus) {
               setState({ showUpgradeStatusModal: false });
             }
           }}
@@ -1222,6 +1237,7 @@ const Root = () => {
             setTerminatedState={(status: boolean) =>
               setState({ connectionTerminated: status })
             }
+            isEC2Install={state.adminConsoleMetadata?.isEC2Install}
           />
         </Modal>
       ) : (
