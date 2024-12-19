@@ -2,6 +2,18 @@ FROM golang:1.23-alpine AS dlv-builder
 
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.23.1
 
+# Install helm from PR 13439 that will support --take-ownership flag
+# Revert this to the latest helm release when that PR is merged
+FROM golang:1.23-alpine AS helm-builder
+
+RUN apk add --no-cache git make bash
+RUN git clone --depth 1 https://github.com/helm/helm.git && \
+    cd helm && \
+    git fetch --depth 1 origin pull/13439/head:pr-13439 && \
+    git checkout pr-13439 && \
+    GOARCH=arm64 make && \
+    chmod a+x bin/helm
+
 FROM golang:1.23-alpine
 
 RUN apk add --no-cache ca-certificates s3cmd curl git make bash
@@ -26,20 +38,10 @@ RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
   && chmod a+x kustomize \
   && mv kustomize /usr/local/bin/kustomize
 
-# Install helm v3
-ENV HELM3_VERSION=3.16.2
-ENV HELM3_URL=https://get.helm.sh/helm-v${HELM3_VERSION}-linux-arm64.tar.gz
-ENV HELM3_SHA256SUM=1888301aeb7d08a03b6d9f4d2b73dcd09b89c41577e80e3455c113629fc657a4
-RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
-  && echo "${HELM3_SHA256SUM} helm.tar.gz" | sha256sum -c - \
-  && tar -xzvf helm.tar.gz \
-  && chmod a+x linux-arm64/helm \
-  && mv linux-arm64/helm /usr/local/bin/helm \
-  && rm -rf helm.tar.gz linux-arm64
-
 WORKDIR /replicatedhq/kots
 
 COPY --from=dlv-builder /go/bin/dlv /dlv
+COPY --from=helm-builder /go/helm/bin/helm /usr/local/bin/helm
 COPY ./bin/kotsadm /kotsadm
 COPY ./bin/kots /kots
 
