@@ -52,6 +52,7 @@ func executeECUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error 
 		return errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
+	// TODO (@salah): old kots should not be constructing the new installation object
 	newInstall := &ecv1beta1.Installation{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: ecv1beta1.GroupVersion.String(),

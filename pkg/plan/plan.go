@@ -53,6 +53,10 @@ func PlanUpgrade(s store.Store, opts PlanUpgradeOptions) (*types.Plan, error) {
 		Owner:             types.StepOwnerKOTS,
 	})
 
+	// TODO (@salah): add a step to upgrade kots here
+	// to make sure later steps are executed by the new version,
+	// as old kots might not be able to parse new kots kinds (and EC config)
+
 	// embedded cluster upgrade
 	if ecVersion != util.EmbeddedClusterVersion() {
 		plan.Steps = append(plan.Steps, &types.PlanStep{
