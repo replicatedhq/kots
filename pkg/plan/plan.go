@@ -146,15 +146,15 @@ func PlanUpgrade(s store.Store, kcli kbclient.Client, opts PlanUpgradeOptions) (
 	}
 
 	// app upgrade
-	// p.Steps = append(p.Steps, &types.PlanStep{
-	// 	ID:                ksuid.New().String(),
-	// 	Name:              "Application Upgrade",
-	// 	Type:              types.StepTypeAppUpgrade,
-	// 	Status:            types.StepStatusPending,
-	// 	StatusDescription: "Pending application upgrade",
-	// 	Owner:             types.StepOwnerKOTS,
-	// 	// the input here is the app upgrade service output
-	// })
+	p.Steps = append(p.Steps, &types.PlanStep{
+		ID:                ksuid.New().String(),
+		Name:              "Application Upgrade",
+		Type:              types.StepTypeAppUpgrade,
+		Status:            types.StepStatusPending,
+		StatusDescription: "Pending application upgrade",
+		Owner:             types.StepOwnerKOTS,
+		// the input here is the app upgrade service output
+	})
 
 	return &p, nil
 }
