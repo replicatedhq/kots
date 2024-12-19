@@ -27,18 +27,7 @@ pipeline:
       mkdir -p "${DESTDIR}"
 
       # Scripts etc.
-      mv deploy/assets/backup.sh "${DESTDIR}/backup.sh"
-      mv deploy/assets/restore-db.sh "${DESTDIR}/restore-db.sh"
-      mv deploy/assets/restore-s3.sh "${DESTDIR}/restore-s3.sh"
-      mv deploy/assets/restore.sh "${DESTDIR}/restore.sh"
-      mv deploy/assets/migrate-s3.sh "${DESTDIR}/migrate-s3.sh"
-      mv deploy/assets/fs-minio-check.sh "${DESTDIR}/fs-minio-check.sh"
-      mv deploy/assets/fs-minio-reset.sh "${DESTDIR}/fs-minio-reset.sh"
-      mv deploy/assets/fs-minio-keys-sha.sh "${DESTDIR}/fs-minio-keys-sha.sh"
-      mv deploy/assets/s3-bucket-create.sh "${DESTDIR}/s3-bucket-create.sh"
-      mv deploy/assets/s3-bucket-head.sh "${DESTDIR}/s3-bucket-head.sh"
-      mv deploy/assets/kots-upgrade.sh "${DESTDIR}/kots-upgrade.sh"
-      mv deploy/assets/postgres "${DESTDIR}/postgres"
+      mv deploy/assets "${DESTDIR}/scripts"
 
       # kotsadm and kots binaries
       export VERSION=${GIT_TAG}

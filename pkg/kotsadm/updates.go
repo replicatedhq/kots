@@ -146,7 +146,7 @@ func UpdateToVersion(newVersion string) error {
 					Name:            "kotsadm-updater",
 					Image:           fmt.Sprintf("kotsadm/kotsadm:%s", newVersion),
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/kots-upgrade.sh"},
+					Command:         []string{"/scripts/kots-upgrade.sh"},
 					Args:            args,
 					Env: []corev1.EnvVar{
 						{

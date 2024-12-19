@@ -68,7 +68,7 @@ func GetConfig() *aws.Config {
 
 // CreateS3BucketUsingAPod is helpful when trying to hit a cluster s3 service using the CLI since that could be used outside the cluster, or due to firewall restrictions
 func CreateS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface, podOptions S3OpsPodOptions) error {
-	command := []string{"/s3-bucket-create.sh"}
+	command := []string{"/scripts/s3-bucket-create.sh"}
 	pod, err := s3BucketPod(clientset, podOptions, command)
 	if err != nil {
 		return errors.Wrap(err, "failed to get pod resource")
@@ -132,7 +132,7 @@ func CreateS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface
 
 // HeadS3BucketUsingAPod is helpful when trying to hit a cluster s3 service using the CLI since that could be used outside the cluster, or due to firewall restrictions
 func HeadS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface, podOptions S3OpsPodOptions) error {
-	command := []string{"/s3-bucket-head.sh"}
+	command := []string{"/scripts/s3-bucket-head.sh"}
 	pod, err := s3BucketPod(clientset, podOptions, command)
 	if err != nil {
 		return errors.Wrap(err, "failed to get pod resource")

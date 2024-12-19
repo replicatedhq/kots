@@ -19,7 +19,7 @@ spec:
         kots.io/backup: velero
       annotations:
         backup.velero.io/backup-volumes: backup
-        pre.hook.backup.velero.io/command: '["/backup.sh"]'
+        pre.hook.backup.velero.io/command: '["/scripts/backup.sh"]'
         pre.hook.backup.velero.io/timeout: 10m
     spec:
       securityContext:
@@ -90,7 +90,7 @@ spec:
                 key: uri
                 optional: true
           - name: POSTGRES_SCHEMA_DIR # this is needed for the migration
-            value: "/postgres/tables"
+            value: "/scripts/postgres/tables"
           - name: RQLITE_URI
             valueFrom:
               secretKeyRef:
@@ -211,7 +211,7 @@ spec:
 
       - name: restore-db
         command:
-        - "/restore-db.sh"
+        - "/scripts/restore-db.sh"
         env:
         - name: RQLITE_PASSWORD
           valueFrom:
@@ -232,7 +232,7 @@ spec:
 
       - name: restore-s3
         command:
-        - /restore-s3.sh
+        - /scripts/restore-s3.sh
         env:
         - name: S3_ENDPOINT
           valueFrom:
