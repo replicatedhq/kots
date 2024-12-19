@@ -89,13 +89,13 @@ func PlanUpgrade(s store.Store, kcli kbclient.Client, opts PlanUpgradeOptions) (
 
 	// TODO (@salah) implement our EC addons upgrade (have to use EC release metadata?). use same diff logic below
 
-	currExts, newExts, err := getExtensions(kcli, newECConfigSpec)
+	currECExts, newECExts, err := getECExtensions(kcli, newECConfigSpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "get extensions")
 	}
 
-	extsDiff := diffExtensions(currExts, newExts)
-	newRepos := newExts.Helm.Repositories
+	extsDiff := diffECExtensions(currECExts, newECExts)
+	newRepos := newECExts.Helm.Repositories
 
 	// added extensions
 	for _, chart := range extsDiff.Added {

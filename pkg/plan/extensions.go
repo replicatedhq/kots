@@ -51,7 +51,7 @@ func executeECExtensionRemove(p *types.Plan, step *types.PlanStep) error {
 	return nil
 }
 
-func getExtensions(kcli kbclient.Client, newSpec *ecv1beta1.ConfigSpec) (ecv1beta1.Extensions, ecv1beta1.Extensions, error) {
+func getECExtensions(kcli kbclient.Client, newSpec *ecv1beta1.ConfigSpec) (ecv1beta1.Extensions, ecv1beta1.Extensions, error) {
 	currInstall, err := embeddedcluster.GetCurrentInstallation(context.Background(), kcli)
 	if err != nil {
 		return ecv1beta1.Extensions{}, ecv1beta1.Extensions{}, errors.Wrap(err, "get current embedded cluster installation")
@@ -59,7 +59,7 @@ func getExtensions(kcli kbclient.Client, newSpec *ecv1beta1.ConfigSpec) (ecv1bet
 	return currInstall.Spec.Config.Extensions, newSpec.Extensions, nil
 }
 
-func diffExtensions(oldExts, newExts ecv1beta1.Extensions) ExtensionsDiffResult {
+func diffECExtensions(oldExts, newExts ecv1beta1.Extensions) ExtensionsDiffResult {
 	oldCharts := make(map[string]ecv1beta1.Chart)
 	newCharts := make(map[string]ecv1beta1.Chart)
 
