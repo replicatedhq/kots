@@ -251,7 +251,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/k0sproject/k0s v1.30.7-0.20241029184556-a942e759e13b // indirect
+	github.com/k0sproject/k0s v1.30.7-0.20241029184556-a942e759e13b
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
