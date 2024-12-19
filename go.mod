@@ -14,7 +14,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.55.5
-	github.com/bitnami-labs/sealed-secrets v0.27.2
+	github.com/bitnami-labs/sealed-secrets v0.27.3
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containers/image/v5 v5.32.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -55,11 +55,11 @@ require (
 	github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.107.5
-	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
+	github.com/replicatedhq/yaml/v3 v3.0.1-beta0-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rqlite/gorqlite v0.0.0-20221028154453-256f31831ff3
-	github.com/schemahero/schemahero v0.17.12
+	github.com/schemahero/schemahero v0.17.13
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/spf13/cobra v1.8.1
@@ -78,15 +78,15 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.16.3
+	helm.sh/helm/v3 v3.16.4
 	k8s.io/api v0.31.3
 	k8s.io/apimachinery v0.31.3
-	k8s.io/cli-runtime v0.31.2
+	k8s.io/cli-runtime v0.31.3
 	k8s.io/client-go v0.31.3
 	k8s.io/cluster-bootstrap v0.31.2
 	k8s.io/helm v2.17.0+incompatible
 	k8s.io/kubelet v0.31.2
-	k8s.io/metrics v0.31.2
+	k8s.io/metrics v0.31.3
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
 	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/application v0.8.3
@@ -386,7 +386,7 @@ require (
 	k8s.io/component-base v0.31.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f // indirect
-	k8s.io/kubectl v0.31.1 // indirect
+	k8s.io/kubectl v0.31.3 // indirect
 	oras.land/oras-go v1.2.6 // indirect
 	periph.io/x/host/v3 v3.8.2 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
