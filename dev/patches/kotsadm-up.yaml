@@ -6,6 +6,14 @@ spec:
         hostPath:
           path: {{ .Env.PROJECT_DIR }}
           type: Directory
+      - name: backup-script
+        hostPath:
+          path: {{ .Env.PROJECT_DIR }}/deploy/assets/backup.sh
+          type: File
+      - name: restore-script
+        hostPath:
+          path: {{ .Env.PROJECT_DIR }}/deploy/assets/restore.sh
+          type: File
 {{- if .Env.EC_NODE  }}
       affinity:
         nodeAffinity:
@@ -30,6 +38,10 @@ spec:
         volumeMounts:
         - name: dev
           mountPath: /replicatedhq/kots # workdir in the container
+        - name: backup-script
+          mountPath: /backup.sh # where we expect the backup script to be
+        - name: restore-script
+          mountPath: /restore.sh # where we expect the restore script to be
         env:
         # in order to serve from kotsadm-web even in embedded cluster
         - name: DISABLE_SPA_SERVING
