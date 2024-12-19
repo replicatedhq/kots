@@ -13,17 +13,15 @@ async function postDeployAppVersion({
   if (isEC2Install) {
     url = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/ec2-deploy`;
   }
-  const response = await fetch(url,
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      credentials: "include",
-      method: "POST",
-      body,
-    }
-  );
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    method: "POST",
+    body,
+  });
 
   if (!response.ok) {
     throw new Error(
