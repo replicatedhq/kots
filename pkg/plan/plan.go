@@ -87,16 +87,74 @@ func PlanUpgrade(s store.Store, kcli kbclient.Client, opts PlanUpgradeOptions) (
 		})
 	}
 
+	// TODO (@salah) implement our EC addons upgrade (have to use EC release metadata?). use same diff logic below
+
+	currExts, newExts, err := getExtensions(kcli, newECConfigSpec)
+	if err != nil {
+		return nil, errors.Wrap(err, "get extensions")
+	}
+
+	extsDiff := diffExtensions(currExts, newExts)
+	newRepos := newExts.Helm.Repositories
+
+	// added extensions
+	for _, chart := range extsDiff.Added {
+		p.Steps = append(p.Steps, &types.PlanStep{
+			ID:                ksuid.New().String(),
+			Name:              "Extension Add",
+			Type:              types.StepTypeECExtensionAdd,
+			Status:            types.StepStatusPending,
+			StatusDescription: "Pending extension addition",
+			Input: types.PlanStepInputECExtension{
+				Repos: newRepos,
+				Chart: chart,
+			},
+			Owner: types.StepOwnerECManager,
+		})
+	}
+
+	// modified extensions
+	for _, chart := range extsDiff.Modified {
+		p.Steps = append(p.Steps, &types.PlanStep{
+			ID:                ksuid.New().String(),
+			Name:              "Extension Upgrade",
+			Type:              types.StepTypeECExtensionUpgrade,
+			Status:            types.StepStatusPending,
+			StatusDescription: "Pending extension upgrade",
+			Input: types.PlanStepInputECExtension{
+				Repos: newRepos,
+				Chart: chart,
+			},
+			Owner: types.StepOwnerECManager,
+		})
+	}
+
+	// removed extensions
+	for _, chart := range extsDiff.Removed {
+		p.Steps = append(p.Steps, &types.PlanStep{
+			ID:                ksuid.New().String(),
+			Name:              "Extension Remove",
+			Type:              types.StepTypeECExtensionRemove,
+			Status:            types.StepStatusPending,
+			StatusDescription: "Pending extension removal",
+			Input: types.PlanStepInputECExtension{
+				Repos: newRepos,
+				Chart: chart,
+			},
+			Owner: types.StepOwnerECManager,
+		})
+	}
+
 	// app upgrade
-	p.Steps = append(p.Steps, &types.PlanStep{
-		ID:                ksuid.New().String(),
-		Name:              "Application Upgrade",
-		Type:              types.StepTypeAppUpgrade,
-		Status:            types.StepStatusPending,
-		StatusDescription: "Pending application upgrade",
-		Owner:             types.StepOwnerKOTS,
-		// the input here is the app upgrade service output
-	})
+	// p.Steps = append(p.Steps, &types.PlanStep{
+	// 	ID:                ksuid.New().String(),
+	// 	Name:              "Application Upgrade",
+	// 	Type:              types.StepTypeAppUpgrade,
+	// 	Status:            types.StepStatusPending,
+	// 	StatusDescription: "Pending application upgrade",
+	// 	Owner:             types.StepOwnerKOTS,
+	// 	// the input here is the app upgrade service output
+	// })
 
 	return &p, nil
 }
@@ -200,6 +258,36 @@ func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError
 		}
 		if err := waitForStep(s, p, step.ID); err != nil {
 			return errors.Wrap(err, "wait for embedded cluster upgrade")
+		}
+
+	case types.StepTypeECExtensionAdd:
+		if step.Status == types.StepStatusPending {
+			if err := executeECExtensionAdd(p, step); err != nil {
+				return errors.Wrap(err, "execute embedded cluster extension add")
+			}
+		}
+		if err := waitForStep(s, p, step.ID); err != nil {
+			return errors.Wrap(err, "wait for embedded cluster extension add")
+		}
+
+	case types.StepTypeECExtensionUpgrade:
+		if step.Status == types.StepStatusPending {
+			if err := executeECExtensionUpgrade(p, step); err != nil {
+				return errors.Wrap(err, "execute embedded cluster extension upgrade")
+			}
+		}
+		if err := waitForStep(s, p, step.ID); err != nil {
+			return errors.Wrap(err, "wait for embedded cluster extension upgrade")
+		}
+
+	case types.StepTypeECExtensionRemove:
+		if step.Status == types.StepStatusPending {
+			if err := executeECExtensionRemove(p, step); err != nil {
+				return errors.Wrap(err, "execute embedded cluster extension remove")
+			}
+		}
+		if err := waitForStep(s, p, step.ID); err != nil {
+			return errors.Wrap(err, "wait for embedded cluster extension remove")
 		}
 
 	case types.StepTypeAppUpgrade:

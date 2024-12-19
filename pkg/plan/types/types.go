@@ -1,6 +1,7 @@
 package types
 
 import (
+	k0sv1beta1 "github.com/k0sproject/k0s/pkg/apis/k0s/v1beta1"
 	ecv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -37,9 +38,12 @@ type PlanStep struct {
 type PlanStepType string
 
 const (
-	StepTypeAppUpgradeService PlanStepType = "app-upgrade-service"
-	StepTypeAppUpgrade        PlanStepType = "app-upgrade"
-	StepTypeECUpgrade         PlanStepType = "ec-upgrade"
+	StepTypeAppUpgradeService  PlanStepType = "app-upgrade-service"
+	StepTypeAppUpgrade         PlanStepType = "app-upgrade"
+	StepTypeECUpgrade          PlanStepType = "ec-upgrade"
+	StepTypeECExtensionAdd     PlanStepType = "ec-extension-add"
+	StepTypeECExtensionUpgrade PlanStepType = "ec-extension-upgrade"
+	StepTypeECExtensionRemove  PlanStepType = "ec-extension-remove"
 )
 
 type PlanStepStatus string
@@ -68,6 +72,11 @@ type PlanStepInputECUpgrade struct {
 	CurrentKOTSInstallation     kotsv1beta1.Installation `json:"currentKOTSInstallation" yaml:"currentKOTSInstallation"`
 	NewECConfigSpec             ecv1beta1.ConfigSpec     `json:"newECConfigSpec" yaml:"newECConfigSpec"`
 	IsDisasterRecoverySupported bool                     `json:"isDisasterRecoverySupported" yaml:"isDisasterRecoverySupported"`
+}
+
+type PlanStepInputECExtension struct {
+	Repos []k0sv1beta1.Repository `json:"repos" yaml:"repos"`
+	Chart ecv1beta1.Chart         `json:"chart" yaml:"chart"`
 }
 
 func (p *Plan) HasEnded() bool {
