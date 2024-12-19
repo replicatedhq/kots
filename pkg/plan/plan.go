@@ -94,11 +94,11 @@ func PlanUpgrade(s store.Store, kcli kbclient.Client, opts PlanUpgradeOptions) (
 		return nil, errors.Wrap(err, "get extensions")
 	}
 
-	extsDiff := diffECExtensions(currECExts, newECExts)
+	ecExtsDiff := diffECExtensions(currECExts, newECExts)
 	newRepos := newECExts.Helm.Repositories
 
 	// added extensions
-	for _, chart := range extsDiff.Added {
+	for _, chart := range ecExtsDiff.Added {
 		p.Steps = append(p.Steps, &types.PlanStep{
 			ID:                ksuid.New().String(),
 			Name:              "Extension Add",
@@ -114,7 +114,7 @@ func PlanUpgrade(s store.Store, kcli kbclient.Client, opts PlanUpgradeOptions) (
 	}
 
 	// modified extensions
-	for _, chart := range extsDiff.Modified {
+	for _, chart := range ecExtsDiff.Modified {
 		p.Steps = append(p.Steps, &types.PlanStep{
 			ID:                ksuid.New().String(),
 			Name:              "Extension Upgrade",
@@ -130,7 +130,7 @@ func PlanUpgrade(s store.Store, kcli kbclient.Client, opts PlanUpgradeOptions) (
 	}
 
 	// removed extensions
-	for _, chart := range extsDiff.Removed {
+	for _, chart := range ecExtsDiff.Removed {
 		p.Steps = append(p.Steps, &types.PlanStep{
 			ID:                ksuid.New().String(),
 			Name:              "Extension Remove",
