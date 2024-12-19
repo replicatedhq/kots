@@ -23,7 +23,7 @@ ec_build_and_load "$component"
 
 # Use the dev image for kotsadm migrations
 if [ "$component" == "kotsadm" ]; then
-  ec_build_and_load "kotsadm-migrations"
+  ec_build_and_load "kotsadm-migrations" true
 fi
 
 # The kotsadm dev image does not have a web component, and kotsadm-web service does not exist in embedded cluster.

@@ -3,24 +3,25 @@ import { useMutation } from "@tanstack/react-query";
 async function postDeployAppVersion({
   slug,
   body,
+  isEC2Install,
 }: {
-  apiEndpoint?: string;
   body: string;
   slug: string;
-  sequence: string;
+  isEC2Install: boolean;
 }) {
-  const response = await fetch(
-    `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/deploy`,
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      credentials: "include",
-      method: "POST",
-      body,
-    }
-  );
+  let url = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/deploy`;
+  if (isEC2Install) {
+    url = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/ec2-deploy`;
+  }
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    method: "POST",
+    body,
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -44,12 +45,12 @@ function makeBody({
 
 function useDeployAppVersion({
   slug,
-  sequence,
   closeModal,
+  isEC2Install,
 }: {
   slug: string;
-  sequence: string;
   closeModal: () => void;
+  isEC2Install: boolean;
 }) {
   return useMutation({
     mutationFn: ({
@@ -61,9 +62,8 @@ function useDeployAppVersion({
     }) =>
       postDeployAppVersion({
         slug,
-        sequence,
-
         body: makeBody({ continueWithFailedPreflights, isSkipPreflights }),
+        isEC2Install,
       }),
     onError: (err: Error) => {
       console.log(err);

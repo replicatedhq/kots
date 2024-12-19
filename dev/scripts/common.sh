@@ -94,8 +94,10 @@ function ec_patch() {
 }
 
 function ec_build_and_load() {
+  force=$2
+
   # Build the image
-  if docker images | grep -q "$(image $1)"; then
+  if [ -z "$force" ] && docker images | grep -q "$(image $1)"; then
     echo "$(image $1) image already exists, skipping build..."
   else
     echo "Building $1..."
@@ -104,7 +106,7 @@ function ec_build_and_load() {
   fi
 
   # Load the image into the embedded cluster
-  if docker exec $(ec_node) k0s ctr images ls | grep -q "$(image $1)"; then
+  if [ -z "$force" ] && docker exec $(ec_node) k0s ctr images ls | grep -q "$(image $1)"; then
     echo "$(image $1) image already loaded in embedded cluster, skipping import..."
   else
     echo "Loading "$(image $1)" image into embedded cluster..."

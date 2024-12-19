@@ -2669,6 +2669,7 @@ func Test_getInstanceBackupMetadata(t *testing.T) {
 		},
 		Spec: embeddedclusterv1beta1.InstallationSpec{
 			BinaryName: "my-app",
+			SourceType: embeddedclusterv1beta1.InstallationSourceTypeCRD,
 		},
 	}
 	seaweedFSS3Service := &corev1.Service{

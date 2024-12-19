@@ -171,7 +171,7 @@ func GetSeaweedFSS3ServiceIP(ctx context.Context, kbClient kbclient.Client) (str
 	return svc.Spec.ClusterIP, nil
 }
 
-func getArtifactsFromInstallation(installation kotsv1beta1.Installation) *embeddedclusterv1beta1.ArtifactsLocation {
+func GetArtifactsFromInstallation(installation kotsv1beta1.Installation) *embeddedclusterv1beta1.ArtifactsLocation {
 	if installation.Spec.EmbeddedClusterArtifacts == nil {
 		return nil
 	}

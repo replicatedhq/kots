@@ -63,6 +63,7 @@ type Props = {
       isAirgap: boolean;
       isKurl: boolean;
       isEmbeddedCluster: boolean;
+      isEC2Install: boolean;
     };
     app: App;
     displayErrorModal: boolean;
@@ -1024,23 +1025,32 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   onCheckForUpgradeServiceStatus = async () => {
-    const { app } = this.props.outletContext;
+    const { app, adminConsoleMetadata } = this.props.outletContext;
 
     this.setState({ isStartingUpgradeService: true });
     return new Promise<void>((resolve, reject) => {
-      fetch(
-        `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          method: "GET",
-        }
-      )
+      let url = `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`;
+      if (adminConsoleMetadata?.isEC2Install) {
+        url = `${process.env.API_ENDPOINT}/app/${app?.slug}/ec2-deploy/status`;
+      }
+      fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        method: "GET",
+      })
         .then(async (res) => {
           const response = await res.json();
-          if (response.status !== "starting") {
+
+          let stopPolling = response.status !== "starting";
+          if (adminConsoleMetadata?.isEC2Install) {
+            stopPolling =
+              response.step !== "app-upgrade-service" ||
+              (response.status !== "pending" && response.status !== "starting");
+          }
+
+          if (stopPolling) {
             this.state.upgradeServiceChecker.stop();
             this.setState({
               isStartingUpgradeService: false,
@@ -1522,8 +1532,14 @@ class AppVersionHistory extends Component<Props, State> {
         error: "",
       },
     });
+
     const appSlug = this.props.params.slug;
-    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
+    let url = `${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`;
+    if (this.props.outletContext.adminConsoleMetadata?.isEC2Install) {
+      url = `${process.env.API_ENDPOINT}/app/${appSlug}/ec2-deploy`;
+    }
+
+    fetch(url, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

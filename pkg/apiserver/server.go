@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/operator"
 	operatorclient "github.com/replicatedhq/kots/pkg/operator/client"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/plan"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -134,6 +135,10 @@ func Start(params *APIServerParams) {
 
 	if err := session.StartSessionPurgeCronJob(); err != nil {
 		log.Println("Failed to start session purge cron job:", err)
+	}
+
+	if err := plan.Resume(store.GetStore()); err != nil {
+		log.Println("Failed to resume plan:", err)
 	}
 
 	waitForAirgap, err := automation.NeedToWaitForAirgapApp()

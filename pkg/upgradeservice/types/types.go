@@ -5,7 +5,8 @@ import (
 )
 
 type UpgradeServiceParams struct {
-	Port string `yaml:"port"`
+	Port       string `yaml:"port"`
+	PlanStepID string `yaml:"planStepID"`
 
 	AppID       string `yaml:"appId"`
 	AppSlug     string `yaml:"appSlug"`
