@@ -254,7 +254,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 			},
 		},
 		{
-			Name:  "POSTGRES_S/CHEMA_DIR", // this is needed for the migration
+			Name:  "POSTGRES_SCHEMA_DIR", // this is needed for the migration
 			Value: "/scripts/postgres/tables",
 		},
 		{
