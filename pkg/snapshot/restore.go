@@ -19,9 +19,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type RestoreInstanceBackupOptions struct {
@@ -56,17 +57,13 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	}
 
 	// get the backup
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create velero clientset")
-	}
-
-	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, options.BackupName, metav1.GetOptions{})
+	var backup velerov1.Backup
+	err = veleroClient.Get(ctx, k8stypes.NamespacedName{Namespace: veleroNamespace, Name: options.BackupName}, &backup)
 	if err != nil {
 		return errors.Wrap(err, "failed to find backup")
 	}
@@ -147,14 +144,14 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 		}
 
 		// delete existing restore object (if exists)
-		err = veleroClient.Restores(veleroNamespace).Delete(ctx, restore.ObjectMeta.Name, metav1.DeleteOptions{})
+		err = veleroClient.Delete(ctx, restore)
 		if err != nil && !strings.Contains(err.Error(), "not found") {
 			log.FinishSpinnerWithError()
 			return errors.Wrapf(err, "failed to delete restore %s", restore.ObjectMeta.Name)
 		}
 
 		// create new restore object
-		restore, err = veleroClient.Restores(veleroNamespace).Create(ctx, restore, metav1.CreateOptions{})
+		err = veleroClient.Create(ctx, restore)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "failed to create restore")
@@ -268,24 +265,20 @@ func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptio
 		return nil, errors.New("velero not found")
 	}
 
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
+		return nil, errors.Wrap(err, "failed to create client")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
-	}
-
-	r, err := veleroClient.Restores(veleroNamespace).List(ctx, metav1.ListOptions{})
+	var restoreList velerov1.RestoreList
+	err = veleroClient.List(ctx, &restoreList, kbclient.InNamespace(veleroNamespace))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list restores")
 	}
 
 	restores := []velerov1.Restore{}
 
-	for _, restore := range r.Items {
+	for _, restore := range restoreList.Items {
 		if restore.Annotations[snapshottypes.InstanceBackupAnnotation] != "true" {
 			continue
 		}
@@ -301,18 +294,14 @@ func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptio
 }
 
 func waitForVeleroRestoreCompleted(ctx context.Context, veleroNamespace string, restoreName string) (*velerov1.Restore, error) {
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to create client")
 	}
 
 	for {
-		restore, err := veleroClient.Restores(veleroNamespace).Get(ctx, restoreName, metav1.GetOptions{})
+		var restore velerov1.Restore
+		err := veleroClient.Get(ctx, k8stypes.NamespacedName{Namespace: veleroNamespace, Name: restoreName}, &restore)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get restore")
 		}

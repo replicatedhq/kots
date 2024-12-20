@@ -24,7 +24,6 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/k8sclient"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
-	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/veleroclient"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -33,7 +32,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -91,9 +89,9 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
+	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
 	kotsadmNamespace := util.PodNamespace
@@ -194,12 +192,12 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		logger.Error(errors.Wrap(err, "failed to exclude shutdown pods from backup"))
 	}
 
-	backup, err := veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
+	err = veleroClient.Create(ctx, veleroBackup)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero backup")
 	}
 
-	return backup, nil
+	return veleroBackup, nil
 }
 
 type instanceBackupMetadata struct {
@@ -237,17 +235,12 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to create clientset")
 	}
 
-	ctrlClient, err := k8sutil.GetKubeClient(ctx)
+	ctrlClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get kubeclient")
 	}
 
-	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create velero clientset")
-	}
-
-	metadata, err := getInstanceBackupMetadata(ctx, k8sClient, ctrlClient, veleroClient, cluster, isScheduled)
+	metadata, err := getInstanceBackupMetadata(ctx, k8sClient, ctrlClient, cluster, isScheduled)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get instance backup metadata")
 	}
@@ -275,20 +268,20 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	}
 
 	logger.Infof("Creating instance backup CR %s", veleroBackup.GenerateName)
-	backup, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
+	err = ctrlClient.Create(ctx, veleroBackup)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create velero backup")
 	}
 
 	if appVeleroBackup != nil {
 		logger.Infof("Creating instance app backup CR %s", appVeleroBackup.GenerateName)
-		_, err := veleroClient.Backups(metadata.backupStorageLocationNamespace).Create(ctx, appVeleroBackup, metav1.CreateOptions{})
+		err = ctrlClient.Create(ctx, appVeleroBackup)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create application velero backup")
 		}
 	}
 
-	return backup.Name, nil // TODO(improveddr): return metadata.BackupName
+	return veleroBackup.Name, nil // TODO(improveddr): return metadata.BackupName
 }
 
 // GetInstanceBackupCount returns the restore CR from the velero backup object annotation.
@@ -317,7 +310,7 @@ func encodeRestoreSpec(restore *velerov1.Restore) (string, error) {
 
 // getInstanceBackupMetadata returns metadata about the instance backup for use in creating an
 // instance backup.
-func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, ctrlClient ctrlclient.Client, veleroClient veleroclientv1.VeleroV1Interface, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
+func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interface, ctrlClient ctrlclient.Client, cluster *downstreamtypes.Downstream, isScheduled bool) (instanceBackupMetadata, error) {
 	metadata := instanceBackupMetadata{
 		backupName:       getBackupNameFromPrefix("instance"),
 		backupReqestedAt: time.Now().UTC(),
@@ -334,7 +327,7 @@ func getInstanceBackupMetadata(ctx context.Context, k8sClient kubernetes.Interfa
 		metadata.snapshotTTL = snapshotTTL
 	}
 
-	kotsadmVeleroBackendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, k8sClient, veleroClient, metadata.kotsadmNamespace)
+	kotsadmVeleroBackendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, k8sClient, ctrlClient, metadata.kotsadmNamespace)
 	if err != nil {
 		return metadata, errors.Wrap(err, "failed to find backupstoragelocations")
 	} else if kotsadmVeleroBackendStorageLocation == nil {
