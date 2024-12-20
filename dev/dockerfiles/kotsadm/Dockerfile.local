@@ -7,10 +7,8 @@ RUN go install github.com/go-delve/delve/cmd/dlv@v1.23.1
 FROM golang:1.23-alpine AS helm-builder
 
 RUN apk add --no-cache git make bash
-RUN git clone --depth 1 https://github.com/helm/helm.git && \
+RUN git clone --depth 1 -b dev-v3 https://github.com/helm/helm.git && \
     cd helm && \
-    git fetch --depth 1 origin pull/13439/head:pr-13439 && \
-    git checkout pr-13439 && \
     GOARCH=arm64 make && \
     chmod a+x bin/helm
 
