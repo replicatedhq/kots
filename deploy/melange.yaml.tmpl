@@ -28,6 +28,7 @@ pipeline:
       branch: dev-v3
       # https://github.com/helm/helm/commit/038321ce79301812e8303372230c8387d00e2d1c
       expected-commit: 038321ce79301812e8303372230c8387d00e2d1c
+      destination: helm
 
   - runs: |
       set -x
@@ -36,8 +37,10 @@ pipeline:
 
       # Build Helm that has --take-ownership flag
       # TODO: remove this when latest Helm supports --take-ownership flag
+      cd helm
       make build
       mv bin/helm "${DESTDIR}/usr/local/bin/helm"
+      cd ..
 
       # Scripts etc.
       mv deploy/assets "${DESTDIR}/scripts"
