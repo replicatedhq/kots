@@ -13,6 +13,7 @@ import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
+import Toggle from "../shared/Toggle";
 
 dayjs.extend(minMax);
 dayjs.extend(duration);
@@ -129,13 +130,15 @@ class SnapshotDetails extends Component {
   }
   navigateSnapshot = (direction) => {
     const { currentSnapshotIndex, snapshotDetails } = this.state;
+    console.log(direction, "direction", currentSnapshotIndex);
     const newIndex =
-      direction === "kots"
+      direction === "infra"
         ? currentSnapshotIndex + 1
         : currentSnapshotIndex - 1;
 
     if (newIndex >= 0 && newIndex < snapshotDetails.length) {
       const series = this.getSeriesDataForSnapshot(snapshotDetails[newIndex]);
+      console.log(newIndex, "ndew");
       this.setState({
         currentSnapshotIndex: newIndex,
         series,
@@ -691,6 +694,43 @@ class SnapshotDetails extends Component {
               </span>
             </p>
           </div>
+          {/* only for EC???/ */}
+          {snapshotDetails.length > 1 && (
+            <div className="flex justifyContent--center u-paddingBottom--30">
+              <Toggle
+                items={[
+                  {
+                    title: "Application",
+                    onClick: () => {
+                      // Ensure the next snapshot exists
+                      this.navigateSnapshot("application");
+                      navigate(
+                        `/snapshots/details/${snapshotDetails[currentSnapshotIndex].name}`
+                      );
+                      // this.props.setState((prevState) => ({ currentSnapshotIndex: prevState.currentSnapshotIndex + 1 }));
+                    },
+                    isActive: currentSnapshotIndex === 0, //
+                  },
+                  {
+                    title: "Infrastructure",
+                    onClick: () => {
+                      console.log("um");
+                      // Ensure the next snapshot exists
+                      this.navigateSnapshot("infra");
+                      navigate(
+                        `/snapshots/details/${
+                          snapshotDetails[currentSnapshotIndex + 1].name
+                        }`
+                      );
+                      console.log(currentSnapshotIndex);
+                      // this.props.setState((prevState) => ({ currentSnapshotIndex: prevState.currentSnapshotIndex - 1 }));
+                    },
+                    isActive: currentSnapshotIndex === 1, //
+                  },
+                ]}
+              />
+            </div>
+          )}
           <div className="flex-column u-lineHeight--normal u-textAlign--right">
             <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">
               Status:{" "}
@@ -914,7 +954,7 @@ class SnapshotDetails extends Component {
   };
 
   render() {
-    const { isEmbeddedCluster } = this.props;
+    const { isEmbeddedCluster, navigate } = this.props;
 
     const {
       loading,
@@ -947,9 +987,7 @@ class SnapshotDetails extends Component {
         </div>
       );
     }
-
-    console.log(snapshotDetails);
-
+    console.log(this.props, "props");
     return (
       <div className="container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <div className="flex tw-items-center tw-justify-between u-marginBottom--30">
