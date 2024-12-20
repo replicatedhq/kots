@@ -22,22 +22,22 @@ environment:
       - make
 
 pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/helm/helm 
+      branch: dev-v3
+      # https://github.com/helm/helm/commit/038321ce79301812e8303372230c8387d00e2d1c
+      expected-commit: 038321ce79301812e8303372230c8387d00e2d1c
+
   - runs: |
       set -x
       export DESTDIR="${{targets.destdir}}"
-      mkdir -p "${DESTDIR}"
+      mkdir -p ${DESTDIR}/usr/local/bin/
 
-      # Build Helm from PR 13439
-      # to be removed later when latest Helm supports --take-ownership flag
-      git clone --depth 1 https://github.com/helm/helm.git
-      cd helm
-      git fetch --depth 1 origin pull/13439/head:pr-13439
-      git checkout pr-13439
-      make
-      chmod a+x bin/helm
-      mv bin/helm "${DESTDIR}/usr/local/bin/"
-      cd ..
-      rm -rf helm
+      # Build Helm that has --take-ownership flag
+      # TODO: remove this when latest Helm supports --take-ownership flag
+      make build
+      mv bin/helm "${DESTDIR}/usr/local/bin/helm"
 
       # Scripts etc.
       mv deploy/assets "${DESTDIR}/scripts"
@@ -63,3 +63,4 @@ pipeline:
 
       ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize
       ln -s /usr/bin/kubectl ${DESTDIR}/usr/local/bin/kubectl
+      ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm
