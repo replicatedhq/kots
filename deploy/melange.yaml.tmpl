@@ -19,12 +19,25 @@ environment:
       - go
       - nodejs
       - yarn
+      - make
 
 pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/helm/helm 
+      branch: dev-v3
+      # https://github.com/helm/helm/commit/038321ce79301812e8303372230c8387d00e2d1c
+      expected-commit: 038321ce79301812e8303372230c8387d00e2d1c
+
   - runs: |
       set -x
       export DESTDIR="${{targets.destdir}}"
-      mkdir -p "${DESTDIR}"
+      mkdir -p ${DESTDIR}/usr/local/bin/
+
+      # Build Helm that has --take-ownership flag
+      # TODO: remove this when latest Helm supports --take-ownership flag
+      make build
+      mv bin/helm "${DESTDIR}/usr/local/bin/helm"
 
       # Scripts etc.
       mv deploy/assets/backup.sh "${DESTDIR}/backup.sh"
@@ -59,6 +72,6 @@ pipeline:
       mv bin/kotsadm "${DESTDIR}/kotsadm"
       mv bin/kots "${DESTDIR}/kots"
 
-      ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm
       ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize
       ln -s /usr/bin/kubectl ${DESTDIR}/usr/local/bin/kubectl
+      ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm
