@@ -8,7 +8,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
-func Test_getArtifactsFromInstallation(t *testing.T) {
+func Test_GetArtifactsFromInstallation(t *testing.T) {
 	type args struct {
 		installation kotsv1beta1.Installation
 	}
@@ -56,9 +56,9 @@ func Test_getArtifactsFromInstallation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getArtifactsFromInstallation(tt.args.installation)
+			got := GetArtifactsFromInstallation(tt.args.installation)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getArtifactsFromInstallation() = %v, want %v", got, tt.want)
+				t.Errorf("GetArtifactsFromInstallation() = %v, want %v", got, tt.want)
 			}
 		})
 	}

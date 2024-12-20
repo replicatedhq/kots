@@ -355,7 +355,7 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.
 }
 
 func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream, license *kotsv1beta1.License, cursor replicatedapp.ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo, selectedAppChannel string) (*Release, error) {
-	getReq, err := replicatedUpstream.GetRequest("GET", license, cursor, selectedAppChannel)
+	getReq, err := replicatedUpstream.GetRequest("GET", license, cursor.Cursor, selectedAppChannel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create http request")
 	}

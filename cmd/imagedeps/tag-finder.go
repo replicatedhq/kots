@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	semver "github.com/Masterminds/semver/v3"
+	"github.com/Masterminds/semver"
 	"github.com/google/go-github/v39/github"
 	"github.com/heroku/docker-registry-client/registry"
 	"golang.org/x/oauth2"
@@ -183,7 +183,7 @@ func getLatestTagFromRegistry(imageUri string, getTags getTagsFn, match filterFn
 		if match(tag) {
 			v, err := semver.NewVersion(tag)
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("parse semver %q: %w", tag, err)
 			}
 			versions = append(versions, v)
 		}

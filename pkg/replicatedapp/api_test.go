@@ -78,7 +78,7 @@ func Test_getRequest(t *testing.T) {
 		if test.channel != nil {
 			cursor.ChannelName = *test.channel
 		}
-		request, err := r.GetRequest("GET", license, cursor, channel)
+		request, err := r.GetRequest("GET", license, cursor.Cursor, channel)
 		req.NoError(err)
 		assert.Equal(t, test.expectedURL, request.URL.String())
 	}

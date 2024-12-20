@@ -56,6 +56,7 @@ type AdminConsoleMetadata struct {
 	IsAirgap          bool `json:"isAirgap"`
 	IsKurl            bool `json:"isKurl"`
 	IsEmbeddedCluster bool `json:"isEmbeddedCluster"`
+	IsEC2Install      bool `json:"isEC2Install"`
 }
 
 // GetMetadataHandler helper function that returns a http handler func that returns metadata. It takes a function that
@@ -77,6 +78,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 				metadataResponse.AdminConsoleMetadata.IsAirgap = kotsadmMetadata.IsAirgap
 				metadataResponse.AdminConsoleMetadata.IsKurl = kotsadmMetadata.IsKurl
 				metadataResponse.AdminConsoleMetadata.IsEmbeddedCluster = kotsadmMetadata.IsEmbeddedCluster
+				metadataResponse.AdminConsoleMetadata.IsEC2Install = util.IsEC2Install()
 
 				logger.Info(fmt.Sprintf("config map %q not found", metadataConfigMapName))
 				JSON(w, http.StatusOK, &metadataResponse)
@@ -118,6 +120,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 			IsAirgap:          kotsadmMetadata.IsAirgap,
 			IsKurl:            kotsadmMetadata.IsKurl,
 			IsEmbeddedCluster: kotsadmMetadata.IsEmbeddedCluster,
+			IsEC2Install:      util.IsEC2Install(),
 		}
 
 		if kotsadmMetadata.IsEmbeddedCluster {
