@@ -69,11 +69,11 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	}
 
 	// make sure this is an instance backup
-	if !snapshottypes.IsInstanceBackup(*backup) {
+	if !snapshottypes.IsInstanceBackup(backup) {
 		return errors.Wrap(err, "backup provided is not an instance backup")
 	}
 
-	if snapshottypes.GetInstanceBackupType(*backup) != snapshottypes.InstanceBackupTypeLegacy {
+	if snapshottypes.GetInstanceBackupType(backup) != snapshottypes.InstanceBackupTypeLegacy {
 		return errors.New("only legacy type instance backups are restorable")
 	}
 
@@ -308,11 +308,11 @@ func waitForVeleroRestoreCompleted(ctx context.Context, veleroNamespace string, 
 
 		switch restore.Status.Phase {
 		case velerov1.RestorePhaseCompleted:
-			return restore, nil
+			return &restore, nil
 		case velerov1.RestorePhaseFailed:
-			return restore, errors.New("restore failed")
+			return &restore, errors.New("restore failed")
 		case velerov1.RestorePhasePartiallyFailed:
-			return restore, errors.New("restore partially failed")
+			return &restore, errors.New("restore partially failed")
 		default:
 			// in progress
 		}

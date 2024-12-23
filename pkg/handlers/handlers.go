@@ -14,6 +14,7 @@ import (
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	yaml "github.com/replicatedhq/yaml/v3"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -34,7 +35,7 @@ func NewHandler() *Handler {
 func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	troubleshootscheme.AddToScheme(scheme.Scheme)
-	veleroscheme.AddToScheme(scheme.Scheme)
+	velerov1.AddToScheme(scheme.Scheme)
 }
 
 func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOTSHandler, middleware *policy.Middleware) {

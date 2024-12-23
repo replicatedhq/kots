@@ -34,9 +34,9 @@ func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetVeleroKubeClient(r.Context())
 	if err != nil {
-		err = errors.Wrap(err, "failed to create velero clientset")
+		err = errors.Wrap(err, "failed to create velero client")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

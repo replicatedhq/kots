@@ -8,6 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -19,7 +20,7 @@ type Handler struct {
 func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	troubleshootscheme.AddToScheme(scheme.Scheme)
-	veleroscheme.AddToScheme(scheme.Scheme)
+	velerov1.AddToScheme(scheme.Scheme)
 }
 
 func RegisterAPIRoutes(r *mux.Router, handler UpgradeServiceHandler) {

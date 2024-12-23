@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -712,9 +713,9 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
 	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
@@ -726,7 +727,8 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		return nil, errors.New("no backup store location found")
 	}
 
-	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(ctx, metav1.ListOptions{})
+	var veleroBackups velerov1.BackupList
+	err = veleroClient.List(ctx, &veleroBackups, ctrlclient.InNamespace(backendStorageLocation.Namespace))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list velero backups")
 	}
@@ -805,7 +807,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -819,7 +821,8 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		return nil, errors.New("no backup store location found")
 	}
 
-	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(ctx, metav1.ListOptions{})
+	var veleroBackups velerov1.BackupList
+	err = veleroClient.List(ctx, &veleroBackups, ctrlclient.InNamespace(backendStorageLocation.Namespace))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list velero backups")
 	}
@@ -934,18 +937,14 @@ func getAppsFromAppSequences(veleroBackup velerov1.Backup) ([]types.App, error) 
 }
 
 func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup) (*types.VolumeSummary, error) {
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
+		return nil, errors.Wrap(err, "failed to create client")
 	}
 
-	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
-	}
-
-	veleroPodBackupVolumes, err := veleroClient.PodVolumeBackups(veleroBackup.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(veleroBackup.Name)),
+	var veleroPodBackupVolumes velerov1.PodVolumeBackupList
+	err = veleroClient.List(ctx, &veleroPodBackupVolumes, ctrlclient.InNamespace(veleroBackup.Namespace), ctrlclient.MatchingLabels{
+		"velero.io/backup-name": velerolabel.GetValidName(veleroBackup.Name),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list pod back up volumes")
@@ -985,7 +984,7 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, backupID string) (*
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -1000,12 +999,13 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, backupID string) (*
 
 	veleroNamespace := bsl.Namespace
 
-	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupID, metav1.GetOptions{})
+	var backup velerov1.Backup
+	err = veleroClient.Get(ctx, k8stypes.NamespacedName{Namespace: veleroNamespace, Name: backupID}, &backup)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup")
 	}
 
-	return backup, nil
+	return &backup, nil
 }
 
 func getBackupNameFromPrefix(appSlug string) string {
@@ -1031,9 +1031,9 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, backupID string)
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to create velero clientset")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
 	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
@@ -1048,8 +1048,10 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, backupID string)
 	// Default legacy behaviour is to delete the backup whose name matches the backupID
 	backupsToDelete := []string{backupID}
 
-	listOptions := metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", types.InstanceBackupNameLabel, backupID)}
-	veleroBackups, err := veleroClient.Backups(veleroNamespace).List(ctx, listOptions)
+	var veleroBackups velerov1.BackupList
+	err = veleroClient.List(ctx, &veleroBackups, ctrlclient.InNamespace(veleroNamespace), ctrlclient.MatchingLabels{
+		types.InstanceBackupNameLabel: backupID,
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to list velero backups for deletion")
 	}
@@ -1073,7 +1075,7 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, backupID string)
 			},
 		}
 
-		_, err = veleroClient.DeleteBackupRequests(veleroNamespace).Create(ctx, veleroDeleteBackupRequest, metav1.CreateOptions{})
+		err = veleroClient.Create(ctx, veleroDeleteBackupRequest)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to create delete backup request for backup %s", backupToDelete))
 		}
@@ -1123,9 +1125,9 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName st
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclient.GetBuilder().GetVeleroClient(cfg)
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
 	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
@@ -1157,10 +1159,11 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName st
 // listBackupsByName returns a list of backups for the specified backup name. First it tries to get
 // the backup by the replicated.com/backup-name label, and if that fails, it tries to get the
 // backup by the metadata name.
-func listBackupsByName(ctx context.Context, veleroClient veleroclientv1.VeleroV1Interface, veleroNamespace string, backupName string) ([]velerov1.Backup, error) {
+func listBackupsByName(ctx context.Context, ctrlClient ctrlclient.Client, veleroNamespace string, backupName string) ([]velerov1.Backup, error) {
 	// first try to get the backup from the backup-name label
-	backupList, err := veleroClient.Backups(veleroNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", types.InstanceBackupNameLabel, velerolabel.GetValidName(backupName)),
+	var backupList velerov1.BackupList
+	err := ctrlClient.List(ctx, &backupList, ctrlclient.InNamespace(veleroNamespace), ctrlclient.MatchingLabels{
+		types.InstanceBackupNameLabel: velerolabel.GetValidName(backupName),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list backups by label: %w", err)
@@ -1168,18 +1171,21 @@ func listBackupsByName(ctx context.Context, veleroClient veleroclientv1.VeleroV1
 	if len(backupList.Items) > 0 {
 		return backupList.Items, nil
 	}
-	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupName, metav1.GetOptions{})
+
+	var backup velerov1.Backup
+	err = ctrlClient.Get(ctx, k8stypes.NamespacedName{Namespace: veleroNamespace, Name: backupName}, &backup)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get backup by name: %w", err)
 	}
 
-	return []velerov1.Backup{*backup}, nil
+	return []velerov1.Backup{backup}, nil
 }
 
 // getBackupDetailForBackup returns a BackupDetail object for the specified backup.
-func getBackupDetailForBackup(ctx context.Context, veleroClient veleroclientv1.VeleroV1Interface, veleroNamespace string, backup velerov1.Backup) (*types.BackupDetail, error) {
-	backupVolumes, err := veleroClient.PodVolumeBackups(veleroNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(backup.Name)),
+func getBackupDetailForBackup(ctx context.Context, ctrlClient ctrlclient.Client, veleroNamespace string, backup velerov1.Backup) (*types.BackupDetail, error) {
+	backupVolumes := velerov1.PodVolumeBackupList{}
+	err := ctrlClient.List(ctx, &backupVolumes, ctrlclient.InNamespace(veleroNamespace), ctrlclient.MatchingLabels{
+		"velero.io/backup-name": velerolabel.GetValidName(backup.Name),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list volumes")

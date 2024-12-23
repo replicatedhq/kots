@@ -42,7 +42,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -1630,8 +1629,8 @@ func resetBackupRepositories(ctx context.Context, veleroNamespace string) error 
 	}
 
 	var repos velerov1.BackupRepositoryList
-	err = veleroClient.List(ctx, &repos, kbclient.InNamespace(veleroNamespace), &kbclient.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labels.Set{"velero.io/storage-location": "default"}),
+	err = veleroClient.List(ctx, &repos, kbclient.InNamespace(veleroNamespace), &kbclient.MatchingLabels{
+		"velero.io/storage-location": "default",
 	})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to list backuprepositories")

@@ -170,7 +170,7 @@ func GetKubeClient(ctx context.Context) (kbclient.Client, error) {
 	return kcli, nil
 }
 
-func GetVeleroKubeClient(ctx context.Context) (kbclient.Client, error) {
+func GetVeleroKubeClient(ctx context.Context) (kbclient.WithWatch, error) {
 	k8slogger := zap.New(func(o *zap.Options) {
 		o.DestWriter = io.Discard
 	})
@@ -181,7 +181,7 @@ func GetVeleroKubeClient(ctx context.Context) (kbclient.Client, error) {
 	}
 	scheme := runtime.NewScheme()
 	velerov1.AddToScheme(scheme)
-	kcli, err := kbclient.New(cfg, kbclient.Options{
+	kcli, err := kbclient.NewWithWatch(cfg, kbclient.Options{
 		Scheme: scheme,
 	})
 	if err != nil {

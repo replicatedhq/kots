@@ -10,6 +10,7 @@ import (
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/k8sclient"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
@@ -17,8 +18,10 @@ import (
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func GetRestore(ctx context.Context, kotsadmNamespace string, restoreID string) (*velerov1.Restore, error) {
@@ -32,9 +35,9 @@ func GetRestore(ctx context.Context, kotsadmNamespace string, restoreID string) 
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
 	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
@@ -45,9 +48,9 @@ func GetRestore(ctx context.Context, kotsadmNamespace string, restoreID string) 
 		return nil, errors.New("no backup store location found")
 	}
 
+	var restore velerov1.Restore
 	veleroNamespace := bsl.Namespace
-
-	restore, err := veleroClient.Restores(veleroNamespace).Get(ctx, restoreID, metav1.GetOptions{})
+	err = veleroClient.Get(ctx, k8stypes.NamespacedName{Namespace: veleroNamespace, Name: restoreID}, &restore)
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return nil, nil
@@ -55,7 +58,7 @@ func GetRestore(ctx context.Context, kotsadmNamespace string, restoreID string) 
 		return nil, errors.Wrap(err, "failed to get restore")
 	}
 
-	return restore, nil
+	return &restore, nil
 }
 
 func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, backupID string, appSlug string) error {
@@ -73,9 +76,9 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, back
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to create velero clientset")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
 	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
@@ -86,10 +89,11 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, back
 		return errors.New("no backup store location found")
 	}
 
+	var backup velerov1.Backup
 	veleroNamespace := bsl.Namespace
 
 	// get the backup
-	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupID, metav1.GetOptions{})
+	err = veleroClient.Get(ctx, k8stypes.NamespacedName{Namespace: veleroNamespace, Name: backupID}, &backup)
 	if err != nil {
 		return errors.Wrap(err, "failed to find backup")
 	}
@@ -106,8 +110,8 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, back
 		},
 	}
 
-	if types.IsInstanceBackup(*backup) {
-		if types.GetInstanceBackupType(*backup) != types.InstanceBackupTypeLegacy {
+	if types.IsInstanceBackup(backup) {
+		if types.GetInstanceBackupType(backup) != types.InstanceBackupTypeLegacy {
 			return errors.New("only legacy type instance backups are restorable")
 		}
 
@@ -123,7 +127,7 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, back
 		}
 	}
 
-	_, err = veleroClient.Restores(veleroNamespace).Create(ctx, restore, metav1.CreateOptions{})
+	err = veleroClient.Create(ctx, restore)
 	if err != nil {
 		return errors.Wrap(err, "failed to create restore")
 	}
@@ -142,9 +146,9 @@ func DeleteRestore(ctx context.Context, kotsadmNamespace string, restoreID strin
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to create velero clientset")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
 	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
@@ -153,10 +157,15 @@ func DeleteRestore(ctx context.Context, kotsadmNamespace string, restoreID strin
 	}
 
 	veleroNamespace := bsl.Namespace
-
-	err = veleroClient.Restores(veleroNamespace).Delete(ctx, restoreID, metav1.DeleteOptions{})
+	restore := velerov1.Restore{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: veleroNamespace,
+			Name:      restoreID,
+		},
+	}
+	err = veleroClient.Delete(ctx, &restore)
 	if err != nil && !strings.Contains(err.Error(), "not found") {
-		return errors.Wrapf(err, "failed to delete restore %s", restoreID)
+		return errors.Wrapf(err, "failed to delete restore %s from namespace %s", restoreID, veleroNamespace)
 	}
 
 	return nil
@@ -173,9 +182,9 @@ func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreID s
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
 	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
@@ -187,14 +196,15 @@ func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreID s
 	}
 
 	veleroNamespace := backendStorageLocation.Namespace
-
-	restore, err := veleroClient.Restores(veleroNamespace).Get(ctx, restoreID, metav1.GetOptions{})
+	var restore velerov1.Restore
+	err = veleroClient.Get(ctx, k8stypes.NamespacedName{Namespace: veleroNamespace, Name: restoreID}, &restore)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get restore")
 	}
 
-	restoreVolumes, err := veleroClient.PodVolumeRestores(veleroNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("velero.io/restore-name=%s", velerolabel.GetValidName(restore.Name)),
+	var restoreVolumes velerov1.PodVolumeRestoreList
+	err = veleroClient.List(ctx, &restoreVolumes, kbclient.MatchingLabels{
+		"velero.io/restore-name": velerolabel.GetValidName(restore.Name),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list volumes")
@@ -217,7 +227,7 @@ func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreID s
 
 		result.Errors = errs
 
-		filtered, err := filterWarnings(restore, warnings, &filterGetter{})
+		filtered, err := filterWarnings(&restore, warnings, &filterGetter{})
 		if err != nil {
 			logger.Infof("failed to filter warnings: %v", err)
 			result.Warnings = warnings

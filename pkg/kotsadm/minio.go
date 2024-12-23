@@ -192,9 +192,9 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetVeleroKubeClient(context.TODO())
 	if err != nil {
-		return errors.Wrap(err, "failed to create velero clientset")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
 	bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), clientset, veleroClient, deployOptions.Namespace)
