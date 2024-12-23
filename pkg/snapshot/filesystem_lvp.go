@@ -115,7 +115,7 @@ func GetCurrentLvpFileSystemConfig(ctx context.Context, namespace string) (*type
 // RevertToMinioFS will apply the spec of the previous BSL to the current one and then update.
 // Used for recovery during a failed migration from Minio to LVP.
 func RevertToMinioFS(ctx context.Context, clientset kubernetes.Interface, ctrlclient kbclient.Client, kotsadmNamespace, veleroNamespace string, previousBsl *velerov1api.BackupStorageLocation) error {
-	bsl, err := FindBackupStoreLocation(context.TODO(), clientset, ctrlclient, kotsadmNamespace)
+	bsl, err := FindBackupStoreLocation(ctx, clientset, ctrlclient, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
 	}

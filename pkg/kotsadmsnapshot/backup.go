@@ -236,7 +236,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return "", errors.Wrap(err, "failed to create clientset")
 	}
 
-	ctrlClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	ctrlClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get kubeclient")
 	}
@@ -713,7 +713,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero client")
 	}
@@ -807,7 +807,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -937,7 +937,7 @@ func getAppsFromAppSequences(veleroBackup velerov1.Backup) ([]types.App, error) 
 }
 
 func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup) (*types.VolumeSummary, error) {
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create client")
 	}
@@ -984,7 +984,7 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, backupID string) (*
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
@@ -1031,7 +1031,7 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, backupID string)
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero client")
 	}
@@ -1125,7 +1125,7 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName st
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero client")
 	}
