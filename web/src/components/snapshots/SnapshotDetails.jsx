@@ -202,7 +202,11 @@ class SnapshotDetails extends Component {
       }
       const response = await res.json();
 
-      const snapshotDetails = response.backupDetails?.[0];
+      const snapshotDetails = response.backupDetails;
+      const { currentSnapshotIndex } = this.state;
+      const series = this.getSeriesDataForSnapshot(
+        snapshotDetails[currentSnapshotIndex]
+      );
 
       this.setState({
         loading: false,
@@ -672,59 +676,60 @@ class SnapshotDetails extends Component {
     );
   };
 
-  renderSnapshot = (snapshotDetails) => {
-    console.log(snapshotDetails, "snapshot");
-    const { series, selectedScriptTab, selectedErrorsWarningTab } = this.state;
-    const { isEmbeddedCluster } = this.props;
+  renderSnapshot = (snapshotDetails, snapshotDetail) => {
+    const {
+      series,
+      selectedScriptTab,
+      selectedErrorsWarningTab,
+      currentSnapshotIndex,
+    } = this.state;
+    const { isEmbeddedCluster, navigate } = this.props;
     let featureName = "snapshot";
     if (isEmbeddedCluster) {
       featureName = "backup";
     }
+    const { params } = this.props;
+    const snapshotName = params.id;
+
     return (
       <div className="card-bg">
         <div className="flex justifyContent--spaceBetween alignItems--center u-paddingBottom--15">
           <div className="flex-column u-lineHeight--normal">
             <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--5">
-              {snapshotDetails?.name} {snapshotDetails?.type}
+              {snapshotName}
             </p>
             <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
               Total size:{" "}
               <span className="u-fontWeight--bold u-textColor--accent">
-                {snapshotDetails?.volumeSizeHuman}
+                {snapshotDetail?.volumeSizeHuman}
               </span>
             </p>
           </div>
           {/* only for EC???/ */}
-          {snapshotDetails.length > 1 && (
+          {snapshotDetails?.length > 1 && (
             <div className="flex justifyContent--center u-paddingBottom--30">
               <Toggle
                 items={[
                   {
                     title: "Application",
                     onClick: () => {
-                      // Ensure the next snapshot exists
                       this.navigateSnapshot("application");
-                      navigate(
-                        `/snapshots/details/${snapshotDetails[currentSnapshotIndex].name}`
-                      );
-                      // this.props.setState((prevState) => ({ currentSnapshotIndex: prevState.currentSnapshotIndex + 1 }));
                     },
+                    status:
+                      snapshotDetails[0]?.status !== "Completed"
+                        ? snapshotDetails[0]?.status
+                        : null,
                     isActive: currentSnapshotIndex === 0, //
                   },
                   {
                     title: "Infrastructure",
                     onClick: () => {
-                      console.log("um");
-                      // Ensure the next snapshot exists
                       this.navigateSnapshot("infra");
-                      navigate(
-                        `/snapshots/details/${
-                          snapshotDetails[currentSnapshotIndex + 1].name
-                        }`
-                      );
-                      console.log(currentSnapshotIndex);
-                      // this.props.setState((prevState) => ({ currentSnapshotIndex: prevState.currentSnapshotIndex - 1 }));
                     },
+                    status:
+                      snapshotDetails[1]?.status !== "Completed"
+                        ? snapshotDetails[1]?.status
+                        : null,
                     isActive: currentSnapshotIndex === 1, //
                   },
                 ]}
@@ -735,13 +740,13 @@ class SnapshotDetails extends Component {
             <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">
               Status:{" "}
               <span
-                className={`status-indicator ${snapshotDetails?.status?.toLowerCase()} u-marginLeft--5`}
+                className={`status-indicator ${snapshotDetail?.status?.toLowerCase()} u-marginLeft--5`}
               >
-                {Utilities.snapshotStatusToDisplayName(snapshotDetails?.status)}
+                {Utilities.snapshotStatusToDisplayName(snapshotDetail?.status)}
               </span>
             </p>
             <div className="u-fontSize--small">
-              {snapshotDetails?.status !== "InProgress" && (
+              {snapshotDetail?.status !== "InProgress" && (
                 <span className="link" onClick={() => this.viewLogs()}>
                   View logs
                 </span>
@@ -750,7 +755,7 @@ class SnapshotDetails extends Component {
           </div>
         </div>
 
-        {snapshotDetails?.status === "InProgress" ? (
+        {snapshotDetail?.status === "InProgress" ? (
           <div className="flex flex-column alignItems--center u-marginTop--60">
             <span className="icon blueWarningIcon" />
             <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginTop--20">
@@ -760,7 +765,7 @@ class SnapshotDetails extends Component {
           </div>
         ) : (
           <div>
-            {!isEmpty(snapshotDetails?.volumes) ||
+            {!isEmpty(snapshotDetail?.volumes) ||
             !isEmpty(this.preSnapshotScripts()) ||
             !isEmpty(this.postSnapshotScripts()) ? (
               <div className="flex-column flex-auto card-item u-padding--15 u-marginBottom--30">
@@ -786,20 +791,20 @@ class SnapshotDetails extends Component {
                     <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold">
                       Volumes
                     </p>
-                    {snapshotDetails?.volumes?.length > 3 ? (
+                    {snapshotDetail?.volumes?.length > 3 ? (
                       <div className="flex flex1 justifyContent--flexEnd">
                         <span
                           className="link u-fontSize--small"
                           onClick={() => this.toggleShowAllVolumes()}
                         >
-                          Show all {snapshotDetails?.volumes?.length} volumes
+                          Show all {snapshotDetail?.volumes?.length} volumes
                         </span>
                       </div>
                     ) : null}
                   </div>
-                  {!isEmpty(snapshotDetails?.volumes) ? (
+                  {!isEmpty(snapshotDetail?.volumes) ? (
                     this.renderShowAllVolumes(
-                      snapshotDetails?.volumes?.slice(0, 3)
+                      snapshotDetail?.volumes?.slice(0, 3)
                     )
                   ) : (
                     <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -877,8 +882,8 @@ class SnapshotDetails extends Component {
               </div>
             </div>
 
-            {(!isEmpty(snapshotDetails?.errors) ||
-              !isEmpty(snapshotDetails?.warnings)) && (
+            {(!isEmpty(snapshotDetail?.errors) ||
+              !isEmpty(snapshotDetail?.warnings)) && (
               <div className="flex flex-auto u-marginBottom--30">
                 <div className="flex-column flex1">
                   <div className="card-item u-padding--15 flex1">
@@ -887,25 +892,25 @@ class SnapshotDetails extends Component {
                         <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
                           Errors and warnings
                         </p>
-                        {snapshotDetails?.errors?.length > 3 &&
+                        {snapshotDetail?.errors?.length > 3 &&
                         selectedErrorsWarningTab === "Errors" ? (
                           <div className="flex flex1 justifyContent--flexEnd">
                             <span
                               className="link u-fontSize--small"
                               onClick={() => this.toggleShowAllErrors()}
                             >
-                              Show all {snapshotDetails?.errors?.length} errors{" "}
+                              Show all {snapshotDetail?.errors?.length} errors{" "}
                             </span>
                           </div>
                         ) : null}
-                        {snapshotDetails?.warnings?.length > 3 &&
+                        {snapshotDetail?.warnings?.length > 3 &&
                         selectedErrorsWarningTab === "Warnings" ? (
                           <div className="flex flex1 justifyContent--flexEnd">
                             <span
                               className="link u-fontSize--small"
                               onClick={() => this.toggleShowAllWarnings()}
                             >
-                              Show all {snapshotDetails?.warnings?.length}{" "}
+                              Show all {snapshotDetail?.warnings?.length}{" "}
                               warnings{" "}
                             </span>
                           </div>
@@ -917,9 +922,9 @@ class SnapshotDetails extends Component {
                     </div>
                     <div>
                       {selectedErrorsWarningTab === "Errors" ? (
-                        !isEmpty(snapshotDetails?.errors) ? (
+                        !isEmpty(snapshotDetail?.errors) ? (
                           this.renderShowAllErrors(
-                            snapshotDetails?.errors.slice(0, 3)
+                            snapshotDetail?.errors.slice(0, 3)
                           )
                         ) : (
                           <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -930,9 +935,9 @@ class SnapshotDetails extends Component {
                           </div>
                         )
                       ) : selectedErrorsWarningTab === "Warnings" &&
-                        !isEmpty(snapshotDetails?.warnings) ? (
+                        !isEmpty(snapshotDetail?.warnings) ? (
                         this.renderShowAllWarnings(
-                          snapshotDetails?.warnings?.slice(0, 3)
+                          snapshotDetail?.warnings?.slice(0, 3)
                         )
                       ) : (
                         <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -980,6 +985,9 @@ class SnapshotDetails extends Component {
       featureName = "backup";
     }
 
+    const { params } = this.props;
+
+    const snapshotName = params.id;
     if (loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -987,7 +995,7 @@ class SnapshotDetails extends Component {
         </div>
       );
     }
-    console.log(this.props, "props");
+
     return (
       <div className="container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <div className="flex tw-items-center tw-justify-between u-marginBottom--30">
@@ -996,33 +1004,14 @@ class SnapshotDetails extends Component {
               {Utilities.toTitleCase(featureName)}
             </span>
             <span className="u-textColor--bodyCopy"> &gt; </span>
-            {snapshotDetails[currentSnapshotIndex]?.name}
+            {snapshotName}
           </p>
-          {/* only for EC???/ */}
-          {snapshotDetails.length > 1 && (
-            <div className="flex alignItems--center ">
-              {currentSnapshotIndex === 0 && (
-                <button
-                  className="btn primary blue"
-                  onClick={() => this.navigateSnapshot("kots")}
-                  disabled={snapshotDetails.length === 0}
-                >
-                  View KOTS backup
-                </button>
-              )}
-              {currentSnapshotIndex === 1 && (
-                <button
-                  className="btn primary blue"
-                  onClick={() => this.navigateSnapshot("velero")}
-                  disabled={snapshotDetails.length === 0}
-                >
-                  View Vendor backup
-                </button>
-              )}
-            </div>
-          )}
         </div>
-        {this.renderSnapshot(snapshotDetails[currentSnapshotIndex])}
+
+        {this.renderSnapshot(
+          snapshotDetails,
+          snapshotDetails[currentSnapshotIndex]
+        )}
         {showScriptsOutput && scriptOutput && (
           <Modal
             isOpen={showScriptsOutput}
