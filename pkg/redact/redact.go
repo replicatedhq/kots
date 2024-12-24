@@ -444,7 +444,7 @@ func buildFullRedact(config *v1.ConfigMap) (*troubleshootv1beta2.Redactor, error
 	}
 
 	keys := []string{}
-	for k, _ := range config.Data {
+	for k := range config.Data {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)

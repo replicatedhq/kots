@@ -151,7 +151,7 @@ spec:
 
 			got, errstring, err := getRedactSpec(&tt.configMap)
 			req.NoError(err)
-			req.Equal(tt.want, got)
+			req.YAMLEq(tt.want, got)
 			req.Equal(tt.errstring, errstring)
 		})
 	}
@@ -245,7 +245,7 @@ spec:
 				req.True(ok)
 				gotIdxParsed := RedactorMetadata{}
 				req.NoError(json.Unmarshal([]byte(gotIdx), &gotIdxParsed))
-				req.Equal(val.Redact, gotIdxParsed.Redact)
+				req.YAMLEq(val.Redact, gotIdxParsed.Redact)
 
 				// set timestamps equal
 				gotIdxParsed.Metadata.Updated = val.Metadata.Updated
