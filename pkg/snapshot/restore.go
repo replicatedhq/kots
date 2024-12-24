@@ -57,7 +57,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	}
 
 	// get the backup
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero client")
 	}
@@ -265,7 +265,7 @@ func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptio
 		return nil, errors.New("velero not found")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create client")
 	}
@@ -294,7 +294,7 @@ func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptio
 }
 
 func waitForVeleroRestoreCompleted(ctx context.Context, veleroNamespace string, restoreName string) (*velerov1.Restore, error) {
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create client")
 	}

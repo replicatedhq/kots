@@ -56,7 +56,7 @@ func GetCurrentLvpFileSystemConfig(ctx context.Context, namespace string) (*type
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero client")
 	}

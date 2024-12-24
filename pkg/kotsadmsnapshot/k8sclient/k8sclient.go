@@ -16,8 +16,7 @@ var _ K8sClientsBuilder = (*MockBuilder)(nil)
 // Or a controller runtime client. Useful to mock the client in tests.
 type K8sClientsBuilder interface {
 	GetClientset(*rest.Config) (kubernetes.Interface, error)
-	GetKubeClient(ctx context.Context) (kbclient.Client, error)
-	GetVeleroKubeClient(ctx context.Context) (kbclient.Client, error)
+	GetKubeClient(ctx context.Context) (kbclient.WithWatch, error)
 }
 
 // Builder is the default implementation of K8sClientsetBuilder. It returns a regular go client clientset or a regular controller runtime client.
@@ -29,13 +28,8 @@ func (b *Builder) GetClientset(cfg *rest.Config) (kubernetes.Interface, error) {
 }
 
 // GetKubeClient returns a regular controller runtime client based on the default cluster config provided.
-func (b *Builder) GetKubeClient(ctx context.Context) (kbclient.Client, error) {
+func (b *Builder) GetKubeClient(ctx context.Context) (kbclient.WithWatch, error) {
 	return k8sutil.GetKubeClient(ctx)
-}
-
-// GetVeleroKubeClient returns a controller runtime client with the velero API scheme based on the default cluster config provided.
-func (b *Builder) GetVeleroKubeClient(ctx context.Context) (kbclient.Client, error) {
-	return k8sutil.GetVeleroKubeClient(ctx)
 }
 
 // MockBuilder is a mock implementation of K8sClientsetBuilder. It returns the client and clientset that was set in the struct allowing
@@ -43,7 +37,7 @@ func (b *Builder) GetVeleroKubeClient(ctx context.Context) (kbclient.Client, err
 
 type MockBuilder struct {
 	Clientset  kubernetes.Interface
-	CtrlClient kbclient.Client
+	CtrlClient kbclient.WithWatch
 	Err        error
 }
 
@@ -53,12 +47,7 @@ func (b *MockBuilder) GetClientset(cfg *rest.Config) (kubernetes.Interface, erro
 }
 
 // GetKubeClient returns the controller runtime client set in the struct.
-func (b *MockBuilder) GetKubeClient(ctx context.Context) (kbclient.Client, error) {
-	return b.CtrlClient, b.Err
-}
-
-// GetVeleroKubeClient returns the controller runtime client set in the struct.
-func (b *MockBuilder) GetVeleroKubeClient(ctx context.Context) (kbclient.Client, error) {
+func (b *MockBuilder) GetKubeClient(ctx context.Context) (kbclient.WithWatch, error) {
 	return b.CtrlClient, b.Err
 }
 

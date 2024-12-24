@@ -11,7 +11,6 @@ import (
 	flag "github.com/spf13/pflag"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
@@ -37,6 +36,7 @@ var kubernetesConfigFlags *genericclioptions.ConfigFlags
 func init() {
 	kubernetesConfigFlags = genericclioptions.NewConfigFlags(false)
 	embeddedclusterv1beta1.AddToScheme(scheme.Scheme)
+	velerov1.AddToScheme(scheme.Scheme)
 }
 
 func AddFlags(flags *flag.FlagSet) {
@@ -154,7 +154,7 @@ func GetDynamicResourceInterface(gvk *schema.GroupVersionKind, namespace string)
 	return dr, nil
 }
 
-func GetKubeClient(ctx context.Context) (kbclient.Client, error) {
+func GetKubeClient(ctx context.Context) (kbclient.WithWatch, error) {
 	k8slogger := zap.New(func(o *zap.Options) {
 		o.DestWriter = io.Discard
 	})
@@ -163,27 +163,7 @@ func GetKubeClient(ctx context.Context) (kbclient.Client, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
-	kcli, err := kbclient.New(cfg, kbclient.Options{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create kubebuilder client")
-	}
-	return kcli, nil
-}
-
-func GetVeleroKubeClient(ctx context.Context) (kbclient.WithWatch, error) {
-	k8slogger := zap.New(func(o *zap.Options) {
-		o.DestWriter = io.Discard
-	})
-	log.SetLogger(k8slogger)
-	cfg, err := GetClusterConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-	scheme := runtime.NewScheme()
-	velerov1.AddToScheme(scheme)
-	kcli, err := kbclient.NewWithWatch(cfg, kbclient.Options{
-		Scheme: scheme,
-	})
+	kcli, err := kbclient.NewWithWatch(cfg, kbclient.Options{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubebuilder client")
 	}

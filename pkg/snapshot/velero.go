@@ -100,7 +100,7 @@ func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (req
 		return
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		finalErr = errors.Wrap(err, "failed to create velero client")
 		return
@@ -147,7 +147,7 @@ func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (req
 }
 
 func EnsureVeleroPermissions(ctx context.Context, clientset kubernetes.Interface, veleroNamespace string, kotsadmNamespace string) error {
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero client")
 	}
@@ -353,7 +353,7 @@ NodeAgentFound:
 }
 
 func getVersion(ctx context.Context, namespace string) (string, error) {
-	kbClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	kbClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get velero kube client")
 	}

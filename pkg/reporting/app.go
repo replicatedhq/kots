@@ -178,7 +178,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 
 	r.IsGitOpsEnabled, r.GitOpsProvider = getGitOpsReport(clientset, appID, r.ClusterID)
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(context.TODO())
+	veleroClient, err := k8sutil.GetKubeClient(context.TODO())
 	if err != nil {
 		logger.Debugf("failed to get velero client: %v", err.Error())
 	}

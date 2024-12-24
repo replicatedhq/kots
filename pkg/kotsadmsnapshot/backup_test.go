@@ -1885,7 +1885,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					assert.Equal(t, "2", got.Annotations[types.InstanceBackupCountAnnotation])
 				}
 				if assert.Contains(t, got.Annotations, types.InstanceBackupRestoreSpecAnnotation) {
-					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{},"itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
+					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","namespace":"kotsadm-backups","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{},"itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
 				}
 			},
 		},
@@ -4331,7 +4331,7 @@ func TestDeleteBackup(t *testing.T) {
 
 			if test.expectedDeleteBackupRequests != nil {
 				// verify delete backup requests
-				veleroClient, err := test.k8sClientBuilder.GetVeleroKubeClient(context.Background())
+				veleroClient, err := test.k8sClientBuilder.GetKubeClient(context.Background())
 				req.NoError(err)
 
 				var deleteBackupRequests velerov1.DeleteBackupRequestList

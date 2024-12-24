@@ -35,7 +35,7 @@ func GetRestore(ctx context.Context, kotsadmNamespace string, restoreID string) 
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero client")
 	}
@@ -76,7 +76,7 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, back
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero client")
 	}
@@ -146,7 +146,7 @@ func DeleteRestore(ctx context.Context, kotsadmNamespace string, restoreID strin
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sclient.GetBuilder().GetKubeClient(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero client")
 	}
@@ -182,7 +182,7 @@ func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreID s
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := k8sclient.GetBuilder().GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sclient.GetBuilder().GetKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero client")
 	}

@@ -202,7 +202,7 @@ func ListAllBackups(ctx context.Context, options ListInstanceBackupsOptions) ([]
 		return nil, errors.New("velero not found")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
@@ -228,7 +228,7 @@ func waitForVeleroBackupCompleted(ctx context.Context, clientset kubernetes.Inte
 		return nil, errors.New("velero not found")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create client")
 	}

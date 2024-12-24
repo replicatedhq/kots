@@ -39,7 +39,7 @@ func Start() error {
 		return errors.Wrap(err, "failed to detect velero namespace")
 	}
 
-	veleroClient, err := k8sutil.GetVeleroKubeClient(context.TODO())
+	veleroClient, err := k8sutil.GetKubeClient(context.TODO())
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero client")
 	}
