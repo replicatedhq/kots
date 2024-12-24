@@ -1885,7 +1885,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					assert.Equal(t, "2", got.Annotations[types.InstanceBackupCountAnnotation])
 				}
 				if assert.Contains(t, got.Annotations, types.InstanceBackupRestoreSpecAnnotation) {
-					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
+					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{},"itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
 				}
 			},
 		},
@@ -3019,9 +3019,9 @@ func TestListBackupsForApp(t *testing.T) {
 	velerov1.AddToScheme(scheme)
 
 	// setup timestamps
-	startTs := metav1.Date(2024, 1, 1, 0, 0, 0, 0, time.Local)
-	completionTs := metav1.Date(2024, 1, 2, 0, 0, 0, 0, time.Local)
-	expirationTs := metav1.Date(2025, 1, 2, 0, 0, 0, 0, time.Local)
+	startTs := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	completionTs := time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)
+	expirationTs := time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)
 
 	// setup common mock objects
 	kotsadmNamespace := "kotsadm-test"
@@ -3168,9 +3168,9 @@ func TestListBackupsForApp(t *testing.T) {
 						},
 						Status: velerov1.BackupStatus{
 							Phase:               velerov1.BackupPhaseCompleted,
-							StartTimestamp:      &startTs,
-							CompletionTimestamp: &completionTs,
-							Expiration:          &expirationTs,
+							StartTimestamp:      &metav1.Time{Time: startTs},
+							CompletionTimestamp: &metav1.Time{Time: completionTs},
+							Expiration:          &metav1.Time{Time: expirationTs},
 						},
 					},
 				).Build(),
@@ -3180,9 +3180,9 @@ func TestListBackupsForApp(t *testing.T) {
 					AppID:      "app-1",
 					Name:       "app-backup-app-1",
 					Status:     "Completed",
-					StartedAt:  &startTs.Time,
-					FinishedAt: &completionTs.Time,
-					ExpiresAt:  &expirationTs.Time,
+					StartedAt:  &startTs,
+					FinishedAt: &completionTs,
+					ExpiresAt:  &expirationTs,
 					VolumeSummary: types.VolumeSummary{
 						VolumeSizeHuman: "0B",
 					},

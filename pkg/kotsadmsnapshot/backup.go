@@ -747,13 +747,16 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		}
 
 		if veleroBackup.Status.StartTimestamp != nil {
-			backup.StartedAt = &veleroBackup.Status.StartTimestamp.Time
+			startedAt := veleroBackup.Status.StartTimestamp.Time.UTC()
+			backup.StartedAt = &startedAt
 		}
 		if veleroBackup.Status.CompletionTimestamp != nil {
-			backup.FinishedAt = &veleroBackup.Status.CompletionTimestamp.Time
+			finishedAt := veleroBackup.Status.CompletionTimestamp.Time.UTC()
+			backup.FinishedAt = &finishedAt
 		}
 		if veleroBackup.Status.Expiration != nil {
-			backup.ExpiresAt = &veleroBackup.Status.Expiration.Time
+			expiresAt := veleroBackup.Status.Expiration.Time.UTC()
+			backup.ExpiresAt = &expiresAt
 		}
 		sequence, ok := veleroBackup.Annotations["kots.io/app-sequence"]
 		if ok {
@@ -855,22 +858,25 @@ func getBackupsFromVeleroBackups(ctx context.Context, veleroBackups []velerov1.B
 		backup.BackupCount++
 		// backup uses the oldest velero backup start time as its start time
 		if veleroStatus.StartTimestamp != nil {
-			if backup.StartedAt == nil || veleroStatus.StartTimestamp.Time.Before(*backup.StartedAt) {
-				backup.StartedAt = &veleroStatus.StartTimestamp.Time
+			startedAt := veleroStatus.StartTimestamp.Time.UTC()
+			if backup.StartedAt == nil || startedAt.Before(*backup.StartedAt) {
+				backup.StartedAt = &startedAt
 			}
 		}
 
 		// backup uses the first expiration date as its expiration timestamp
 		if veleroStatus.Expiration != nil {
-			if backup.ExpiresAt == nil || veleroStatus.Expiration.Time.Before(*backup.ExpiresAt) {
-				backup.ExpiresAt = &veleroStatus.Expiration.Time
+			expiresAt := veleroStatus.Expiration.Time.UTC()
+			if backup.ExpiresAt == nil || expiresAt.Before(*backup.ExpiresAt) {
+				backup.ExpiresAt = &expiresAt
 			}
 		}
 
 		// backup uses the most recent completion date as its completion timestamp
 		if veleroStatus.CompletionTimestamp != nil {
-			if backup.FinishedAt == nil || veleroStatus.CompletionTimestamp.Time.After(*backup.FinishedAt) {
-				backup.FinishedAt = &veleroStatus.CompletionTimestamp.Time
+			finishedAt := veleroStatus.CompletionTimestamp.Time.UTC()
+			if backup.FinishedAt == nil || finishedAt.After(*backup.FinishedAt) {
+				backup.FinishedAt = &finishedAt
 			}
 		}
 
@@ -1237,7 +1243,8 @@ func listBackupVolumes(backupVolumes []velerov1.PodVolumeBackup) []types.Snapsho
 		}
 
 		if backupVolume.Status.StartTimestamp != nil {
-			v.StartedAt = &backupVolume.Status.StartTimestamp.Time
+			startedAt := backupVolume.Status.StartTimestamp.Time.UTC()
+			v.StartedAt = &startedAt
 
 			if backupVolume.Status.Progress.TotalBytes > 0 {
 				bytesPerSecond := float64(backupVolume.Status.Progress.BytesDone) / time.Now().Sub(*v.StartedAt).Seconds()
@@ -1246,7 +1253,8 @@ func listBackupVolumes(backupVolumes []velerov1.PodVolumeBackup) []types.Snapsho
 			}
 		}
 		if backupVolume.Status.CompletionTimestamp != nil {
-			v.FinishedAt = &backupVolume.Status.CompletionTimestamp.Time
+			finishedAt := backupVolume.Status.CompletionTimestamp.Time.UTC()
+			v.FinishedAt = &finishedAt
 		}
 
 		volumes = append(volumes, v)
