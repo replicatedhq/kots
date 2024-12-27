@@ -130,7 +130,7 @@ class SnapshotDetails extends Component {
   }
   navigateSnapshot = (direction) => {
     const { currentSnapshotIndex, snapshotDetails } = this.state;
-    console.log(direction, "direction", currentSnapshotIndex);
+
     const newIndex =
       direction === "infra"
         ? currentSnapshotIndex + 1
@@ -138,7 +138,7 @@ class SnapshotDetails extends Component {
 
     if (newIndex >= 0 && newIndex < snapshotDetails.length) {
       const series = this.getSeriesDataForSnapshot(snapshotDetails[newIndex]);
-      console.log(newIndex, "ndew");
+
       this.setState({
         currentSnapshotIndex: newIndex,
         series,
