@@ -450,6 +450,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 					Affinity: &corev1.Affinity{
 						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
+					Tolerations:        deployOptions.Tolerations,
 					SecurityContext:    securityContext,
 					Volumes:            volumes,
 					ServiceAccountName: "kotsadm",
@@ -1006,6 +1007,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 					Affinity: &corev1.Affinity{
 						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
+					Tolerations:        deployOptions.Tolerations,
 					SecurityContext:    securityContext,
 					Volumes:            volumes,
 					ServiceAccountName: "kotsadm",

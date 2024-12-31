@@ -143,6 +143,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 					Affinity: &corev1.Affinity{
 						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
+					Tolerations:      deployOptions.Tolerations,
 					SecurityContext:  securityContext,
 					ImagePullSecrets: pullSecrets,
 					InitContainers:   initContainers,
