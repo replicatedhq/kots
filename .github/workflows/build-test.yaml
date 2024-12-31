@@ -30,12 +30,12 @@ jobs:
       - name: ok
         run: echo "yes"
 
-  # Use this to disable tests when iteratig on a specific test to save time
+  # Use this to disable tests when iterating on a specific test to save time
   enable-tests:
     runs-on: ubuntu-20.04
     steps:
       - name: ok
-        # change 0 to a positive interger to prevent all tests from running
+        # change 0 to a positive integer to prevent all tests from running
         run: exit 0
 
 
@@ -806,39 +806,39 @@ jobs:
           echo "additional pod labels and annotations are present"
 
           echo "check that the kotsadm, minio and rqlite pods have the correct tolerations"
-          echo "tolerations one"
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q testvalue1; then
-              echo "kotsadm pod does not have the correct testlabel1 label"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels}'
+          echo "EQUAL toleration"
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'EQUAL' | grep -q 'NoSchedule' | grep -q 'test.com/role'; then
+              echo "kotsadm pod does not have EQUAL toleration"
+              kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
-              echo "kotsadm-minio pod does not have the correct testlabel1 label"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels}'
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'EQUAL' | grep -q 'NoSchedule' | grep -q 'test.com/role'; then
+              echo "kotsadm-minio pod does not have EQUAL toleration"
+              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
-              echo "kotsadm-rqlite pod does not have the correct testlabel1 label"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels}'
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'EQUAL' | grep -q 'NoSchedule' | grep -q 'test.com/role'; then
+              echo "kotsadm-rqlite pod does not have EQUAL toleration"
+              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          echo "tolerations two"
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
-              echo "kotsadm pod does not have the correct testlabel1 label"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].metadata.labels}'
+          echo "EQUAL tolerations are present"
+          echo "EXISTS toleration"
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'EXISTS' | grep -q 'NoSchedule' | grep -q 'test.com/productid'; then
+              echo "kotsadm pod does not have EXISTS toleration"
+              kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
-              echo "kotsadm-minio pod does not have the correct testlabel1 label"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].metadata.labels}'
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'EXISTS' | grep -q 'NoSchedule' | grep -q 'test.com/productid'; then
+              echo "kotsadm-minio pod does not have EXISTS toleration"
+              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels.testlabel1}' | grep -q testvalue1; then
-              echo "kotsadm-rqlite pod does not have the correct testlabel1 label"
-              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].metadata.labels}'
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'EXISTS' | grep -q 'NoSchedule' | grep -q 'test.com/productid'; then
+              echo "kotsadm-rqlite pod does not have EXISTS toleration"
+              kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          echo "pod tolerations are present"
 
       - name: Generate support bundle on failure
         if: failure()

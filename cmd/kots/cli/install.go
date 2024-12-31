@@ -282,7 +282,7 @@ func InstallCmd() *cobra.Command {
 			for _, foo := range v.GetStringSlice("tolerations") {
 				toleration, err := parseToleration(foo)
 				if err != nil {
-
+					return fmt.Errorf("failed to parse toleration %q: %w", foo, err)
 				}
 
 				tolerations = append(tolerations, *toleration)
