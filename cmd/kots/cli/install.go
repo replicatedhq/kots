@@ -1185,7 +1185,7 @@ func isValidEffect(effect string) bool {
 func isValidOperator(op string) bool {
 	validOperators := map[string]bool{
 		"Exists": true,
-		"Equals": true,
+		"Equal":  true,
 	}
 	return validOperators[op]
 }
