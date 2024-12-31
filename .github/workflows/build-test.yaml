@@ -807,34 +807,34 @@ jobs:
 
           echo "check that the kotsadm, minio and rqlite pods have the correct tolerations"
           echo "Equal toleration"
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'Equal' | grep -q 'NoSchedule' | grep -q 'test.com/role'; then
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}' | grep 'Equal' | grep 'NoSchedule' | grep -q 'test.com/role'; then
               echo "kotsadm pod does not have Equal toleration"
               kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'Equal' | grep -q 'NoSchedule' | grep -q 'test.com/role'; then
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}' | grep 'Equal' | grep 'NoSchedule' | grep -q 'test.com/role'; then
               echo "kotsadm-minio pod does not have Equal toleration"
               kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'Equal' | grep -q 'NoSchedule' | grep -q 'test.com/role'; then
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}' | grep 'Equal' | grep 'NoSchedule' | grep -q 'test.com/role'; then
               echo "kotsadm-rqlite pod does not have Equal toleration"
               kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
           echo "Equal tolerations are present"
           echo "Exists toleration"
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'Exists' | grep -q 'NoSchedule' | grep -q 'test.com/productid'; then
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}' | grep 'Exists' | grep 'NoSchedule' | grep -q 'test.com/productid'; then
               echo "kotsadm pod does not have Exists toleration"
               kubectl get pods -n "$APP_SLUG" -l app=kotsadm -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'Exists' | grep -q 'NoSchedule' | grep -q 'test.com/productid'; then
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}' | grep 'Exists' | grep 'NoSchedule' | grep -q 'test.com/productid'; then
               echo "kotsadm-minio pod does not have Exists toleration"
               kubectl get pods -n "$APP_SLUG" -l app=kotsadm-minio -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
-          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}' | grep -q 'Exists' | grep -q 'NoSchedule' | grep -q 'test.com/productid'; then
+          if ! kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}' | grep 'Exists' | grep 'NoSchedule' | grep -q 'test.com/productid'; then
               echo "kotsadm-rqlite pod does not have Exists toleration"
               kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
