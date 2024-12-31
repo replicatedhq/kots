@@ -839,6 +839,8 @@ jobs:
               kubectl get pods -n "$APP_SLUG" -l app=kotsadm-rqlite -o jsonpath='{.items[0].spec.tolerations[*]}'
               exit 1
           fi
+          echo "Exists tolerations are present"
+          echo "all tolerations are present"
 
       - name: Generate support bundle on failure
         if: failure()
