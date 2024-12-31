@@ -1138,7 +1138,7 @@ func parseToleration(input string) (*v1.Toleration, error) {
 
 	operatorStr := parts[1]
 	if !isValidOperator(operatorStr) {
-		return nil, fmt.Errorf("invalid toleration operator: %s", operatorStr)
+		return nil, fmt.Errorf("invalid toleration operator: %q", operatorStr)
 	}
 
 	// Initialize the Toleration struct
@@ -1156,7 +1156,7 @@ func parseToleration(input string) (*v1.Toleration, error) {
 
 	effectStr := parts[3]
 	if !isValidEffect(effectStr) {
-		return nil, fmt.Errorf("invalid toleration effect: %s", effectStr)
+		return nil, fmt.Errorf("invalid toleration effect: %q", effectStr)
 	}
 	toleration.Effect = v1.TaintEffect(effectStr)
 
@@ -1164,7 +1164,7 @@ func parseToleration(input string) (*v1.Toleration, error) {
 	if len(parts) > 4 {
 		tolerationSeconds, err := strconv.ParseInt(parts[4], 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("invalid tolerationSeconds value: %v", err)
+			return nil, fmt.Errorf("invalid tolerationSeconds value %q: %v", parts[4], err)
 		}
 		toleration.TolerationSeconds = &tolerationSeconds
 	}
