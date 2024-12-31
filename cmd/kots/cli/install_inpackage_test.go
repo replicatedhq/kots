@@ -29,7 +29,7 @@ func Test_parseToleration(t *testing.T) {
 		},
 		{
 			name:  "Equal 30 seconds",
-			input: "test.com/role:Equal:core:NoSchedule:30s",
+			input: "test.com/role:Equal:core:NoSchedule:30",
 			want: &v1.Toleration{
 				Key:               "test.com/role",
 				Operator:          v1.TolerationOpEqual,
@@ -38,6 +38,35 @@ func Test_parseToleration(t *testing.T) {
 				TolerationSeconds: util.IntPointer(30),
 			},
 			wantErr: assert.NoError,
+		},
+		{
+			name:  "Exists",
+			input: "test.com/productid:Exists::NoSchedule",
+			want: &v1.Toleration{
+				Key:      "test.com/productid",
+				Operator: v1.TolerationOpExists,
+				Effect:   v1.TaintEffectNoSchedule,
+			},
+		},
+		{
+			name:  "Exists with value",
+			input: "test.com/productid:Exists:testval:NoSchedule",
+			want: &v1.Toleration{
+				Key:      "test.com/productid",
+				Operator: v1.TolerationOpExists,
+				Value:    "testval",
+				Effect:   v1.TaintEffectNoSchedule,
+			},
+		},
+		{
+			name:  "Exists 60 seconds",
+			input: "test.com/productid:Exists::NoSchedule:60",
+			want: &v1.Toleration{
+				Key:               "test.com/productid",
+				Operator:          v1.TolerationOpExists,
+				Effect:            v1.TaintEffectNoSchedule,
+				TolerationSeconds: util.IntPointer(60),
+			},
 		},
 	}
 	for _, tt := range tests {
