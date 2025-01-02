@@ -137,6 +137,7 @@ func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Qu
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext: securityContext,
+					Tolerations:     deployOptions.Tolerations,
 					Containers: []corev1.Container{
 						{
 							Name:            "docker-registry",
