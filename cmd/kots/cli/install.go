@@ -279,12 +279,11 @@ func InstallCmd() *cobra.Command {
 			}
 
 			var tolerations []v1.Toleration
-			for _, foo := range v.GetStringSlice("tolerations") {
-				toleration, err := parseToleration(foo)
+			for _, tolerationStr := range v.GetStringSlice("tolerations") {
+				toleration, err := parseToleration(tolerationStr)
 				if err != nil {
-
+					return errors.Errorf("tolerations flag is not in the correct format.  Must be key:operator:value:effect: " + err.Error())
 				}
-
 				tolerations = append(tolerations, *toleration)
 			}
 
