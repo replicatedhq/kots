@@ -255,7 +255,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 		},
 		{
 			Name:  "POSTGRES_SCHEMA_DIR", // this is needed for the migration
-			Value: "/postgres/tables",
+			Value: "/scripts/postgres/tables",
 		},
 		{
 			Name: "POD_NAMESPACE",
@@ -357,7 +357,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 
 	podAnnotations := map[string]string{
 		"backup.velero.io/backup-volumes":   "backup",
-		"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
+		"pre.hook.backup.velero.io/command": `["/scripts/backup.sh"]`,
 		"pre.hook.backup.velero.io/timeout": "10m",
 	}
 	for k, v := range deployOptions.AdditionalAnnotations {
@@ -554,7 +554,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-db",
 							Command: []string{
-								"/restore-db.sh",
+								"/scripts/restore-db.sh",
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -596,7 +596,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-s3",
 							Command: []string{
-								"/restore-s3.sh",
+								"/scripts/restore-s3.sh",
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -829,7 +829,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 		},
 		{
 			Name:  "POSTGRES_SCHEMA_DIR", // this is needed for the migration
-			Value: "/postgres/tables",
+			Value: "/scripts/postgres/tables",
 		},
 		{
 			Name: "POD_NAMESPACE",
@@ -901,7 +901,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 
 	podAnnotations := map[string]string{
 		"backup.velero.io/backup-volumes":   "backup",
-		"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
+		"pre.hook.backup.velero.io/command": `["/scripts/backup.sh"]`,
 		"pre.hook.backup.velero.io/timeout": "10m",
 	}
 	for k, v := range deployOptions.AdditionalAnnotations {
@@ -1111,7 +1111,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-data",
 							Command: []string{
-								"/restore.sh",
+								"/scripts/restore.sh",
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -1157,7 +1157,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "migrate-s3",
 							Command: []string{
-								"/migrate-s3.sh",
+								"/scripts/migrate-s3.sh",
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
