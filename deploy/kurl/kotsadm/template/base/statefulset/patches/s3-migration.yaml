@@ -4,7 +4,7 @@
   value:
     name: migrate-s3
     command:
-    - "/migrate-s3.sh"
+    - "/scripts/migrate-s3.sh"
     env:
     - name: S3_ENDPOINT
       valueFrom:
