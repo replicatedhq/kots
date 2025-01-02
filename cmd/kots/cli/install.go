@@ -562,9 +562,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
 	cmd.Flags().String("app-version-label", "", "the application version label to install. if not specified, the latest version will be installed")
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console and only install the application")
-	cmd.Flags().StringArray("additional-annotations", []string{}, "additional annotations to add to kotsadm pods")
-	cmd.Flags().StringArray("additional-labels", []string{}, "additional labels to add to kotsadm pods")
-	cmd.Flags().StringArray("tolerations", []string{}, "tolerations to add to kotsadm pods")
+	cmd.Flags().StringArray("additional-annotations", []string{}, "additional annotations to add to kotsadm pods, formatted as key=value like 'kubernetes.io/arch=amd64'")
+	cmd.Flags().StringArray("additional-labels", []string{}, "additional labels to add to kotsadm pods, formatted as key=value like 'kubernetes.io/arch=amd64'")
+	cmd.Flags().StringArray("tolerations", []string{}, "tolerations to add to kotsadm pods, formatted as key:operator:value(optional):effect:tolerationSeconds(optional) like 'key1:Equal:value1:NoSchedule:60' or 'key2:Exists::NoExecute'")
 	cmd.Flags().String("private-ca-configmap", "", "the name of a configmap containing private CAs to add to the kotsadm deployment")
 
 	registryFlags(cmd.Flags())
