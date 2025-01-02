@@ -104,6 +104,7 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 					Labels:      types.GetKotsadmLabels(podLabels),
 				},
 				Spec: corev1.PodSpec{
+					Tolerations:      deployOptions.Tolerations,
 					SecurityContext:  securityContext,
 					ImagePullSecrets: pullSecrets,
 					Volumes:          volumes,
