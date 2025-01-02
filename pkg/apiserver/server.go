@@ -17,6 +17,7 @@ import (
 	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator"
 	operatorclient "github.com/replicatedhq/kots/pkg/operator/client"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -50,12 +51,14 @@ func Start(params *APIServerParams) {
 		panic(err)
 	}
 	cancel()
+	logger.Debug("store is ready")
 
 	// check if we need to migrate from postgres before doing anything else
 	if err := persistence.MigrateFromPostgresToRqlite(); err != nil {
 		log.Println("error migrating from postgres to rqlite")
 		panic(err)
 	}
+	logger.Debug("postgres is migrated to rqlite or the migration was not required")
 
 	if err := bootstrap(BootstrapParams{
 		AutoCreateClusterToken: params.AutocreateClusterToken,
@@ -63,23 +66,30 @@ func Start(params *APIServerParams) {
 		log.Println("error bootstrapping")
 		panic(err)
 	}
+	logger.Debug("bootstrap completed")
 
 	store.GetStore().RunMigrations()
+	logger.Debug("store migrations completed")
+
 	if err := identitymigrate.RunMigrations(context.TODO(), util.PodNamespace); err != nil {
 		log.Println("Failed to run identity migrations: ", err)
 	}
+	logger.Debug("identity migrations completed")
 
 	if err := binaries.InitKubectl(); err != nil {
 		log.Println("error initializing kubectl binaries package")
 		panic(err)
 	}
+	logger.Debug("kubectl binaries are initialized")
 
 	if err := binaries.InitKustomize(); err != nil {
 		log.Println("error initializing kustomize binaries package")
 		panic(err)
 	}
+	logger.Debug("kustomize binaries are initialized")
 
 	kotsStore := store.GetStore()
+	logger.Debug("kotsstore is initialized")
 
 	operatorClient := &operatorclient.Client{
 		TargetNamespace:       util.AppNamespace(),
@@ -91,12 +101,15 @@ func Start(params *APIServerParams) {
 		log.Println("error getting k8s clientset")
 		panic(err)
 	}
+	logger.Debug("k8s clientset is initialized")
+
 	op := operator.Init(operatorClient, kotsStore, params.AutocreateClusterToken, k8sClientset)
 	if err := op.Start(); err != nil {
 		log.Println("error starting the operator")
 		panic(err)
 	}
 	defer op.Shutdown()
+	logger.Debug("operator is initialized")
 
 	if params.SharedPassword != "" {
 		// TODO: this won't override the password in the database
@@ -111,31 +124,40 @@ func Start(params *APIServerParams) {
 	if err := k8sutil.InitHelmCapabilities(); err != nil {
 		panic(err)
 	}
+	logger.Debug("helm capabilities are initialized")
 
 	if err := update.InitAvailableUpdatesDir(); err != nil {
 		panic(err)
 	}
+	logger.Debug("available updates dir is initialized")
 
 	if err := reporting.Init(); err != nil {
 		log.Println("failed to initialize reporting:", err)
 	}
+	logger.Debug("reporting is initialized")
 
 	supportbundle.StartServer()
+	logger.Debug("support bundle server is started")
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers:", err)
 	}
+	logger.Debug("informers are started")
 
 	if err := updatechecker.Start(); err != nil {
 		log.Println("Failed to start update checker:", err)
 	}
+	logger.Debug("update checker is started")
+
 	if err := snapshotscheduler.Start(); err != nil {
 		log.Println("Failed to start snapshot scheduler:", err)
 	}
+	logger.Debug("snapshot scheduler is started")
 
 	if err := session.StartSessionPurgeCronJob(); err != nil {
 		log.Println("Failed to start session purge cron job:", err)
 	}
+	logger.Debug("session purge cron job is started")
 
 	if err := plan.Resume(store.GetStore()); err != nil {
 		log.Println("Failed to resume plan:", err)
@@ -150,6 +172,7 @@ func Start(params *APIServerParams) {
 			log.Println("Failed to run automated installs:", err)
 		}
 	}
+	logger.Debug("automated airgap installs are completed")
 
 	r := mux.NewRouter()
 
