@@ -8,8 +8,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/stretchr/testify/require"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	velerofake "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/fake"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +15,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	testclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
+	kbclientfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func Test_updateExistingStore(t *testing.T) {
@@ -547,7 +547,7 @@ func TestFindBackupStoreLocation(t *testing.T) {
 
 	type args struct {
 		clientset        kubernetes.Interface
-		veleroClient     veleroclientv1.VeleroV1Interface
+		ctrlclient       kbclient.Client
 		kotsadmNamespace string
 	}
 	tests := []struct {
@@ -560,7 +560,7 @@ func TestFindBackupStoreLocation(t *testing.T) {
 			name: "backup store location found",
 			args: args{
 				clientset:        fake.NewSimpleClientset(veleroNamespaceConfigmap, veleroDeployment),
-				veleroClient:     velerofake.NewSimpleClientset(testBsl).VeleroV1(),
+				ctrlclient:       kbclientfake.NewFakeClient(testBsl),
 				kotsadmNamespace: "default",
 			},
 			want: testBsl,
@@ -569,7 +569,7 @@ func TestFindBackupStoreLocation(t *testing.T) {
 			name: "return nil if no backup store location found",
 			args: args{
 				clientset:        fake.NewSimpleClientset(veleroNamespaceConfigmap, veleroDeployment),
-				veleroClient:     velerofake.NewSimpleClientset().VeleroV1(),
+				ctrlclient:       kbclientfake.NewFakeClient(),
 				kotsadmNamespace: "default",
 			},
 			want: nil,
@@ -578,7 +578,7 @@ func TestFindBackupStoreLocation(t *testing.T) {
 			name: "return nil if no velero deployment found",
 			args: args{
 				clientset:        fake.NewSimpleClientset(veleroNamespaceConfigmap),
-				veleroClient:     velerofake.NewSimpleClientset(testBsl).VeleroV1(),
+				ctrlclient:       kbclientfake.NewFakeClient(testBsl),
 				kotsadmNamespace: "default",
 			},
 			want: nil,
@@ -587,7 +587,7 @@ func TestFindBackupStoreLocation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			got, err := FindBackupStoreLocation(ctx, tt.args.clientset, tt.args.veleroClient, tt.args.kotsadmNamespace)
+			got, err := FindBackupStoreLocation(ctx, tt.args.clientset, tt.args.ctrlclient, tt.args.kotsadmNamespace)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FindBackupStoreLocation() error = %v, wantErr %v", err, tt.wantErr)
 				return

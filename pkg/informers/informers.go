@@ -12,11 +12,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Start will start the kots informers
@@ -39,12 +39,15 @@ func Start() error {
 		return errors.Wrap(err, "failed to detect velero namespace")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetKubeClient(context.TODO())
 	if err != nil {
-		return errors.Wrap(err, "failed to create velero clientset")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
-	backupWatch, err := veleroClient.Backups(veleroNamespace).Watch(context.TODO(), metav1.ListOptions{ResourceVersion: "0"})
+	var backupList velerov1.BackupList
+	backupWatch, err := veleroClient.Watch(context.TODO(), &backupList, kbclient.InNamespace(veleroNamespace), &kbclient.ListOptions{
+		Raw: &metav1.ListOptions{ResourceVersion: "0"},
+	})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return nil
@@ -86,7 +89,8 @@ func Start() error {
 
 						backup.Annotations["kots.io/support-bundle-requested"] = time.Now().UTC().Format(time.RFC3339)
 
-						if _, err := veleroClient.Backups(backup.Namespace).Update(context.TODO(), backup, metav1.UpdateOptions{}); err != nil {
+						var backup velerov1.Backup
+						if err := veleroClient.Update(context.TODO(), &backup); err != nil {
 							logger.Error(err)
 							continue
 						}
@@ -97,14 +101,8 @@ func Start() error {
 							continue
 						}
 
-						updatedBackup, err := veleroClient.Backups(backup.Namespace).Get(context.TODO(), backup.Name, metav1.GetOptions{})
-						if err != nil {
-							logger.Error(err)
-							continue
-						}
-
-						updatedBackup.Annotations["kots.io/support-bundle-id"] = supportBundleID
-						if _, err := veleroClient.Backups(backup.Namespace).Update(context.TODO(), updatedBackup, metav1.UpdateOptions{}); err != nil {
+						backup.Annotations["kots.io/support-bundle-id"] = supportBundleID
+						if err := veleroClient.Update(context.TODO(), &backup); err != nil {
 							logger.Error(err)
 							continue
 						}

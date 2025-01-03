@@ -15,9 +15,9 @@ import (
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type CreateInstanceBackupOptions struct {
@@ -192,7 +192,7 @@ func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions
 func ListAllBackups(ctx context.Context, options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get k8s clientset")
+		return nil, errors.Wrap(err, "failed to get k8s client")
 	}
 	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, options.Namespace)
 	if err != nil {
@@ -202,23 +202,19 @@ func ListAllBackups(ctx context.Context, options ListInstanceBackupsOptions) ([]
 		return nil, errors.New("velero not found")
 	}
 
-	cfg, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	b, err := veleroClient.Backups(veleroNamespace).List(ctx, metav1.ListOptions{})
+	var backupList velerov1.BackupList
+	err = veleroClient.List(ctx, &backupList, kbclient.InNamespace(veleroNamespace))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list backups")
 	}
 
 	backups := []velerov1.Backup{}
-	backups = append(backups, b.Items...)
+	backups = append(backups, backupList.Items...)
 
 	return backups, nil
 }
@@ -232,29 +228,25 @@ func waitForVeleroBackupCompleted(ctx context.Context, clientset kubernetes.Inte
 		return nil, errors.New("velero not found")
 	}
 
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to create client")
 	}
 
 	for {
-		backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupName, metav1.GetOptions{})
+		var backup velerov1.Backup
+		err := veleroClient.Get(ctx, k8stypes.NamespacedName{Namespace: veleroNamespace, Name: backupName}, &backup)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get backup")
 		}
 
 		switch backup.Status.Phase {
 		case velerov1.BackupPhaseCompleted:
-			return backup, nil
+			return &backup, nil
 		case velerov1.BackupPhaseFailed:
-			return backup, errors.New("backup failed")
+			return &backup, errors.New("backup failed")
 		case velerov1.BackupPhasePartiallyFailed:
-			return backup, errors.New("backup partially failed")
+			return &backup, errors.New("backup partially failed")
 		default:
 			// in progress
 		}

@@ -81,7 +81,7 @@ func DownloadRestoreResults(ctx context.Context, veleroNamespace, restoreName st
 }
 
 func DownloadRequest(ctx context.Context, veleroNamespace string, kind velerov1.DownloadTargetKind, name string) (io.ReadCloser, error) {
-	kbClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	kbClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero kube client")
 	}

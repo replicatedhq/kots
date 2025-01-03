@@ -23,7 +23,6 @@ import (
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/segmentio/ksuid"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -179,7 +178,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 
 	r.IsGitOpsEnabled, r.GitOpsProvider = getGitOpsReport(clientset, appID, r.ClusterID)
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetKubeClient(context.TODO())
 	if err != nil {
 		logger.Debugf("failed to get velero client: %v", err.Error())
 	}

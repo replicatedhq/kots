@@ -1024,6 +1024,7 @@ metadata:
 spec:
   csiSnapshotTimeout: 0s
   hooks: {}
+  itemOperationTimeout: 0s
   metadata: {}
   ttl: 0s
 status: {}
@@ -1080,6 +1081,7 @@ metadata:
 spec:
   csiSnapshotTimeout: 0s
   hooks: {}
+  itemOperationTimeout: 0s
   metadata: {}
   ttl: 0s
 status: {}
