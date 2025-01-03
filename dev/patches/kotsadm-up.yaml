@@ -6,6 +6,10 @@ spec:
         hostPath:
           path: {{ .Env.PROJECT_DIR }}
           type: Directory
+      - name: scripts
+        hostPath:
+          path: {{ .Env.PROJECT_DIR }}/deploy/assets
+          type: Directory
 {{- if .Env.EC_NODE  }}
       affinity:
         nodeAffinity:
@@ -30,6 +34,8 @@ spec:
         volumeMounts:
         - name: dev
           mountPath: /replicatedhq/kots # workdir in the container
+        - name: scripts
+          mountPath: /scripts
         env:
         # in order to serve from kotsadm-web even in embedded cluster
         - name: DISABLE_SPA_SERVING

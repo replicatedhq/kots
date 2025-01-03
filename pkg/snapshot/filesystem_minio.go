@@ -810,17 +810,17 @@ func createFileSystemMinioKeysSHAPod(ctx context.Context, clientset kubernetes.I
 }
 
 func fileSystemMinioCheckPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (*corev1.Pod, error) {
-	command := []string{"/fs-minio-check.sh"}
+	command := []string{"/scripts/fs-minio-check.sh"}
 	return fileSystemMinioConfigPod(clientset, deployOptions, registryConfig, fsMinioCheckTag, command, nil, true)
 }
 
 func fileSystemMinioResetPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (*corev1.Pod, error) {
-	command := []string{"/fs-minio-reset.sh"}
+	command := []string{"/scripts/fs-minio-reset.sh"}
 	return fileSystemMinioConfigPod(clientset, deployOptions, registryConfig, fsMinioResetTag, command, nil, false)
 }
 
 func fileSystemMinioKeysSHAPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig, minioKeysSHA string) (*corev1.Pod, error) {
-	command := []string{"/fs-minio-keys-sha.sh"}
+	command := []string{"/scripts/fs-minio-keys-sha.sh"}
 	args := []string{minioKeysSHA}
 	return fileSystemMinioConfigPod(clientset, deployOptions, registryConfig, fsMinioKeysSHATag, command, args, false)
 }

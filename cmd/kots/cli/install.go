@@ -46,6 +46,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	authorizationv1 "k8s.io/api/authorization/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -277,6 +278,16 @@ func InstallCmd() *cobra.Command {
 				additionalAnnotations[parts[0]] = parts[1]
 			}
 
+			var tolerations []v1.Toleration
+			for _, foo := range v.GetStringSlice("tolerations") {
+				toleration, err := parseToleration(foo)
+				if err != nil {
+					return fmt.Errorf("failed to parse toleration %q: %w", foo, err)
+				}
+
+				tolerations = append(tolerations, *toleration)
+			}
+
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:              namespace,
 				Context:                v.GetString("context"),
@@ -308,6 +319,7 @@ func InstallCmd() *cobra.Command {
 				RequestedChannelSlug:   preferredChannelSlug,
 				AdditionalLabels:       additionalLabels,
 				AdditionalAnnotations:  additionalAnnotations,
+				Tolerations:            tolerations,
 				PrivateCAsConfigmap:    v.GetString("private-ca-configmap"),
 
 				RegistryConfig: *registryConfig,
@@ -550,8 +562,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
 	cmd.Flags().String("app-version-label", "", "the application version label to install. if not specified, the latest version will be installed")
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console and only install the application")
-	cmd.Flags().StringArray("additional-annotations", []string{}, "additional annotations to add to kotsadm pods")
-	cmd.Flags().StringArray("additional-labels", []string{}, "additional labels to add to kotsadm pods")
+	cmd.Flags().StringArray("additional-annotations", []string{}, "additional annotations to add to kotsadm pods, formatted as key=value like 'kubernetes.io/arch=amd64'")
+	cmd.Flags().StringArray("additional-labels", []string{}, "additional labels to add to kotsadm pods, formatted as key=value like 'kubernetes.io/arch=amd64'")
+	cmd.Flags().StringArray("tolerations", []string{}, "tolerations to add to kotsadm pods, formatted as key:operator:value(optional):effect:tolerationSeconds(optional) like 'key1:Equal:value1:NoSchedule:60' or 'key2:Exists::NoExecute'")
 	cmd.Flags().String("private-ca-configmap", "", "the name of a configmap containing private CAs to add to the kotsadm deployment")
 
 	registryFlags(cmd.Flags())
@@ -1109,4 +1122,70 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse, skipPr
 	}
 
 	return true, nil
+}
+
+// Parses a string in the format below into a k8s Toleration:
+// "key:operator:value:effect:tolerationSeconds" where the value can be empty and the tolerationsSeconds is optional.
+func parseToleration(input string) (*v1.Toleration, error) {
+	// Trim any leading or trailing spaces
+	input = strings.TrimSpace(input)
+
+	// Split the input string by the ':' delimiter
+	parts := strings.Split(input, ":")
+	if len(parts) < 4 {
+		return nil, fmt.Errorf("invalid toleration format, expected at least 4 fields")
+	}
+
+	operatorStr := parts[1]
+	if !isValidOperator(operatorStr) {
+		return nil, fmt.Errorf("invalid toleration operator: %q", operatorStr)
+	}
+
+	// Initialize the Toleration struct
+	toleration := &v1.Toleration{
+		Key:      parts[0],
+		Operator: v1.TolerationOperator(operatorStr),
+	}
+
+	// Handle the case where the value field might be empty
+	if len(parts) > 2 && parts[2] != "" {
+		toleration.Value = parts[2]
+	} else {
+		toleration.Value = "" // If empty, explicitly set to empty string
+	}
+
+	effectStr := parts[3]
+	if !isValidEffect(effectStr) {
+		return nil, fmt.Errorf("invalid toleration effect: %q", effectStr)
+	}
+	toleration.Effect = v1.TaintEffect(effectStr)
+
+	// If there is a fifth part, it represents tolerationSeconds
+	if len(parts) > 4 {
+		tolerationSeconds, err := strconv.ParseInt(parts[4], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid tolerationSeconds value %q: %v", parts[4], err)
+		}
+		toleration.TolerationSeconds = &tolerationSeconds
+	}
+
+	// Return the parsed toleration struct
+	return toleration, nil
+}
+
+func isValidEffect(effect string) bool {
+	validEffects := map[string]bool{
+		"NoSchedule":       true,
+		"PreferNoSchedule": true,
+		"NoExecute":        true,
+	}
+	return validEffects[effect]
+}
+
+func isValidOperator(op string) bool {
+	validOperators := map[string]bool{
+		"Exists": true,
+		"Equal":  true,
+	}
+	return validOperators[op]
 }

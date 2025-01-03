@@ -40,24 +40,7 @@ RUN useradd -c 'kotsadm user' -m -d /home/kotsadm -s /bin/bash -u 1001 kotsadm
 USER kotsadm
 ENV HOME /home/kotsadm
 
-COPY --chown=kotsadm:kotsadm ./deploy/assets/backup.sh /backup.sh
-COPY --chown=kotsadm:kotsadm ./deploy/assets/restore-db.sh /restore-db.sh
-COPY --chown=kotsadm:kotsadm ./deploy/assets/restore-s3.sh /restore-s3.sh
-COPY --chown=kotsadm:kotsadm ./deploy/assets/restore.sh /restore.sh
-COPY --chown=kotsadm:kotsadm ./deploy/assets/migrate-s3.sh /migrate-s3.sh
-
-COPY --chown=kotsadm:kotsadm ./deploy/assets/fs-minio-check.sh /fs-minio-check.sh
-COPY --chown=kotsadm:kotsadm ./deploy/assets/fs-minio-reset.sh /fs-minio-reset.sh
-COPY --chown=kotsadm:kotsadm ./deploy/assets/fs-minio-keys-sha.sh /fs-minio-keys-sha.sh
-
-COPY --chown=kotsadm:kotsadm ./deploy/assets/s3-bucket-create.sh /s3-bucket-create.sh
-COPY --chown=kotsadm:kotsadm ./deploy/assets/s3-bucket-head.sh /s3-bucket-head.sh
-
-COPY --chown=kotsadm:kotsadm ./deploy/assets/kots-upgrade.sh /kots-upgrade.sh
-
-# only used for the migration
-COPY --chown=kotsadm:kotsadm ./deploy/assets/postgres /postgres
-
+COPY --chown=kotsadm:kotsadm ./deploy/assets /scripts
 COPY --chown=kotsadm:kotsadm ./bin/kotsadm /kotsadm
 COPY --chown=kotsadm:kotsadm ./bin/kots /kots
 

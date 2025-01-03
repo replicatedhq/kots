@@ -115,7 +115,7 @@
     "terser-webpack-plugin": "^5.3.11",
     "ts-loader": "^9.5.1",
     "tty-browserify": "^0.0.1",
-    "typescript": "4.9.4",
+    "typescript": "5.7.2",
     "url-loader": "4.1.1",
     "util": "^0.12.5",
     "webpack": "^5.97.1",

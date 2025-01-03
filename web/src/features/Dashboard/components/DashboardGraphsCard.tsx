@@ -127,7 +127,9 @@ export default class DashboardGraphsCard extends Component<Props, State> {
           console.error("Failed to compile legend template", err);
         }
       }
-      return metrics.length > 0 ? metrics[Object.keys(metrics)[0]] : "";
+      return Object.keys(metrics).length > 0
+        ? metrics[Object.keys(metrics)[0]]
+        : "";
     });
   };
 
