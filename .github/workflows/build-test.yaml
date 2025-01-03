@@ -594,7 +594,7 @@ jobs:
           kots-namespace: 'qakotsregression'
           test-id: '@regression'
           k8s-distribution: k3s
-          k8s-version: v1.29
+          k8s-version: v1.26
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
