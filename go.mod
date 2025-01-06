@@ -67,7 +67,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tj/go-spin v1.1.0
-	github.com/vmware-tanzu/velero v1.14.1
+	github.com/vmware-tanzu/velero v1.15.1
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.31.0
@@ -398,6 +398,7 @@ require (
 	cloud.google.com/go/auth v0.9.8 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/monitoring v1.21.1 // indirect
+	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.48.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.48.1 // indirect
@@ -417,8 +418,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.1.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
-	github.com/kopia/kopia v0.10.7 // indirect
-	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
+	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0 // indirect
 	github.com/miekg/dns v1.1.62 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
@@ -458,8 +458,3 @@ replace (
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce => github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497
 	gopkg.in/square/go-jose.v2 => gopkg.in/square/go-jose.v2 v2.2.2
 )
-
-// This is the only way I could get these two to play nice together
-// When getting github.com/replicatedhq/troubleshoot@0.86.0 or later, it pulls in github.com/replicatedhq/velero@v1.13.1 which fails with the following error:
-// ../../../../pkg/mod/github.com/vmware-tanzu/velero@v1.13.1/pkg/builder/persistent_volume_claim_builder.go:104:32: cannot use dataSourceRef (variable of type *"k8s.io/api/core/v1".TypedLocalObjectReference) as *"k8s.io/api/core/v1".TypedObjectReference value in assignment
-replace github.com/vmware-tanzu/velero => github.com/vmware-tanzu/velero v1.10.3

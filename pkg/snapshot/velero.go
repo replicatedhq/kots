@@ -13,8 +13,8 @@ import (
 	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"github.com/vmware-tanzu/velero/pkg/cmd/cli/serverstatus"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -99,13 +100,14 @@ func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (req
 		return
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		finalErr = errors.Wrap(err, "failed to create velero clientset")
+		finalErr = errors.Wrap(err, "failed to create velero client")
 		return
 	}
 
-	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(ctx, metav1.ListOptions{})
+	var backupStorageLocations velerov1.BackupStorageLocationList
+	err = veleroClient.List(ctx, &backupStorageLocations, kbclient.InNamespace(veleroNamespace))
 	if kuberneteserrors.IsForbidden(err) {
 		requiresAccess = true
 		return
@@ -145,17 +147,13 @@ func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (req
 }
 
 func EnsureVeleroPermissions(ctx context.Context, clientset kubernetes.Interface, veleroNamespace string, kotsadmNamespace string) error {
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create velero clientset")
-	}
-
-	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(ctx, metav1.ListOptions{})
+	var backupStorageLocations velerov1.BackupStorageLocationList
+	err = veleroClient.List(ctx, &backupStorageLocations, kbclient.InNamespace(veleroNamespace))
 	if err != nil {
 		return errors.Wrapf(err, "failed to list backupstoragelocations in '%s' namespace", veleroNamespace)
 	}
@@ -355,7 +353,7 @@ NodeAgentFound:
 }
 
 func getVersion(ctx context.Context, namespace string) (string, error) {
-	kbClient, err := k8sutil.GetVeleroKubeClient(ctx)
+	kbClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get velero kube client")
 	}
