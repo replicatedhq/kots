@@ -205,7 +205,7 @@ func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreID s
 	var restoreVolumes velerov1.PodVolumeRestoreList
 	err = veleroClient.List(ctx, &restoreVolumes, kbclient.MatchingLabels{
 		"velero.io/restore-name": velerolabel.GetValidName(restore.Name),
-	})
+	}, kbclient.InNamespace(veleroNamespace))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list volumes")
 	}
