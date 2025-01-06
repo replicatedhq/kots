@@ -811,7 +811,7 @@ func upsertBackupStorageLocation(ctx context.Context, bsl *velerov1.BackupStorag
 		return bsl, nil
 	}
 
-	return nil, errors.Wrap(err, "failed to get backup storage location")
+	return nil, errors.Wrap(err, "failed to update backup storage location")
 }
 
 func updateMinioFileSystemStore(ctx context.Context, clientset kubernetes.Interface, store *types.Store, bsl *velerov1.BackupStorageLocation) error {
