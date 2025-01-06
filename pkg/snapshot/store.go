@@ -798,7 +798,8 @@ func upsertBackupStorageLocation(ctx context.Context, bsl *velerov1.BackupStorag
 		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
-	if err = veleroClient.Update(ctx, bsl); err == nil {
+	err = veleroClient.Update(ctx, bsl)
+	if err == nil {
 		return bsl, nil
 	}
 
