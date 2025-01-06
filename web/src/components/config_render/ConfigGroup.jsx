@@ -227,7 +227,7 @@ const ConfigGroup = (props) => {
             <div key={`${i}-${item.name}`}>
               Unsupported config type{" "}
               <a
-                href="https://help.replicated.com/docs/config-screen/config-yaml/"
+                href="https://docs.replicated.com/reference/custom-resource-config"
                 target="_blank"
                 rel="noopener noreferrer"
               >
