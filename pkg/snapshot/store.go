@@ -799,9 +799,6 @@ func upsertBackupStorageLocation(ctx context.Context, bsl *velerov1.BackupStorag
 	}
 
 	if err := veleroClient.Update(ctx, bsl); err == nil {
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to update backup storage location")
-		}
 		return bsl, nil
 	}
 
