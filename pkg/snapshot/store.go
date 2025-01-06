@@ -798,12 +798,12 @@ func upsertBackupStorageLocation(ctx context.Context, bsl *velerov1.BackupStorag
 		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
-	if err := veleroClient.Update(ctx, bsl); err == nil {
+	if err = veleroClient.Update(ctx, bsl); err == nil {
 		return bsl, nil
 	}
 
 	if kuberneteserrors.IsNotFound(err) {
-		err := veleroClient.Create(ctx, bsl)
+		err = veleroClient.Create(ctx, bsl)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create backup storage location")
 		}
