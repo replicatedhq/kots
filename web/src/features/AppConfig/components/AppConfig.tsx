@@ -782,8 +782,8 @@ class AppConfig extends Component<Props, State> {
           </p>
         </div>
         <div className="flex flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-4 card-bg">
-          {!Utilities.isInitialAppInstall(app) && (
-            <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
+          <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
+            {!Utilities.isInitialAppInstall(app) && (
               <div
                 id="configSidebarWrapper"
                 className="config-sidebar-wrapper card-bg clickable"
@@ -861,58 +861,57 @@ class AppConfig extends Component<Props, State> {
                   );
                 })}
               </div>
-              <div className="ConfigArea--wrapper !tw-pt-0">
-                <ConfigInfo
-                  app={app}
-                  fromLicenseFlow={this.props.fromLicenseFlow}
-                />
-                <div
-                  className={classNames(
-                    "ConfigOuterWrapper card-bg u-padding--15"
-                  )}
-                >
-                  <div className="ConfigInnerWrapper">
-                    <AppConfigRenderer
-                      appSlug={app.slug}
-                      configSequence={params.sequence}
-                      getData={this.handleConfigChange}
-                      groups={configGroups}
-                      handleDownloadFile={this.handleDownloadFile}
-                      readonly={this.isConfigReadOnly(app)}
-                    />
-                  </div>
-                  <div className="flex tw-items-center tw-w-full">
-                    {savingConfig && (
-                      <div className="u-paddingBottom--30">
-                        <Loader size="30" />
-                      </div>
-                    )}
-                    {!savingConfig && (
-                      <div className="ConfigError--wrapper tw-flex tw-items-center tw-justify-between !tw-w-full">
-                        {(showConfigError ||
-                          this.state.showValidationError) && (
-                          <span className="u-textColor--error tw-mb-2 tw-text-xs">
-                            {configErrorMessage || validationErrorMessage}
-                          </span>
-                        )}
-                        <button
-                          className="btn primary blue tw-ml-auto"
-                          disabled={
-                            showValidationError ||
-                            (!changed && !fromLicenseFlow) ||
-                            this.isConfigReadOnly(app)
-                          }
-                          onClick={this.handleSave}
-                        >
-                          {saveButtonText}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+            )}
+            <div className="ConfigArea--wrapper !tw-pt-0">
+              <ConfigInfo
+                app={app}
+                fromLicenseFlow={this.props.fromLicenseFlow}
+              />
+              <div
+                className={classNames(
+                  "ConfigOuterWrapper card-bg u-padding--15"
+                )}
+              >
+                <div className="ConfigInnerWrapper">
+                  <AppConfigRenderer
+                    appSlug={app.slug}
+                    configSequence={params.sequence}
+                    getData={this.handleConfigChange}
+                    groups={configGroups}
+                    handleDownloadFile={this.handleDownloadFile}
+                    readonly={this.isConfigReadOnly(app)}
+                  />
                 </div>
-              </div>{" "}
-            </div>
-          )}
+                <div className="flex tw-items-center tw-w-full">
+                  {savingConfig && (
+                    <div className="u-paddingBottom--30">
+                      <Loader size="30" />
+                    </div>
+                  )}
+                  {!savingConfig && (
+                    <div className="ConfigError--wrapper tw-flex tw-items-center tw-justify-between !tw-w-full">
+                      {(showConfigError || this.state.showValidationError) && (
+                        <span className="u-textColor--error tw-mb-2 tw-text-xs">
+                          {configErrorMessage || validationErrorMessage}
+                        </span>
+                      )}
+                      <button
+                        className="btn primary blue tw-ml-auto"
+                        disabled={
+                          showValidationError ||
+                          (!changed && !fromLicenseFlow) ||
+                          this.isConfigReadOnly(app)
+                        }
+                        onClick={this.handleSave}
+                      >
+                        {saveButtonText}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>{" "}
+          </div>
         </div>
         <Modal
           isOpen={showNextStepModal}
