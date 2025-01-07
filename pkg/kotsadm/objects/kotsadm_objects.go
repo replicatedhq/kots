@@ -163,6 +163,8 @@ func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeplo
 	existingDeployment.Spec.Template.Spec.Containers[containerIdx].VolumeMounts = desiredVolumeMounts
 	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env = desiredDeployment.Spec.Template.Spec.Containers[0].Env
 
+	existingDeployment.Spec.Template.Annotations["pre.hook.backup.velero.io/command"] = `["/scripts/backup.sh"]`
+
 	return nil
 }
 
@@ -726,6 +728,8 @@ func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredSt
 	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Image = desiredStatefulSet.Spec.Template.Spec.Containers[0].Image
 	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].VolumeMounts = desiredVolumeMounts
 	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Env = desiredStatefulSet.Spec.Template.Spec.Containers[0].Env
+
+	existingStatefulset.Spec.Template.Annotations["pre.hook.backup.velero.io/command"] = `["/scripts/backup.sh"]`
 
 	return nil
 }
