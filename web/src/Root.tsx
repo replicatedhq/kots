@@ -804,6 +804,7 @@ const Root = () => {
                       setCurrentStep={setCurrentStep}
                       setNavbarConfigGroups={setNavbarConfigGroups}
                       setActiveGroups={setActiveGroups}
+                      isGuidedInstall={navbarConfigGroups.length > 0}
                     />
                   }
                 />
@@ -1096,6 +1097,7 @@ const Root = () => {
                         setCurrentStep={setCurrentStep}
                         setNavbarConfigGroups={setNavbarConfigGroups}
                         setActiveGroups={setActiveGroups}
+                        isGuidedInstall={navbarConfigGroups.length > 0}
                       />
                     }
                   />
