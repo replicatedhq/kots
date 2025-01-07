@@ -743,63 +743,72 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			continue
 		}
 
-		backup := types.Backup{
-			Name:   veleroBackup.Name,
-			Status: types.GetStatusFromBackupPhase(veleroBackup.Status.Phase),
-			AppID:  appID,
+		back, err := ParseVeleroBackup(ctx, veleroBackup)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse velero backup")
 		}
 
-		if veleroBackup.Status.StartTimestamp != nil {
-			startedAt := veleroBackup.Status.StartTimestamp.Time.UTC()
-			backup.StartedAt = &startedAt
+		if back != nil {
+			backups = append(backups, back)
 		}
-		if veleroBackup.Status.CompletionTimestamp != nil {
-			finishedAt := veleroBackup.Status.CompletionTimestamp.Time.UTC()
-			backup.FinishedAt = &finishedAt
-		}
-		if veleroBackup.Status.Expiration != nil {
-			expiresAt := veleroBackup.Status.Expiration.Time.UTC()
-			backup.ExpiresAt = &expiresAt
-		}
-		sequence, ok := veleroBackup.Annotations["kots.io/app-sequence"]
-		if ok {
-			s, err := strconv.ParseInt(sequence, 10, 64)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to parse app sequence")
-			}
-
-			backup.Sequence = s
-		}
-		if backup.Status == "" {
-			backup.Status = types.BackupStatusInProgress
-		}
-
-		trigger, ok := veleroBackup.Annotations[types.BackupTriggerAnnotation]
-		if ok {
-			backup.Trigger = trigger
-		}
-
-		supportBundleID, ok := veleroBackup.Annotations["kots.io/support-bundle-id"]
-		if ok {
-			backup.SupportBundleID = supportBundleID
-		}
-
-		if backup.Status != types.BackupStatusInProgress {
-			volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get volume summary")
-			}
-
-			backup.VolumeCount = volumeSummary.VolumeCount
-			backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
-			backup.VolumeBytes = volumeSummary.VolumeBytes
-			backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
-		}
-
-		backups = append(backups, &backup)
 	}
 
 	return backups, nil
+}
+
+func ParseVeleroBackup(ctx context.Context, veleroBackup velerov1.Backup) (*types.Backup, error) {
+	backup := types.Backup{
+		Name:   veleroBackup.Name,
+		Status: types.GetStatusFromBackupPhase(veleroBackup.Status.Phase),
+	}
+
+	if veleroBackup.Status.StartTimestamp != nil {
+		startedAt := veleroBackup.Status.StartTimestamp.Time.UTC()
+		backup.StartedAt = &startedAt
+	}
+	if veleroBackup.Status.CompletionTimestamp != nil {
+		finishedAt := veleroBackup.Status.CompletionTimestamp.Time.UTC()
+		backup.FinishedAt = &finishedAt
+	}
+	if veleroBackup.Status.Expiration != nil {
+		expiresAt := veleroBackup.Status.Expiration.Time.UTC()
+		backup.ExpiresAt = &expiresAt
+	}
+	sequence, ok := veleroBackup.Annotations["kots.io/app-sequence"]
+	if ok {
+		s, err := strconv.ParseInt(sequence, 10, 64)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse app sequence")
+		}
+
+		backup.Sequence = s
+	}
+	if backup.Status == "" {
+		backup.Status = types.BackupStatusInProgress
+	}
+
+	trigger, ok := veleroBackup.Annotations[types.BackupTriggerAnnotation]
+	if ok {
+		backup.Trigger = trigger
+	}
+
+	supportBundleID, ok := veleroBackup.Annotations["kots.io/support-bundle-id"]
+	if ok {
+		backup.SupportBundleID = supportBundleID
+	}
+
+	if backup.Status != types.BackupStatusInProgress {
+		volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get volume summary")
+		}
+
+		backup.VolumeCount = volumeSummary.VolumeCount
+		backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
+		backup.VolumeBytes = volumeSummary.VolumeBytes
+		backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
+	}
+	return &backup, nil
 }
 
 func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.Backup, error) {
