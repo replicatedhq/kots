@@ -782,61 +782,62 @@ class AppConfig extends Component<Props, State> {
           </p>
         </div>
         <div className="flex flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-4 card-bg">
-          <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
-            <div
-              id="configSidebarWrapper"
-              className="config-sidebar-wrapper card-bg clickable"
-            >
-              {configGroups?.map((group, i) => {
-                if (
-                  group.title === "" ||
-                  group.title.length === 0 ||
-                  group.hidden ||
-                  group.when === "false"
-                ) {
-                  return;
-                }
-                return (
-                  <div
-                    key={`${i}-${group.name}-${group.title}`}
-                    className={`side-nav-group ${
-                      this.state.activeGroups.includes(group.name) ||
-                      group.hasError
-                        ? "group-open"
-                        : ""
-                    }`}
-                    id={`config-group-nav-${group.name}`}
-                  >
+          {!Utilities.isInitialAppInstall(app) && (
+            <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
+              <div
+                id="configSidebarWrapper"
+                className="config-sidebar-wrapper card-bg clickable"
+              >
+                {configGroups?.map((group, i) => {
+                  if (
+                    group.title === "" ||
+                    group.title.length === 0 ||
+                    group.hidden ||
+                    group.when === "false"
+                  ) {
+                    return;
+                  }
+                  return (
                     <div
-                      className="flex alignItems--center"
-                      onClick={() => this.toggleActiveGroups(group.name)}
+                      key={`${i}-${group.name}-${group.title}`}
+                      className={`side-nav-group ${
+                        this.state.activeGroups.includes(group.name) ||
+                        group.hasError
+                          ? "group-open"
+                          : ""
+                      }`}
+                      id={`config-group-nav-${group.name}`}
                     >
-                      <div className="u-lineHeight--normal group-title u-fontSize--normal">
-                        {group.title}
+                      <div
+                        className="flex alignItems--center"
+                        onClick={() => this.toggleActiveGroups(group.name)}
+                      >
+                        <div className="u-lineHeight--normal group-title u-fontSize--normal">
+                          {group.title}
+                        </div>
+                        {/* adding the arrow-down classes, will rotate the icon when clicked */}
+                        <Icon
+                          icon="down-arrow"
+                          className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
+                          size={12}
+                          style={{}}
+                          color={""}
+                          disableFill={false}
+                          removeInlineStyle={false}
+                        />
                       </div>
-                      {/* adding the arrow-down classes, will rotate the icon when clicked */}
-                      <Icon
-                        icon="down-arrow"
-                        className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                        size={12}
-                        style={{}}
-                        color={""}
-                        disableFill={false}
-                        removeInlineStyle={false}
-                      />
-                    </div>
-                    {group.items ? (
-                      <div className="side-nav-items">
-                        {group.items
-                          ?.filter((item) => item.type !== "label")
-                          ?.map((item, j) => {
-                            const hash = this.props.location.hash.slice(1);
-                            if (item.hidden || item.when === "false") {
-                              return;
-                            }
-                            return (
-                              <a
-                                className={`u-fontSize--normal u-lineHeight--normal
+                      {group.items ? (
+                        <div className="side-nav-items">
+                          {group.items
+                            ?.filter((item) => item.type !== "label")
+                            ?.map((item, j) => {
+                              const hash = this.props.location.hash.slice(1);
+                              if (item.hidden || item.when === "false") {
+                                return;
+                              }
+                              return (
+                                <a
+                                  className={`u-fontSize--normal u-lineHeight--normal
                                 ${
                                   item.validationError || item.error
                                     ? "has-error"
@@ -847,69 +848,71 @@ class AppConfig extends Component<Props, State> {
                                     ? "active-item"
                                     : ""
                                 }`}
-                                href={`#${item.name}-group`}
-                                key={`${j}-${item.name}-${item.title}`}
-                              >
-                                {item.title}
-                              </a>
-                            );
-                          })}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="ConfigArea--wrapper !tw-pt-0">
-              <ConfigInfo
-                app={app}
-                fromLicenseFlow={this.props.fromLicenseFlow}
-              />
-              <div
-                className={classNames(
-                  "ConfigOuterWrapper card-bg u-padding--15"
-                )}
-              >
-                <div className="ConfigInnerWrapper">
-                  <AppConfigRenderer
-                    appSlug={app.slug}
-                    configSequence={params.sequence}
-                    getData={this.handleConfigChange}
-                    groups={configGroups}
-                    handleDownloadFile={this.handleDownloadFile}
-                    readonly={this.isConfigReadOnly(app)}
-                  />
-                </div>
-                <div className="flex tw-items-center tw-w-full">
-                  {savingConfig && (
-                    <div className="u-paddingBottom--30">
-                      <Loader size="30" />
+                                  href={`#${item.name}-group`}
+                                  key={`${j}-${item.name}-${item.title}`}
+                                >
+                                  {item.title}
+                                </a>
+                              );
+                            })}
+                        </div>
+                      ) : null}
                     </div>
-                  )}
-                  {!savingConfig && (
-                    <div className="ConfigError--wrapper tw-flex tw-items-center tw-justify-between !tw-w-full">
-                      {(showConfigError || this.state.showValidationError) && (
-                        <span className="u-textColor--error tw-mb-2 tw-text-xs">
-                          {configErrorMessage || validationErrorMessage}
-                        </span>
-                      )}
-                      <button
-                        className="btn primary blue tw-ml-auto"
-                        disabled={
-                          showValidationError ||
-                          (!changed && !fromLicenseFlow) ||
-                          this.isConfigReadOnly(app)
-                        }
-                        onClick={this.handleSave}
-                      >
-                        {saveButtonText}
-                      </button>
-                    </div>
-                  )}
-                </div>
+                  );
+                })}
               </div>
-            </div>{" "}
-          </div>
+              <div className="ConfigArea--wrapper !tw-pt-0">
+                <ConfigInfo
+                  app={app}
+                  fromLicenseFlow={this.props.fromLicenseFlow}
+                />
+                <div
+                  className={classNames(
+                    "ConfigOuterWrapper card-bg u-padding--15"
+                  )}
+                >
+                  <div className="ConfigInnerWrapper">
+                    <AppConfigRenderer
+                      appSlug={app.slug}
+                      configSequence={params.sequence}
+                      getData={this.handleConfigChange}
+                      groups={configGroups}
+                      handleDownloadFile={this.handleDownloadFile}
+                      readonly={this.isConfigReadOnly(app)}
+                    />
+                  </div>
+                  <div className="flex tw-items-center tw-w-full">
+                    {savingConfig && (
+                      <div className="u-paddingBottom--30">
+                        <Loader size="30" />
+                      </div>
+                    )}
+                    {!savingConfig && (
+                      <div className="ConfigError--wrapper tw-flex tw-items-center tw-justify-between !tw-w-full">
+                        {(showConfigError ||
+                          this.state.showValidationError) && (
+                          <span className="u-textColor--error tw-mb-2 tw-text-xs">
+                            {configErrorMessage || validationErrorMessage}
+                          </span>
+                        )}
+                        <button
+                          className="btn primary blue tw-ml-auto"
+                          disabled={
+                            showValidationError ||
+                            (!changed && !fromLicenseFlow) ||
+                            this.isConfigReadOnly(app)
+                          }
+                          onClick={this.handleSave}
+                        >
+                          {saveButtonText}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>{" "}
+            </div>
+          )}
         </div>
         <Modal
           isOpen={showNextStepModal}
