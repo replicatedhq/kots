@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { Component, useState } from "react";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import MonacoEditor from "@monaco-editor/react";
 import Modal from "react-modal";
@@ -24,6 +24,7 @@ let mapColors = {};
 
 class SnapshotDetails extends Component {
   state = {
+    activeIds: [],
     showScriptsOutput: false,
     scriptOutput: "",
     selectedTab: "stdout",
@@ -677,12 +678,31 @@ class SnapshotDetails extends Component {
     );
   };
 
+  componentDidUpdate = (lastProps, lastState) => {
+    console.log("hello");
+    const { snapshotDetails } = this.state;
+
+    if (
+      lastState.snapshotDetails !== snapshotDetails &&
+      snapshotDetails.length > 0
+    ) {
+      // Filter snapshots with status not equal to "Completed"
+      const activeIds = snapshotDetails
+        .filter((snapshotDetail) => snapshotDetail.status !== "Completed")
+        .map((snapshotDetail) => snapshotDetail.name);
+
+      // Set the filtered snapshot names in state
+      this.setState({ activeIds });
+    }
+  };
+
   renderSnapshot = (snapshotDetails, snapshotDetail) => {
     const {
       series,
       selectedScriptTab,
       selectedErrorsWarningTab,
       currentSnapshotIndex,
+      activeIds,
     } = this.state;
     const { isEmbeddedCluster, navigate } = this.props;
     let featureName = "snapshot";
@@ -692,9 +712,14 @@ class SnapshotDetails extends Component {
     const { params } = this.props;
     const snapshotName = params.id;
 
-    const activeId = "snapshot";
+    const toggleAccordion = (name) => {
+      this.setState({
+        activeIds: this.state.activeIds.includes(name)
+          ? this.state.activeIds.filter((id) => id !== name)
+          : [...this.state.activeIds, name],
+      });
+    };
 
-    console.log(snapshotDetails, "detials");
     return (
       <div className="card-bg">
         <div className="tw-flex tw-flex-col justifyContent--spaceBetween u-paddingBottom--15">
@@ -723,287 +748,217 @@ class SnapshotDetails extends Component {
           </div>
           {/* only render accordian if there are more than one snapshot for EC */}
           {snapshotDetails.length > 1 &&
-            snapshotDetails.map((snapshotDetail) => (
-              <div
-                key={snapshotDetail.name}
-                className="tw-bg-gradient-to-br tw-from-slate-100 tw-to-slate-200 tw-mt-4 "
-              >
-                <div className="tw-w-full tw-max-w-6xl tw-mx-auto">
-                  <div className="tw-border tw-border-slate-200 tw-rounded-lg tw-overflow-hidden tw-bg-white">
-                    <button
-                      onClick={
-                        () => console.log("onclick")
-                        // setActiveId(activeId === "snapshot" ? null : "snapshot")
-                      }
-                      className="tw-w-full tw-px-4 tw-py-3 tw-flex tw-items-center tw-justify-between hover:tw-bg-slate-50 tw-transition-colors"
-                    >
-                      <span className="tw-text-lg tw-font-semibold">
-                        {snapshotDetail?.type === "app"
-                          ? "Application"
-                          : "Infrastructure"}
-                      </span>
-
-                      {snapshotDetail.status !== "Completed" ? (
-                        <span
-                          className={`status-indicator ${snapshotDetail?.status?.toLowerCase()} u-marginLeft--5`}
-                        ></span>
-                      ) : null}
-
-                      <Icon
-                        icon="down-arrow"
-                        className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                        size={12}
-                        style={{}}
-                        color={""}
-                        disableFill={false}
-                        removeInlineStyle={false}
-                      />
-                    </button>
-
-                    <div
-                      className={`tw-transition-all tw-duration-200 tw-ease-in-out tw-p-4 ${
-                        activeId === "snapshot"
-                          ? "tw-max-h-[2000px] tw-opacity-100"
-                          : "tw-max-h-0 tw-opacity-0"
-                      } tw-overflow-hidden`}
-                    >
-                      <div className="flex-column u-lineHeight--normal u-textAlign--right">
-                        <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">
-                          Status:{" "}
-                          <span
-                            className={`status-indicator ${snapshotDetail?.status?.toLowerCase()} u-marginLeft--5`}
-                          >
-                            {Utilities.snapshotStatusToDisplayName(
-                              snapshotDetail?.status
-                            )}
+            snapshotDetails.map((snapshotDetail) => {
+              const isActive = activeIds.includes(snapshotDetail.name);
+              return (
+                <div key={snapshotDetail.name} className=" tw-bg-white tw-mt-4">
+                  <div className="tw-w-full">
+                    <div className="tw-overflow-hidden tw-bg-white">
+                      <button
+                        onClick={() => toggleAccordion(snapshotDetail.name)}
+                        className="tw-rounded-lg tw-border-0 tw-w-full tw-px-4 tw-py-3 tw-flex tw-items-center tw-justify-between hover:tw-bg-slate-50 tw-bg-white"
+                      >
+                        <div className="tw-flex tw-items-center">
+                          <span className="tw-text-lg tw-font-semibold">
+                            {snapshotDetail?.type === "app"
+                              ? "Application"
+                              : "Infrastructure"}
                           </span>
-                        </p>
-                        <div className="u-fontSize--small">
-                          {snapshotDetail?.status !== "InProgress" && (
+
+                          {snapshotDetail.status !== "Completed" ? (
                             <span
-                              className="link"
-                              onClick={() => this.viewLogs()}
-                            >
-                              View logs
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {snapshotDetail?.status === "InProgress" ? (
-                        <div className="flex flex-column alignItems--center u-marginTop--60">
-                          <span className="icon blueWarningIcon" />
-                          <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginTop--20">
-                            {" "}
-                            This {featureName} has not completed yet, check back
-                            soon{" "}
-                          </p>
-                        </div>
-                      ) : (
-                        <div>
-                          {!isEmpty(snapshotDetail?.volumes) ||
-                          !isEmpty(this.preSnapshotScripts()) ||
-                          !isEmpty(this.postSnapshotScripts()) ? (
-                            <div className="flex-column flex-auto card-item u-padding--15 u-marginBottom--30">
-                              <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
-                                {Utilities.toTitleCase(featureName)} timeline
-                              </p>
-                              <div className="flex1" id="chart">
-                                <ReactApexChart
-                                  options={this.state.options}
-                                  series={series}
-                                  type="rangeBar"
-                                  height={140}
-                                />
-                                {this.renderTimeInterval()}
-                              </div>
-                            </div>
+                              className={`status-indicator ${snapshotDetail?.status?.toLowerCase()} tw-mx-2 tw-mb-4`}
+                            ></span>
                           ) : null}
+                        </div>
+                        <Icon
+                          icon="down-arrow"
+                          className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
+                          size={12}
+                          style={{}}
+                          color={""}
+                          disableFill={false}
+                          removeInlineStyle={false}
+                        />
+                      </button>
 
-                          <div className="flex flex-auto u-marginBottom--30">
-                            <div className="flex flex1" style={{ gap: "15px" }}>
-                              <div className="card-item u-padding--15 flex1">
-                                <div className="flex flex1 alignItems--center u-paddingBottom--10 u-borderBottom--gray">
-                                  <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold">
-                                    Volumes
-                                  </p>
-                                  {snapshotDetail?.volumes?.length > 3 ? (
-                                    <div className="flex flex1 justifyContent--flexEnd">
-                                      <span
-                                        className="link u-fontSize--small"
-                                        onClick={() =>
-                                          this.toggleShowAllVolumes()
-                                        }
-                                      >
-                                        Show all{" "}
-                                        {snapshotDetail?.volumes?.length}{" "}
-                                        volumes
-                                      </span>
-                                    </div>
-                                  ) : null}
-                                </div>
-                                {!isEmpty(snapshotDetail?.volumes) ? (
-                                  this.renderShowAllVolumes(
-                                    snapshotDetail?.volumes?.slice(0, 3)
-                                  )
-                                ) : (
-                                  <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
-                                    <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
-                                      {" "}
-                                      No volumes to display{" "}
-                                    </p>
-                                  </div>
+                      <div
+                        className={`tw-transition-all tw-duration-200 tw-ease-in-out ${
+                          isActive
+                            ? "tw-max-h-[2000px] tw-opacity-100 tw-p-4"
+                            : "tw-max-h-0 tw-opacity-0"
+                        } tw-overflow-hidden`}
+                      >
+                        <div>
+                          <div className="tw-flex tw-justify-between tw-items-center">
+                            <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
+                              Size:{" "}
+                              <span className="u-fontWeight--bold u-textColor--accent">
+                                {snapshotDetail?.volumeSizeHuman}
+                              </span>
+                            </p>
+                            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">
+                              Status:{" "}
+                              <span
+                                className={`status-indicator ${snapshotDetail?.status?.toLowerCase()} u-marginLeft--5`}
+                              >
+                                {Utilities.snapshotStatusToDisplayName(
+                                  snapshotDetail?.status
                                 )}
-                              </div>
-                              <div className="card-item u-padding--15 flex1">
-                                <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
-                                  <div className="flex flex1">
-                                    <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
-                                      Scripts
-                                    </p>
-                                    {this.preSnapshotScripts()?.length > 3 &&
-                                    selectedScriptTab ===
-                                      "Pre-snapshot scripts" ? (
-                                      <div className="flex flex1 justifyContent--flexEnd">
-                                        <span
-                                          className="link u-fontSize--small"
-                                          onClick={() =>
-                                            this.toggleShowAllPreScripts()
-                                          }
-                                        >
-                                          Show all{" "}
-                                          {this.preSnapshotScripts()?.length}{" "}
-                                          pre-scripts
-                                        </span>
-                                      </div>
-                                    ) : null}
-                                    {this.postSnapshotScripts()?.length > 3 &&
-                                    selectedScriptTab ===
-                                      "Post-snapshot scripts" ? (
-                                      <div className="flex flex1 justifyContent--flexEnd">
-                                        <span
-                                          className="link u-fontSize--small"
-                                          onClick={() =>
-                                            this.toggleShowAllPostScripts()
-                                          }
-                                        >
-                                          Show all{" "}
-                                          {this.postSnapshotScripts()?.length}{" "}
-                                          post-scripts
-                                        </span>
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                  <div className="flex-column flex1">
-                                    {this.renderScriptsTabs()}
-                                  </div>
+                              </span>
+                            </p>
+                          </div>
+                          <div className="u-fontSize--small tw-text-right">
+                            {snapshotDetail?.status !== "InProgress" && (
+                              <span
+                                className="link"
+                                onClick={() => this.viewLogs()}
+                              >
+                                View logs
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {snapshotDetail?.status === "InProgress" ? (
+                          <div className="flex flex-column alignItems--center u-marginTop--60">
+                            <span className="icon blueWarningIcon" />
+                            <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginTop--20">
+                              {" "}
+                              This {featureName} has not completed yet, check
+                              back soon{" "}
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            {!isEmpty(snapshotDetail?.volumes) ||
+                            !isEmpty(this.preSnapshotScripts()) ||
+                            !isEmpty(this.postSnapshotScripts()) ? (
+                              <div className="flex-column flex-auto card-item u-padding--15 u-marginBottom--30">
+                                <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
+                                  {Utilities.toTitleCase(featureName)} timeline
+                                </p>
+                                <div className="flex1" id="chart">
+                                  <ReactApexChart
+                                    options={this.state.options}
+                                    series={series}
+                                    type="rangeBar"
+                                    height={140}
+                                  />
+                                  {this.renderTimeInterval()}
                                 </div>
-                                <div>
-                                  {selectedScriptTab ===
-                                  "Pre-snapshot scripts" ? (
-                                    !isEmpty(this.preSnapshotScripts()) ? (
-                                      this.renderShowAllScripts(
-                                        this.preSnapshotScripts().slice(0, 3)
-                                      )
-                                    ) : (
-                                      <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
-                                        <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
-                                          {" "}
-                                          No pre-{featureName} scripts to
-                                          display{" "}
-                                        </p>
+                              </div>
+                            ) : null}
+
+                            <div className="flex flex-auto u-marginBottom--30">
+                              <div
+                                className="flex flex1"
+                                style={{ gap: "15px" }}
+                              >
+                                <div className="card-item u-padding--15 flex1">
+                                  <div className="flex flex1 alignItems--center u-paddingBottom--10 u-borderBottom--gray">
+                                    <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold">
+                                      Volumes
+                                    </p>
+                                    {snapshotDetail?.volumes?.length > 3 ? (
+                                      <div className="flex flex1 justifyContent--flexEnd">
+                                        <span
+                                          className="link u-fontSize--small"
+                                          onClick={() =>
+                                            this.toggleShowAllVolumes()
+                                          }
+                                        >
+                                          Show all{" "}
+                                          {snapshotDetail?.volumes?.length}{" "}
+                                          volumes
+                                        </span>
                                       </div>
-                                    )
-                                  ) : selectedScriptTab ===
-                                      "Post-snapshot scripts" &&
-                                    !isEmpty(this.postSnapshotScripts()) ? (
-                                    this.renderShowAllScripts(
-                                      this.postSnapshotScripts().slice(0, 3)
+                                    ) : null}
+                                  </div>
+                                  {!isEmpty(snapshotDetail?.volumes) ? (
+                                    this.renderShowAllVolumes(
+                                      snapshotDetail?.volumes?.slice(0, 3)
                                     )
                                   ) : (
                                     <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                                       <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
                                         {" "}
-                                        No post-{featureName} scripts to display{" "}
+                                        No volumes to display{" "}
                                       </p>
                                     </div>
                                   )}
                                 </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {(!isEmpty(snapshotDetail?.errors) ||
-                            !isEmpty(snapshotDetail?.warnings)) && (
-                            <div className="flex flex-auto u-marginBottom--30">
-                              <div className="flex-column flex1">
                                 <div className="card-item u-padding--15 flex1">
                                   <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
                                     <div className="flex flex1">
                                       <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
-                                        Errors and warnings
+                                        Scripts
                                       </p>
-                                      {snapshotDetail?.errors?.length > 3 &&
-                                      selectedErrorsWarningTab === "Errors" ? (
+                                      {this.preSnapshotScripts()?.length > 3 &&
+                                      selectedScriptTab ===
+                                        "Pre-snapshot scripts" ? (
                                         <div className="flex flex1 justifyContent--flexEnd">
                                           <span
                                             className="link u-fontSize--small"
                                             onClick={() =>
-                                              this.toggleShowAllErrors()
+                                              this.toggleShowAllPreScripts()
                                             }
                                           >
                                             Show all{" "}
-                                            {snapshotDetail?.errors?.length}{" "}
-                                            errors{" "}
+                                            {this.preSnapshotScripts()?.length}{" "}
+                                            pre-scripts
                                           </span>
                                         </div>
                                       ) : null}
-                                      {snapshotDetail?.warnings?.length > 3 &&
-                                      selectedErrorsWarningTab ===
-                                        "Warnings" ? (
+                                      {this.postSnapshotScripts()?.length > 3 &&
+                                      selectedScriptTab ===
+                                        "Post-snapshot scripts" ? (
                                         <div className="flex flex1 justifyContent--flexEnd">
                                           <span
                                             className="link u-fontSize--small"
                                             onClick={() =>
-                                              this.toggleShowAllWarnings()
+                                              this.toggleShowAllPostScripts()
                                             }
                                           >
                                             Show all{" "}
-                                            {snapshotDetail?.warnings?.length}{" "}
-                                            warnings{" "}
+                                            {this.postSnapshotScripts()?.length}{" "}
+                                            post-scripts
                                           </span>
                                         </div>
                                       ) : null}
                                     </div>
                                     <div className="flex-column flex1">
-                                      {this.renderErrorsWarningsTabs()}
+                                      {this.renderScriptsTabs()}
                                     </div>
                                   </div>
                                   <div>
-                                    {selectedErrorsWarningTab === "Errors" ? (
-                                      !isEmpty(snapshotDetail?.errors) ? (
-                                        this.renderShowAllErrors(
-                                          snapshotDetail?.errors.slice(0, 3)
+                                    {selectedScriptTab ===
+                                    "Pre-snapshot scripts" ? (
+                                      !isEmpty(this.preSnapshotScripts()) ? (
+                                        this.renderShowAllScripts(
+                                          this.preSnapshotScripts().slice(0, 3)
                                         )
                                       ) : (
                                         <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                                           <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
                                             {" "}
-                                            No errors to display{" "}
+                                            No pre-{featureName} scripts to
+                                            display{" "}
                                           </p>
                                         </div>
                                       )
-                                    ) : selectedErrorsWarningTab ===
-                                        "Warnings" &&
-                                      !isEmpty(snapshotDetail?.warnings) ? (
-                                      this.renderShowAllWarnings(
-                                        snapshotDetail?.warnings?.slice(0, 3)
+                                    ) : selectedScriptTab ===
+                                        "Post-snapshot scripts" &&
+                                      !isEmpty(this.postSnapshotScripts()) ? (
+                                      this.renderShowAllScripts(
+                                        this.postSnapshotScripts().slice(0, 3)
                                       )
                                     ) : (
                                       <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                                         <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
                                           {" "}
-                                          No warnings to display{" "}
+                                          No post-{featureName} scripts to
+                                          display{" "}
                                         </p>
                                       </div>
                                     )}
@@ -1011,14 +966,95 @@ class SnapshotDetails extends Component {
                                 </div>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      )}
+
+                            {(!isEmpty(snapshotDetail?.errors) ||
+                              !isEmpty(snapshotDetail?.warnings)) && (
+                              <div className="flex flex-auto u-marginBottom--30">
+                                <div className="flex-column flex1">
+                                  <div className="card-item u-padding--15 flex1">
+                                    <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
+                                      <div className="flex flex1">
+                                        <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
+                                          Errors and warnings
+                                        </p>
+                                        {snapshotDetail?.errors?.length > 3 &&
+                                        selectedErrorsWarningTab ===
+                                          "Errors" ? (
+                                          <div className="flex flex1 justifyContent--flexEnd">
+                                            <span
+                                              className="link u-fontSize--small"
+                                              onClick={() =>
+                                                this.toggleShowAllErrors()
+                                              }
+                                            >
+                                              Show all{" "}
+                                              {snapshotDetail?.errors?.length}{" "}
+                                              errors{" "}
+                                            </span>
+                                          </div>
+                                        ) : null}
+                                        {snapshotDetail?.warnings?.length > 3 &&
+                                        selectedErrorsWarningTab ===
+                                          "Warnings" ? (
+                                          <div className="flex flex1 justifyContent--flexEnd">
+                                            <span
+                                              className="link u-fontSize--small"
+                                              onClick={() =>
+                                                this.toggleShowAllWarnings()
+                                              }
+                                            >
+                                              Show all{" "}
+                                              {snapshotDetail?.warnings?.length}{" "}
+                                              warnings{" "}
+                                            </span>
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                      <div className="flex-column flex1">
+                                        {this.renderErrorsWarningsTabs()}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      {selectedErrorsWarningTab === "Errors" ? (
+                                        !isEmpty(snapshotDetail?.errors) ? (
+                                          this.renderShowAllErrors(
+                                            snapshotDetail?.errors.slice(0, 3)
+                                          )
+                                        ) : (
+                                          <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
+                                            <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
+                                              {" "}
+                                              No errors to display{" "}
+                                            </p>
+                                          </div>
+                                        )
+                                      ) : selectedErrorsWarningTab ===
+                                          "Warnings" &&
+                                        !isEmpty(snapshotDetail?.warnings) ? (
+                                        this.renderShowAllWarnings(
+                                          snapshotDetail?.warnings?.slice(0, 3)
+                                        )
+                                      ) : (
+                                        <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
+                                          <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
+                                            {" "}
+                                            No warnings to display{" "}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
       </div>
     );
