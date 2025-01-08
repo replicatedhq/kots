@@ -679,7 +679,6 @@ class SnapshotDetails extends Component {
   };
 
   componentDidUpdate = (lastProps, lastState) => {
-    console.log("hello");
     const { snapshotDetails } = this.state;
 
     if (
@@ -727,22 +726,19 @@ class SnapshotDetails extends Component {
             <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--5">
               {snapshotName}
             </p>
-            <div className="tw-flex tw-justify-between tw-items-center">
+            <div className="tw-flex tw-items-center tw-gap-4">
               <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
                 Total size:{" "}
                 <span className="u-fontWeight--bold u-textColor--accent">
                   {snapshotDetail?.volumeSizeHuman}
                 </span>
               </p>
-              <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">
+              <p className="u-fontSize--normal u-fontWeight--normal">
                 Status:{" "}
                 <span
-                  className={`status-indicator ${snapshotDetail?.status?.toLowerCase()} u-marginLeft--5`}
-                >
-                  {Utilities.snapshotStatusToDisplayName(
-                    snapshotDetail?.status
-                  )}
-                </span>
+                  className={`tw-mb-4 status-indicator ${snapshotDetail?.status?.toLowerCase()} u-marginLeft--5`}
+                ></span>
+                {Utilities.snapshotStatusToDisplayName(snapshotDetail?.status)}
               </p>
             </div>
           </div>
@@ -790,22 +786,21 @@ class SnapshotDetails extends Component {
                         } tw-overflow-hidden`}
                       >
                         <div>
-                          <div className="tw-flex tw-justify-between tw-items-center">
-                            <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
+                          <div className="tw-flex tw-items-center tw-gap-4 tw-mb-2">
+                            <p className="tw-text-sm u-fontWeight--normal u-textColor--bodyCopy">
                               Size:{" "}
                               <span className="u-fontWeight--bold u-textColor--accent">
                                 {snapshotDetail?.volumeSizeHuman}
                               </span>
                             </p>
-                            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">
+                            <p className="tw-text-sm tw-flex tw-items-center">
                               Status:{" "}
                               <span
-                                className={`status-indicator ${snapshotDetail?.status?.toLowerCase()} u-marginLeft--5`}
-                              >
-                                {Utilities.snapshotStatusToDisplayName(
-                                  snapshotDetail?.status
-                                )}
-                              </span>
+                                className={`tw-mb-4 status-indicator ${snapshotDetail?.status?.toLowerCase()} u-marginLeft--5`}
+                              ></span>
+                              {Utilities.snapshotStatusToDisplayName(
+                                snapshotDetail?.status
+                              )}
                             </p>
                           </div>
                           <div className="u-fontSize--small tw-text-right">
