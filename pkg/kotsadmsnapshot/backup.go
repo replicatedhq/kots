@@ -749,6 +749,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		}
 
 		if back != nil {
+			back.AppID = appID
 			backups = append(backups, back)
 		}
 	}
