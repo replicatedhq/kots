@@ -44,7 +44,7 @@ class SnapshotDetails extends Component {
 
     loading: true,
     currentSnapshotIndex: 0,
-    snapshotDetails: [],
+    snapshotDetails: {},
     errorMessage: "",
     errorTitle: "",
 
@@ -188,17 +188,10 @@ class SnapshotDetails extends Component {
       }
       const response = await res.json();
 
-      const snapshotDetails = response.backupDetails;
-      const { currentSnapshotIndex } = this.state;
-      const series = this.getSeriesDataForSnapshot(
-        snapshotDetails[currentSnapshotIndex]
-      );
-
       this.setState({
         loading: false,
-        snapshotDetails,
+        snapshotDetails: response,
         currentSnapshotIndex: 0,
-        series,
         errorMessage: "",
         errorTitle: "",
       });
@@ -214,14 +207,14 @@ class SnapshotDetails extends Component {
     }
   };
 
-  preSnapshotScripts = () => {
-    return filter(this.state.snapshotDetails?.hooks, (hook) => {
+  preSnapshotScripts = (snapshotDetail) => {
+    return filter(snapshotDetail?.hooks, (hook) => {
       return hook.phase === "pre";
     });
   };
 
-  postSnapshotScripts = () => {
-    return filter(this.state.snapshotDetails?.hooks, (hook) => {
+  postSnapshotScripts = (snapshotDetail) => {
+    return filter(snapshotDetail?.hooks, (hook) => {
       return hook.phase === "post";
     });
   };
@@ -388,8 +381,8 @@ class SnapshotDetails extends Component {
     );
   };
 
-  renderErrorsWarningsTabs = () => {
-    const { snapshotDetails, selectedErrorsWarningTab } = this.state;
+  renderErrorsWarningsTabs = (snapshotDetail) => {
+    const { selectedErrorsWarningTab } = this.state;
     const tabs = ["Errors", "Warnings"];
     return (
       <div className="flex action-tab-bar u-marginTop--10">
@@ -405,14 +398,14 @@ class SnapshotDetails extends Component {
             {tab === "Errors" ? (
               <span className="errors u-marginLeft--5">
                 {" "}
-                {snapshotDetails?.errors?.length}{" "}
+                {snapshotDetail?.errors?.length}{" "}
               </span>
             ) : (
               <span className="warnings u-marginLeft--5">
                 {" "}
-                {!snapshotDetails?.warnings
+                {!snapshotDetail?.warnings
                   ? "0"
-                  : snapshotDetails?.warnings?.length}{" "}
+                  : snapshotDetail?.warnings?.length}{" "}
               </span>
             )}
           </div>
@@ -589,20 +582,16 @@ class SnapshotDetails extends Component {
     return series;
   };
 
-  renderTimeInterval = () => {
-    const { currentSnapshotIndex, snapshotDetails } = this.state;
+  renderTimeInterval = (snapshotDetail) => {
     let data;
-    if (!isEmpty(snapshotDetails[currentSnapshotIndex]?.volumes)) {
-      if (!isEmpty(snapshotDetails[currentSnapshotIndex]?.hooks)) {
-        data = [
-          ...snapshotDetails[currentSnapshotIndex]?.volumes,
-          ...snapshotDetails[currentSnapshotIndex]?.hooks,
-        ];
+    if (!isEmpty(snapshotDetail?.volumes)) {
+      if (!isEmpty(snapshotDetail?.hooks)) {
+        data = [...snapshotDetail?.volumes, ...snapshotDetail?.hooks];
       } else {
-        data = snapshotDetails[currentSnapshotIndex]?.volumes;
+        data = snapshotDetail?.volumes;
       }
-    } else if (!isEmpty(snapshotDetails[currentSnapshotIndex]?.hooks)) {
-      data = snapshotDetails[currentSnapshotIndex]?.hooks;
+    } else if (!isEmpty(snapshotDetail?.hooks)) {
+      data = snapshotDetail?.hooks;
     }
     return (
       <div className="flex flex1">
@@ -664,13 +653,13 @@ class SnapshotDetails extends Component {
 
   componentDidUpdate = (lastProps, lastState) => {
     const { snapshotDetails } = this.state;
-
+    const { backupDetails } = snapshotDetails;
     if (
       lastState.snapshotDetails !== snapshotDetails &&
-      snapshotDetails.length > 0
+      backupDetails.length > 0
     ) {
       // Filter snapshots with status not equal to "Completed"
-      const activeIds = snapshotDetails
+      const activeIds = backupDetails
         .filter((snapshotDetail) => snapshotDetail.status !== "Completed")
         .map((snapshotDetail) => snapshotDetail.name);
 
@@ -679,7 +668,8 @@ class SnapshotDetails extends Component {
     }
   };
 
-  renderSnapshot = (snapshotDetails, snapshotDetail) => {
+  renderSnapshot = () => {
+    const { backupDetails, backup } = this.state.snapshotDetails;
     const {
       series,
       selectedScriptTab,
@@ -714,21 +704,21 @@ class SnapshotDetails extends Component {
               <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
                 Total size:{" "}
                 <span className="u-fontWeight--bold u-textColor--accent">
-                  {snapshotDetail?.volumeSizeHuman}
+                  {backup?.volumeSizeHuman}
                 </span>
               </p>
               <p className="u-fontSize--normal u-fontWeight--normal">
                 Status:{" "}
                 <span
-                  className={`tw-mb-4 status-indicator ${snapshotDetail?.status?.toLowerCase()} u-marginLeft--5`}
+                  className={`tw-mb-4 status-indicator ${backup?.status?.toLowerCase()} u-marginLeft--5`}
                 ></span>
-                {Utilities.snapshotStatusToDisplayName(snapshotDetail?.status)}
+                {Utilities.snapshotStatusToDisplayName(backup?.status)}
               </p>
             </div>
           </div>
           {/* only render accordian if there are more than one snapshot for EC */}
-          {snapshotDetails.length > 1 &&
-            snapshotDetails.map((snapshotDetail) => {
+          {backupDetails &&
+            backupDetails?.map((snapshotDetail) => {
               const isActive = activeIds.includes(snapshotDetail.name);
               return (
                 <div key={snapshotDetail.name} className=" tw-bg-white tw-mt-4">
@@ -811,8 +801,10 @@ class SnapshotDetails extends Component {
                         ) : (
                           <div>
                             {!isEmpty(snapshotDetail?.volumes) ||
-                            !isEmpty(this.preSnapshotScripts()) ||
-                            !isEmpty(this.postSnapshotScripts()) ? (
+                            !isEmpty(this.preSnapshotScripts(snapshotDetail)) ||
+                            !isEmpty(
+                              this.postSnapshotScripts(snapshotDetail)
+                            ) ? (
                               <div className="flex-column flex-auto card-item u-padding--15 u-marginBottom--30">
                                 <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
                                   {Utilities.toTitleCase(featureName)} timeline
@@ -820,11 +812,13 @@ class SnapshotDetails extends Component {
                                 <div className="flex1" id="chart">
                                   <ReactApexChart
                                     options={this.state.options}
-                                    series={series}
+                                    series={this.getSeriesDataForSnapshot(
+                                      snapshotDetail
+                                    )}
                                     type="rangeBar"
                                     height={140}
                                   />
-                                  {this.renderTimeInterval()}
+                                  {/* {this.renderTimeInterval(snapshotDetail)} */}
                                 </div>
                               </div>
                             ) : null}
@@ -889,7 +883,8 @@ class SnapshotDetails extends Component {
                                           </span>
                                         </div>
                                       ) : null}
-                                      {this.postSnapshotScripts()?.length > 3 &&
+                                      {this.postSnapshotScripts(snapshotDetail)
+                                        ?.length > 3 &&
                                       selectedScriptTab ===
                                         "Post-snapshot scripts" ? (
                                         <div className="flex flex1 justifyContent--flexEnd">
@@ -900,7 +895,11 @@ class SnapshotDetails extends Component {
                                             }
                                           >
                                             Show all{" "}
-                                            {this.postSnapshotScripts()?.length}{" "}
+                                            {
+                                              this.postSnapshotScripts(
+                                                snapshotDetail
+                                              )?.length
+                                            }{" "}
                                             post-scripts
                                           </span>
                                         </div>
@@ -913,9 +912,13 @@ class SnapshotDetails extends Component {
                                   <div>
                                     {selectedScriptTab ===
                                     "Pre-snapshot scripts" ? (
-                                      !isEmpty(this.preSnapshotScripts()) ? (
+                                      !isEmpty(
+                                        this.preSnapshotScripts(snapshotDetail)
+                                      ) ? (
                                         this.renderShowAllScripts(
-                                          this.preSnapshotScripts().slice(0, 3)
+                                          this.preSnapshotScripts(
+                                            snapshotDetail
+                                          ).slice(0, 3)
                                         )
                                       ) : (
                                         <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -928,9 +931,13 @@ class SnapshotDetails extends Component {
                                       )
                                     ) : selectedScriptTab ===
                                         "Post-snapshot scripts" &&
-                                      !isEmpty(this.postSnapshotScripts()) ? (
+                                      !isEmpty(
+                                        this.postSnapshotScripts(snapshotDetail)
+                                      ) ? (
                                       this.renderShowAllScripts(
-                                        this.postSnapshotScripts().slice(0, 3)
+                                        this.postSnapshotScripts(
+                                          snapshotDetail
+                                        ).slice(0, 3)
                                       )
                                     ) : (
                                       <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -990,7 +997,9 @@ class SnapshotDetails extends Component {
                                         ) : null}
                                       </div>
                                       <div className="flex-column flex1">
-                                        {this.renderErrorsWarningsTabs()}
+                                        {this.renderErrorsWarningsTabs(
+                                          snapshotDetail
+                                        )}
                                       </div>
                                     </div>
                                     <div>
@@ -1089,10 +1098,7 @@ class SnapshotDetails extends Component {
           </p>
         </div>
 
-        {this.renderSnapshot(
-          snapshotDetails,
-          snapshotDetails[currentSnapshotIndex]
-        )}
+        {this.renderSnapshot()}
         {showScriptsOutput && scriptOutput && (
           <Modal
             isOpen={showScriptsOutput}
