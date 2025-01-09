@@ -80,10 +80,6 @@ class SnapshotRow extends Component {
                     {snapshot?.volumeSizeHuman}{" "}
                   </p>
                 )}
-                <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center">
-                  <span className="icon snapshot-volume-icon" />{" "}
-                  {snapshot?.volumeSuccessCount}/{snapshot?.volumeCount}
-                </p>
               </div>
               {snapshot?.status === "Completed" ? (
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginRight--20">
