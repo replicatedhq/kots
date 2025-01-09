@@ -1,20 +1,20 @@
-import { Component, useState } from "react";
-import { withRouter } from "@src/utilities/react-router-utilities";
 import MonacoEditor from "@monaco-editor/react";
-import Modal from "react-modal";
+import dayjs from "dayjs";
+import duration from "dayjs/plugin/duration";
+import minMax from "dayjs/plugin/minMax";
 import filter from "lodash/filter";
 import isEmpty from "lodash/isEmpty";
+import { Component, useState } from "react";
 import ReactApexChart from "react-apexcharts";
-import dayjs from "dayjs";
-import minMax from "dayjs/plugin/minMax";
-import duration from "dayjs/plugin/duration";
-import Loader from "../shared/Loader";
+import Modal from "react-modal";
+
+import Icon from "@components/Icon";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import { Utilities } from "../../utilities/utilities";
+import ErrorModal from "../modals/ErrorModal";
 import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
-import ErrorModal from "../modals/ErrorModal";
-import { Utilities } from "../../utilities/utilities";
-import Toggle from "../shared/Toggle";
-import Icon from "@components/Icon";
+import Loader from "../shared/Loader";
 
 dayjs.extend(minMax);
 dayjs.extend(duration);
@@ -130,23 +130,7 @@ class SnapshotDetails extends Component {
       this.fetchSnapshotDetails();
     }
   }
-  navigateSnapshot = (direction) => {
-    const { currentSnapshotIndex, snapshotDetails } = this.state;
 
-    const newIndex =
-      direction === "infra"
-        ? currentSnapshotIndex + 1
-        : currentSnapshotIndex - 1;
-
-    if (newIndex >= 0 && newIndex < snapshotDetails.length) {
-      const series = this.getSeriesDataForSnapshot(snapshotDetails[newIndex]);
-
-      this.setState({
-        currentSnapshotIndex: newIndex,
-        series,
-      });
-    }
-  };
   getSeriesDataForSnapshot = (snapshot) => {
     let series = [];
     if (!isEmpty(snapshot?.volumes)) {
