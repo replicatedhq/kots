@@ -925,6 +925,22 @@ func getBackupsFromVeleroBackups(ctx context.Context, veleroBackups []velerov1.B
 	return backups, nil
 }
 
+// GetInstanceBackup calls ListInstanceBackups and returns the first backup with the given name.
+// This is done because multiple velero backup objects are combined into a single kots backup object,
+// and the easiest way to do that is to generate the entire set of kots backup objects again.
+func GetInstanceBackup(ctx context.Context, namespace string, backupName string) (*types.Backup, error) {
+	allBackups, err := ListInstanceBackups(ctx, namespace)
+	if err != nil {
+		return nil, err
+	}
+	for _, backup := range allBackups {
+		if backup.Name == backupName {
+			return backup, nil
+		}
+	}
+	return nil, fmt.Errorf("no backup found with name %s", backupName)
+}
+
 // getAppsFromAppSequences returns a list of `App` structs from the backup sequence annotation.
 func getAppsFromAppSequences(veleroBackup velerov1.Backup) ([]types.App, error) {
 	apps := []types.App{}
