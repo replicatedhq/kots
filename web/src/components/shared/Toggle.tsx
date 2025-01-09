@@ -5,7 +5,6 @@ interface Props {
     onClick: () => void;
     isActive: boolean;
     title: string;
-    status?: string;
   }[];
 }
 
@@ -20,12 +19,6 @@ export default function Tooltip(props: Props) {
             onClick={item.onClick}
           >
             {item.title}
-
-            {item.status && (
-              <span
-                className={`status-indicator ${item.status?.toLowerCase()} u-marginLeft--5`}
-              ></span>
-            )}
           </div>
         );
       })}
