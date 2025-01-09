@@ -767,24 +767,29 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to parse app sequence")
 			}
+
 			backup.Sequence = s
 		}
 		if backup.Status == "" {
 			backup.Status = types.BackupStatusInProgress
 		}
+
 		trigger, ok := veleroBackup.Annotations[types.BackupTriggerAnnotation]
 		if ok {
 			backup.Trigger = trigger
 		}
+
 		supportBundleID, ok := veleroBackup.Annotations["kots.io/support-bundle-id"]
 		if ok {
 			backup.SupportBundleID = supportBundleID
 		}
+
 		if backup.Status != types.BackupStatusInProgress {
 			volumeSummary, err := getSnapshotVolumeSummary(ctx, &veleroBackup)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get volume summary")
 			}
+
 			backup.VolumeCount = volumeSummary.VolumeCount
 			backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
 			backup.VolumeBytes = volumeSummary.VolumeBytes
