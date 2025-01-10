@@ -783,7 +783,9 @@ class AppConfig extends Component<Props, State> {
         </div>
         <div className="flex flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-4 card-bg">
           <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
-            {!this.props.isEmbeddedCluster && (
+            {!(
+              Utilities.isInitialAppInstall(app) && this.props.isEmbeddedCluster
+            ) && (
               <div
                 id="configSidebarWrapper"
                 className="config-sidebar-wrapper card-bg clickable"
