@@ -151,9 +151,9 @@ func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 	thisBackup, err := snapshot.GetInstanceBackup(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
 	if err != nil {
 		logger.Error(err)
-		getBackupResponse.Error = "failed to get backup"
-		JSON(w, 500, getBackupResponse)
-		return
+		//getBackupResponse.Error = "failed to get backup"
+		//JSON(w, 500, getBackupResponse)
+		//return
 	}
 	getBackupResponse.Backup = thisBackup
 	getBackupResponse.Success = true
