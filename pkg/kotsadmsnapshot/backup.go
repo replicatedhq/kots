@@ -748,10 +748,8 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 			return nil, errors.Wrap(err, "failed to parse velero backup")
 		}
 
-		if back != nil {
-			back.AppID = appID
-			backups = append(backups, back)
-		}
+		back.AppID = appID
+		backups = append(backups, back)
 	}
 
 	return backups, nil
