@@ -1,9 +1,9 @@
-import { Component } from "react";
-import { AppConfigRenderer } from "../../../components/AppConfigRenderer";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import {Component} from "react";
+import {AppConfigRenderer} from "../../../components/AppConfigRenderer";
+import {Link, useLocation, useNavigate} from "react-router-dom";
+import {withRouter} from "@src/utilities/react-router-utilities";
 import classNames from "classnames";
-import { KotsPageTitle } from "@components/Head";
+import {KotsPageTitle} from "@components/Head";
 import debounce from "lodash/debounce";
 import find from "lodash/find";
 import map from "lodash/map";
@@ -13,12 +13,12 @@ import ErrorModal from "../../../components/modals/ErrorModal";
 import ConfigInfo from "./ConfigInfo";
 
 import "../../../scss/components/watches/WatchConfig.scss";
-import { Utilities } from "../../../utilities/utilities";
+import {Utilities} from "../../../utilities/utilities";
 
 import Icon from "@src/components/Icon";
 
 // Types
-import { App, KotsParams, Version } from "@types";
+import {App, KotsParams, Version} from "@types";
 
 type Props = {
   location: ReturnType<typeof useLocation>;
@@ -783,7 +783,8 @@ class AppConfig extends Component<Props, State> {
         </div>
         <div className="flex flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-4 card-bg">
           <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
-            {!Utilities.isInitialAppInstall(app) && (
+            {!(Utilities.isInitialAppInstall(app) &&
+                this.props.isEmbeddedCluster) && (
               <div
                 id="configSidebarWrapper"
                 className="config-sidebar-wrapper card-bg clickable"
