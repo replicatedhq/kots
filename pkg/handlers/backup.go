@@ -150,10 +150,29 @@ func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 
 	thisBackup, err := snapshot.GetInstanceBackup(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
 	if err != nil {
-		logger.Error(err)
-		//getBackupResponse.Error = "failed to get backup"
-		//JSON(w, 500, getBackupResponse)
-		//return
+		if errors.Is(err, snapshot.BackupNotFoundError{}) {
+			// attempt to get the backup by name directly
+			rawBackup, err := snapshot.GetBackup(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
+			if err != nil {
+				logger.Error(err)
+				getBackupResponse.Error = "failed to get backup"
+				JSON(w, 500, getBackupResponse)
+				return
+			}
+			thisBackup, err = snapshot.ParseVeleroBackup(r.Context(), *rawBackup)
+			if err != nil {
+				logger.Error(err)
+				getBackupResponse.Error = "failed to parse backup"
+				JSON(w, 500, getBackupResponse)
+				return
+			}
+		} else {
+			logger.Error(err)
+			getBackupResponse.Error = "failed to get backup"
+			JSON(w, 500, getBackupResponse)
+			return
+		}
+
 	}
 	getBackupResponse.Backup = thisBackup
 	getBackupResponse.Success = true
