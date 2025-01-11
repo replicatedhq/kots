@@ -155,7 +155,7 @@
     "material-react-table": "^1.15.1",
     "monaco-editor": "^0.52.2",
     "monaco-editor-webpack-plugin": "^7.1.0",
-    "node-polyfill-webpack-plugin": "^1.1.4",
+    "node-polyfill-webpack-plugin": "^4.1.0",
     "prettier": "^2.7.1",
     "prismjs": "^1.29.0",
     "query-string": "6.13.1",
