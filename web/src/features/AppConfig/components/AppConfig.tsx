@@ -783,6 +783,8 @@ class AppConfig extends Component<Props, State> {
         </div>
         <div className="flex flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-4 card-bg">
           <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
+            {/*If this is the initial installation of an app on embedded cluster,*/}
+            {/*do not show the config sidebar as the installation wizard already has one.*/}
             {!(
               Utilities.isInitialAppInstall(app) && this.props.isEmbeddedCluster
             ) && (
