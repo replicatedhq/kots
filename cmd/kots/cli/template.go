@@ -132,7 +132,7 @@ func TemplateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
+	cmd.Flags().String("license-file", "", "path to a license file to use to download a replicated app")
 	cmd.Flags().String("config-values", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
 	cmd.Flags().String("data", "", "raw template data to render")
 	cmd.Flags().Bool("interactive", false, "provides an interactive command-line console for evaluating template values")
