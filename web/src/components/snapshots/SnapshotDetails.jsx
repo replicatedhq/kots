@@ -780,7 +780,9 @@ class SnapshotDetails extends Component {
                             {snapshotDetail?.status !== "InProgress" && (
                               <span
                                 className="link"
-                                onClick={() => this.viewLogs(snapshotDetail?.name)}
+                                onClick={() =>
+                                  this.viewLogs(snapshotDetail?.name)
+                                }
                               >
                                 View logs
                               </span>
