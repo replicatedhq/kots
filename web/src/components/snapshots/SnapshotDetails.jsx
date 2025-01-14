@@ -251,14 +251,13 @@ class SnapshotDetails extends Component {
     this.setState({ showAllErrors: !this.state.showAllErrors });
   };
 
-  viewLogs = () => {
+  viewLogs = (name) => {
     this.setState(
       {
         toggleViewLogsModal: !this.state.toggleViewLogsModal,
       },
       () => {
         this.setState({ loadingSnapshotLogs: true });
-        const name = this.state.snapshotDetails?.name;
         const url = `${process.env.API_ENDPOINT}/snapshot/${name}/logs`;
         fetch(url, {
           credentials: "include",
@@ -781,7 +780,7 @@ class SnapshotDetails extends Component {
                             {snapshotDetail?.status !== "InProgress" && (
                               <span
                                 className="link"
-                                onClick={() => this.viewLogs()}
+                                onClick={() => this.viewLogs(snapshotDetail?.name)}
                               >
                                 View logs
                               </span>
