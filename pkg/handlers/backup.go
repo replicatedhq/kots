@@ -151,7 +151,7 @@ func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 	thisBackup, err := snapshot.GetInstanceBackup(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
 	if err != nil {
 		if errors.Is(err, snapshot.BackupNotFoundError{}) {
-			// attempt to get the backup by name directly
+			// attempt to get the backup by name directly - this is for compatibility with non-embedded-cluster installations
 			rawBackup, err := snapshot.GetBackup(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
 			if err != nil {
 				logger.Error(err)
