@@ -721,7 +721,7 @@ class SnapshotDetails extends Component {
               </p>
             </div>
           </div>
-          {/* only render accordian if there are more than one snapshot for EC */}
+          {/* only render accordion if there are more than one snapshot for EC */}
           {backupDetails &&
             backupDetails?.map((snapshotDetail) => {
               const isActive = activeIds.includes(snapshotDetail.name);
