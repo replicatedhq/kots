@@ -810,7 +810,6 @@ func ParseVeleroBackup(ctx context.Context, veleroBackup velerov1.Backup) (*type
 	return &backup, nil
 }
 
-
 func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.Backup, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
