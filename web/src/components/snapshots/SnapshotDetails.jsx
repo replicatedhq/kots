@@ -675,6 +675,12 @@ class SnapshotDetails extends Component {
       selectedErrorsWarningTab,
       currentSnapshotIndex,
       activeIds,
+      showAllVolumes,
+      showAllPreSnapshotScripts,
+      showAllPostSnapshotScripts,
+      showAllWarnings,
+      showAllErrors,
+      showAllScriptsOutput,
     } = this.state;
     const { isEmbeddedCluster, navigate } = this.props;
     let featureName = "snapshot";
@@ -721,6 +727,56 @@ class SnapshotDetails extends Component {
               const isActive = activeIds.includes(snapshotDetail.name);
               return (
                 <div key={snapshotDetail.name} className=" tw-bg-white tw-mt-4">
+                  {showAllVolumes && (
+                    <ShowAllModal
+                      displayShowAllModal={showAllVolumes}
+                      toggleShowAllModal={this.toggleShowAllVolumes}
+                      dataToShow={this.renderShowAllVolumes(
+                        snapshotDetail?.volumes
+                      )}
+                      name="Volumes"
+                    />
+                  )}
+                  {showAllPreSnapshotScripts && (
+                    <ShowAllModal
+                      displayShowAllModal={showAllPreSnapshotScripts}
+                      toggleShowAllModal={this.toggleShowAllPreScripts}
+                      dataToShow={this.renderShowAllScripts(
+                        this.preSnapshotScripts(snapshotDetail)
+                      )}
+                      name={`Pre-${featureName} scripts`}
+                    />
+                  )}
+                  {showAllPostSnapshotScripts && (
+                    <ShowAllModal
+                      displayShowAllModal={showAllPostSnapshotScripts}
+                      toggleShowAllModal={this.toggleShowAllPostScripts}
+                      dataToShow={this.renderShowAllScripts(
+                        this.postSnapshotScripts(snapshotDetail)
+                      )}
+                      name={`Post-${featureName} scripts`}
+                    />
+                  )}
+                  {showAllWarnings && (
+                    <ShowAllModal
+                      displayShowAllModal={showAllWarnings}
+                      toggleShowAllModal={this.toggleShowAllWarnings}
+                      dataToShow={this.renderShowAllWarnings(
+                        snapshotDetail?.warnings
+                      )}
+                      name="Warnings"
+                    />
+                  )}
+                  {showAllErrors && (
+                    <ShowAllModal
+                      displayShowAllModal={showAllErrors}
+                      toggleShowAllModal={this.toggleShowAllErrors}
+                      dataToShow={this.renderShowAllErrors(
+                        snapshotDetail?.errors
+                      )}
+                      name="Errors"
+                    />
+                  )}
                   <div className="tw-w-full">
                     <div className="tw-overflow-hidden tw-bg-white">
                       <button
@@ -1145,46 +1201,7 @@ class SnapshotDetails extends Component {
             </div>
           </Modal>
         )}
-        {showAllVolumes && (
-          <ShowAllModal
-            displayShowAllModal={showAllVolumes}
-            toggleShowAllModal={this.toggleShowAllVolumes}
-            dataToShow={this.renderShowAllVolumes(snapshotDetails?.volumes)}
-            name="Volumes"
-          />
-        )}
-        {showAllPreSnapshotScripts && (
-          <ShowAllModal
-            displayShowAllModal={showAllPreSnapshotScripts}
-            toggleShowAllModal={this.toggleShowAllPreScripts}
-            dataToShow={this.renderShowAllScripts(this.preSnapshotScripts())}
-            name={`Pre-${featureName} scripts`}
-          />
-        )}
-        {showAllPostSnapshotScripts && (
-          <ShowAllModal
-            displayShowAllModal={showAllPostSnapshotScripts}
-            toggleShowAllModal={this.toggleShowAllPostScripts}
-            dataToShow={this.renderShowAllScripts(this.postSnapshotScripts())}
-            name={`Post-${featureName} scripts`}
-          />
-        )}
-        {showAllWarnings && (
-          <ShowAllModal
-            displayShowAllModal={showAllWarnings}
-            toggleShowAllModal={this.toggleShowAllWarnings}
-            dataToShow={this.renderShowAllWarnings(snapshotDetails?.warnings)}
-            name="Warnings"
-          />
-        )}
-        {showAllErrors && (
-          <ShowAllModal
-            displayShowAllModal={showAllErrors}
-            toggleShowAllModal={this.toggleShowAllErrors}
-            dataToShow={this.renderShowAllErrors(snapshotDetails?.errors)}
-            name="Errors"
-          />
-        )}
+
         {this.state.toggleViewLogsModal && (
           <ViewSnapshotLogsModal
             displayShowSnapshotLogsModal={this.state.toggleViewLogsModal}
