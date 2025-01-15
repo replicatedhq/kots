@@ -13,6 +13,7 @@ type WSClient struct {
 	LastPongRecv PingPongInfo    `json:"lastPongRecv"`
 	LastPingRecv PingPongInfo    `json:"lastPingRecv"`
 	LastPongSent PingPongInfo    `json:"lastPongSent"`
+	Version      string          `json:"version"`
 }
 
 type PingPongInfo struct {

@@ -18,7 +18,7 @@ var wsUpgrader = websocket.Upgrader{}
 var wsClients = make(map[string]types.WSClient)
 var wsMutex = sync.Mutex{}
 
-func Connect(w http.ResponseWriter, r *http.Request, nodeName string) error {
+func Connect(w http.ResponseWriter, r *http.Request, nodeName string, version string) error {
 	conn, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to upgrade to websocket")
@@ -27,20 +27,20 @@ func Connect(w http.ResponseWriter, r *http.Request, nodeName string) error {
 
 	conn.SetPingHandler(wsPingHandler(nodeName, conn))
 	conn.SetPongHandler(wsPongHandler(nodeName))
-	conn.SetCloseHandler(wsCloseHandler(nodeName, conn))
+	conn.SetCloseHandler(wsCloseHandler(nodeName, version))
 
 	// register the client
-	registerWSClient(nodeName, conn)
+	registerWSClient(nodeName, version, conn)
 
 	// ping client on a regular interval to make sure it's still connected
-	go pingWSClient(nodeName, conn)
+	go pingWSClient(nodeName, version, conn)
 
 	// listen to client messages
-	listenToWSClient(nodeName, conn)
+	listenToWSClient(nodeName, version, conn)
 	return nil
 }
 
-func pingWSClient(nodeName string, conn *websocket.Conn) {
+func pingWSClient(nodeName string, version string, conn *websocket.Conn) {
 	for {
 		sleepDuration := time.Second * time.Duration(5+rand.Intn(16)) // 5-20 seconds
 		time.Sleep(sleepDuration)
@@ -49,7 +49,7 @@ func pingWSClient(nodeName string, conn *websocket.Conn) {
 
 		if err := conn.WriteControl(websocket.PingMessage, []byte(pingMsg), time.Now().Add(1*time.Second)); err != nil {
 			if isWSConnClosed(nodeName, err) {
-				removeWSClient(nodeName, err)
+				handleWSConnClosed(nodeName, version, err)
 				return
 			}
 			logger.Debugf("Failed to send ping message to %s: %v", nodeName, err)
@@ -58,22 +58,21 @@ func pingWSClient(nodeName string, conn *websocket.Conn) {
 
 		wsMutex.Lock()
 		client := wsClients[nodeName]
-		wsMutex.Unlock()
-
 		client.LastPingSent = types.PingPongInfo{
 			Time:    time.Now(),
 			Message: pingMsg,
 		}
 		wsClients[nodeName] = client
+		wsMutex.Unlock()
 	}
 }
 
-func listenToWSClient(nodeName string, conn *websocket.Conn) {
+func listenToWSClient(nodeName string, version string, conn *websocket.Conn) {
 	for {
 		_, _, err := conn.ReadMessage() // this is required to receive ping/pong messages
 		if err != nil {
 			if isWSConnClosed(nodeName, err) {
-				removeWSClient(nodeName, err)
+				handleWSConnClosed(nodeName, version, err)
 				return
 			}
 			logger.Debugf("Error reading websocket message from %s: %v", nodeName, err)
@@ -81,7 +80,7 @@ func listenToWSClient(nodeName string, conn *websocket.Conn) {
 	}
 }
 
-func registerWSClient(nodeName string, conn *websocket.Conn) {
+func registerWSClient(nodeName string, version string, conn *websocket.Conn) {
 	wsMutex.Lock()
 	defer wsMutex.Unlock()
 
@@ -93,20 +92,10 @@ func registerWSClient(nodeName string, conn *websocket.Conn) {
 	wsClients[nodeName] = types.WSClient{
 		Conn:        conn,
 		ConnectedAt: time.Now(),
+		Version:     version,
 	}
 
-	logger.Infof("Registered new websocket for %s", nodeName)
-}
-
-func removeWSClient(nodeName string, err error) {
-	wsMutex.Lock()
-	defer wsMutex.Unlock()
-
-	if _, ok := wsClients[nodeName]; !ok {
-		return
-	}
-	logger.Infof("Websocket connection closed for %s: %v", nodeName, err)
-	delete(wsClients, nodeName)
+	logger.Infof("Registered new websocket for %s with version %s", nodeName, version)
 }
 
 func wsPingHandler(nodeName string, conn *websocket.Conn) func(message string) error {
@@ -150,16 +139,9 @@ func wsPongHandler(nodeName string) func(message string) error {
 	}
 }
 
-func wsCloseHandler(nodeName string, conn *websocket.Conn) func(code int, text string) error {
+func wsCloseHandler(nodeName string, version string) func(code int, text string) error {
 	return func(code int, text string) error {
-		logger.Infof("Websocket connection closed for %s: %d (exit code), message: %q", nodeName, code, text)
-
-		wsMutex.Lock()
-		delete(wsClients, nodeName)
-		wsMutex.Unlock()
-
-		message := websocket.FormatCloseMessage(code, text)
-		conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(time.Second))
+		handleWSConnClosed(nodeName, version, errors.Errorf("%d (exit code), message: %q", code, text))
 		return nil
 	}
 }
@@ -178,6 +160,21 @@ func isWSConnClosed(nodeName string, err error) bool {
 		return true
 	}
 	return false
+}
+
+func handleWSConnClosed(nodeName string, version string, err error) {
+	wsMutex.Lock()
+	defer wsMutex.Unlock()
+
+	logger.Infof("Websocket connection closed for %s with version %s: %v", nodeName, version, err)
+
+	// if the version is different, it means a new version of
+	// the client has connected and we should ignore
+	if e, ok := wsClients[nodeName]; ok && e.Version != version {
+		return
+	}
+
+	delete(wsClients, nodeName)
 }
 
 func GetClients() map[string]types.WSClient {

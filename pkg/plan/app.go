@@ -18,9 +18,47 @@ import (
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/segmentio/ksuid"
 )
 
+func planAppUpgradeService(s store.Store, p *types.Plan) ([]*types.PlanStep, error) {
+	ausInput, err := getAppUpgradeServiceInput(s, p, ksuid.New().String())
+	if err != nil {
+		return nil, errors.Wrap(err, "get app upgrade service input")
+	}
+	steps := []*types.PlanStep{
+		{
+			ID:                ausInput.Params.PlanStepID,
+			Name:              "App Upgrade Service",
+			Type:              types.StepTypeAppUpgradeService,
+			Status:            types.StepStatusPending,
+			StatusDescription: "Pending",
+			Owner:             types.StepOwnerKOTS,
+			Input:             *ausInput,
+		},
+	}
+	return steps, nil
+}
+
+func planAppUpgrade() ([]*types.PlanStep, error) {
+	return []*types.PlanStep{
+		{
+			ID:                ksuid.New().String(),
+			Name:              "Application Upgrade",
+			Type:              types.StepTypeAppUpgrade,
+			Status:            types.StepStatusPending,
+			StatusDescription: "Pending application upgrade",
+			Owner:             types.StepOwnerKOTS,
+			// the input here is the app upgrade service output
+		},
+	}, nil
+}
+
 func executeAppUpgradeService(s store.Store, p *types.Plan, step *types.PlanStep) (finalError error) {
+	if step.Status != types.StepStatusPending {
+		return errors.Errorf("step %q cannot be resumed", step.Name)
+	}
+
 	in, ok := step.Input.(types.PlanStepInputAppUpgradeService)
 	if !ok {
 		return errors.New("invalid input for app upgrade service step")
@@ -48,6 +86,10 @@ func executeAppUpgradeService(s store.Store, p *types.Plan, step *types.PlanStep
 		Status:       types.StepStatusRunning,
 	}); err != nil {
 		return errors.Wrap(err, "update step status")
+	}
+
+	if err := waitForStep(p, step.ID); err != nil {
+		return errors.Wrap(err, "wait for upgrade service")
 	}
 
 	return nil

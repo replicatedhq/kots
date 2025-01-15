@@ -11,6 +11,47 @@ import (
 	"github.com/replicatedhq/kots/pkg/websocket/types"
 )
 
+// UpgradeECManager sends a manager upgrade command to all managers that are not running the specified version
+func UpgradeECManager(nodeName, licenseID, licenseEndpoint, version, appSlug, versionLabel, stepID string) error {
+	data, err := json.Marshal(map[string]string{
+		"licenseID":       licenseID,
+		"licenseEndpoint": licenseEndpoint,
+		"version":         version,
+		"appSlug":         appSlug,
+		"versionLabel":    versionLabel,
+		"stepID":          stepID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "marshal installation")
+	}
+
+	message, err := json.Marshal(map[string]interface{}{
+		"command": "upgrade-manager",
+		"data":    string(data),
+	})
+	if err != nil {
+		return errors.Wrap(err, "marshal command message")
+	}
+
+	wscli, err := wsClientForNode(nodeName)
+	if err != nil {
+		return errors.Wrapf(err, "get websocket client for node %s", nodeName)
+	}
+
+	if wscli.Version == version {
+		logger.Infof("Embedded cluster manager on node %s is already running version %s. Skipping...", nodeName, version)
+		return nil
+	}
+
+	logger.Infof("Sending ec manager upgrade command to websocket of node %s", nodeName)
+
+	if err := wscli.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
+		return errors.Wrap(err, "send upgrade ec manager command to websocket")
+	}
+
+	return nil
+}
+
 // UpgradeCluster sends an upgrade command to the first available websocket from the active ones
 func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel, stepID string) error {
 	marshalledInst, err := json.Marshal(installation)
@@ -41,7 +82,7 @@ func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel,
 		return errors.Wrap(err, "get first active websocket client")
 	}
 
-	logger.Infof("Sending cluster upgrade command to websocket of node %s with message: %s", nodeName, string(message))
+	logger.Infof("Sending cluster upgrade command to websocket of node %s", nodeName)
 
 	if err := wscli.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
 		return errors.Wrap(err, "send upgrade command to websocket")
@@ -97,7 +138,7 @@ func sendExtensionCommand(command string, repos []k0sv1beta1.Repository, chart e
 		return errors.Wrap(err, "get first active websocket client")
 	}
 
-	logger.Infof("Sending extension %s command to websocket of node %s with message: %s", command, nodeName, string(message))
+	logger.Infof("Sending %s %s command to websocket of node %s", command, chart.Name, nodeName)
 
 	if err := wscli.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
 		return errors.Wrap(err, "send upgrade command to websocket")
@@ -125,4 +166,17 @@ func firstActiveWSClient() (types.WSClient, string, error) {
 	}
 
 	return wscli, nodeName, nil
+}
+
+func wsClientForNode(nodeName string) (*types.WSClient, error) {
+	wsMutex.Lock()
+	defer wsMutex.Unlock()
+
+	for name, client := range wsClients {
+		if name == nodeName {
+			return &client, nil
+		}
+	}
+
+	return nil, errors.New("not found")
 }

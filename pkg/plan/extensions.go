@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/plan/types"
 	"github.com/replicatedhq/kots/pkg/websocket"
+	"github.com/segmentio/ksuid"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,14 +19,84 @@ type ExtensionsDiffResult struct {
 	Modified []ecv1beta1.Chart
 }
 
+func planECExtensions(kcli kbclient.Client, newSpec *ecv1beta1.ConfigSpec) ([]*types.PlanStep, error) {
+	steps := []*types.PlanStep{}
+
+	currECExts, newECExts, err := getECExtensions(kcli, newSpec)
+	if err != nil {
+		return nil, errors.Wrap(err, "get extensions")
+	}
+
+	ecExtsDiff := diffECExtensions(currECExts, newECExts)
+	newRepos := newECExts.Helm.Repositories
+
+	// added extensions
+	for _, chart := range ecExtsDiff.Added {
+		steps = append(steps, &types.PlanStep{
+			ID:                ksuid.New().String(),
+			Name:              "Extension Add",
+			Type:              types.StepTypeECExtensionAdd,
+			Status:            types.StepStatusPending,
+			StatusDescription: "Pending extension addition",
+			Input: types.PlanStepInputECExtension{
+				Repos: newRepos,
+				Chart: chart,
+			},
+			Owner: types.StepOwnerECManager,
+		})
+	}
+
+	// modified extensions
+	for _, chart := range ecExtsDiff.Modified {
+		steps = append(steps, &types.PlanStep{
+			ID:                ksuid.New().String(),
+			Name:              "Extension Upgrade",
+			Type:              types.StepTypeECExtensionUpgrade,
+			Status:            types.StepStatusPending,
+			StatusDescription: "Pending extension upgrade",
+			Input: types.PlanStepInputECExtension{
+				Repos: newRepos,
+				Chart: chart,
+			},
+			Owner: types.StepOwnerECManager,
+		})
+	}
+
+	// removed extensions
+	for _, chart := range ecExtsDiff.Removed {
+		steps = append(steps, &types.PlanStep{
+			ID:                ksuid.New().String(),
+			Name:              "Extension Remove",
+			Type:              types.StepTypeECExtensionRemove,
+			Status:            types.StepStatusPending,
+			StatusDescription: "Pending extension removal",
+			Input: types.PlanStepInputECExtension{
+				Repos: newRepos,
+				Chart: chart,
+			},
+			Owner: types.StepOwnerECManager,
+		})
+	}
+
+	return steps, nil
+}
+
 func executeECExtensionAdd(p *types.Plan, step *types.PlanStep) error {
 	in, ok := step.Input.(types.PlanStepInputECExtension)
 	if !ok {
 		return errors.New("invalid input for embedded cluster extension add step")
 	}
-	if err := websocket.AddExtension(in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
-		return errors.Wrap(err, "add extension")
+
+	if step.Status == types.StepStatusPending {
+		if err := websocket.AddExtension(in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
+			return errors.Wrap(err, "add extension")
+		}
 	}
+
+	if err := waitForStep(p, step.ID); err != nil {
+		return errors.Wrap(err, "wait for embedded cluster extension add")
+	}
+
 	return nil
 }
 
@@ -34,9 +105,17 @@ func executeECExtensionUpgrade(p *types.Plan, step *types.PlanStep) error {
 	if !ok {
 		return errors.New("invalid input for embedded cluster extension upgrade step")
 	}
-	if err := websocket.UpgradeExtension(in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
-		return errors.Wrap(err, "upgrade extension")
+
+	if step.Status == types.StepStatusPending {
+		if err := websocket.UpgradeExtension(in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
+			return errors.Wrap(err, "upgrade extension")
+		}
 	}
+
+	if err := waitForStep(p, step.ID); err != nil {
+		return errors.Wrap(err, "wait for embedded cluster extension upgrade")
+	}
+
 	return nil
 }
 
@@ -45,9 +124,17 @@ func executeECExtensionRemove(p *types.Plan, step *types.PlanStep) error {
 	if !ok {
 		return errors.New("invalid input for embedded cluster extension remove step")
 	}
-	if err := websocket.RemoveExtension(in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
-		return errors.Wrap(err, "remove extension")
+
+	if step.Status == types.StepStatusPending {
+		if err := websocket.RemoveExtension(in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
+			return errors.Wrap(err, "remove extension")
+		}
 	}
+
+	if err := waitForStep(p, step.ID); err != nil {
+		return errors.Wrap(err, "wait for embedded cluster extension remove")
+	}
+
 	return nil
 }
 
