@@ -107,12 +107,12 @@ func waitForECManagerToConnect(nodeName string, version string) error {
 			connectedManagers := websocket.GetClients()
 			if m, ok := connectedManagers[nodeName]; ok {
 				if m.Version == version {
-					logger.Infof("EC manager on node %s connected successfully", nodeName)
+					logger.Debugf("EC manager on node %s connected successfully", nodeName)
 					return nil
 				}
-				logger.Infof("EC manager on node %s is connected but is running version %s not %s. Waiting...", nodeName, m.Version, version)
+				logger.Debugf("EC manager on node %s is connected but is running version %s not %s. Waiting...", nodeName, m.Version, version)
 			} else {
-				logger.Infof("EC manager on node %s is not connected. Waiting...", nodeName)
+				logger.Debugf("EC manager on node %s is not connected. Waiting...", nodeName)
 			}
 		}
 	}
