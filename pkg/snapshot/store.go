@@ -37,14 +37,15 @@ import (
 	"github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"google.golang.org/api/option"
 	"gopkg.in/ini.v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -428,9 +429,9 @@ func upsertGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
 	bsl, err := FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
@@ -792,34 +793,25 @@ func cloudCredentialsEnvVars() []corev1.EnvVar {
 }
 
 func upsertBackupStorageLocation(ctx context.Context, bsl *velerov1.BackupStorageLocation) (*velerov1.BackupStorageLocation, error) {
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
+		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
-	}
-
-	_, err = veleroClient.BackupStorageLocations(bsl.Namespace).Get(ctx, bsl.Name, metav1.GetOptions{})
+	err = veleroClient.Update(ctx, bsl)
 	if err == nil {
-		updated, err := veleroClient.BackupStorageLocations(bsl.Namespace).Update(ctx, bsl, metav1.UpdateOptions{})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to update backup storage location")
-		}
-		return updated, nil
+		return bsl, nil
 	}
 
 	if kuberneteserrors.IsNotFound(err) {
-		created, err := veleroClient.BackupStorageLocations(bsl.Namespace).Create(ctx, bsl, metav1.CreateOptions{})
+		err = veleroClient.Create(ctx, bsl)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create backup storage location")
 		}
-		return created, nil
+		return bsl, nil
 	}
 
-	return nil, errors.Wrap(err, "failed to get backup storage location")
+	return nil, errors.Wrap(err, "failed to update backup storage location")
 }
 
 func updateMinioFileSystemStore(ctx context.Context, clientset kubernetes.Interface, store *types.Store, bsl *velerov1.BackupStorageLocation) error {
@@ -883,9 +875,9 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, bsl *velerov1.
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return nil, errors.Wrap(err, "failed to create velero client")
 	}
 
 	if bsl == nil {
@@ -1076,7 +1068,7 @@ func mapAWSBackupStorageLocationToStore(kotsadmVeleroBackendStorageLocation *vel
 
 // FindBackupStoreLocation will find the backup storage location used by velero
 // kotsadmNamespace is only required in minimal rbac installations. if empty, cluster scope privileges will be needed to detect and validate velero
-func FindBackupStoreLocation(ctx context.Context, clientset kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, kotsadmNamespace string) (*velerov1.BackupStorageLocation, error) {
+func FindBackupStoreLocation(ctx context.Context, clientset kubernetes.Interface, ctrlClient kbclient.Client, kotsadmNamespace string) (*velerov1.BackupStorageLocation, error) {
 	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to detect velero namespace")
@@ -1086,7 +1078,8 @@ func FindBackupStoreLocation(ctx context.Context, clientset kubernetes.Interface
 		return nil, nil
 	}
 
-	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(ctx, metav1.ListOptions{})
+	var backupStorageLocations velerov1.BackupStorageLocationList
+	err = ctrlClient.List(ctx, &backupStorageLocations, kbclient.InNamespace(veleroNamespace))
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return nil, nil
@@ -1105,17 +1098,12 @@ func FindBackupStoreLocation(ctx context.Context, clientset kubernetes.Interface
 
 // UpdateBackupStorageLocation applies an updated Velero backup storage location resource to the cluster
 func UpdateBackupStorageLocation(ctx context.Context, veleroNamespace string, bsl *velerov1.BackupStorageLocation) error {
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create velero clientset")
-	}
-
-	_, err = veleroClient.BackupStorageLocations(veleroNamespace).Update(ctx, bsl, metav1.UpdateOptions{})
+	err = veleroClient.Update(ctx, bsl)
 	if err != nil {
 		return errors.Wrap(err, "failed to update backupstoragelocation")
 	}
@@ -1632,18 +1620,14 @@ func resetRepositories(ctx context.Context, veleroNamespace string) error {
 
 func resetBackupRepositories(ctx context.Context, veleroNamespace string) error {
 	// BackupRepositories store the previous snapshot location which breaks volume backup when location changes.
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
-	}
-
-	repos, err := veleroClient.BackupRepositories(veleroNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: "velero.io/storage-location=default",
+	var repos velerov1.BackupRepositoryList
+	err = veleroClient.List(ctx, &repos, kbclient.InNamespace(veleroNamespace), &kbclient.MatchingLabels{
+		"velero.io/storage-location": "default",
 	})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to list backuprepositories")
@@ -1653,7 +1637,7 @@ func resetBackupRepositories(ctx context.Context, veleroNamespace string) error 
 	}
 
 	for _, repo := range repos.Items {
-		err := veleroClient.BackupRepositories(veleroNamespace).Delete(ctx, repo.Name, metav1.DeleteOptions{})
+		err := veleroClient.Delete(ctx, &repo)
 		if err != nil {
 			return errors.Wrapf(err, "failed to delete backuprepository %s", repo.Name)
 		}
@@ -1719,14 +1703,9 @@ func GetLvpBucket(fsConfig *types.FileSystemConfig) (string, error) {
 func WaitForDefaultBslAvailableAndSynced(ctx context.Context, veleroNamespace string, start metav1.Time) error {
 	timeout := time.After(5 * time.Minute)
 
-	cfg, err := k8sutil.GetClusterConfig()
+	veleroClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
+		return errors.Wrap(err, "failed to create velero client")
 	}
 
 	for {
@@ -1734,7 +1713,8 @@ func WaitForDefaultBslAvailableAndSynced(ctx context.Context, veleroNamespace st
 		case <-timeout:
 			return errors.New("timed out waiting for default backup storage location to be available")
 		default:
-			bsl, err := veleroClient.BackupStorageLocations(veleroNamespace).Get(ctx, DefaultBackupStorageLocationName, metav1.GetOptions{})
+			var bsl velerov1.BackupStorageLocation
+			err := veleroClient.Get(ctx, k8stypes.NamespacedName{Namespace: veleroNamespace, Name: DefaultBackupStorageLocationName}, &bsl)
 			if err != nil {
 				return errors.Wrap(err, "failed to get default backup storage location")
 			}

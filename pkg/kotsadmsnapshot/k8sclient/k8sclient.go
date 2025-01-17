@@ -1,46 +1,63 @@
 package k8sclient
 
 import (
+	"context"
+
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ K8sClientsetBuilder = (*Builder)(nil)
-var _ K8sClientsetBuilder = (*MockBuilder)(nil)
+var _ K8sClientsBuilder = (*Builder)(nil)
+var _ K8sClientsBuilder = (*MockBuilder)(nil)
 
-// K8sClientsetBuilder interface is used as an abstraction to get a k8s clientset. Useful to mock the client in tests.
-type K8sClientsetBuilder interface {
+// K8sClientsBuilder interface is used as an abstraction to get a kubernetes go client clientset.
+// Or a controller runtime client. Useful to mock the client in tests.
+type K8sClientsBuilder interface {
 	GetClientset(*rest.Config) (kubernetes.Interface, error)
+	GetKubeClient(ctx context.Context) (kbclient.WithWatch, error)
 }
 
-// Builder is the default implementation of K8sClientsetBuilder. It returns a regular k8s clientset.
+// Builder is the default implementation of K8sClientsetBuilder. It returns a regular go client clientset or a regular controller runtime client.
 type Builder struct{}
 
-// GetClientset returns a regular k8s client.
+// GetClientset returns a regular go client for the given config.
 func (b *Builder) GetClientset(cfg *rest.Config) (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(cfg)
 }
 
-// MockBuilder is a mock implementation of K8sClientsetBuilder. It returns the client that was set in the struct allowing
-// you to set a fakeClient for example.
+// GetKubeClient returns a regular controller runtime client based on the default cluster config provided.
+func (b *Builder) GetKubeClient(ctx context.Context) (kbclient.WithWatch, error) {
+	return k8sutil.GetKubeClient(ctx)
+}
+
+// MockBuilder is a mock implementation of K8sClientsetBuilder. It returns the client and clientset that was set in the struct allowing
+// you to set a fake clients for example.
 
 type MockBuilder struct {
-	Client kubernetes.Interface
-	Err    error
+	Clientset  kubernetes.Interface
+	CtrlClient kbclient.WithWatch
+	Err        error
 }
 
-// GetClientset returns the client that was set in the struct.
+// GetClientset returns the clientset that was set in the struct.
 func (b *MockBuilder) GetClientset(cfg *rest.Config) (kubernetes.Interface, error) {
-	return b.Client, b.Err
+	return b.Clientset, b.Err
 }
 
-var clientBuilder K8sClientsetBuilder
+// GetKubeClient returns the controller runtime client set in the struct.
+func (b *MockBuilder) GetKubeClient(ctx context.Context) (kbclient.WithWatch, error) {
+	return b.CtrlClient, b.Err
+}
 
-func GetBuilder() K8sClientsetBuilder {
+var clientBuilder K8sClientsBuilder
+
+func GetBuilder() K8sClientsBuilder {
 	return clientBuilder
 }
 
-func SetBuilder(builder K8sClientsetBuilder) {
+func SetBuilder(builder K8sClientsBuilder) {
 	clientBuilder = builder
 }
 

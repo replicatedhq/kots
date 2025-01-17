@@ -12,7 +12,6 @@ import (
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -35,9 +34,9 @@ func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroClient, err := k8sutil.GetKubeClient(r.Context())
 	if err != nil {
-		err = errors.Wrap(err, "failed to create velero clientset")
+		err = errors.Wrap(err, "failed to create velero client")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

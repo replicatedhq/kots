@@ -163,7 +163,35 @@ func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeplo
 	existingDeployment.Spec.Template.Spec.Containers[containerIdx].VolumeMounts = desiredVolumeMounts
 	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env = desiredDeployment.Spec.Template.Spec.Containers[0].Env
 
+	updateKotsadmDeploymentScriptsPath(existingDeployment)
+
 	return nil
+}
+
+func updateKotsadmDeploymentScriptsPath(existing *appsv1.Deployment) {
+	if existing.Spec.Template.Annotations != nil {
+		existing.Spec.Template.Annotations["pre.hook.backup.velero.io/command"] = `["/scripts/backup.sh"]`
+	}
+
+	for i, c := range existing.Spec.Template.Spec.Containers {
+		for j, env := range c.Env {
+			if env.Name == "POSTGRES_SCHEMA_DIR" {
+				existing.Spec.Template.Spec.Containers[i].Env[j].Value = "/scripts/postgres/tables"
+			}
+		}
+	}
+
+	for i, c := range existing.Spec.Template.Spec.InitContainers {
+		if c.Name == "restore-db" {
+			existing.Spec.Template.Spec.InitContainers[i].Command = []string{
+				"/scripts/restore-db.sh",
+			}
+		} else if c.Name == "restore-s3" {
+			existing.Spec.Template.Spec.InitContainers[i].Command = []string{
+				"/scripts/restore-s3.sh",
+			}
+		}
+	}
 }
 
 func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, error) {
@@ -727,7 +755,27 @@ func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredSt
 	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].VolumeMounts = desiredVolumeMounts
 	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Env = desiredStatefulSet.Spec.Template.Spec.Containers[0].Env
 
+	updateKotsadmStatefulSetScriptsPath(existingStatefulset)
+
 	return nil
+}
+
+func updateKotsadmStatefulSetScriptsPath(existing *appsv1.StatefulSet) {
+	if existing.Spec.Template.Annotations != nil {
+		existing.Spec.Template.Annotations["pre.hook.backup.velero.io/command"] = `["/scripts/backup.sh"]`
+	}
+
+	for i, c := range existing.Spec.Template.Spec.InitContainers {
+		if c.Name == "restore-data" {
+			existing.Spec.Template.Spec.InitContainers[i].Command = []string{
+				"/scripts/restore.sh",
+			}
+		} else if c.Name == "migrate-s3" {
+			existing.Spec.Template.Spec.InitContainers[i].Command = []string{
+				"/scripts/migrate-s3.sh",
+			}
+		}
+	}
 }
 
 // TODO add configmap for additional CAs

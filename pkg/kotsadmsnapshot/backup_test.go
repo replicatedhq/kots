@@ -16,7 +16,6 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/k8sclient"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
-	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/veleroclient"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -25,9 +24,8 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	velerov1shrd "github.com/vmware-tanzu/velero/pkg/apis/velero/shared"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	velerofake "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/fake"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -1887,7 +1885,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					assert.Equal(t, "2", got.Annotations[types.InstanceBackupCountAnnotation])
 				}
 				if assert.Contains(t, got.Annotations, types.InstanceBackupRestoreSpecAnnotation) {
-					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
+					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","namespace":"kotsadm-backups","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{},"itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
 				}
 			},
 		},
@@ -2637,6 +2635,7 @@ func Test_getInstanceBackupMetadata(t *testing.T) {
 	scheme := runtime.NewScheme()
 	corev1.AddToScheme(scheme)
 	embeddedclusterv1beta1.AddToScheme(scheme)
+	velerov1.AddToScheme(scheme)
 
 	testBsl := &velerov1.BackupStorageLocation{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2683,11 +2682,10 @@ func Test_getInstanceBackupMetadata(t *testing.T) {
 	}
 
 	type args struct {
-		k8sClient    kubernetes.Interface
-		ctrlClient   ctrlclient.Client
-		veleroClient veleroclientv1.VeleroV1Interface
-		cluster      *downstreamtypes.Downstream
-		isScheduled  bool
+		k8sClient   kubernetes.Interface
+		ctrlClient  ctrlclient.Client
+		cluster     *downstreamtypes.Downstream
+		isScheduled bool
 	}
 	tests := []struct {
 		name    string
@@ -2758,9 +2756,8 @@ spec:
 				})
 			},
 			args: args{
-				k8sClient:    fake.NewSimpleClientset(veleroNamespaceConfigmap, veleroDeployment),
-				ctrlClient:   ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects().Build(),
-				veleroClient: velerofake.NewSimpleClientset(testBsl).VeleroV1(),
+				k8sClient:  fake.NewSimpleClientset(veleroNamespaceConfigmap, veleroDeployment),
+				ctrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(testBsl).Build(),
 				cluster: &downstreamtypes.Downstream{
 					SnapshotTTL: "24h",
 				},
@@ -2884,8 +2881,8 @@ spec:
 				ctrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					&installation,
 					seaweedFSS3Service,
+					testBsl,
 				).Build(),
-				veleroClient: velerofake.NewSimpleClientset(testBsl).VeleroV1(),
 				cluster: &downstreamtypes.Downstream{
 					SnapshotTTL: "24h",
 				},
@@ -2952,7 +2949,7 @@ spec:
 				tt.setup(t, mockStore)
 			}
 
-			got, err := getInstanceBackupMetadata(context.Background(), tt.args.k8sClient, tt.args.ctrlClient, tt.args.veleroClient, tt.args.cluster, tt.args.isScheduled)
+			got, err := getInstanceBackupMetadata(context.Background(), tt.args.k8sClient, tt.args.ctrlClient, tt.args.cluster, tt.args.isScheduled)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -3019,6 +3016,7 @@ func TestListBackupsForApp(t *testing.T) {
 	scheme := runtime.NewScheme()
 	corev1.AddToScheme(scheme)
 	embeddedclusterv1beta1.AddToScheme(scheme)
+	velerov1.AddToScheme(scheme)
 
 	// setup timestamps
 	startTs := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -3054,45 +3052,28 @@ func TestListBackupsForApp(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		appID               string
-		veleroClientBuilder veleroclient.VeleroClientBuilder
-		k8sClientBuilder    k8sclient.K8sClientsetBuilder
-		expectedBackups     []*types.Backup
-		wantErr             string
+		name             string
+		appID            string
+		k8sClientBuilder k8sclient.K8sClientsBuilder
+		expectedBackups  []*types.Backup
+		wantErr          string
 	}{
 		{
 			name:  "fails to create k8s clientset",
 			appID: "app-1",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: nil,
-				Err:    fmt.Errorf("error creating k8s clientset"),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset().VeleroV1(),
+				Clientset:  nil,
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).Build(),
+				Err:        fmt.Errorf("error creating k8s clientset"),
 			},
 			wantErr: "failed to create clientset",
-		},
-		{
-			name:  "fails to create velero client",
-			appID: "app-1",
-			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: nil,
-				Err:    fmt.Errorf("error creating velero client"),
-			},
-			wantErr: "failed to create velero clientset",
 		},
 		{
 			name:  "fails to find backup storage location",
 			appID: "app-1",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset().VeleroV1(),
+				Clientset:  fake.NewSimpleClientset(),
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).Build(),
 			},
 			wantErr: "no backup store location found",
 		},
@@ -3100,15 +3081,11 @@ func TestListBackupsForApp(t *testing.T) {
 			name:  "empty backup list",
 			appID: "app-1",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
-					testBsl,
-				).VeleroV1(),
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(testBsl).Build(),
 			},
 			expectedBackups: []*types.Backup{},
 		},
@@ -3116,13 +3093,11 @@ func TestListBackupsForApp(t *testing.T) {
 			name:  "backups not matching the app id are excluded",
 			appID: "app-1",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3160,7 +3135,7 @@ func TestListBackupsForApp(t *testing.T) {
 							Phase: velerov1.BackupPhaseCompleted,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3177,13 +3152,11 @@ func TestListBackupsForApp(t *testing.T) {
 			name:  "timestamps are populated",
 			appID: "app-1",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3200,7 +3173,7 @@ func TestListBackupsForApp(t *testing.T) {
 							Expiration:          &metav1.Time{Time: expirationTs},
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3220,13 +3193,11 @@ func TestListBackupsForApp(t *testing.T) {
 			name:  "volume info is populated from pod volume backups",
 			appID: "app-1",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3251,12 +3222,12 @@ func TestListBackupsForApp(t *testing.T) {
 						},
 						Status: velerov1.PodVolumeBackupStatus{
 							Phase: velerov1.PodVolumeBackupPhaseCompleted,
-							Progress: velerov1.PodVolumeOperationProgress{
+							Progress: velerov1shrd.DataMoveOperationProgress{
 								BytesDone: 2000,
 							},
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3280,7 +3251,6 @@ func TestListBackupsForApp(t *testing.T) {
 			asrt := assert.New(t)
 			// setup mock clients
 			k8sclient.SetBuilder(test.k8sClientBuilder)
-			veleroclient.SetBuilder(test.veleroClientBuilder)
 
 			backups, err := ListBackupsForApp(context.Background(), kotsadmNamespace, test.appID)
 
@@ -3299,6 +3269,7 @@ func TestListInstanceBackups(t *testing.T) {
 	scheme := runtime.NewScheme()
 	corev1.AddToScheme(scheme)
 	embeddedclusterv1beta1.AddToScheme(scheme)
+	velerov1.AddToScheme(scheme)
 
 	// setup timestamps
 	startTs := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -3334,70 +3305,46 @@ func TestListInstanceBackups(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		setup               func(mockStore *mock_store.MockStore)
-		veleroClientBuilder veleroclient.VeleroClientBuilder
-		k8sClientBuilder    k8sclient.K8sClientsetBuilder
-		expectedBackups     []*types.Backup
-		wantErr             string
+		name             string
+		setup            func(mockStore *mock_store.MockStore)
+		k8sClientBuilder k8sclient.K8sClientsBuilder
+		expectedBackups  []*types.Backup
+		wantErr          string
 	}{
 		{
 			name: "fails to create k8s clientset",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: nil,
-				Err:    fmt.Errorf("error creating k8s clientset"),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset().VeleroV1(),
+				Err: fmt.Errorf("error creating k8s clientset"),
 			},
 			wantErr: "failed to create clientset",
 		},
 		{
-			name: "fails to create velero client",
-			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: nil,
-				Err:    fmt.Errorf("error creating velero client"),
-			},
-			wantErr: "failed to create velero clientset",
-		},
-		{
 			name: "fails to find backup storage location",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset().VeleroV1(),
+				Clientset:  fake.NewSimpleClientset(),
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).Build(),
 			},
 			wantErr: "no backup store location found",
 		},
 		{
 			name: "empty backup list",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
-					testBsl,
-				).VeleroV1(),
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(testBsl).Build(),
 			},
 			expectedBackups: []*types.Backup{},
 		},
 		{
 			name: "non instance backups are excluded",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3420,7 +3367,7 @@ func TestListInstanceBackups(t *testing.T) {
 							Phase: velerov1.BackupPhaseCompleted,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3438,13 +3385,11 @@ func TestListInstanceBackups(t *testing.T) {
 		{
 			name: "new improved dr backups are part of the same replicated backup",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3482,7 +3427,7 @@ func TestListInstanceBackups(t *testing.T) {
 							Phase: velerov1.BackupPhaseCompleted,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3508,13 +3453,11 @@ func TestListInstanceBackups(t *testing.T) {
 				}, nil)
 			},
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3529,7 +3472,7 @@ func TestListInstanceBackups(t *testing.T) {
 							Phase: velerov1.BackupPhaseCompleted,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3568,13 +3511,11 @@ func TestListInstanceBackups(t *testing.T) {
 				}, nil)
 			},
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3614,7 +3555,7 @@ func TestListInstanceBackups(t *testing.T) {
 							Phase: velerov1.BackupPhaseCompleted,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3645,13 +3586,11 @@ func TestListInstanceBackups(t *testing.T) {
 		{
 			name: "timestamps are populated",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3668,7 +3607,7 @@ func TestListInstanceBackups(t *testing.T) {
 							Expiration:          &metav1.Time{Time: expirationTs},
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3689,13 +3628,11 @@ func TestListInstanceBackups(t *testing.T) {
 		{
 			name: "if improved dr, timestamps are populated based on the timestamps of the included backups",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3714,8 +3651,8 @@ func TestListInstanceBackups(t *testing.T) {
 						Status: velerov1.BackupStatus{
 							Phase:               velerov1.BackupPhaseCompleted,
 							StartTimestamp:      &metav1.Time{Time: startTs},
-							CompletionTimestamp: &metav1.Time{Time: completionTs.Add(-1 * time.Minute)},
-							Expiration:          &metav1.Time{Time: expirationTs.Add(1 * time.Minute)},
+							CompletionTimestamp: &metav1.Time{Time: completionTs.Add(-1 * time.Minute).UTC()},
+							Expiration:          &metav1.Time{Time: expirationTs.Add(1 * time.Minute).UTC()},
 						},
 					},
 					&velerov1.Backup{
@@ -3734,12 +3671,12 @@ func TestListInstanceBackups(t *testing.T) {
 						},
 						Status: velerov1.BackupStatus{
 							Phase:               velerov1.BackupPhaseCompleted,
-							StartTimestamp:      &metav1.Time{Time: startTs.Add(1 * time.Minute)},
+							StartTimestamp:      &metav1.Time{Time: startTs.Add(1 * time.Minute).UTC()},
 							CompletionTimestamp: &metav1.Time{Time: completionTs},
 							Expiration:          &metav1.Time{Time: expirationTs},
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3760,13 +3697,11 @@ func TestListInstanceBackups(t *testing.T) {
 		{
 			name: "volume info is populated from pod volume backups",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3791,12 +3726,12 @@ func TestListInstanceBackups(t *testing.T) {
 						},
 						Status: velerov1.PodVolumeBackupStatus{
 							Phase: velerov1.PodVolumeBackupPhaseCompleted,
-							Progress: velerov1.PodVolumeOperationProgress{
+							Progress: velerov1shrd.DataMoveOperationProgress{
 								BytesDone: 2000,
 							},
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3818,13 +3753,11 @@ func TestListInstanceBackups(t *testing.T) {
 		{
 			name: "if improved dr, volume info is populated from pod volume backups from both backups",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3872,7 +3805,7 @@ func TestListInstanceBackups(t *testing.T) {
 						},
 						Status: velerov1.PodVolumeBackupStatus{
 							Phase: velerov1.PodVolumeBackupPhaseCompleted,
-							Progress: velerov1.PodVolumeOperationProgress{
+							Progress: velerov1shrd.DataMoveOperationProgress{
 								BytesDone: 2000,
 							},
 						},
@@ -3887,12 +3820,12 @@ func TestListInstanceBackups(t *testing.T) {
 						},
 						Status: velerov1.PodVolumeBackupStatus{
 							Phase: velerov1.PodVolumeBackupPhaseCompleted,
-							Progress: velerov1.PodVolumeOperationProgress{
+							Progress: velerov1shrd.DataMoveOperationProgress{
 								BytesDone: 3000,
 							},
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3913,13 +3846,11 @@ func TestListInstanceBackups(t *testing.T) {
 		{
 			name: "if expected backup count is not equal to actual backup count, it is marked as failed",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -3939,7 +3870,7 @@ func TestListInstanceBackups(t *testing.T) {
 							Phase: velerov1.BackupPhaseCompleted,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -3957,13 +3888,11 @@ func TestListInstanceBackups(t *testing.T) {
 		{
 			name: "status is in progress if any of the backups are in progress",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -4001,7 +3930,7 @@ func TestListInstanceBackups(t *testing.T) {
 							Phase: velerov1.BackupPhaseInProgress,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -4019,13 +3948,11 @@ func TestListInstanceBackups(t *testing.T) {
 		{
 			name: "status is deleting if any of the backups are deleting and none is in progress",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -4063,7 +3990,7 @@ func TestListInstanceBackups(t *testing.T) {
 							Phase: velerov1.BackupPhaseDeleting,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -4081,13 +4008,11 @@ func TestListInstanceBackups(t *testing.T) {
 		{
 			name: "status is failed if one backup is failed and the other completed",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -4125,7 +4050,7 @@ func TestListInstanceBackups(t *testing.T) {
 							Phase: velerov1.BackupPhaseFailed,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedBackups: []*types.Backup{
 				{
@@ -4147,7 +4072,6 @@ func TestListInstanceBackups(t *testing.T) {
 			asrt := assert.New(t)
 			// setup mock clients
 			k8sclient.SetBuilder(test.k8sClientBuilder)
-			veleroclient.SetBuilder(test.veleroClientBuilder)
 			// setup mock store
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -4242,6 +4166,7 @@ func TestDeleteBackup(t *testing.T) {
 	scheme := runtime.NewScheme()
 	corev1.AddToScheme(scheme)
 	embeddedclusterv1beta1.AddToScheme(scheme)
+	velerov1.AddToScheme(scheme)
 
 	// setup common mock objects
 	kotsadmNamespace := "kotsadm-test"
@@ -4274,40 +4199,23 @@ func TestDeleteBackup(t *testing.T) {
 	tests := []struct {
 		name                         string
 		backupToDelete               string
-		veleroClientBuilder          veleroclient.VeleroClientBuilder
-		k8sClientBuilder             k8sclient.K8sClientsetBuilder
+		k8sClientBuilder             k8sclient.K8sClientsBuilder
 		expectedDeleteBackupRequests []velerov1.DeleteBackupRequest
 		wantErr                      string
 	}{
 		{
 			name: "fails to create k8s clientset",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: nil,
-				Err:    fmt.Errorf("error creating k8s clientset"),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset().VeleroV1(),
+				Clientset: nil,
+				Err:       fmt.Errorf("error creating k8s clientset"),
 			},
 			wantErr: "failed to create clientset",
 		},
 		{
-			name: "fails to create velero client",
-			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: nil,
-				Err:    fmt.Errorf("error creating velero client"),
-			},
-			wantErr: "failed to create velero clientset",
-		},
-		{
 			name: "fails to find backup storage location",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset().VeleroV1(),
+				Clientset:  fake.NewSimpleClientset(),
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).Build(),
 			},
 			wantErr: "no backup store location found",
 		},
@@ -4315,21 +4223,18 @@ func TestDeleteBackup(t *testing.T) {
 			name:           "should issue a single delete backup request for the provided id if no backups with label name exist",
 			backupToDelete: "test-backup",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
-					testBsl,
-				).VeleroV1(),
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(testBsl).Build(),
 			},
 			expectedDeleteBackupRequests: []velerov1.DeleteBackupRequest{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-backup",
-						Namespace: "velero",
+						Name:            "test-backup",
+						Namespace:       "velero",
+						ResourceVersion: "1",
 					},
 					Spec: velerov1.DeleteBackupRequestSpec{
 						BackupName: "test-backup",
@@ -4341,13 +4246,11 @@ func TestDeleteBackup(t *testing.T) {
 			name:           "should issue two delete backup requests for the provided id if two backups with label name exist",
 			backupToDelete: "aggregated-repl-backup",
 			k8sClientBuilder: &k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(
+				Clientset: fake.NewSimpleClientset(
 					veleroNamespaceConfigmap,
 					veleroDeployment,
 				),
-			},
-			veleroClientBuilder: &veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(
 					testBsl,
 					&velerov1.Backup{
 						ObjectMeta: metav1.ObjectMeta{
@@ -4383,13 +4286,14 @@ func TestDeleteBackup(t *testing.T) {
 							Phase: velerov1.BackupPhaseCompleted,
 						},
 					},
-				).VeleroV1(),
+				).Build(),
 			},
 			expectedDeleteBackupRequests: []velerov1.DeleteBackupRequest{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "app-backup",
-						Namespace: "velero",
+						Name:            "app-backup",
+						Namespace:       "velero",
+						ResourceVersion: "1",
 					},
 					Spec: velerov1.DeleteBackupRequestSpec{
 						BackupName: "app-backup",
@@ -4397,8 +4301,9 @@ func TestDeleteBackup(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "infra-backup",
-						Namespace: "velero",
+						Name:            "infra-backup",
+						Namespace:       "velero",
+						ResourceVersion: "1",
 					},
 					Spec: velerov1.DeleteBackupRequestSpec{
 						BackupName: "infra-backup",
@@ -4414,7 +4319,6 @@ func TestDeleteBackup(t *testing.T) {
 			req := require.New(t)
 			// setup mock clients
 			k8sclient.SetBuilder(test.k8sClientBuilder)
-			veleroclient.SetBuilder(test.veleroClientBuilder)
 
 			err := DeleteBackup(context.Background(), kotsadmNamespace, test.backupToDelete)
 
@@ -4427,12 +4331,13 @@ func TestDeleteBackup(t *testing.T) {
 
 			if test.expectedDeleteBackupRequests != nil {
 				// verify delete backup requests
-				veleroClient, err := test.veleroClientBuilder.GetVeleroClient(nil)
+				veleroClient, err := test.k8sClientBuilder.GetKubeClient(context.Background())
 				req.NoError(err)
 
-				requests, err := veleroClient.DeleteBackupRequests("velero").List(context.Background(), metav1.ListOptions{})
+				var deleteBackupRequests velerov1.DeleteBackupRequestList
+				err = veleroClient.List(context.Background(), &deleteBackupRequests, ctrlclient.InNamespace("velero"))
 				req.NoError(err)
-				asrt.Equal(test.expectedDeleteBackupRequests, requests.Items)
+				asrt.Equal(test.expectedDeleteBackupRequests, deleteBackupRequests.Items)
 			}
 		})
 	}
@@ -4460,7 +4365,7 @@ func TestGetBackupDetail(t *testing.T) {
 		},
 	}
 
-	veleroObjects := []runtime.Object{
+	veleroObjects := []ctrlclient.Object{
 		&velerov1.BackupStorageLocation{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "default",
@@ -4610,10 +4515,8 @@ func TestGetBackupDetail(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			k8sclient.SetBuilder(&k8sclient.MockBuilder{
-				Client: fake.NewSimpleClientset(objects...),
-			})
-			veleroclient.SetBuilder(&veleroclient.MockBuilder{
-				Client: velerofake.NewSimpleClientset(veleroObjects...).VeleroV1(),
+				Clientset:  fake.NewSimpleClientset(objects...),
+				CtrlClient: ctrlclientfake.NewClientBuilder().WithScheme(scheme).WithObjects(veleroObjects...).Build(),
 			})
 			got, err := GetBackupDetail(context.Background(), "velero", tt.args.backupName)
 			if tt.wantErr {

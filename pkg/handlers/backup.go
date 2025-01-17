@@ -131,6 +131,7 @@ func (h *Handler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
 
 type GetBackupResponse struct {
 	BackupDetails []snapshottypes.BackupDetail `json:"backupDetails"`
+	Backup        *snapshottypes.Backup        `json:"backup"`
 	Success       bool                         `json:"success"`
 	Error         string                       `json:"error,omitempty"`
 }
@@ -147,6 +148,33 @@ func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 	}
 	getBackupResponse.BackupDetails = backups
 
+	thisBackup, err := snapshot.GetInstanceBackup(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
+	if err != nil {
+		if errors.Is(err, snapshot.BackupNotFoundError{}) {
+			// attempt to get the backup by name directly - this is for compatibility with non-embedded-cluster installations
+			rawBackup, err := snapshot.GetBackup(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
+			if err != nil {
+				logger.Error(err)
+				getBackupResponse.Error = "failed to get backup"
+				JSON(w, 500, getBackupResponse)
+				return
+			}
+			thisBackup, err = snapshot.ParseVeleroBackup(r.Context(), *rawBackup)
+			if err != nil {
+				logger.Error(err)
+				getBackupResponse.Error = "failed to parse backup"
+				JSON(w, 500, getBackupResponse)
+				return
+			}
+		} else {
+			logger.Error(err)
+			getBackupResponse.Error = "failed to get backup"
+			JSON(w, 500, getBackupResponse)
+			return
+		}
+
+	}
+	getBackupResponse.Backup = thisBackup
 	getBackupResponse.Success = true
 
 	JSON(w, http.StatusOK, getBackupResponse)
