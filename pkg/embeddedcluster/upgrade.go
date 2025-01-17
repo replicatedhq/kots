@@ -412,7 +412,7 @@ func createV2MigrationSecret(ctx context.Context, k8sClient kubernetes.Interface
 			"license": encoded,
 		},
 	}
-	_, err = k8sClient.CoreV1().Secrets("kotsadm").Create(ctx, secret, metav1.CreateOptions{})
+	_, err = k8sClient.CoreV1().Secrets("embedded-cluster").Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("create secret: %w", err)
 	}
