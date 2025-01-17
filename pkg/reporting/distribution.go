@@ -53,16 +53,9 @@ func distributionFromServerGroupAndResources(clientset kubernetes.Interface) Dis
 
 func distributionFromProviderId(clientset kubernetes.Interface) Distribution {
 	nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
-	nodeCount := len(nodes.Items)
-	if nodeCount > 1 {
-		logger.Infof("Found %d nodes", nodeCount)
-	} else {
-		logger.Infof("Found %d node", nodeCount)
-	}
 	if err != nil {
 		logger.Infof("got error listing node: %v", err.Error())
-	}
-	if len(nodes.Items) >= 1 {
+	} else if len(nodes.Items) >= 1 {
 		node := nodes.Items[0]
 		if strings.HasPrefix(node.Spec.ProviderID, "kind:") {
 			return Kind

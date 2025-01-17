@@ -140,8 +140,6 @@ func runClusterUpgrade(
 		return fmt.Errorf("marshal installation: %w", err)
 	}
 
-	log.Println("Running upgrade command...")
-
 	args := []string{"upgrade"}
 	if in.Spec.AirGap {
 		// TODO(upgrade): local-artifact-mirror-image should be included in the installation object
@@ -164,6 +162,8 @@ func runClusterUpgrade(
 		args = append(args, "--app-slug", license.Spec.AppSlug)
 		args = append(args, "--app-version-label", versionLabel)
 	}
+
+	log.Printf("Running upgrade command with args %q ...", args)
 
 	cmd := exec.CommandContext(ctx, bin, args...)
 	cmd.Stdin = strings.NewReader(string(installationData))
@@ -406,7 +406,7 @@ func createV2MigrationSecret(ctx context.Context, k8sClient kubernetes.Interface
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      V2MigrationSecretName,
-			Namespace: "kotsadm",
+			Namespace: "embedded-cluster",
 		},
 		Data: map[string][]byte{
 			"license": encoded,
