@@ -162,7 +162,7 @@ spec:
 			// Mock EC managers
 			for _, m := range tt.managers {
 				go newTestECManager(ts, m.nodeName, m.version)
-				ts.waitForManager(m.nodeName)
+				ts.waitForManager(m.nodeName, m.version)
 			}
 
 			// Create fake k8s client
@@ -244,7 +244,11 @@ Loop:
 			}
 
 			// connect back with the new version
-			go newTestECManager(ts, nodeName, d["version"])
+			go func() {
+				time.Sleep(time.Second * 2) // simulate a restart delay
+				newTestECManager(ts, nodeName, d["version"])
+			}()
+
 			break Loop
 		default:
 			ts.t.Fatalf("unknown command: %s", msg["command"])
@@ -288,10 +292,10 @@ func (ts *TestServer) handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (ts *TestServer) waitForManager(nodeName string) {
+func (ts *TestServer) waitForManager(nodeName string, version string) {
 	assert.Eventually(ts.t, func() bool {
-		_, ok := websocket.GetClients()[nodeName]
-		return ok
+		e, ok := websocket.GetClients()[nodeName]
+		return ok && e.Version == version
 	}, time.Second*5, time.Millisecond*100, "Node %s did not connect", nodeName)
 }
 
