@@ -283,6 +283,7 @@ test("smoke test", async ({ page }) => {
     .click();
   await page.locator(".SnapshotRow--wrapper").click();
   await expect(page.locator("#app")).toContainText("Snapshot timeline");
+  await page.getByText("Infrastructure", { exact: true }).click();
   await page.getByText("View logs").click();
   await expect(page.locator(".view-lines")).toContainText("level=info");
   await page.getByRole("button", { name: "Ok, got it!" }).click();

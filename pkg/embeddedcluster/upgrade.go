@@ -26,11 +26,16 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
 	k8syaml "sigs.k8s.io/yaml"
+)
+
+const (
+	V2MigrationSecretName = "migratev2-secret"
 )
 
 // startClusterUpgrade will create a new installation with the provided config.
@@ -135,8 +140,6 @@ func runClusterUpgrade(
 		return fmt.Errorf("marshal installation: %w", err)
 	}
 
-	log.Println("Running upgrade command...")
-
 	args := []string{"upgrade"}
 	if in.Spec.AirGap {
 		// TODO(upgrade): local-artifact-mirror-image should be included in the installation object
@@ -147,6 +150,20 @@ func runClusterUpgrade(
 		args = append(args, "--local-artifact-mirror-image", localArtifactMirrorImage)
 	}
 	args = append(args, "--installation", "-")
+
+	if os.Getenv("ENABLE_V2_MIGRATION") == "true" {
+		err := createV2MigrationSecret(ctx, k8sClient, license)
+		if err != nil {
+			return fmt.Errorf("create v2 migration secret: %w", err)
+		}
+
+		args = append(args, "--migrate-v2")
+		args = append(args, "--migrate-v2-secret", V2MigrationSecretName)
+		args = append(args, "--app-slug", license.Spec.AppSlug)
+		args = append(args, "--app-version-label", versionLabel)
+	}
+
+	log.Printf("Running upgrade command with args %q ...", args)
 
 	cmd := exec.CommandContext(ctx, bin, args...)
 	cmd.Stdin = strings.NewReader(string(installationData))
@@ -374,4 +391,31 @@ func embeddedRegistryImageName(registrySettings registrytypes.RegistrySettings, 
 	}
 
 	return imageutil.DestECImage(destRegistry, srcImage)
+}
+
+func createV2MigrationSecret(ctx context.Context, k8sClient kubernetes.Interface, license kotsv1beta1.License) error {
+	encoded, err := k8syaml.Marshal(license)
+	if err != nil {
+		return fmt.Errorf("encode license: %w", err)
+	}
+
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      V2MigrationSecretName,
+			Namespace: "embedded-cluster",
+		},
+		Data: map[string][]byte{
+			"license": encoded,
+		},
+	}
+	_, err = k8sClient.CoreV1().Secrets("embedded-cluster").Create(ctx, secret, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("create secret: %w", err)
+	}
+
+	return nil
 }
