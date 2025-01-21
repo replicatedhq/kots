@@ -207,9 +207,16 @@ func GetClients() map[string]types.WSClient {
 	return wsClients
 }
 
+// This is only used for testing
 func ResetClients() {
 	wsMutex.Lock()
 	defer wsMutex.Unlock()
+
+	for _, e := range wsClients {
+		if e.Conn != nil {
+			e.Conn.Close()
+		}
+	}
 
 	wsClients = make(map[string]types.WSClient)
 }

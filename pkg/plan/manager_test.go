@@ -289,9 +289,6 @@ func NewTestServer(t *testing.T) *TestServer {
 		t: t,
 	}
 
-	// Reset websocket clients
-	websocket.ResetClients()
-
 	// Create the test server
 	ts.Server = httptest.NewServer(http.HandlerFunc(ts.handler))
 
@@ -325,5 +322,6 @@ func (ts *TestServer) waitForManager(nodeName string, version string) {
 
 // Close shuts down the test server
 func (ts *TestServer) Close() {
+	websocket.ResetClients()
 	ts.Server.Close()
 }
