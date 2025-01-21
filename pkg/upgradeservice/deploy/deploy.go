@@ -120,6 +120,7 @@ func Deploy(opts DeployOptions) error {
 	go func() (finalError error) {
 		defer func() {
 			if finalError != nil {
+				logger.Error(errors.Wrap(finalError, "failed to deploy"))
 				if err := task.SetStatusUpgradeFailed(opts.Params.AppSlug, finalError.Error()); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set task status to upgrade failed"))
 				}

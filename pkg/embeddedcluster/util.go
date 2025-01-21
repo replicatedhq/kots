@@ -91,7 +91,7 @@ func ListCMInstallations(ctx context.Context, kbClient kbclient.Client) ([]embed
 		),
 	}
 	var cmList corev1.ConfigMapList
-	if err := kbClient.List(ctx, &cmList, opts); err != nil {
+	if err := kbClient.List(ctx, &cmList, kbclient.InNamespace("embedded-cluster"), opts); err != nil {
 		return nil, fmt.Errorf("list configmaps: %w", err)
 	}
 
