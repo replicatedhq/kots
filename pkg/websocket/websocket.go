@@ -206,3 +206,10 @@ func clientChanged(nodeName string, version string) bool {
 func GetClients() map[string]types.WSClient {
 	return wsClients
 }
+
+func ResetClients() {
+	wsMutex.Lock()
+	defer wsMutex.Unlock()
+
+	wsClients = make(map[string]types.WSClient)
+}

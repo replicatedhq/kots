@@ -289,6 +289,9 @@ func NewTestServer(t *testing.T) *TestServer {
 		t: t,
 	}
 
+	// Reset websocket clients
+	websocket.ResetClients()
+
 	// Create the test server
 	ts.Server = httptest.NewServer(http.HandlerFunc(ts.handler))
 
