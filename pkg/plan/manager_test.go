@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/plan/types"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kots/pkg/websocket"
+	websockettypes "github.com/replicatedhq/kots/pkg/websocket/types"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -204,6 +205,13 @@ spec:
 			for _, step := range p.Steps {
 				assert.Equal(t, types.StepStatusComplete, step.Status)
 			}
+
+			// Verify version of EC managers
+			connectedManagers := websocket.GetClients()
+			assert.Equal(t, len(tt.managers), len(connectedManagers))
+			for _, m := range connectedManagers {
+				assert.Equal(t, p.NewECVersion, m.Version)
+			}
 		})
 	}
 }
@@ -231,27 +239,40 @@ Loop:
 			ts.t.Fatalf("read message: %v", err)
 		}
 
-		msg := map[string]interface{}{}
+		var msg websockettypes.Message
 		if err := json.Unmarshal(message, &msg); err != nil {
 			ts.t.Fatalf("failed to unmarshal message: %s: %s", err, string(message))
 		}
+		if err := msg.Validate(); err != nil {
+			ts.t.Fatalf("invalid message: %v", err)
+		}
 
-		switch msg["command"].(string) {
-		case "upgrade-manager":
-			d := map[string]string{}
-			if err := json.Unmarshal([]byte(msg["data"].(string)), &d); err != nil {
+		assert.Equal(ts.t, msg.AppSlug, "test-app")
+		assert.Equal(ts.t, msg.VersionLabel, "test-version-label")
+		assert.NotEmpty(ts.t, msg.StepID)
+
+		switch msg.Command {
+		case websockettypes.CommandUpgradeManager:
+			d := websockettypes.UpgradeManagerData{}
+			if err := json.Unmarshal([]byte(msg.Data), &d); err != nil {
 				ts.t.Fatalf("failed to unmarshal data: %v", err)
 			}
+			if err := d.Validate(); err != nil {
+				ts.t.Fatalf("invalid data: %v", err)
+			}
+
+			assert.Equal(ts.t, d.LicenseID, "test-license")
+			assert.Equal(ts.t, d.LicenseEndpoint, "https://replicated.app")
 
 			// connect back with the new version
 			go func() {
 				time.Sleep(time.Second * 2) // simulate a restart delay
-				newTestECManager(ts, nodeName, d["version"])
+				newTestECManager(ts, nodeName, "2.0.0")
 			}()
 
 			break Loop
 		default:
-			ts.t.Fatalf("unknown command: %s", msg["command"])
+			ts.t.Fatalf("unknown command: %s", msg.Command)
 		}
 	}
 }
