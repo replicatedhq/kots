@@ -11,29 +11,64 @@ import (
 	"github.com/replicatedhq/kots/pkg/websocket/types"
 )
 
+// UpgradeECManager sends a manager upgrade command to all managers that are not running the specified version
+func UpgradeECManager(nodeName, licenseID, licenseEndpoint, version, appSlug, versionLabel, stepID string) error {
+	data, err := json.Marshal(types.UpgradeManagerData{
+		LicenseID:       licenseID,
+		LicenseEndpoint: licenseEndpoint,
+	})
+	if err != nil {
+		return errors.Wrap(err, "marshal data")
+	}
+
+	message, err := json.Marshal(types.Message{
+		AppSlug:      appSlug,
+		VersionLabel: versionLabel,
+		StepID:       stepID,
+		Command:      types.CommandUpgradeManager,
+		Data:         string(data),
+	})
+	if err != nil {
+		return errors.Wrap(err, "marshal message")
+	}
+
+	wscli, err := wsClientForNode(nodeName)
+	if err != nil {
+		return errors.Wrapf(err, "get websocket client for node %s", nodeName)
+	}
+
+	if wscli.Version == version {
+		logger.Infof("Embedded cluster manager on node %s is already running version %s. Skipping...", nodeName, version)
+		return nil
+	}
+
+	logger.Infof("Sending ec manager upgrade command to websocket of node %s", nodeName)
+
+	if err := wscli.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
+		return errors.Wrap(err, "send upgrade ec manager command to websocket")
+	}
+
+	return nil
+}
+
 // UpgradeCluster sends an upgrade command to the first available websocket from the active ones
 func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel, stepID string) error {
-	marshalledInst, err := json.Marshal(installation)
-	if err != nil {
-		return errors.Wrap(err, "marshal installation")
-	}
-
-	data, err := json.Marshal(map[string]string{
-		"installation": string(marshalledInst),
-		"appSlug":      appSlug,
-		"versionLabel": versionLabel,
-		"stepID":       stepID,
+	data, err := json.Marshal(types.UpgradeClusterData{
+		Installation: *installation,
 	})
 	if err != nil {
-		return errors.Wrap(err, "marshal installation")
+		return errors.Wrap(err, "marshal data")
 	}
 
-	message, err := json.Marshal(map[string]interface{}{
-		"command": "upgrade-cluster",
-		"data":    string(data),
+	message, err := json.Marshal(types.Message{
+		AppSlug:      appSlug,
+		VersionLabel: versionLabel,
+		StepID:       stepID,
+		Command:      types.CommandUpgradeCluster,
+		Data:         string(data),
 	})
 	if err != nil {
-		return errors.Wrap(err, "marshal command message")
+		return errors.Wrap(err, "marshal message")
 	}
 
 	wscli, nodeName, err := firstActiveWSClient()
@@ -41,7 +76,7 @@ func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel,
 		return errors.Wrap(err, "get first active websocket client")
 	}
 
-	logger.Infof("Sending cluster upgrade command to websocket of node %s with message: %s", nodeName, string(message))
+	logger.Infof("Sending cluster upgrade command to websocket of node %s", nodeName)
 
 	if err := wscli.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
 		return errors.Wrap(err, "send upgrade command to websocket")
@@ -51,45 +86,35 @@ func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel,
 }
 
 func AddExtension(repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
-	return sendExtensionCommand("add-extension", repos, chart, appSlug, versionLabel, stepID)
+	return sendExtensionCommand(types.CommandAddExtension, repos, chart, appSlug, versionLabel, stepID)
 }
 
 func UpgradeExtension(repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
-	return sendExtensionCommand("upgrade-extension", repos, chart, appSlug, versionLabel, stepID)
+	return sendExtensionCommand(types.CommandUpgradeExtension, repos, chart, appSlug, versionLabel, stepID)
 }
 
 func RemoveExtension(repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
-	return sendExtensionCommand("remove-extension", repos, chart, appSlug, versionLabel, stepID)
+	return sendExtensionCommand(types.CommandRemoveExtension, repos, chart, appSlug, versionLabel, stepID)
 }
 
-func sendExtensionCommand(command string, repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
-	marshalledRepos, err := json.Marshal(repos)
-	if err != nil {
-		return errors.Wrap(err, "marshal repos")
-	}
-
-	marshalledChart, err := json.Marshal(chart)
-	if err != nil {
-		return errors.Wrap(err, "marshal chart")
-	}
-
-	data, err := json.Marshal(map[string]string{
-		"repos":        string(marshalledRepos),
-		"chart":        string(marshalledChart),
-		"appSlug":      appSlug,
-		"versionLabel": versionLabel,
-		"stepID":       stepID,
+func sendExtensionCommand(command types.Command, repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
+	data, err := json.Marshal(types.ExtensionData{
+		Repos: repos,
+		Chart: chart,
 	})
 	if err != nil {
 		return errors.Wrap(err, "marshal data")
 	}
 
-	message, err := json.Marshal(map[string]interface{}{
-		"command": command,
-		"data":    string(data),
+	message, err := json.Marshal(types.Message{
+		AppSlug:      appSlug,
+		VersionLabel: versionLabel,
+		StepID:       stepID,
+		Command:      command,
+		Data:         string(data),
 	})
 	if err != nil {
-		return errors.Wrap(err, "marshal command message")
+		return errors.Wrap(err, "marshal message")
 	}
 
 	wscli, nodeName, err := firstActiveWSClient()
@@ -97,7 +122,7 @@ func sendExtensionCommand(command string, repos []k0sv1beta1.Repository, chart e
 		return errors.Wrap(err, "get first active websocket client")
 	}
 
-	logger.Infof("Sending extension %s command to websocket of node %s with message: %s", command, nodeName, string(message))
+	logger.Infof("Sending %s %s command to websocket of node %s", command, chart.Name, nodeName)
 
 	if err := wscli.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
 		return errors.Wrap(err, "send upgrade command to websocket")
@@ -125,4 +150,17 @@ func firstActiveWSClient() (types.WSClient, string, error) {
 	}
 
 	return wscli, nodeName, nil
+}
+
+func wsClientForNode(nodeName string) (*types.WSClient, error) {
+	wsMutex.Lock()
+	defer wsMutex.Unlock()
+
+	for name, client := range wsClients {
+		if name == nodeName {
+			return &client, nil
+		}
+	}
+
+	return nil, errors.New("not found")
 }

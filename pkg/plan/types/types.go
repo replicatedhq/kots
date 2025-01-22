@@ -40,7 +40,8 @@ type PlanStepType string
 const (
 	StepTypeAppUpgradeService  PlanStepType = "app-upgrade-service"
 	StepTypeAppUpgrade         PlanStepType = "app-upgrade"
-	StepTypeECUpgrade          PlanStepType = "ec-upgrade"
+	StepTypeK0sUpgrade         PlanStepType = "k0s-upgrade"
+	StepTypeECManagerUpgrade   PlanStepType = "ec-manager-upgrade"
 	StepTypeECExtensionAdd     PlanStepType = "ec-extension-add"
 	StepTypeECExtensionUpgrade PlanStepType = "ec-extension-upgrade"
 	StepTypeECExtensionRemove  PlanStepType = "ec-extension-remove"
@@ -67,7 +68,13 @@ type PlanStepInputAppUpgradeService struct {
 	Params upgradeservicetypes.UpgradeServiceParams `json:"params" yaml:"params"`
 }
 
-type PlanStepInputECUpgrade struct {
+type PlanStepInputECManagerUpgrade struct {
+	NodeName        string `json:"nodeName" yaml:"nodeName"`
+	LicenseID       string `json:"licenseID" yaml:"licenseID"`
+	LicenseEndpoint string `json:"licenseEndpoint" yaml:"licenseEndpoint"`
+}
+
+type PlanStepInputK0sUpgrade struct {
 	CurrentECInstallation       ecv1beta1.Installation   `json:"currentECInstallation" yaml:"currentECInstallation"`
 	CurrentKOTSInstallation     kotsv1beta1.Installation `json:"currentKOTSInstallation" yaml:"currentKOTSInstallation"`
 	NewECConfigSpec             ecv1beta1.ConfigSpec     `json:"newECConfigSpec" yaml:"newECConfigSpec"`

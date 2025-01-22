@@ -52,109 +52,41 @@ func PlanUpgrade(s store.Store, kcli kbclient.Client, opts PlanUpgradeOptions) (
 	}
 
 	// app upgrade service
-	ausInput, err := getAppUpgradeServiceInput(s, &p, ksuid.New().String())
+	ausSteps, err := planAppUpgradeService(s, &p)
 	if err != nil {
-		return nil, errors.Wrap(err, "get app upgrade service input")
+		return nil, errors.Wrap(err, "plan app upgrade service")
 	}
-	p.Steps = append(p.Steps, &types.PlanStep{
-		ID:                ausInput.Params.PlanStepID,
-		Name:              "App Upgrade Service",
-		Type:              types.StepTypeAppUpgradeService,
-		Status:            types.StepStatusPending,
-		StatusDescription: "Pending",
-		Owner:             types.StepOwnerKOTS,
-		Input:             *ausInput,
-	})
+	p.Steps = append(p.Steps, ausSteps...)
 
-	// embedded cluster upgrade
-	requiresECUpgrade, err := requiresECUpgrade(kcli, newECConfigSpec)
+	// ec managers upgrade
+	ecManagerSteps, err := planECManagersUpgrade(kcli, a, newECConfigSpec.Version)
 	if err != nil {
-		return nil, errors.Wrap(err, "check if requires ec upgrade")
+		return nil, errors.Wrap(err, "plan ec managers upgrade")
 	}
-	if requiresECUpgrade {
-		in, err := getECUpgradeInput(s, kcli, a, opts.VersionLabel, newECConfigSpec)
-		if err != nil {
-			return nil, errors.Wrap(err, "get ec upgrade input")
-		}
-		p.Steps = append(p.Steps, &types.PlanStep{
-			ID:                ksuid.New().String(),
-			Name:              "Embedded Cluster Upgrade",
-			Type:              types.StepTypeECUpgrade,
-			Status:            types.StepStatusPending,
-			StatusDescription: "Pending embedded cluster upgrade",
-			Input:             *in,
-			Owner:             types.StepOwnerECManager,
-		})
-	}
+	p.Steps = append(p.Steps, ecManagerSteps...)
 
-	// TODO (@salah) implement our EC addons upgrade (have to use EC release metadata?). use same diff logic below
+	// TODO (@salah) implement our EC addons upgrade. make sure kots gets upgraded first.
 
-	currECExts, newECExts, err := getECExtensions(kcli, newECConfigSpec)
+	// k0s upgrade
+	k0sUpgradeSteps, err := planK0sUpgrade(s, kcli, a, opts.VersionLabel, newECConfigSpec)
 	if err != nil {
-		return nil, errors.Wrap(err, "get extensions")
+		return nil, errors.Wrap(err, "plan k0s upgrade")
 	}
+	p.Steps = append(p.Steps, k0sUpgradeSteps...)
 
-	ecExtsDiff := diffECExtensions(currECExts, newECExts)
-	newRepos := newECExts.Helm.Repositories
-
-	// added extensions
-	for _, chart := range ecExtsDiff.Added {
-		p.Steps = append(p.Steps, &types.PlanStep{
-			ID:                ksuid.New().String(),
-			Name:              "Extension Add",
-			Type:              types.StepTypeECExtensionAdd,
-			Status:            types.StepStatusPending,
-			StatusDescription: "Pending extension addition",
-			Input: types.PlanStepInputECExtension{
-				Repos: newRepos,
-				Chart: chart,
-			},
-			Owner: types.StepOwnerECManager,
-		})
+	// ec extensions
+	ecExtensionSteps, err := planECExtensions(kcli, newECConfigSpec)
+	if err != nil {
+		return nil, errors.Wrap(err, "plan ec extensions")
 	}
-
-	// modified extensions
-	for _, chart := range ecExtsDiff.Modified {
-		p.Steps = append(p.Steps, &types.PlanStep{
-			ID:                ksuid.New().String(),
-			Name:              "Extension Upgrade",
-			Type:              types.StepTypeECExtensionUpgrade,
-			Status:            types.StepStatusPending,
-			StatusDescription: "Pending extension upgrade",
-			Input: types.PlanStepInputECExtension{
-				Repos: newRepos,
-				Chart: chart,
-			},
-			Owner: types.StepOwnerECManager,
-		})
-	}
-
-	// removed extensions
-	for _, chart := range ecExtsDiff.Removed {
-		p.Steps = append(p.Steps, &types.PlanStep{
-			ID:                ksuid.New().String(),
-			Name:              "Extension Remove",
-			Type:              types.StepTypeECExtensionRemove,
-			Status:            types.StepStatusPending,
-			StatusDescription: "Pending extension removal",
-			Input: types.PlanStepInputECExtension{
-				Repos: newRepos,
-				Chart: chart,
-			},
-			Owner: types.StepOwnerECManager,
-		})
-	}
+	p.Steps = append(p.Steps, ecExtensionSteps...)
 
 	// app upgrade
-	p.Steps = append(p.Steps, &types.PlanStep{
-		ID:                ksuid.New().String(),
-		Name:              "Application Upgrade",
-		Type:              types.StepTypeAppUpgrade,
-		Status:            types.StepStatusPending,
-		StatusDescription: "Pending application upgrade",
-		Owner:             types.StepOwnerKOTS,
-		// the input here is the app upgrade service output
-	})
+	appUpgradeSteps, err := planAppUpgrade()
+	if err != nil {
+		return nil, errors.Wrap(err, "plan app upgrade")
+	}
+	p.Steps = append(p.Steps, appUpgradeSteps...)
 
 	return &p, nil
 }
@@ -200,6 +132,8 @@ func Execute(s store.Store, p *types.Plan) error {
 		}
 	}
 
+	logger.Infof("Plan %q completed successfully", p.ID)
+
 	return nil
 }
 
@@ -240,54 +174,33 @@ func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError
 
 	switch step.Type {
 	case types.StepTypeAppUpgradeService:
-		if step.Status != types.StepStatusPending {
-			return errors.Errorf("step %q cannot be resumed", step.Name)
-		}
 		if err := executeAppUpgradeService(s, p, step); err != nil {
 			return errors.Wrap(err, "execute app upgrade service")
 		}
-		if err := waitForStep(s, p, step.ID); err != nil {
-			return errors.Wrap(err, "wait for upgrade service")
+
+	case types.StepTypeECManagerUpgrade:
+		if err := executeECManagerUpgrade(s, p, step); err != nil {
+			return errors.Wrap(err, "execute ec manager upgrade")
 		}
 
-	case types.StepTypeECUpgrade:
-		if step.Status == types.StepStatusPending {
-			if err := executeECUpgrade(s, p, step); err != nil {
-				return errors.Wrap(err, "execute embedded cluster upgrade")
-			}
-		}
-		if err := waitForStep(s, p, step.ID); err != nil {
-			return errors.Wrap(err, "wait for embedded cluster upgrade")
+	case types.StepTypeK0sUpgrade:
+		if err := executeK0sUpgrade(s, p, step); err != nil {
+			return errors.Wrap(err, "execute k0s upgrade")
 		}
 
 	case types.StepTypeECExtensionAdd:
-		if step.Status == types.StepStatusPending {
-			if err := executeECExtensionAdd(p, step); err != nil {
-				return errors.Wrap(err, "execute embedded cluster extension add")
-			}
-		}
-		if err := waitForStep(s, p, step.ID); err != nil {
-			return errors.Wrap(err, "wait for embedded cluster extension add")
+		if err := executeECExtensionAdd(p, step); err != nil {
+			return errors.Wrap(err, "execute embedded cluster extension add")
 		}
 
 	case types.StepTypeECExtensionUpgrade:
-		if step.Status == types.StepStatusPending {
-			if err := executeECExtensionUpgrade(p, step); err != nil {
-				return errors.Wrap(err, "execute embedded cluster extension upgrade")
-			}
-		}
-		if err := waitForStep(s, p, step.ID); err != nil {
-			return errors.Wrap(err, "wait for embedded cluster extension upgrade")
+		if err := executeECExtensionUpgrade(p, step); err != nil {
+			return errors.Wrap(err, "execute embedded cluster extension upgrade")
 		}
 
 	case types.StepTypeECExtensionRemove:
-		if step.Status == types.StepStatusPending {
-			if err := executeECExtensionRemove(p, step); err != nil {
-				return errors.Wrap(err, "execute embedded cluster extension remove")
-			}
-		}
-		if err := waitForStep(s, p, step.ID); err != nil {
-			return errors.Wrap(err, "wait for embedded cluster extension remove")
+		if err := executeECExtensionRemove(p, step); err != nil {
+			return errors.Wrap(err, "execute embedded cluster extension remove")
 		}
 
 	case types.StepTypeAppUpgrade:
@@ -302,7 +215,7 @@ func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError
 	return nil
 }
 
-func waitForStep(s store.Store, p *types.Plan, stepID string) error {
+func waitForStep(p *types.Plan, stepID string) error {
 	for {
 		stepIndex := -1
 		for i, step := range p.Steps {

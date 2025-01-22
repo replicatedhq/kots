@@ -23,7 +23,15 @@ func (h *Handler) ConnectToECWebsocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := websocket.Connect(w, r, nodeName); err != nil {
+	version := r.URL.Query().Get("version")
+	if version == "" {
+		response.Error = "missing version"
+		logger.Error(errors.New(response.Error))
+		JSON(w, http.StatusBadRequest, response)
+		return
+	}
+
+	if err := websocket.Connect(w, r, nodeName, version); err != nil {
 		response.Error = "failed to establish websocket connection"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
