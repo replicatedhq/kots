@@ -144,6 +144,7 @@ func pickEmbeddedClusterArtifacts(fetchOptions *types.FetchOptions) *kotsv1beta1
 			AdditionalArtifacts: map[string]string{
 				"kots":     imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts["kots"], opts).String(),
 				"operator": imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts["operator"], opts).String(),
+				"manager":  imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts["manager"], opts).String(),
 			},
 		}
 	}
