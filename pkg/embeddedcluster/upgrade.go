@@ -86,7 +86,7 @@ func startClusterUpgrade(
 		logger.Errorf("Failed to notify upgrade started: %v", err)
 	}
 
-	err = runClusterUpgrade(ctx, k8sClient, newInstall, registrySettings, license, versionLabel)
+	err = runClusterUpgrade(ctx, k8sClient, newcfg, newInstall, registrySettings, license, versionLabel)
 	if err != nil {
 		if err := NotifyUpgradeFailed(ctx, license.Spec.Endpoint, newInstall, current, err.Error()); err != nil {
 			logger.Errorf("Failed to notify upgrade failed: %v", err)
@@ -105,7 +105,8 @@ func startClusterUpgrade(
 // operator, wait for the CRD to be up-to-date, and then apply the installation object.
 func runClusterUpgrade(
 	ctx context.Context, k8sClient kubernetes.Interface,
-	in *embeddedclusterv1beta1.Installation, registrySettings registrytypes.RegistrySettings,
+	newcfg embeddedclusterv1beta1.ConfigSpec, in *embeddedclusterv1beta1.Installation,
+	registrySettings registrytypes.RegistrySettings,
 	license kotsv1beta1.License, versionLabel string,
 ) error {
 	var bin string
@@ -151,7 +152,7 @@ func runClusterUpgrade(
 	}
 	args = append(args, "--installation", "-")
 
-	if os.Getenv("ENABLE_V2_MIGRATION") == "true" {
+	if newcfg.V2Enabled {
 		err := createV2MigrationSecret(ctx, k8sClient, license)
 		if err != nil {
 			return fmt.Errorf("create v2 migration secret: %w", err)
