@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/pkg/errors"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
@@ -416,8 +417,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				if prevChart.GetReleaseName() != newChart.GetReleaseName() {
 					continue
 				}
-				if !prevChart.Spec.UseHelmInstall {
-					return "", errors.Errorf("cannot upgrade chart release %s to v1beta2 because useHelmInstall is false", newChart.GetReleaseName())
+				if !prevChart.Spec.UseHelmInstall && !slices.Contains(newChart.GetUpgradeFlags(), "--take-ownership") {
+					return "", errors.Errorf("cannot upgrade chart release %s to v1beta2 because useHelmInstall is false and Helm --take-ownership is not set", newChart.GetReleaseName())
 				}
 			}
 		}
