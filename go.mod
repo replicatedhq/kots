@@ -51,7 +51,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20241217212717-16e5694e39aa
+	github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250121224829-68f86fdec4e9
 	github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.115.1

@@ -650,10 +650,14 @@ export const Utilities = {
         return "Upgrading addons";
       case "PendingChartCreation":
         return "Creating addons";
+      case "AddonsInstalled":
+        return "Addons upgraded";
       case "HelmChartUpdateFailure":
         return "Failed to upgrade addons";
       case "Failed":
         return "Failed";
+      case "V2MigrationInProgress":
+        return "Migrating cluster to v2";
       default:
         return "Unknown";
     }

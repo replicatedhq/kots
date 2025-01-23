@@ -1357,8 +1357,8 @@ github.com/redis/go-redis/v9 v9.0.5/go.mod h1:WqMKv5vnQbRuZstUwxQI195wHy+t4PuXDO
 github.com/redis/go-redis/v9 v9.5.1 h1:H1X4D3yHPaYrkL5X06Wh6xNVM/pX0Ft4RV0vMGvLBh8=
 github.com/redis/go-redis/v9 v9.5.1/go.mod h1:hdY0cQFCN4fnSYT6TkisLufl/4W5UIXyv0b/CLO2V2M=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
-github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20241217212717-16e5694e39aa h1:fXPI/I8F2goWhpGrmJops8SW5y6RnBJ9tZGdw+Qd+x0=
-github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20241217212717-16e5694e39aa/go.mod h1:+M1m6F45l4m7z8L6sBe+iLg/IVDZkR7jEHDgM8WwEfE=
+github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250121224829-68f86fdec4e9 h1:d2lxqo8Qmh3xnknchklnn94GzHyneDZLOQ6vSUZS1Tg=
+github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250121224829-68f86fdec4e9/go.mod h1:SeowBlFk6Eh4dUIb4p4cckjjzg+fshqlFBA3yuMCS+c=
 github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95 h1:JhwPz4Bgbz5iYl3UV2EB+HnF9oW/eCRi+hASAz+J6XI=
 github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=
@@ -2292,7 +2292,6 @@ google.golang.org/grpc v1.50.1/go.mod h1:ZgQEeidpAuNRZ8iRrlBKXZQP1ghovWIVhdJRyCD
 google.golang.org/grpc v1.69.4 h1:MF5TftSMkd8GLw/m0KM6V8CMOCY6NZ1NQDPGFgbTt4A=
 google.golang.org/grpc v1.69.4/go.mod h1:vyjdE6jLBI76dgpDojsFGNaHlxdjXN9ghpnd2o7JGZ4=
 google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0/go.mod h1:6Kw0yEErY5E/yWrBtf03jp27GLLJujG4z/JK95pnjjw=
-google.golang.org/grpc/stats/opentelemetry v0.0.0-20240907200651-3ffb98b2c93a h1:UIpYSuWdWHSzjwcAFRLjKcPXFZVVLXGEM23W+NWqipw=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=
 google.golang.org/protobuf v0.0.0-20200221191635-4d8936d0db64/go.mod h1:kwYJMbMJ01Woi6D6+Kah6886xMZcty6N08ah7+eCXa0=
 google.golang.org/protobuf v0.0.0-20200228230310-ab0ca4ff8a60/go.mod h1:cfTl7dwQJ+fmap5saPgwCLgHXTUD7jkjRqWcaiX5VyM=

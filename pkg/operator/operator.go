@@ -1068,7 +1068,18 @@ func (o *Operator) waitForClusterUpgrade(appID string, appSlug string) error {
 			}
 			return nil // we try to deploy the app even if the cluster upgrade failed
 		}
-		if err := upgradeservicetask.SetStatusUpgradingCluster(appSlug, ins.Status.State); err != nil {
+		msg := ins.Status.State
+		if checkInstallationConditionStatus(ins.Status, embeddedclusterv1beta1.ConditionTypeV2MigrationInProgress) == metav1.ConditionTrue {
+			msg = "V2MigrationInProgress"
+		}
+		if msg == "" {
+			// if the status was the same previously, do not overwrite the previous message with an empty one
+			taskStatus, taskMsg, _ := upgradeservicetask.GetStatus(appSlug)
+			if taskStatus == string(upgradeservicetask.StatusUpgradingCluster) {
+				msg = taskMsg
+			}
+		}
+		if err := upgradeservicetask.SetStatusUpgradingCluster(appSlug, msg); err != nil {
 			return errors.Wrap(err, "failed to set task status to upgrading cluster")
 		}
 		time.Sleep(5 * time.Second)
@@ -1123,4 +1134,13 @@ func (o *Operator) notifyClusterUpgradeFailed(ctx context.Context, kbClient kbcl
 		return errors.Wrap(err, "failed to send event")
 	}
 	return nil
+}
+
+func checkInstallationConditionStatus(inStat embeddedclusterv1beta1.InstallationStatus, conditionName string) metav1.ConditionStatus {
+	for _, cond := range inStat.Conditions {
+		if cond.Type == conditionName {
+			return cond.Status
+		}
+	}
+	return ""
 }

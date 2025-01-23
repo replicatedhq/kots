@@ -81,7 +81,7 @@ const UpgradeStatusModal = (props: Props) => {
     );
   }
 
-  let message;
+  let message: string;
   if (props.status === "upgrading-cluster") {
     message = Utilities.humanReadableClusterState(props.message);
   } else if (props.status === "upgrading-app") {
