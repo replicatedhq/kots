@@ -122,35 +122,22 @@ func Resume(s store.Store) error {
 
 // TODO (@salah): make each step report better status
 func Execute(s store.Store, p *types.Plan) error {
-	stopCh := make(chan struct{})
-	defer close(stopCh)
-	go startPlanMonitor(s, p, stopCh)
-
 	for _, step := range p.Steps {
 		if err := executeStep(s, p, step); err != nil {
 			return errors.Wrap(err, "execute step")
 		}
+
+		updated, err := s.GetPlan(p.AppID, p.VersionLabel)
+		if err != nil {
+			logger.Errorf("Failed to get plan: %v", err)
+			continue
+		}
+		*p = *updated
 	}
 
 	logger.Infof("Plan %q completed successfully", p.ID)
 
 	return nil
-}
-
-func startPlanMonitor(s store.Store, p *types.Plan, stopCh chan struct{}) {
-	for {
-		select {
-		case <-stopCh:
-			return
-		case <-time.After(time.Second * 2):
-			updated, err := s.GetPlan(p.AppID, p.VersionLabel)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "get plan"))
-				continue
-			}
-			*p = *updated
-		}
-	}
 }
 
 func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError error) {
@@ -189,17 +176,17 @@ func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError
 		}
 
 	case types.StepTypeECExtensionAdd:
-		if err := executeECExtensionAdd(p, step); err != nil {
+		if err := executeECExtensionAdd(s, p, step); err != nil {
 			return errors.Wrap(err, "execute embedded cluster extension add")
 		}
 
 	case types.StepTypeECExtensionUpgrade:
-		if err := executeECExtensionUpgrade(p, step); err != nil {
+		if err := executeECExtensionUpgrade(s, p, step); err != nil {
 			return errors.Wrap(err, "execute embedded cluster extension upgrade")
 		}
 
 	case types.StepTypeECExtensionRemove:
-		if err := executeECExtensionRemove(p, step); err != nil {
+		if err := executeECExtensionRemove(s, p, step); err != nil {
 			return errors.Wrap(err, "execute embedded cluster extension remove")
 		}
 
@@ -215,24 +202,31 @@ func executeStep(s store.Store, p *types.Plan, step *types.PlanStep) (finalError
 	return nil
 }
 
-func waitForStep(p *types.Plan, stepID string) error {
+func waitForStep(s store.Store, p *types.Plan, stepID string) error {
 	for {
+		updated, err := s.GetPlan(p.AppID, p.VersionLabel)
+		if err != nil {
+			logger.Errorf("Failed to get plan: %v", err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+
 		stepIndex := -1
-		for i, step := range p.Steps {
+		for i, step := range updated.Steps {
 			if step.ID == stepID {
 				stepIndex = i
 				break
 			}
 		}
 		if stepIndex == -1 {
-			return errors.Errorf("step %s not found in plan %s", stepID, p.ID)
+			return errors.Errorf("step %s not found in plan %s", stepID, updated.ID)
 		}
 
-		if p.Steps[stepIndex].Status == types.StepStatusComplete {
+		if updated.Steps[stepIndex].Status == types.StepStatusComplete {
 			return nil
 		}
-		if p.Steps[stepIndex].Status == types.StepStatusFailed {
-			return errors.Errorf("step failed: %s", p.Steps[stepIndex].StatusDescription)
+		if updated.Steps[stepIndex].Status == types.StepStatusFailed {
+			return errors.Errorf("step failed: %s", updated.Steps[stepIndex].StatusDescription)
 		}
 
 		time.Sleep(time.Second * 2)

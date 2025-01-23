@@ -29,11 +29,6 @@ var wsDialer = &gwebsocket.Dialer{
 }
 
 func TestUpgradeECManager(t *testing.T) {
-	// Create a mock store
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockStore := mock_store.NewMockStore(ctrl)
-
 	// Test app
 	versionLabel := "test-version-label"
 	app := &apptypes.App{
@@ -66,7 +61,7 @@ spec:
 		name                  string
 		managers              []manager
 		app                   *apptypes.App
-		mockStoreExpectations func()
+		mockStoreExpectations func(mockStore *mock_store.MockStore)
 		wantSteps             []*types.PlanStep
 	}{
 		{
@@ -78,7 +73,7 @@ spec:
 				},
 			},
 			app: app,
-			mockStoreExpectations: func() {
+			mockStoreExpectations: func(mockStore *mock_store.MockStore) {
 				mockStore.EXPECT().GetAppFromSlug(app.Slug).Return(app, nil).Times(1)
 				mockStore.EXPECT().GetPlan(app.ID, versionLabel).Return(p, nil).AnyTimes()
 				mockStore.EXPECT().UpsertPlan(p).Return(nil).Times(1)
@@ -116,7 +111,7 @@ spec:
 				},
 			},
 			app: app,
-			mockStoreExpectations: func() {
+			mockStoreExpectations: func(mockStore *mock_store.MockStore) {
 				mockStore.EXPECT().GetAppFromSlug(app.Slug).Return(app, nil).Times(2)
 				mockStore.EXPECT().GetPlan(app.ID, versionLabel).Return(p, nil).AnyTimes()
 				mockStore.EXPECT().UpsertPlan(p).Return(nil).Times(2)
@@ -153,8 +148,14 @@ spec:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create a mock store
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockStore := mock_store.NewMockStore(ctrl)
+
 			// Mock store expectations
-			tt.mockStoreExpectations()
+			tt.mockStoreExpectations(mockStore)
 
 			// Create and start test server
 			ts := NewTestServer(t)
