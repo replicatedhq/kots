@@ -924,7 +924,7 @@ class SnapshotDetails extends Component {
                                       <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
                                         Scripts
                                       </p>
-                                      {this.preSnapshotScripts()?.length > 3 &&
+                                      {this.preSnapshotScripts(snapshotDetail)?.length > 3 &&
                                       selectedScriptTab ===
                                         "Pre-snapshot scripts" ? (
                                         <div className="flex flex1 justifyContent--flexEnd">
@@ -935,7 +935,7 @@ class SnapshotDetails extends Component {
                                             }
                                           >
                                             Show all{" "}
-                                            {this.preSnapshotScripts()?.length}{" "}
+                                            {this.preSnapshotScripts(snapshotDetail)?.length}{" "}
                                             pre-scripts
                                           </span>
                                         </div>
