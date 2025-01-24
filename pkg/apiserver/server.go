@@ -32,6 +32,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kots/pkg/websocket"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -137,7 +138,9 @@ func Start(params *APIServerParams) {
 		log.Println("Failed to start session purge cron job:", err)
 	}
 
-	if err := plan.Resume(store.GetStore()); err != nil {
+	wsConnectionManager := websocket.NewConnectionManager()
+
+	if err := plan.Resume(store.GetStore(), wsConnectionManager); err != nil {
 		log.Println("Failed to resume plan:", err)
 	}
 
@@ -162,7 +165,7 @@ func Start(params *APIServerParams) {
 	loggingRouter := r.NewRoute().Subrouter()
 	loggingRouter.Use(handlers.LoggingMiddleware)
 
-	handler := handlers.NewHandler()
+	handler := handlers.NewHandler(wsConnectionManager)
 
 	/**********************************************************************
 	* Unauthenticated routes

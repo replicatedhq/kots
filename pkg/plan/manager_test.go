@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/websocket"
 	websockettypes "github.com/replicatedhq/kots/pkg/websocket/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -152,26 +154,34 @@ spec:
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
+			ws := websocket.NewConnectionManager()
+
 			mockStore := mock_store.NewMockStore(ctrl)
 
 			// Mock store expectations
 			tt.mockStoreExpectations(mockStore)
 
 			// Create and start test server
-			ts := NewTestServer(t)
+			ts := NewTestServer(t, ws)
 			defer ts.Close()
+
+			wg := sync.WaitGroup{}
+			wg.Add(len(tt.managers))
 
 			// Mock EC managers
 			for _, m := range tt.managers {
 				m := m
-				go newTestECManager(ts, m.nodeName, m.version)
+				go func() {
+					defer wg.Done()
+					newTestECManager(ts, m.nodeName, m.version)
+				}()
 				ts.waitForManager(m.nodeName, m.version)
 			}
 
 			// Create fake k8s client
 			scheme := runtime.NewScheme()
 			err := corev1.AddToScheme(scheme)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			objects := make([]kbclient.Object, len(tt.managers))
 			for i := range tt.managers {
@@ -188,32 +198,36 @@ spec:
 				Build()
 
 			// Plan the upgrade
-			gotSteps, err := planECManagersUpgrade(kcli, tt.app, p.NewECVersion)
-			assert.NoError(t, err)
-			assert.Equal(t, len(tt.wantSteps), len(gotSteps))
+			gotSteps, err := planECManagersUpgrade(ws, kcli, tt.app, p.NewECVersion)
+			require.NoError(t, err)
+			assert.Equal(t, len(tt.wantSteps), len(gotSteps), "unexpected number of steps")
 
 			// Verify the plan steps
 			for i, wantStep := range tt.wantSteps {
 				wantStep.ID = gotSteps[i].ID // ID is dynamic
-				assert.Equal(t, wantStep, gotSteps[i])
+				assert.Equal(t, wantStep, gotSteps[i], "unexpected step %s", wantStep.Name)
 			}
 
 			// Execute the plan
 			p.Steps = gotSteps
-			err = Execute(mockStore, p)
-			assert.NoError(t, err)
+			err = Execute(mockStore, ws, p)
+			assert.NoError(t, err, "failed to execute plan")
 
 			// Verify the plan status after execution
 			for _, step := range p.Steps {
-				assert.Equal(t, types.StepStatusComplete, step.Status)
+				assert.Equal(t, types.StepStatusComplete, step.Status, "unexpected status of step %s", step.Name)
 			}
 
 			// Verify version of EC managers
-			connectedManagers := websocket.GetClients()
+			connectedManagers := ws.GetClients()
 			assert.Equal(t, len(tt.managers), len(connectedManagers), "unexpected number of connected managers")
-			for _, m := range connectedManagers {
-				assert.Equal(t, p.NewECVersion, m.Version)
+			for nodeName, m := range connectedManagers {
+				assert.Equal(t, p.NewECVersion, m.Version, "unexpected version of EC manager %s", nodeName)
+				m.Conn.Close()
 			}
+
+			// ensure clean closing of websockets
+			wg.Wait()
 		})
 	}
 }
@@ -255,6 +269,7 @@ Loop:
 
 		switch msg.Command {
 		case websockettypes.CommandUpgradeManager:
+			ts.t.Logf("received upgrade manager command: %s", nodeName)
 			d := websockettypes.UpgradeManagerData{}
 			if err := json.Unmarshal([]byte(msg.Data), &d); err != nil {
 				ts.t.Fatalf("failed to unmarshal data: %v", err)
@@ -269,6 +284,7 @@ Loop:
 			// connect back with the new version
 			go func() {
 				time.Sleep(time.Second * 2) // simulate a restart delay
+				ts.t.Logf("connecting back with the new version: %s", nodeName)
 				newTestECManager(ts, nodeName, "2.0.0")
 			}()
 
@@ -282,13 +298,15 @@ Loop:
 // TestServer is a mock KOTS admin console for testing
 type TestServer struct {
 	Server *httptest.Server
+	WS     *websocket.ConnectionManager
 	t      *testing.T
 }
 
 // NewTestServer creates a new test server with all the required endpoints
-func NewTestServer(t *testing.T) *TestServer {
+func NewTestServer(t *testing.T, ws *websocket.ConnectionManager) *TestServer {
 	ts := &TestServer{
-		t: t,
+		WS: ws,
+		t:  t,
 	}
 
 	// Create the test server
@@ -307,7 +325,7 @@ func (ts *TestServer) handler(w http.ResponseWriter, r *http.Request) {
 		version := r.URL.Query().Get("version")
 		assert.NotEmpty(ts.t, version)
 
-		err := websocket.Connect(w, r, nodeName, version)
+		err := ts.WS.Connect(w, r, nodeName, version)
 		assert.NoError(ts.t, err)
 
 	default:
@@ -317,13 +335,13 @@ func (ts *TestServer) handler(w http.ResponseWriter, r *http.Request) {
 
 func (ts *TestServer) waitForManager(nodeName string, version string) {
 	assert.Eventually(ts.t, func() bool {
-		e, ok := websocket.GetClients()[nodeName]
+		e, ok := ts.WS.GetClients()[nodeName]
 		return ok && e.Version == version
 	}, time.Second*5, time.Millisecond*100, "Node %s did not connect", nodeName)
 }
 
 // Close shuts down the test server
 func (ts *TestServer) Close() {
-	websocket.ResetClients()
+	ts.WS.ResetClients()
 	ts.Server.Close()
 }

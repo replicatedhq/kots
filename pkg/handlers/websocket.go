@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/websocket"
 )
 
 type ConnectToECWebsocketResponse struct {
@@ -31,7 +30,7 @@ func (h *Handler) ConnectToECWebsocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := websocket.Connect(w, r, nodeName, version); err != nil {
+	if err := h.WSConnectionManager.Connect(w, r, nodeName, version); err != nil {
 		response.Error = "failed to establish websocket connection"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)

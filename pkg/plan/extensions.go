@@ -82,14 +82,14 @@ func planECExtensions(kcli kbclient.Client, newSpec *ecv1beta1.ConfigSpec) ([]*t
 	return steps, nil
 }
 
-func executeECExtensionAdd(s store.Store, p *types.Plan, step *types.PlanStep) error {
+func executeECExtensionAdd(s store.Store, ws *websocket.ConnectionManager, p *types.Plan, step *types.PlanStep) error {
 	in, ok := step.Input.(types.PlanStepInputECExtension)
 	if !ok {
 		return errors.New("invalid input for embedded cluster extension add step")
 	}
 
 	if step.Status == types.StepStatusPending {
-		if err := websocket.AddExtension(in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
+		if err := websocket.AddExtension(ws, in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
 			return errors.Wrap(err, "add extension")
 		}
 	}
@@ -101,14 +101,14 @@ func executeECExtensionAdd(s store.Store, p *types.Plan, step *types.PlanStep) e
 	return nil
 }
 
-func executeECExtensionUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error {
+func executeECExtensionUpgrade(s store.Store, ws *websocket.ConnectionManager, p *types.Plan, step *types.PlanStep) error {
 	in, ok := step.Input.(types.PlanStepInputECExtension)
 	if !ok {
 		return errors.New("invalid input for embedded cluster extension upgrade step")
 	}
 
 	if step.Status == types.StepStatusPending {
-		if err := websocket.UpgradeExtension(in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
+		if err := websocket.UpgradeExtension(ws, in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
 			return errors.Wrap(err, "upgrade extension")
 		}
 	}
@@ -120,14 +120,14 @@ func executeECExtensionUpgrade(s store.Store, p *types.Plan, step *types.PlanSte
 	return nil
 }
 
-func executeECExtensionRemove(s store.Store, p *types.Plan, step *types.PlanStep) error {
+func executeECExtensionRemove(s store.Store, ws *websocket.ConnectionManager, p *types.Plan, step *types.PlanStep) error {
 	in, ok := step.Input.(types.PlanStepInputECExtension)
 	if !ok {
 		return errors.New("invalid input for embedded cluster extension remove step")
 	}
 
 	if step.Status == types.StepStatusPending {
-		if err := websocket.RemoveExtension(in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
+		if err := websocket.RemoveExtension(ws, in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
 			return errors.Wrap(err, "remove extension")
 		}
 	}

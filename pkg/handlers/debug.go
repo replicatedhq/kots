@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/replicatedhq/kots/pkg/websocket"
 	websockettypes "github.com/replicatedhq/kots/pkg/websocket/types"
 )
 
@@ -13,7 +12,7 @@ type DebugInfoResponse struct {
 
 func (h *Handler) GetDebugInfo(w http.ResponseWriter, r *http.Request) {
 	response := DebugInfoResponse{
-		WSClients: websocket.GetClients(),
+		WSClients: h.WSConnectionManager.GetClients(),
 	}
 
 	JSON(w, http.StatusOK, response)
