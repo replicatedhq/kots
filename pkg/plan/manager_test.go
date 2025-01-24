@@ -163,6 +163,7 @@ spec:
 
 			// Mock EC managers
 			for _, m := range tt.managers {
+				m := m
 				go newTestECManager(ts, m.nodeName, m.version)
 				ts.waitForManager(m.nodeName, m.version)
 			}
@@ -209,7 +210,7 @@ spec:
 
 			// Verify version of EC managers
 			connectedManagers := websocket.GetClients()
-			assert.Equal(t, len(tt.managers), len(connectedManagers))
+			assert.Equal(t, len(tt.managers), len(connectedManagers), "unexpected number of connected managers")
 			for _, m := range connectedManagers {
 				assert.Equal(t, p.NewECVersion, m.Version)
 			}

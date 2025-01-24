@@ -84,10 +84,13 @@ func listenToWSClient(nodeName string, version string, conn *websocket.Conn) {
 	for {
 		_, _, err := conn.ReadMessage() // this is required to receive ping/pong messages
 		if err != nil {
+			wsMutex.Lock()
 			if isWSConnClosed(nodeName, version, err) {
 				handleWSConnClosed(nodeName, version, err)
+				wsMutex.Unlock()
 				return
 			}
+			wsMutex.Unlock()
 			logger.Debugf("Error reading websocket message from %s: %v", nodeName, err)
 		}
 	}
@@ -204,7 +207,14 @@ func clientChanged(nodeName string, version string) bool {
 }
 
 func GetClients() map[string]types.WSClient {
-	return wsClients
+	wsMutex.Lock()
+	defer wsMutex.Unlock()
+
+	copy := make(map[string]types.WSClient)
+	for k, v := range wsClients {
+		copy[k] = v
+	}
+	return copy
 }
 
 // This is only used for testing
