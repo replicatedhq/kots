@@ -70,7 +70,6 @@ func (m *ConnectionManager) ResetClients() {
 
 	for _, e := range m.clients {
 		if e.Conn != nil {
-			fmt.Println("reset close")
 			e.Conn.Close()
 		}
 	}
@@ -94,7 +93,6 @@ func (m *ConnectionManager) pingWSClient(nodeName string, version string, conn *
 			pingMsg := fmt.Sprintf("%x", rand.Int())
 			if err := conn.WriteControl(websocket.PingMessage, []byte(pingMsg), time.Now().Add(1*time.Second)); err != nil {
 				if m.isWSConnClosed(nodeName, version, err) {
-					fmt.Println("PING ERROR", err)
 					m.handleWSConnClosed(nodeName, version, err)
 					return true
 				}
@@ -117,9 +115,6 @@ func (m *ConnectionManager) pingWSClient(nodeName string, version string, conn *
 }
 
 func (m *ConnectionManager) listenToWSClient(nodeName string, version string, conn *websocket.Conn) {
-	defer func() {
-		fmt.Println("listenToWSClient done", nodeName)
-	}()
 	for {
 		_, _, err := conn.ReadMessage() // this is required to receive ping/pong messages
 		if err != nil {
@@ -140,7 +135,6 @@ func (m *ConnectionManager) registerWSClient(nodeName string, version string, co
 	defer m.mu.Unlock()
 
 	if e, ok := m.clients[nodeName]; ok && e.Conn != nil {
-		fmt.Println("registerWSClient close existing connection", nodeName)
 		e.Conn.Close()
 	}
 
@@ -159,7 +153,6 @@ func (m *ConnectionManager) wsPingHandler(nodeName string, version string, conn 
 		defer m.mu.Unlock()
 
 		if m.clientChanged(nodeName, version) {
-			fmt.Println("PING CLIENT CHANGED", nodeName, version)
 			return nil
 		}
 
@@ -189,7 +182,6 @@ func (m *ConnectionManager) wsPongHandler(nodeName string, version string) func(
 		defer m.mu.Unlock()
 
 		if m.clientChanged(nodeName, version) {
-			fmt.Println("PONG CLIENT CHANGED", nodeName, version)
 			return nil
 		}
 
@@ -216,7 +208,6 @@ func (m *ConnectionManager) wsCloseHandler(nodeName string, version string) func
 
 func (m *ConnectionManager) isWSConnClosed(nodeName string, version string, err error) bool {
 	if m.clientChanged(nodeName, version) {
-		fmt.Println("isWSConnClosed CLIENT CHANGED", nodeName, version)
 		return true
 	}
 	if _, ok := err.(*websocket.CloseError); ok {
