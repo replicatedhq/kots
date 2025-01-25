@@ -90,7 +90,7 @@ require (
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/application v0.8.3
-	sigs.k8s.io/controller-runtime v0.19.4
+	sigs.k8s.io/controller-runtime v0.20.1
 	sigs.k8s.io/kustomize/api v0.18.0
 	sigs.k8s.io/kustomize/kyaml v0.18.1
 	sigs.k8s.io/yaml v1.4.0
@@ -209,7 +209,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/btree v1.1.2 // indirect
+	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-containerregistry v0.20.2 // indirect
