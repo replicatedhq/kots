@@ -170,7 +170,6 @@ spec:
 
 			// Mock EC managers
 			for _, m := range tt.managers {
-				m := m
 				go func() {
 					defer wg.Done()
 					newTestECManager(ts, m.nodeName, m.version)
