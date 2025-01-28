@@ -235,12 +235,11 @@ func GetUpgradeServiceParams(s store.Store, a *apptypes.App, r StartUpgradeServi
 		}
 		updateECVersion = ecv
 	} else {
-		// kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
-		// if err != nil {
-		// 	return nil, errors.Wrap(err, "failed to download kots binary")
-		// }
-		// updateKOTSBin = kb
-		updateKOTSBin = kotsutil.GetKOTSBinPath()
+		kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to download kots binary")
+		}
+		updateKOTSBin = kb
 		ecv, err := replicatedapp.GetECVersionForRelease(license, r.VersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get kots version for release")
