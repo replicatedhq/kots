@@ -102,7 +102,7 @@ func UpdateInstallationImages(opts UpdateInstallationImagesOptions) error {
 			g.Go(func() error {
 				isPrivate, err := isPrivateImage(image)
 				if err != nil {
-					return errors.Wrapf(err, "failed to check if image %s is private", image)
+					return errors.Wrapf(err, "failed to check if image %q is private", image)
 				}
 				mtx.Lock()
 				installationImagesMap[image] = types.InstallationImageInfo{IsPrivate: isPrivate}
