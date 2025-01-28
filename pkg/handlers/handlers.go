@@ -11,7 +11,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
-	"github.com/replicatedhq/kots/pkg/websocket"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	yaml "github.com/replicatedhq/yaml/v3"
@@ -22,16 +21,13 @@ import (
 var _ KOTSHandler = (*Handler)(nil)
 
 type Handler struct {
-	WSConnectionManager *websocket.ConnectionManager
-
 	// KubeClientBuilder is used to get a kube client. It is useful to mock the client in testing scenarios.
 	kubeclient.KubeClientBuilder
 }
 
 // NewHandler returns a new default Handler
-func NewHandler(ws *websocket.ConnectionManager) *Handler {
+func NewHandler() *Handler {
 	return &Handler{
-		WSConnectionManager: ws,
 		KubeClientBuilder:   &kubeclient.Builder{},
 	}
 }
@@ -335,16 +331,6 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
 
-	// Debug info
-	r.Name("GetDebugInfo").Path("/api/v1/debug").Methods("GET").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetDebugInfo))
-
-	// endpoints for EC install2 workflow
-	r.Name("DeployEC2AppVersion").Path("/api/v1/app/{appSlug}/ec2-deploy").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.DeployEC2AppVersion))
-	r.Name("GetEC2DeployStatus").Path("/api/v1/app/{appSlug}/ec2-deploy/status").Methods("GET").
-		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.GetEC2DeployStatus))
-
 	// Upgrade service
 	r.Name("StartUpgradeService").Path("/api/v1/app/{appSlug}/start-upgrade-service").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgradeService))
@@ -401,10 +387,6 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 
 	// This handler requires a valid token in the query
 	loggingRouter.Path("/api/v1/embedded-cluster/join").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterNodeJoinCommand)
-
-	// TODO (@salah): make this authed
-	// endpoints for EC install2 workflow
-	loggingRouter.Path("/api/v1/app/{appSlug}/plan/{stepID}").Methods("PUT").HandlerFunc(handler.UpdatePlanStep)
 }
 
 func StreamJSON(c *gwebsocket.Conn, payload interface{}) {

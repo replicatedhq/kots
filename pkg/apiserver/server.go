@@ -20,7 +20,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/operator"
 	operatorclient "github.com/replicatedhq/kots/pkg/operator/client"
 	"github.com/replicatedhq/kots/pkg/persistence"
-	"github.com/replicatedhq/kots/pkg/plan"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -32,7 +31,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	"github.com/replicatedhq/kots/pkg/util"
-	"github.com/replicatedhq/kots/pkg/websocket"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -138,12 +136,6 @@ func Start(params *APIServerParams) {
 		log.Println("Failed to start session purge cron job:", err)
 	}
 
-	wsConnectionManager := websocket.NewConnectionManager()
-
-	if err := plan.Resume(store.GetStore(), wsConnectionManager); err != nil {
-		log.Println("Failed to resume plan:", err)
-	}
-
 	waitForAirgap, err := automation.NeedToWaitForAirgapApp()
 	if err != nil {
 		log.Println("Failed to check if airgap install is in progress:", err)
@@ -165,22 +157,13 @@ func Start(params *APIServerParams) {
 	loggingRouter := r.NewRoute().Subrouter()
 	loggingRouter.Use(handlers.LoggingMiddleware)
 
-	handler := handlers.NewHandler(wsConnectionManager)
+	handler := handlers.NewHandler()
 
 	/**********************************************************************
 	* Unauthenticated routes
 	**********************************************************************/
 
 	handlers.RegisterUnauthenticatedRoutes(handler, kotsStore, debugRouter, loggingRouter)
-
-	/**********************************************************************
-	* Websocket routes (only for embedded cluster)
-	**********************************************************************/
-
-	if util.IsEmbeddedCluster() {
-		wsRouter := r.NewRoute().Subrouter()
-		wsRouter.HandleFunc("/ec-ws", handler.ConnectToECWebsocket)
-	}
 
 	/**********************************************************************
 	* KOTS token auth routes

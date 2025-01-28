@@ -13,10 +13,8 @@ import (
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	plantypes "github.com/replicatedhq/kots/pkg/plan/types"
 	"github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/upgradeservice/plan"
 	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
@@ -107,14 +105,8 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if util.IsEC2Install() {
-				if err := plan.UpdateStepStatus(params, plantypes.StepStatusStarting, scanner.Text(), ""); err != nil {
-					logger.Error(err)
-				}
-			} else {
-				if err := task.SetStatusStarting(params.AppSlug, scanner.Text()); err != nil {
-					logger.Error(err)
-				}
+			if err := task.SetStatusStarting(params.AppSlug, scanner.Text()); err != nil {
+				logger.Error(err)
 			}
 		}
 		pipeReader.CloseWithError(scanner.Err())

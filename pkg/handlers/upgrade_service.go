@@ -93,7 +93,7 @@ func (h *Handler) GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request
 	status, message, err := upgradeservicetask.GetStatus(appSlug)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "get status"))
 		return
 	}
 
@@ -235,11 +235,12 @@ func GetUpgradeServiceParams(s store.Store, a *apptypes.App, r StartUpgradeServi
 		}
 		updateECVersion = ecv
 	} else {
-		kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to download kots binary")
-		}
-		updateKOTSBin = kb
+		// kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
+		// if err != nil {
+		// 	return nil, errors.Wrap(err, "failed to download kots binary")
+		// }
+		// updateKOTSBin = kb
+		updateKOTSBin = kotsutil.GetKOTSBinPath()
 		ecv, err := replicatedapp.GetECVersionForRelease(license, r.VersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get kots version for release")

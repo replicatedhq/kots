@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 type UpgradeInfoResponse = {
   isConfigurable: boolean;
   hasPreflight: boolean;
-  isEC2Install: boolean;
 };
 
 type UpgradeInfoParams = {

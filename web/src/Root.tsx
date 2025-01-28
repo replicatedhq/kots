@@ -31,7 +31,6 @@ import AppLicense from "@components/apps/AppLicense";
 import AppRegistrySettings from "@components/apps/AppRegistrySettings";
 import AppIdentityServiceSettings from "@components/apps/AppIdentityServiceSettings";
 import TroubleshootContainer from "@components/troubleshoot/TroubleshootContainer";
-import DebugInfo from "@components/DebugInfo";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
@@ -278,10 +277,7 @@ const Root = () => {
 
   const fetchUpgradeStatus = async (appSlug) => {
     try {
-      let url = `${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`;
-      if (state.adminConsoleMetadata?.isEC2Install) {
-        url = `${process.env.API_ENDPOINT}/app/${appSlug}/ec2-deploy/status`;
-      }
+      const url = `${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`;
       const res = await fetch(url, {
         headers: {
           "Content-Type": "application/json",
@@ -302,21 +298,11 @@ const Root = () => {
       }
       const response = await res.json();
       const status = response.status;
-
-      let showModal = false;
-      if (state.adminConsoleMetadata?.isEC2Install) {
-        // TODO (@salah): don't show modal if it's only an app upgrade
-        showModal =
-          status !== "" &&
-          status !== "complete" &&
-          response.step !== "app-upgrade-service";
-      } else {
-        showModal =
-          status === "upgrading-cluster" ||
-          status === "upgrading-app" ||
-          status === "upgrade-failed";
-      }
-      if (showModal) {
+      if (
+        status === "upgrading-cluster" ||
+        status === "upgrading-app" ||
+        status === "upgrade-failed"
+      ) {
         setState({
           showUpgradeStatusModal: true,
           upgradeStatus: status,
@@ -761,7 +747,6 @@ const Root = () => {
                 />
                 <Route path="/crashz" element={<Crashz />} />{" "}
                 <Route path="*" element={<NotFound />} />
-                <Route path="/debug" element={<DebugInfo />} />
                 <Route
                   path="/secure-console"
                   element={
@@ -1215,10 +1200,7 @@ const Root = () => {
           isOpen={state.showUpgradeStatusModal}
           onRequestClose={() => {
             // cannot close the modal while upgrading
-            const failedStatus = state.adminConsoleMetadata?.isEC2Install
-              ? "failed"
-              : "upgrade-failed";
-            if (state.upgradeStatus === failedStatus) {
+            if (state.upgradeStatus === "upgrade-failed") {
               setState({ showUpgradeStatusModal: false });
             }
           }}
@@ -1237,7 +1219,6 @@ const Root = () => {
             setTerminatedState={(status: boolean) =>
               setState({ connectionTerminated: status })
             }
-            isEC2Install={state.adminConsoleMetadata?.isEC2Install}
           />
         </Modal>
       ) : (

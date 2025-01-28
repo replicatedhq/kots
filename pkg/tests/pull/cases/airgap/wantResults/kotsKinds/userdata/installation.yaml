@@ -14,7 +14,6 @@ spec:
     additionalArtifacts:
       kots: ttl.sh/replicated/kots:v1
       operator: ttl.sh/replicated/operator:v1
-      manager: ttl.sh/replicated/manager:v1
   knownImages:
   - image: alpine
     isPrivate: true

@@ -63,12 +63,10 @@ const ConfirmAndDeploy = ({
   setCurrentStep,
   hasPreflight,
   isConfigurable,
-  isEC2Install,
 }: {
   isConfigurable: boolean;
   hasPreflight: boolean;
   setCurrentStep: (step: number) => void;
-  isEC2Install: boolean;
 }) => {
   useEffect(() => {
     setCurrentStep(2);
@@ -94,7 +92,6 @@ const ConfirmAndDeploy = ({
   const { mutate: deployKotsDownstream, isLoading } = useDeployAppVersion({
     slug,
     closeModal,
-    isEC2Install: isEC2Install,
   });
 
   const { data: preflightCheck, error: getPreflightResultsError } =

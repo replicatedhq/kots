@@ -11,11 +11,10 @@ interface Props {
   closeModal: () => void;
   connectionTerminated: boolean;
   setTerminatedState: (terminated: boolean) => void;
-  isEC2Install: boolean;
 }
 
 const UpgradeStatusModal = (props: Props) => {
-  const failedStatus = props.isEC2Install ? "failed" : "upgrade-failed";
+  const failedStatus = "upgrade-failed";
 
   const ping = async () => {
     await fetch(`${process.env.API_ENDPOINT}/ping`, {

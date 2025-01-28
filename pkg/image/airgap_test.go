@@ -58,7 +58,6 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"embedded-cluster/some-file-TBD":         []byte("this-is-an-arbitrary-file"),
 				"embedded-cluster/artifacts/kots":        []byte("this-is-the-kots-bin"),
 				"embedded-cluster/artifacts/operator":    []byte("this-is-the-operator-bin"),
-				"embedded-cluster/artifacts/manager":     []byte("this-is-the-manager-bin"),
 			},
 			artifactsToPush: &kotsv1beta1.EmbeddedClusterArtifacts{
 				BinaryAmd64: "embedded-cluster/test-app",
@@ -68,7 +67,6 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				AdditionalArtifacts: map[string]string{
 					"kots":     "embedded-cluster/artifacts/kots",
 					"operator": "embedded-cluster/artifacts/operator",
-					"manager":  "embedded-cluster/artifacts/manager",
 				},
 			},
 			wantRegistryArtifacts: map[string]string{
@@ -78,7 +76,6 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug): fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 				fmt.Sprintf("%s/embedded-cluster/kots", testAppSlug):                  fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 				fmt.Sprintf("%s/embedded-cluster/operator", testAppSlug):              fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
-				fmt.Sprintf("%s/embedded-cluster/manager", testAppSlug):               fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 			},
 			wantErr: false,
 		},
@@ -95,7 +92,6 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"embedded-cluster/some-file-TBD":         []byte("this-is-an-arbitrary-file"),
 				"embedded-cluster/artifacts/kots":        []byte("this-is-the-kots-bin"),
 				"embedded-cluster/artifacts/operator":    []byte("this-is-the-operator-bin"),
-				"embedded-cluster/artifacts/manager":     []byte("this-is-the-manager-bin"),
 			},
 			artifactsToPush: &kotsv1beta1.EmbeddedClusterArtifacts{
 				BinaryAmd64: "embedded-cluster/test-app",
@@ -105,7 +101,6 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				AdditionalArtifacts: map[string]string{
 					"kots":     "embedded-cluster/artifacts/kots",
 					"operator": "embedded-cluster/artifacts/operator",
-					"manager":  "embedded-cluster/artifacts/manager",
 				},
 			},
 			useTLS: true,
@@ -116,7 +111,6 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug): fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 				fmt.Sprintf("%s/embedded-cluster/kots", testAppSlug):                  fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 				fmt.Sprintf("%s/embedded-cluster/operator", testAppSlug):              fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
-				fmt.Sprintf("%s/embedded-cluster/manager", testAppSlug):               fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 			},
 			wantErr: false,
 		},

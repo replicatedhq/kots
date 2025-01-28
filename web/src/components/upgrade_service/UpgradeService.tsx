@@ -96,7 +96,6 @@ const UpgradeServiceBody = () => {
                       isConfigurable={upgradeInfo?.isConfigurable}
                       hasPreflight={upgradeInfo?.hasPreflight}
                       setCurrentStep={setCurrentStep}
-                      isEC2Install={upgradeInfo?.isEC2Install}
                     />
                   }
                 />
