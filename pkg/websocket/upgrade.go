@@ -12,7 +12,7 @@ import (
 )
 
 // UpgradeECManager sends a manager upgrade command to all managers that are not running the specified version
-func UpgradeECManager(nodeName, licenseID, licenseEndpoint, version, appSlug, versionLabel, stepID string) error {
+func UpgradeECManager(m *ConnectionManager, nodeName, licenseID, licenseEndpoint, version, appSlug, versionLabel, stepID string) error {
 	data, err := json.Marshal(types.UpgradeManagerData{
 		LicenseID:       licenseID,
 		LicenseEndpoint: licenseEndpoint,
@@ -32,7 +32,7 @@ func UpgradeECManager(nodeName, licenseID, licenseEndpoint, version, appSlug, ve
 		return errors.Wrap(err, "marshal message")
 	}
 
-	wscli, err := wsClientForNode(nodeName)
+	wscli, err := wsClientForNode(m, nodeName)
 	if err != nil {
 		return errors.Wrapf(err, "get websocket client for node %s", nodeName)
 	}
@@ -52,7 +52,7 @@ func UpgradeECManager(nodeName, licenseID, licenseEndpoint, version, appSlug, ve
 }
 
 // UpgradeCluster sends an upgrade command to the first available websocket from the active ones
-func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel, stepID string) error {
+func UpgradeCluster(m *ConnectionManager, installation *ecv1beta1.Installation, appSlug, versionLabel, stepID string) error {
 	data, err := json.Marshal(types.UpgradeClusterData{
 		Installation: *installation,
 	})
@@ -71,7 +71,7 @@ func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel,
 		return errors.Wrap(err, "marshal message")
 	}
 
-	wscli, nodeName, err := firstActiveWSClient()
+	wscli, nodeName, err := firstActiveWSClient(m)
 	if err != nil {
 		return errors.Wrap(err, "get first active websocket client")
 	}
@@ -85,19 +85,19 @@ func UpgradeCluster(installation *ecv1beta1.Installation, appSlug, versionLabel,
 	return nil
 }
 
-func AddExtension(repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
-	return sendExtensionCommand(types.CommandAddExtension, repos, chart, appSlug, versionLabel, stepID)
+func AddExtension(m *ConnectionManager, repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
+	return sendExtensionCommand(m, types.CommandAddExtension, repos, chart, appSlug, versionLabel, stepID)
 }
 
-func UpgradeExtension(repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
-	return sendExtensionCommand(types.CommandUpgradeExtension, repos, chart, appSlug, versionLabel, stepID)
+func UpgradeExtension(m *ConnectionManager, repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
+	return sendExtensionCommand(m, types.CommandUpgradeExtension, repos, chart, appSlug, versionLabel, stepID)
 }
 
-func RemoveExtension(repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
-	return sendExtensionCommand(types.CommandRemoveExtension, repos, chart, appSlug, versionLabel, stepID)
+func RemoveExtension(m *ConnectionManager, repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
+	return sendExtensionCommand(m, types.CommandRemoveExtension, repos, chart, appSlug, versionLabel, stepID)
 }
 
-func sendExtensionCommand(command types.Command, repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
+func sendExtensionCommand(m *ConnectionManager, command types.Command, repos []k0sv1beta1.Repository, chart ecv1beta1.Chart, appSlug, versionLabel, stepID string) error {
 	data, err := json.Marshal(types.ExtensionData{
 		Repos: repos,
 		Chart: chart,
@@ -117,7 +117,7 @@ func sendExtensionCommand(command types.Command, repos []k0sv1beta1.Repository, 
 		return errors.Wrap(err, "marshal message")
 	}
 
-	wscli, nodeName, err := firstActiveWSClient()
+	wscli, nodeName, err := firstActiveWSClient(m)
 	if err != nil {
 		return errors.Wrap(err, "get first active websocket client")
 	}
@@ -131,11 +131,11 @@ func sendExtensionCommand(command types.Command, repos []k0sv1beta1.Repository, 
 	return nil
 }
 
-func firstActiveWSClient() (types.WSClient, string, error) {
-	wsMutex.Lock()
-	defer wsMutex.Unlock()
+func firstActiveWSClient(m *ConnectionManager) (types.WSClient, string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	if len(wsClients) == 0 {
+	if len(m.clients) == 0 {
 		return types.WSClient{}, "", errors.New("no active websocket connections available")
 	}
 
@@ -143,7 +143,7 @@ func firstActiveWSClient() (types.WSClient, string, error) {
 	var nodeName string
 
 	// get the first client in the map
-	for name, client := range wsClients {
+	for name, client := range m.clients {
 		nodeName = name
 		wscli = client
 		break
@@ -152,11 +152,11 @@ func firstActiveWSClient() (types.WSClient, string, error) {
 	return wscli, nodeName, nil
 }
 
-func wsClientForNode(nodeName string) (*types.WSClient, error) {
-	wsMutex.Lock()
-	defer wsMutex.Unlock()
+func wsClientForNode(m *ConnectionManager, nodeName string) (*types.WSClient, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	for name, client := range wsClients {
+	for name, client := range m.clients {
 		if name == nodeName {
 			return &client, nil
 		}

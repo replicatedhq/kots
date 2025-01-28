@@ -5,12 +5,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
+	gwebsocket "github.com/gorilla/websocket"
 	"github.com/replicatedhq/kots/pkg/handlers/kubeclient"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
+	"github.com/replicatedhq/kots/pkg/websocket"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	yaml "github.com/replicatedhq/yaml/v3"
@@ -21,14 +22,17 @@ import (
 var _ KOTSHandler = (*Handler)(nil)
 
 type Handler struct {
+	WSConnectionManager *websocket.ConnectionManager
+
 	// KubeClientBuilder is used to get a kube client. It is useful to mock the client in testing scenarios.
 	kubeclient.KubeClientBuilder
 }
 
 // NewHandler returns a new default Handler
-func NewHandler() *Handler {
+func NewHandler(ws *websocket.ConnectionManager) *Handler {
 	return &Handler{
-		KubeClientBuilder: &kubeclient.Builder{},
+		WSConnectionManager: ws,
+		KubeClientBuilder:   &kubeclient.Builder{},
 	}
 }
 
@@ -403,14 +407,14 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 	loggingRouter.Path("/api/v1/app/{appSlug}/plan/{stepID}").Methods("PUT").HandlerFunc(handler.UpdatePlanStep)
 }
 
-func StreamJSON(c *websocket.Conn, payload interface{}) {
+func StreamJSON(c *gwebsocket.Conn, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
-	err = c.WriteMessage(websocket.TextMessage, response)
+	err = c.WriteMessage(gwebsocket.TextMessage, response)
 	if err != nil {
 		logger.Error(err)
 		return

@@ -17,14 +17,14 @@ import (
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func planECManagersUpgrade(kcli kbclient.Client, a *apptypes.App, newECVersion string) ([]*types.PlanStep, error) {
+func planECManagersUpgrade(ws *websocket.ConnectionManager, kcli kbclient.Client, a *apptypes.App, newECVersion string) ([]*types.PlanStep, error) {
 	nodes := &corev1.NodeList{}
 	if err := kcli.List(context.Background(), nodes, &kbclient.ListOptions{}); err != nil {
 		return nil, errors.Wrap(err, "list nodes")
 	}
 
 	steps := []*types.PlanStep{}
-	connectedManagers := websocket.GetClients()
+	connectedManagers := ws.GetClients()
 
 	for _, node := range nodes.Items {
 		m, ok := connectedManagers[node.Name]
@@ -52,19 +52,19 @@ func planECManagersUpgrade(kcli kbclient.Client, a *apptypes.App, newECVersion s
 	return steps, nil
 }
 
-func executeECManagerUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error {
+func executeECManagerUpgrade(s store.Store, ws *websocket.ConnectionManager, p *types.Plan, step *types.PlanStep) error {
 	in, ok := step.Input.(types.PlanStepInputECManagerUpgrade)
 	if !ok {
 		return errors.New("invalid input for ec manager upgrade step")
 	}
 
 	if step.Status == types.StepStatusPending {
-		if err := websocket.UpgradeECManager(in.NodeName, in.LicenseID, in.LicenseEndpoint, p.NewECVersion, p.AppSlug, p.VersionLabel, step.ID); err != nil {
+		if err := websocket.UpgradeECManager(ws, in.NodeName, in.LicenseID, in.LicenseEndpoint, p.NewECVersion, p.AppSlug, p.VersionLabel, step.ID); err != nil {
 			return errors.Wrapf(err, "upgrade %s ec manager", in.NodeName)
 		}
 	}
 
-	if err := waitForECManagerToConnect(in.NodeName, p.NewECVersion); err != nil {
+	if err := waitForECManagerToConnect(ws, in.NodeName, p.NewECVersion); err != nil {
 		return errors.Wrapf(err, "wait for %s ec manager to connect", in.NodeName)
 	}
 
@@ -93,7 +93,7 @@ func getECManagerUpgradeInput(nodeName string, a *apptypes.App) (*types.PlanStep
 	}, nil
 }
 
-func waitForECManagerToConnect(nodeName string, version string) error {
+func waitForECManagerToConnect(ws *websocket.ConnectionManager, nodeName string, version string) error {
 	timeout := time.After(5 * time.Minute)
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -104,7 +104,7 @@ func waitForECManagerToConnect(nodeName string, version string) error {
 			return errors.Errorf("timeout waiting for EC manager on node %s to connect with version %s", nodeName, version)
 
 		case <-ticker.C:
-			connectedManagers := websocket.GetClients()
+			connectedManagers := ws.GetClients()
 			if m, ok := connectedManagers[nodeName]; ok {
 				if m.Version == version {
 					logger.Debugf("EC manager on node %s connected successfully", nodeName)

@@ -88,7 +88,7 @@ func executeAppUpgradeService(s store.Store, p *types.Plan, step *types.PlanStep
 		return errors.Wrap(err, "update step status")
 	}
 
-	if err := waitForStep(p, step.ID); err != nil {
+	if err := waitForStep(s, p, step.ID); err != nil {
 		return errors.Wrap(err, "wait for upgrade service")
 	}
 

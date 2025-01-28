@@ -45,7 +45,7 @@ func planK0sUpgrade(s store.Store, kcli kbclient.Client, a *apptypes.App, versio
 	return steps, nil
 }
 
-func executeK0sUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error {
+func executeK0sUpgrade(s store.Store, ws *websocket.ConnectionManager, p *types.Plan, step *types.PlanStep) error {
 	in, ok := step.Input.(types.PlanStepInputK0sUpgrade)
 	if !ok {
 		return errors.New("invalid input for k0s upgrade step")
@@ -69,12 +69,12 @@ func executeK0sUpgrade(s store.Store, p *types.Plan, step *types.PlanStep) error
 		newInstall.Spec.Config = &in.NewECConfigSpec
 		newInstall.Spec.LicenseInfo = &ecv1beta1.LicenseInfo{IsDisasterRecoverySupported: in.IsDisasterRecoverySupported}
 
-		if err := websocket.UpgradeCluster(newInstall, p.AppSlug, p.VersionLabel, step.ID); err != nil {
+		if err := websocket.UpgradeCluster(ws, newInstall, p.AppSlug, p.VersionLabel, step.ID); err != nil {
 			return errors.Wrap(err, "upgrade cluster")
 		}
 	}
 
-	if err := waitForStep(p, step.ID); err != nil {
+	if err := waitForStep(s, p, step.ID); err != nil {
 		return errors.Wrap(err, "wait for k0s upgrade")
 	}
 

@@ -92,7 +92,7 @@ func (h *Handler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err := plan.PlanUpgrade(store.GetStore(), kbClient, plan.PlanUpgradeOptions{
+	p, err := plan.PlanUpgrade(store.GetStore(), h.WSConnectionManager, kbClient, plan.PlanUpgradeOptions{
 		AppSlug:      appSlug,
 		VersionLabel: request.VersionLabel,
 		UpdateCursor: request.UpdateCursor,
@@ -113,7 +113,7 @@ func (h *Handler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := plan.Execute(store.GetStore(), p); err != nil {
+		if err := plan.Execute(store.GetStore(), h.WSConnectionManager, p); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to execute plan %s", p.ID))
 		}
 	}()
