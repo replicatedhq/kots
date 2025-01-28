@@ -37,7 +37,6 @@ func Test_GetArtifactsFromInstallation(t *testing.T) {
 							AdditionalArtifacts: map[string]string{
 								"kots":     "onprem.registry.com/my-app/embedded-cluster/kots.tar.gz:v1",
 								"operator": "onprem.registry.com/my-app/embedded-cluster/operator.tar.gz:v1",
-								"manager":  "onprem.registry.com/my-app/embedded-cluster/manager.tar.gz:v1",
 							},
 						},
 					},
@@ -51,7 +50,6 @@ func Test_GetArtifactsFromInstallation(t *testing.T) {
 				AdditionalArtifacts: map[string]string{
 					"kots":     "onprem.registry.com/my-app/embedded-cluster/kots.tar.gz:v1",
 					"operator": "onprem.registry.com/my-app/embedded-cluster/operator.tar.gz:v1",
-					"manager":  "onprem.registry.com/my-app/embedded-cluster/manager.tar.gz:v1",
 				},
 			},
 		},

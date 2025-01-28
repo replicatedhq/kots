@@ -63,7 +63,6 @@ type Props = {
       isAirgap: boolean;
       isKurl: boolean;
       isEmbeddedCluster: boolean;
-      isEC2Install: boolean;
     };
     app: App;
     displayErrorModal: boolean;
@@ -1025,14 +1024,11 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   onCheckForUpgradeServiceStatus = async () => {
-    const { app, adminConsoleMetadata } = this.props.outletContext;
+    const { app } = this.props.outletContext;
 
     this.setState({ isStartingUpgradeService: true });
     return new Promise<void>((resolve, reject) => {
-      let url = `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`;
-      if (adminConsoleMetadata?.isEC2Install) {
-        url = `${process.env.API_ENDPOINT}/app/${app?.slug}/ec2-deploy/status`;
-      }
+      const url = `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`;
       fetch(url, {
         headers: {
           "Content-Type": "application/json",
@@ -1042,15 +1038,7 @@ class AppVersionHistory extends Component<Props, State> {
       })
         .then(async (res) => {
           const response = await res.json();
-
-          let stopPolling = response.status !== "starting";
-          if (adminConsoleMetadata?.isEC2Install) {
-            stopPolling =
-              response.step !== "app-upgrade-service" ||
-              (response.status !== "pending" && response.status !== "starting");
-          }
-
-          if (stopPolling) {
+          if (response.status !== "starting") {
             this.state.upgradeServiceChecker.stop();
             this.setState({
               isStartingUpgradeService: false,
@@ -1534,10 +1522,7 @@ class AppVersionHistory extends Component<Props, State> {
     });
 
     const appSlug = this.props.params.slug;
-    let url = `${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`;
-    if (this.props.outletContext.adminConsoleMetadata?.isEC2Install) {
-      url = `${process.env.API_ENDPOINT}/app/${appSlug}/ec2-deploy`;
-    }
+    const url = `${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`;
 
     fetch(url, {
       headers: {

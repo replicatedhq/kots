@@ -15,5 +15,4 @@ type UpgradeServiceHandler interface {
 	GetPreflightResult(w http.ResponseWriter, r *http.Request)
 
 	Deploy(w http.ResponseWriter, r *http.Request)
-	DeployEC2(w http.ResponseWriter, r *http.Request)
 }

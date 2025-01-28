@@ -135,7 +135,6 @@ export type Metadata = {
   isAirgap: boolean;
   isKurl: boolean;
   isEmbeddedCluster: boolean;
-  isEC2Install: boolean;
 };
 
 export type PreflightError = {

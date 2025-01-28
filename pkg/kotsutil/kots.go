@@ -933,20 +933,6 @@ func LoadV1Beta2HelmChartFromContents(content []byte) (*kotsv1beta2.HelmChart, e
 	return obj.(*kotsv1beta2.HelmChart), nil
 }
 
-func FindInstallationInPath(fromDir string) (*kotsv1beta1.Installation, error) {
-	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta1", "Installation", fromDir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load Installation from path %s", fromDir)
-	}
-
-	if len(objects) == 0 {
-		return nil, errors.New("not found")
-	}
-
-	// we only support having one installation spec
-	return objects[0].(*kotsv1beta1.Installation), nil
-}
-
 func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Installation, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(installationData), nil, nil)

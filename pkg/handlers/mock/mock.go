@@ -178,18 +178,6 @@ func (mr *MockKOTSHandlerMockRecorder) ConfirmEmbeddedClusterManagement(w, r int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfirmEmbeddedClusterManagement", reflect.TypeOf((*MockKOTSHandler)(nil).ConfirmEmbeddedClusterManagement), w, r)
 }
 
-// ConnectToECWebsocket mocks base method.
-func (m *MockKOTSHandler) ConnectToECWebsocket(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ConnectToECWebsocket", w, r)
-}
-
-// ConnectToECWebsocket indicates an expected call of ConnectToECWebsocket.
-func (mr *MockKOTSHandlerMockRecorder) ConnectToECWebsocket(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectToECWebsocket", reflect.TypeOf((*MockKOTSHandler)(nil).ConnectToECWebsocket), w, r)
-}
-
 // CreateAppFromAirgap mocks base method.
 func (m *MockKOTSHandler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -332,18 +320,6 @@ func (m *MockKOTSHandler) DeployAppVersion(w http.ResponseWriter, r *http.Reques
 func (mr *MockKOTSHandlerMockRecorder) DeployAppVersion(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).DeployAppVersion), w, r)
-}
-
-// DeployEC2AppVersion mocks base method.
-func (m *MockKOTSHandler) DeployEC2AppVersion(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeployEC2AppVersion", w, r)
-}
-
-// DeployEC2AppVersion indicates an expected call of DeployEC2AppVersion.
-func (mr *MockKOTSHandlerMockRecorder) DeployEC2AppVersion(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployEC2AppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).DeployEC2AppVersion), w, r)
 }
 
 // DisableAppGitOps mocks base method.
@@ -718,18 +694,6 @@ func (mr *MockKOTSHandlerMockRecorder) GetBackup(w, r interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackup", reflect.TypeOf((*MockKOTSHandler)(nil).GetBackup), w, r)
 }
 
-// GetDebugInfo mocks base method.
-func (m *MockKOTSHandler) GetDebugInfo(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetDebugInfo", w, r)
-}
-
-// GetDebugInfo indicates an expected call of GetDebugInfo.
-func (mr *MockKOTSHandlerMockRecorder) GetDebugInfo(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDebugInfo", reflect.TypeOf((*MockKOTSHandler)(nil).GetDebugInfo), w, r)
-}
-
 // GetDownstreamOutput mocks base method.
 func (m *MockKOTSHandler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -740,18 +704,6 @@ func (m *MockKOTSHandler) GetDownstreamOutput(w http.ResponseWriter, r *http.Req
 func (mr *MockKOTSHandlerMockRecorder) GetDownstreamOutput(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstreamOutput", reflect.TypeOf((*MockKOTSHandler)(nil).GetDownstreamOutput), w, r)
-}
-
-// GetEC2DeployStatus mocks base method.
-func (m *MockKOTSHandler) GetEC2DeployStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetEC2DeployStatus", w, r)
-}
-
-// GetEC2DeployStatus indicates an expected call of GetEC2DeployStatus.
-func (mr *MockKOTSHandlerMockRecorder) GetEC2DeployStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEC2DeployStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetEC2DeployStatus), w, r)
 }
 
 // GetEmbeddedClusterNode mocks base method.
@@ -1556,18 +1508,6 @@ func (m *MockKOTSHandler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r 
 func (mr *MockKOTSHandlerMockRecorder) UpdateGlobalSnapshotSettings(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateGlobalSnapshotSettings", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateGlobalSnapshotSettings), w, r)
-}
-
-// UpdatePlanStep mocks base method.
-func (m *MockKOTSHandler) UpdatePlanStep(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdatePlanStep", w, r)
-}
-
-// UpdatePlanStep indicates an expected call of UpdatePlanStep.
-func (mr *MockKOTSHandlerMockRecorder) UpdatePlanStep(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePlanStep", reflect.TypeOf((*MockKOTSHandler)(nil).UpdatePlanStep), w, r)
 }
 
 // UpdateRedact mocks base method.

@@ -93,7 +93,7 @@ func (h *Handler) GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request
 	status, message, err := upgradeservicetask.GetStatus(appSlug)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "get status"))
 		return
 	}
 

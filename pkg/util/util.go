@@ -172,10 +172,6 @@ func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
 }
 
-func IsEC2Install() bool {
-	return os.Getenv("IS_EC2_INSTALL") == "true"
-}
-
 func IsUpgradeService() bool {
 	return os.Getenv("IS_UPGRADE_SERVICE") == "true"
 }
