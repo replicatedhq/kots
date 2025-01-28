@@ -167,7 +167,7 @@ spec:
     - copyFromHost:
         collectorName: "copy apiserver audit logs"
         image: alpine
-        hostPath: "/var/log/apiserver/"
+        hostPath: "/var/log/apiserver/k8s-audit.log"
         name: "logs"
         extractArchive: true
     - copyFromHost:
