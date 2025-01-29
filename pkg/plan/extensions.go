@@ -90,12 +90,12 @@ func executeECExtensionAdd(s store.Store, ws *websocket.ConnectionManager, p *ty
 
 	if step.Status == types.StepStatusPending {
 		if err := websocket.AddExtension(ws, in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
-			return errors.Wrap(err, "add extension")
+			return errors.Wrapf(err, "add extension %q", in.Chart.ChartName)
 		}
 	}
 
 	if err := waitForStep(s, p, step.ID); err != nil {
-		return errors.Wrap(err, "wait for embedded cluster extension add")
+		return errors.Wrapf(err, "wait for embedded cluster extension %q add", in.Chart.ChartName)
 	}
 
 	return nil
@@ -109,12 +109,12 @@ func executeECExtensionUpgrade(s store.Store, ws *websocket.ConnectionManager, p
 
 	if step.Status == types.StepStatusPending {
 		if err := websocket.UpgradeExtension(ws, in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
-			return errors.Wrap(err, "upgrade extension")
+			return errors.Wrapf(err, "upgrade extension %q", in.Chart.ChartName)
 		}
 	}
 
 	if err := waitForStep(s, p, step.ID); err != nil {
-		return errors.Wrap(err, "wait for embedded cluster extension upgrade")
+		return errors.Wrapf(err, "wait for embedded cluster extension %q upgrade", in.Chart.ChartName)
 	}
 
 	return nil
@@ -128,12 +128,12 @@ func executeECExtensionRemove(s store.Store, ws *websocket.ConnectionManager, p 
 
 	if step.Status == types.StepStatusPending {
 		if err := websocket.RemoveExtension(ws, in.Repos, in.Chart, p.AppSlug, p.VersionLabel, step.ID); err != nil {
-			return errors.Wrap(err, "remove extension")
+			return errors.Wrapf(err, "remove extension %q", in.Chart.ChartName)
 		}
 	}
 
 	if err := waitForStep(s, p, step.ID); err != nil {
-		return errors.Wrap(err, "wait for embedded cluster extension remove")
+		return errors.Wrapf(err, "wait for embedded cluster extension %q remove", in.Chart.ChartName)
 	}
 
 	return nil
