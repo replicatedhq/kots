@@ -1088,6 +1088,7 @@ func (o *Operator) reconcileClusterUpgrade(ctx context.Context, appID string, ap
 		msg = "V2MigrationInProgress"
 	}
 	if msg == "" {
+		// if the status was the same previously, do not overwrite the previous message with an empty one
 		taskStatus, taskMsg, _ := upgradeservicetask.GetStatus(appSlug)
 		if taskStatus == string(upgradeservicetask.StatusUpgradingCluster) {
 			msg = taskMsg
