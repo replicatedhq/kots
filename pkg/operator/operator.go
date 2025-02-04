@@ -1039,51 +1039,67 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) 
 }
 
 func (o *Operator) waitForClusterUpgrade(appID string, appSlug string) error {
-	ctx := context.Background()
-
-	kbClient, err := k8sutil.GetKubeClient(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to get kube client")
-	}
 	logger.Infof("Waiting for cluster upgrade to finish")
+
 	for {
-		ins, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
+		done, err := o.reconcileClusterUpgrade(context.Background(), appID, appSlug)
 		if err != nil {
-			return errors.Wrap(err, "failed to wait for embedded cluster installation")
-		}
-		if embeddedcluster.InstallationSucceeded(ctx, ins) {
-			logger.Infof("Cluster upgrade succeeded")
-			if err := o.notifyClusterUpgradeSucceeded(ctx, kbClient, ins, appID); err != nil {
-				logger.Errorf("Failed to notify upgrade succeeded: %v", err)
-			}
+			logger.Errorf("Error reconciling cluster upgrade (retrying in 5s): %v", err)
+		} else if done {
 			return nil
 		}
-		if embeddedcluster.InstallationFailed(ctx, ins) {
-			logger.Infof("Cluster upgrade failed")
-			if err := o.notifyClusterUpgradeFailed(ctx, kbClient, ins, appID); err != nil {
-				logger.Errorf("Failed to notify upgrade failed: %v", err)
-			}
-			if err := upgradeservicetask.SetStatusUpgradeFailed(appSlug, ins.Status.Reason); err != nil {
-				return errors.Wrap(err, "failed to set task status to failed")
-			}
-			return nil // we try to deploy the app even if the cluster upgrade failed
-		}
-		msg := ins.Status.State
-		if checkInstallationConditionStatus(ins.Status, embeddedclusterv1beta1.ConditionTypeV2MigrationInProgress) == metav1.ConditionTrue {
-			msg = "V2MigrationInProgress"
-		}
-		if msg == "" {
-			// if the status was the same previously, do not overwrite the previous message with an empty one
-			taskStatus, taskMsg, _ := upgradeservicetask.GetStatus(appSlug)
-			if taskStatus == string(upgradeservicetask.StatusUpgradingCluster) {
-				msg = taskMsg
-			}
-		}
-		if err := upgradeservicetask.SetStatusUpgradingCluster(appSlug, msg); err != nil {
-			return errors.Wrap(err, "failed to set task status to upgrading cluster")
-		}
+
 		time.Sleep(5 * time.Second)
 	}
+}
+
+func (o *Operator) reconcileClusterUpgrade(ctx context.Context, appID string, appSlug string) (bool, error) {
+	kbClient, err := k8sutil.GetKubeClient(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get kube client")
+	}
+
+	ins, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to wait for embedded cluster installation")
+	}
+
+	if embeddedcluster.InstallationSucceeded(ctx, ins) {
+		logger.Infof("Cluster upgrade succeeded")
+		if err := o.notifyClusterUpgradeSucceeded(ctx, kbClient, ins, appID); err != nil {
+			logger.Errorf("Failed to notify upgrade succeeded: %v", err)
+		}
+		return true, nil // succeeded
+	}
+
+	if embeddedcluster.InstallationFailed(ctx, ins) {
+		logger.Infof("Cluster upgrade failed")
+		if err := o.notifyClusterUpgradeFailed(ctx, kbClient, ins, appID); err != nil {
+			logger.Errorf("Failed to notify upgrade failed: %v", err)
+		}
+		if err := upgradeservicetask.SetStatusUpgradeFailed(appSlug, ins.Status.Reason); err != nil {
+			return false, errors.Wrap(err, "failed to set task status to failed")
+		}
+		return true, nil // failed, but we try to deploy the app even if the cluster upgrade failed
+	}
+
+	msg := ins.Status.State
+	if checkInstallationConditionStatus(ins.Status, embeddedclusterv1beta1.ConditionTypeV2MigrationInProgress) == metav1.ConditionTrue {
+		msg = "V2MigrationInProgress"
+	}
+	if msg == "" {
+		// if the status was the same previously, do not overwrite the previous message with an empty one
+		taskStatus, taskMsg, _ := upgradeservicetask.GetStatus(appSlug)
+		if taskStatus == string(upgradeservicetask.StatusUpgradingCluster) {
+			msg = taskMsg
+		}
+	}
+
+	if err := upgradeservicetask.SetStatusUpgradingCluster(appSlug, msg); err != nil {
+		return false, errors.Wrap(err, "failed to set task status to upgrading cluster")
+	}
+
+	return false, nil // in progress
 }
 
 // notifyClusterUpgradeSucceeded sends a metrics event to the api that the upgrade succeeded.
