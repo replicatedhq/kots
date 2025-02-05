@@ -114,8 +114,6 @@ jobs:
         uses: slackapi/slack-github-action@v2.0.0
         with: 
           payload: |
-            {
-              "pull_request_url": "${{steps.cpr.outputs.pull-request-url}}"
-            }
+            pull_request_url: "${{steps.cpr.outputs.pull-request-url}}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_IMAGE_DEPS_SLACK_WEBHOOK }}
