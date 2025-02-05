@@ -112,10 +112,8 @@ jobs:
       - name: Slack Notification
         if: ${{ steps.cpr.outputs.pull-request-number }}
         uses: slackapi/slack-github-action@v2.0.0
-        with: 
+        with:
+          webhook: ${{ secrets.KOTS_IMAGE_DEPS_SLACK_WEBHOOK }}
+          webhook-type: webhook-trigger
           payload: |
-            {
-              "pull_request_url": "${{steps.cpr.outputs.pull-request-url}}"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_IMAGE_DEPS_SLACK_WEBHOOK }}
+            pull_request_url: "${{steps.cpr.outputs.pull-request-url}}"
