@@ -5,5 +5,5 @@ package image
 // image name.
 
 const (
-	Lvp = "replicated/local-volume-provider:v0.3.3"
+	Lvp = "replicated/local-volume-provider:0.3.3"
 )
