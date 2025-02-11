@@ -71,7 +71,6 @@ export const AvailableUpdateRow = ({
           <div className="tw-my-4">
             <span className="u-fontSize--small u-textColor--error u-fontWeight--bold">
               {upgradeService.error}
-              error
             </span>
           </div>
         )}

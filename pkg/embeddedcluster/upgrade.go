@@ -2,6 +2,7 @@ package embeddedcluster
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -168,10 +169,17 @@ func runClusterUpgrade(
 
 	cmd := exec.CommandContext(ctx, bin, args...)
 	cmd.Stdin = strings.NewReader(string(installationData))
+
+	// create pipe for capturing output
 	pr, pw := io.Pipe()
 	defer pw.Close()
+
+	// capture stderr separately so we can return it in the error
+	var stderr bytes.Buffer
 	cmd.Stdout = pw
-	cmd.Stderr = pw
+	cmd.Stderr = io.MultiWriter(pw, &stderr)
+
+	// stream output to logs
 	go func() {
 		defer pr.Close()
 		log.Println("Upgrade command output:")
@@ -180,9 +188,9 @@ func runClusterUpgrade(
 			log.Println("  " + scanner.Text())
 		}
 	}()
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("run upgrade command: %w", err)
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("run upgrade command: %w: %s", err, stderr.String())
 	}
 
 	return nil
