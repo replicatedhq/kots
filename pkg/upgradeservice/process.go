@@ -1,6 +1,7 @@
 package upgradeservice
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,8 +21,9 @@ import (
 )
 
 type UpgradeService struct {
-	cmd  *exec.Cmd
-	port string
+	cmd    *exec.Cmd
+	port   string
+	stderr bytes.Buffer
 }
 
 // map of app slug to upgrade service
@@ -33,10 +35,10 @@ var upgradeServiceMtx = &sync.Mutex{}
 func Start(params types.UpgradeServiceParams) (finalError error) {
 	svc, err := start(params)
 	if err != nil {
-		return errors.Wrap(err, "failed to create new upgrade service")
+		return errors.Wrap(err, "create new upgrade service")
 	}
 	if err := svc.waitForReady(params.AppSlug); err != nil {
-		return errors.Wrap(err, "failed to wait for upgrade service to become ready")
+		return errors.Wrap(err, "wait for upgrade service to become ready")
 	}
 	return nil
 }
@@ -77,7 +79,7 @@ func Proxy(w http.ResponseWriter, r *http.Request) {
 
 	remote, err := url.Parse(fmt.Sprintf("http://localhost:%s", svc.port))
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to parse upgrade service url"))
+		logger.Error(errors.Wrap(err, "parse upgrade service url"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -96,27 +98,30 @@ func start(params types.UpgradeServiceParams) (*UpgradeService, error) {
 		currSvc.stop()
 	}
 
+	// create a new service
+	newSvc := &UpgradeService{
+		port:   params.Port,
+		stderr: bytes.Buffer{},
+	}
+
 	paramsYAML, err := yaml.Marshal(params)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal params")
+		return nil, errors.Wrap(err, "marshal params")
 	}
 
 	cmd := exec.Command(params.UpdateKOTSBin, "upgrade-service", "start", "-")
 	cmd.Stdin = strings.NewReader(string(paramsYAML))
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = io.MultiWriter(os.Stderr, &newSvc.stderr)
 	if err := cmd.Start(); err != nil {
-		return nil, errors.Wrap(err, "failed to start")
+		return nil, errors.Wrap(err, "start")
 	}
 
 	// calling wait helps populate the process state and reap the zombie process
 	go cmd.Wait()
 
-	// create a new service
-	newSvc := &UpgradeService{
-		cmd:  cmd,
-		port: params.Port,
-	}
+	// update cmd and register the service
+	newSvc.cmd = cmd
 	upgradeServiceMap[params.AppSlug] = newSvc
 
 	return newSvc, nil
@@ -144,16 +149,16 @@ func (s *UpgradeService) waitForReady(appSlug string) error {
 			return errors.New("upgrade service not found")
 		}
 		if s.cmd.ProcessState != nil {
-			return errors.Errorf("upgrade service terminated. last error: %v", lasterr)
+			return errors.Errorf("upgrade service terminated. ping error: %v: stderr: %s", lasterr, s.stderr.String())
 		}
 		request, err := http.NewRequest("GET", fmt.Sprintf("http://localhost:%s/api/v1/upgrade-service/app/%s/ping", s.port, appSlug), nil)
 		if err != nil {
-			lasterr = errors.Wrap(err, "failed to create request")
+			lasterr = errors.Wrap(err, "create request")
 			continue
 		}
 		response, err := http.DefaultClient.Do(request)
 		if err != nil {
-			lasterr = errors.Wrap(err, "failed to do request")
+			lasterr = errors.Wrap(err, "do request")
 			continue
 		}
 		if response.StatusCode != http.StatusOK {
