@@ -40,6 +40,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
@@ -195,8 +196,12 @@ func InstallCmd() *cobra.Command {
 					return errors.Wrapf(err, "failed to get metadata from %s", airgapBundle)
 				}
 			} else if !v.GetBool("airgap") {
-				applicationMetadata, err = pull.PullApplicationMetadata(upstream, v.GetString("app-version-label"))
+				applicationMetadata, err = pull.PullApplicationMetadata(upstream, license, v.GetString("app-version-label"))
 				if err != nil {
+					// application metadata is required for embedded cluster installations
+					if util.IsEmbeddedCluster() {
+						return errors.Wrap(err, "failed to pull application metadata")
+					}
 					log.Info("Unable to pull application metadata. This can be ignored, but custom branding will not be available in the Admin Console until a license is installed. This may also cause the Admin Console to run without minimal role-based-access-control (RBAC) privileges, which may be required by the application.")
 					applicationMetadata = &replicatedapp.ApplicationMetadata{}
 				}

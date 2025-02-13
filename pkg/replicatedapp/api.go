@@ -142,8 +142,7 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 // GetApplicationMetadata will return any available application yaml from
 // the upstream. If there is no application.yaml, it will return
 // a placeholder one
-func GetApplicationMetadata(upstream *url.URL, versionLabel string) (*ApplicationMetadata, error) {
-	host := util.GetReplicatedAPIEndpoint()
+func GetApplicationMetadata(host string, upstream *url.URL, versionLabel string) (*ApplicationMetadata, error) {
 	manifest, err := getApplicationMetadataFromHost(host, "metadata", upstream, versionLabel)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get metadata from %s", host)
