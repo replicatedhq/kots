@@ -196,7 +196,7 @@ func InstallCmd() *cobra.Command {
 					return errors.Wrapf(err, "failed to get metadata from %s", airgapBundle)
 				}
 			} else if !v.GetBool("airgap") {
-				applicationMetadata, err = pull.PullApplicationMetadata(license.Spec.Endpoint, upstream, v.GetString("app-version-label"))
+				applicationMetadata, err = pull.PullApplicationMetadata(upstream, license, v.GetString("app-version-label"))
 				if err != nil {
 					// application metadata is required for embedded cluster installations
 					if util.IsEmbeddedCluster() {

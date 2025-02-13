@@ -145,6 +145,14 @@ func (e ActionableError) Error() string {
 	return fmt.Sprintf("%s", e.Message)
 }
 
+func GetReplicatedAPIEndpoint() string {
+	endpoint := os.Getenv("REPLICATED_API_ENDPOINT")
+	if endpoint != "" {
+		return endpoint
+	}
+	return "https://replicated.app"
+}
+
 func HomeDir() string {
 	if h := os.Getenv("HOME"); h != "" {
 		return h

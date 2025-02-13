@@ -87,7 +87,14 @@ var (
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
-func PullApplicationMetadata(host string, upstreamURI string, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
+func PullApplicationMetadata(upstreamURI string, license *kotsv1beta1.License, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
+	var host string
+	if license.Spec.Endpoint != "" {
+		host = license.Spec.Endpoint
+	} else {
+		host = util.GetReplicatedAPIEndpoint()
+	}
+
 	uri, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse uri")
