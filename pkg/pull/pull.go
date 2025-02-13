@@ -89,7 +89,7 @@ var (
 // available for the upstream
 func PullApplicationMetadata(upstreamURI string, license *kotsv1beta1.License, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
 	var host string
-	if license.Spec.Endpoint != "" {
+	if license != nil && license.Spec.Endpoint != "" {
 		host = license.Spec.Endpoint
 	} else {
 		host = util.GetReplicatedAPIEndpoint()
