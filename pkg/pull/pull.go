@@ -87,18 +87,18 @@ var (
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
-func PullApplicationMetadata(upstreamURI string, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
-	u, err := url.ParseRequestURI(upstreamURI)
+func PullApplicationMetadata(host string, upstreamURI string, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
+	uri, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse uri")
 	}
 
 	// metadata is only currently supported on licensed apps
-	if u.Scheme != "replicated" {
+	if uri.Scheme != "replicated" {
 		return nil, nil
 	}
 
-	metadata, err := replicatedapp.GetApplicationMetadata(u, versionLabel)
+	metadata, err := replicatedapp.GetApplicationMetadata(host, uri, versionLabel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get application metadata")
 	}
