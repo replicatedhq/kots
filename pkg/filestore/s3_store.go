@@ -81,7 +81,7 @@ func (s *S3Store) WaitForReady(ctx context.Context) error {
 
 	period := 1 * time.Second // TOOD: backoff
 	for {
-		_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+		_, err := s3Client.HeadBucketWithContext(ctx, &s3.HeadBucketInput{
 			Bucket: aws.String(os.Getenv("S3_BUCKET_NAME")),
 		})
 		if err == nil {
@@ -95,6 +95,7 @@ func (s *S3Store) WaitForReady(ctx context.Context) error {
 
 		select {
 		case <-time.After(period):
+			logger.Debug("waiting for object store to be ready")
 			continue
 		case <-ctx.Done():
 			return errors.Errorf("failed to find valid object store: %s, last error: %s", ctx.Err(), err)
