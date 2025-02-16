@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 )
 
 func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.ReportingInfo) {
@@ -24,7 +25,11 @@ func GetReportingInfoHeaders(reportingInfo *types.ReportingInfo) map[string]stri
 		return headers
 	}
 
-	headers["User-Agent"] = reportingInfo.UserAgent
+	if reportingInfo.UserAgent != "" {
+		headers["User-Agent"] = reportingInfo.UserAgent
+	} else {
+		headers["User-Agent"] = buildversion.GetUserAgent()
+	}
 	headers["X-Replicated-K8sVersion"] = reportingInfo.K8sVersion
 	headers["X-Replicated-IsKurl"] = strconv.FormatBool(reportingInfo.IsKurl)
 	headers["X-Replicated-AppStatus"] = reportingInfo.AppStatus
