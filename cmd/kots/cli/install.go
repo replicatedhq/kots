@@ -90,7 +90,7 @@ func InstallCmd() *cobra.Command {
 				log.ActionWithoutSpinner("Cleaning up")
 				if finalMessage != "" {
 					log.ActionWithoutSpinner("")
-					log.ActionWithoutSpinner(finalMessage)
+					log.ActionWithoutSpinner("%s", finalMessage)
 					log.ActionWithoutSpinner("")
 				}
 
@@ -490,7 +490,7 @@ func InstallCmd() *cobra.Command {
 						perr := preflightError{}
 						if errors.As(err, &perr) {
 							log.FinishSpinner() // We succeeded waiting for the results. Don't finish with an error
-							log.Errorf(perr.Msg)
+							log.Errorf("%s", perr.Msg)
 							print.PreflightResults(perr.Results)
 							cmd.SilenceErrors = true // Stop Cobra from printing the error, we format the message ourselves
 						} else {
@@ -1061,7 +1061,7 @@ func (e preflightError) Error() string {
 	return e.Msg
 }
 
-func (e preflightError) Unwrap() error { return fmt.Errorf(e.Msg) }
+func (e preflightError) Unwrap() error { return fmt.Errorf("%s", e.Msg) }
 
 func checkPreflightResults(response *handlers.GetPreflightResultResponse, skipPreflights bool) (bool, error) {
 	if response.PreflightResult.Result == "" {
