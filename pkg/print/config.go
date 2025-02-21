@@ -24,5 +24,5 @@ func ConfigValidationErrors(log *logger.CLILogger, groupValidationErrors []confi
 	}
 
 	log.FinishSpinnerWithError()
-	log.Errorf(sb.String())
+	log.Errorf("%s", sb.String())
 }

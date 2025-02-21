@@ -101,7 +101,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 				os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 			}
 
-			log.ActionWithSpinner(fmt.Sprintf("Retrying download for sequence %d", appSequence))
+			log.ActionWithSpinner("Retrying download for sequence %d", appSequence)
 
 			newReq, err := http.NewRequest("POST", url, nil)
 			if err != nil {
@@ -154,7 +154,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 			if v.GetBool("wait") {
 				log.ActionWithoutSpinner("Downloaded successfully.")
 			} else {
-				log.ActionWithoutSpinner(fmt.Sprintf("App sequence %d is being re-downloaded.", appSequence))
+				log.ActionWithoutSpinner("App sequence %d is being re-downloaded.", appSequence)
 			}
 
 			return nil

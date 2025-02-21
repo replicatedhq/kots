@@ -149,7 +149,7 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 			if backup != nil {
 				errMsg := fmt.Sprintf("backup failed with %d errors and %d warnings.", backup.Status.Errors, backup.Status.Warnings)
 				log.FinishSpinnerWithError()
-				log.ActionWithoutSpinner(errMsg)
+				log.ActionWithoutSpinner("%s", errMsg)
 				return nil, errors.Wrap(err, errMsg)
 			}
 			log.FinishSpinnerWithError()
@@ -157,10 +157,10 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 		}
 
 		log.FinishSpinner()
-		log.ActionWithoutSpinner(fmt.Sprintf("Backup completed successfully. Backup name is %s", backupResponse.BackupName))
+		log.ActionWithoutSpinner("Backup completed successfully. Backup name is %s", backupResponse.BackupName)
 	} else {
 		log.FinishSpinner()
-		log.ActionWithoutSpinner(fmt.Sprintf("Backup is in progress. Backup name is %s", backupResponse.BackupName))
+		log.ActionWithoutSpinner("Backup is in progress. Backup name is %s", backupResponse.BackupName)
 	}
 
 	return &backupResponse, nil

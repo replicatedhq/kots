@@ -55,7 +55,7 @@ func BackupCmd() *cobra.Command {
 				if err != nil {
 					return errors.Wrap(err, "error marshaling JSON")
 				}
-				log.Info(string(outputJSON))
+				log.Info("%s", string(outputJSON))
 			}
 
 			return nil

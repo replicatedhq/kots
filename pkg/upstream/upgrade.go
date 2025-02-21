@@ -3,7 +3,6 @@ package upstream
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -181,18 +180,18 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		} else if options.Wait {
 			if options.Deploy {
 				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, ensuring latest is deployed", ur.AvailableUpdates))
+				log.ActionWithoutSpinner("There are currently %d updates available in the Admin Console, ensuring latest is deployed", ur.AvailableUpdates)
 			} else {
 				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, ensuring %s is deployed", ur.AvailableUpdates, options.DeployVersionLabel))
+				log.ActionWithoutSpinner("There are currently %d updates available in the Admin Console, ensuring %s is deployed", ur.AvailableUpdates, options.DeployVersionLabel)
 			}
 		} else {
 			if options.Deploy {
 				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the latest release is downloaded, it will be deployed", ur.AvailableUpdates))
+				log.ActionWithoutSpinner("There are currently %d updates available in the Admin Console, when the latest release is downloaded, it will be deployed", ur.AvailableUpdates)
 			} else {
 				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the release with the %s version label is downloaded, it will be deployed", ur.AvailableUpdates, options.DeployVersionLabel))
+				log.ActionWithoutSpinner("There are currently %d updates available in the Admin Console, when the release with the %s version label is downloaded, it will be deployed", ur.AvailableUpdates, options.DeployVersionLabel)
 			}
 		}
 
@@ -212,7 +211,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 			log.ActionWithoutSpinner("There are no application updates available")
 		} else {
 			log.ActionWithoutSpinner("")
-			log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ur.AvailableUpdates))
+			log.ActionWithoutSpinner("There are currently %d updates available in the Admin Console", ur.AvailableUpdates)
 		}
 	}
 

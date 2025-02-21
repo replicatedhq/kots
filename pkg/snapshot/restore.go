@@ -163,7 +163,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 			if restore != nil {
 				errMsg := fmt.Sprintf("Admin Console restore failed with %d errors and %d warnings.", restore.Status.Errors, restore.Status.Warnings)
 				log.FinishSpinnerWithError()
-				log.ActionWithoutSpinner(errMsg)
+				log.ActionWithoutSpinner("%s", errMsg)
 				return errors.Wrap(err, errMsg)
 			}
 			log.FinishSpinnerWithError()

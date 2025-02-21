@@ -1070,7 +1070,7 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 func promptForFileSystemReset(log *logger.CLILogger, warningMsg string) bool {
 	// this is a workaround to avoid this issue: https://github.com/manifoldco/promptui/issues/122
 	red := color.New(color.FgHiRed).SprintFunc()
-	log.Info(fmt.Sprintf("\n%s", red(warningMsg)))
+	log.Info("\n%s", red(warningMsg))
 
 	prompt := promptui.Prompt{
 		Label:     "Would you like to continue",

@@ -176,24 +176,24 @@ func logUpstreamUpgrade(log *logger.CLILogger, res *upstream.UpgradeResponse, ou
 		if err != nil {
 			return errors.Wrap(err, "error marshaling JSON")
 		}
-		log.Info(string(outputJSON))
+		log.Info("%s", string(outputJSON))
 		return nil
 	}
 
 	// text output
 	if res.Error != "" {
-		log.ActionWithoutSpinner(res.Error)
+		log.ActionWithoutSpinner("%s", res.Error)
 	} else {
 		if res.CurrentRelease != nil {
-			log.ActionWithoutSpinner(fmt.Sprintf("Currently deployed release: sequence %v, version %v", res.CurrentRelease.Sequence, res.CurrentRelease.Version))
+			log.ActionWithoutSpinner("Currently deployed release: sequence %v, version %v", res.CurrentRelease.Sequence, res.CurrentRelease.Version)
 		}
 
 		for _, r := range res.AvailableReleases {
-			log.ActionWithoutSpinner(fmt.Sprintf("Downloading available release: sequence %v, version %v", r.Sequence, r.Version))
+			log.ActionWithoutSpinner("Downloading available release: sequence %v, version %v", r.Sequence, r.Version)
 		}
 
 		if res.DeployingRelease != nil {
-			log.ActionWithoutSpinner(fmt.Sprintf("Deploying release: sequence %v, version %v", res.DeployingRelease.Sequence, res.DeployingRelease.Version))
+			log.ActionWithoutSpinner("Deploying release: sequence %v, version %v", res.DeployingRelease.Sequence, res.DeployingRelease.Version)
 		}
 	}
 
