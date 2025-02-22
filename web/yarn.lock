@@ -1607,13 +1607,13 @@
   resolved "https://registry.yarnpkg.com/@gar/promisify/-/promisify-1.1.3.tgz#555193ab2e3bb3b6adc3d551c9c030d9e860daf6"
   integrity sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==
 
-"@grafana/data@^11.5.1":
-  version "11.5.1"
-  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-11.5.1.tgz#292e87ab9083eae5c6e345e49c2f9074cedd4799"
-  integrity sha512-boN98B8ZMlqieexjOhVqOzF5a8sByR5QihdHhCw7MScBh/6YroLhzxCgJb0T369zF5AGhxVj08WgLQ2m/Q492g==
+"@grafana/data@^11.5.2":
+  version "11.5.2"
+  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-11.5.2.tgz#63bfb9ce6a07130cb25bf19423701f6b152fcb73"
+  integrity sha512-bNCLXVP+HV75/aHtY4u6Wg3i9uxJG6//EEdhRaDwxCJ1C695M2ShOuKxHzkRH+VNqS0zt1rFQbv5wD53n6MuPg==
   dependencies:
     "@braintree/sanitize-url" "7.0.1"
-    "@grafana/schema" "11.5.1"
+    "@grafana/schema" "11.5.2"
     "@types/d3-interpolate" "^3.0.0"
     "@types/string-hash" "1.1.3"
     d3-interpolate "3.0.1"
@@ -1637,10 +1637,10 @@
     uplot "1.6.31"
     xss "^1.0.14"
 
-"@grafana/schema@11.5.1":
-  version "11.5.1"
-  resolved "https://registry.yarnpkg.com/@grafana/schema/-/schema-11.5.1.tgz#fff0e3207f13187a90bfef839971afa7d84cf08d"
-  integrity sha512-i8Ep003k1ThI48ARlPRA2iUpCp7+DtECQ9KWv2DUDd605DWpaGsIujp4YLb6Xnq+oFOHSZeA5TDgHYZjsJBxwg==
+"@grafana/schema@11.5.2":
+  version "11.5.2"
+  resolved "https://registry.yarnpkg.com/@grafana/schema/-/schema-11.5.2.tgz#f18979455f132690085375524cf529037abdbe59"
+  integrity sha512-zXfFrIx+jKziVUq17I0D67Y+Ry+FOXCnQ+InMwl/fKmYqgQKV6kzn0P8QhsvudYg5ptAvBCxSGG+U4+N95KPVA==
   dependencies:
     tslib "2.8.1"
 
@@ -2554,10 +2554,10 @@
     util-deprecate "^1.0.2"
     uuid-browser "^3.1.0"
 
-"@storybook/addon-actions@^8.5.6":
-  version "8.5.6"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-8.5.6.tgz#ea8c76a8d61b324bd034f6f614f86b7760525f36"
-  integrity sha512-kREkqUNmaYFYL5NsgbtYXxuFbVGuoA1reQPYl/ToqI/ujXZo1XDo0o+Sztjj8r2GVAjaM6a96FUxEJ7yg1yBCg==
+"@storybook/addon-actions@^8.5.8":
+  version "8.5.8"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-8.5.8.tgz#51e111f830d9d05a78f5d8bec4b9f758baeaac43"
+  integrity sha512-7J0NAz+WDw1NmvmKIh0Qr5cxgVRDPFC5fmngbDNxedk147TkwrgmqOypgEi/SAksHbTWxJclbimoqdcsNtWffA==
   dependencies:
     "@storybook/global" "^5.0.0"
     "@types/uuid" "^9.0.1"
@@ -2668,10 +2668,10 @@
     polished "^4.2.2"
     ts-dedent "^2.2.0"
 
-"@storybook/addon-links@^8.5.6":
-  version "8.5.6"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-8.5.6.tgz#a21ca16f84c8e915aafbd2597a5bcaf09c677a04"
-  integrity sha512-srJRVows/5s257jPlkZFDxyuuBluGW1lWfaUoo3ls3jYx2ZP1v2ilZHh9WB3o2zcZQit4afX2FAK52s/ZwRB3w==
+"@storybook/addon-links@^8.5.8":
+  version "8.5.8"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-8.5.8.tgz#7e028ecda058011c1c407a88a9eb18c4a5b59689"
+  integrity sha512-nLfcWhqDCTaEB/zPjzdN+FtsJ3WnvrRE7Uq+UZHF/HDqt7EXicUYCnbzHIF6ReyNBFklr48O/RhotDu9cyUDlw==
   dependencies:
     "@storybook/csf" "0.1.12"
     "@storybook/global" "^5.0.0"
@@ -2707,12 +2707,12 @@
     regenerator-runtime "^0.13.7"
     ts-dedent "^2.0.0"
 
-"@storybook/addon-storysource@^8.5.6":
-  version "8.5.6"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-storysource/-/addon-storysource-8.5.6.tgz#1db8453d0e83f39a20eeed10d13da2ceb536909b"
-  integrity sha512-sIhJ4v5GCMYE8x8DUEtVFCBM8G1rcZZz01wjzPE2cSvswg0Hwq5QEUQI+IQrQF0JGAwimRHW4S5yTdDYPx+hmQ==
+"@storybook/addon-storysource@^8.5.8":
+  version "8.5.8"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-storysource/-/addon-storysource-8.5.8.tgz#795ec7bc33cdf46105ed1fd7e1ea4c4cf6d632ec"
+  integrity sha512-AbtdMbZ/1hpemJZypRilhzifcEvs0xVhV21CgOmYXz87N1cRkJ/bb2t2aclgdPwfOUE/reQ6r2X7HGeOWcWM9w==
   dependencies:
-    "@storybook/source-loader" "8.5.6"
+    "@storybook/source-loader" "8.5.8"
     estraverse "^5.2.0"
     tiny-invariant "^1.3.1"
 
@@ -3497,10 +3497,10 @@
     prettier ">=2.2.1 <=2.3.0"
     regenerator-runtime "^0.13.7"
 
-"@storybook/source-loader@8.5.6":
-  version "8.5.6"
-  resolved "https://registry.yarnpkg.com/@storybook/source-loader/-/source-loader-8.5.6.tgz#35ddd25ef6fb3f40d00cc01744b20905826012d3"
-  integrity sha512-031/KJA7T8L3WSp2t39UuRX1E4D3UdFEsWco0tVvZKPlfzRYLdSmAdkTbYMQacl3IYYznHh0+J2Hs7DiZ86esQ==
+"@storybook/source-loader@8.5.8":
+  version "8.5.8"
+  resolved "https://registry.yarnpkg.com/@storybook/source-loader/-/source-loader-8.5.8.tgz#bfc27bce22fdf23cc8ec5fa50a853adf20c524cb"
+  integrity sha512-qbCGFoUrm15wF5+G1b5Rkrkt7ACN53MO05p3L8pUHT3WX1FQ7KEYmBPERRJB7oZ6wM0nnfkHDEQnovHSwu7RAQ==
   dependencies:
     "@storybook/csf" "0.1.12"
     es-toolkit "^1.22.0"
@@ -4186,10 +4186,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/node@*", "@types/node@^22.13.4":
-  version "22.13.4"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.4.tgz#3fe454d77cd4a2d73c214008b3e331bfaaf5038a"
-  integrity sha512-ywP2X0DYtX3y08eFVx5fNIw7/uIv8hYUKgXoK8oayJlLnKcRfEYCxWMVE1XagUdVtCJlZT1AU4LXEABW+L1Peg==
+"@types/node@*", "@types/node@^22.13.5":
+  version "22.13.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.5.tgz#23add1d71acddab2c6a4d31db89c0f98d330b511"
+  integrity sha512-+lTU0PxZXn0Dr1NBtC7Y8cR21AJr87dLLU953CWA6pMxxv/UDc7jYAY90upcrie1nRcD6XNG5HOYEDtgW5TxAg==
   dependencies:
     undici-types "~6.20.0"
 
@@ -5186,10 +5186,10 @@ anymatch@^3.0.0, anymatch@^3.0.3, anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-apexcharts@^4.4.0:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/apexcharts/-/apexcharts-4.4.0.tgz#af1e80c3cbc5720f0362a7c34e09c6e461006e22"
-  integrity sha512-JGsHeQEKDlQh1rob8aBai9/HKvXIpbZ83TnobKZAcdOELf+oQZaxZyAnbbldr6PPBdCgG2zzzLaP1dtEsJxzWw==
+apexcharts@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/apexcharts/-/apexcharts-4.5.0.tgz#efddb1a9b48e5add201df1549ac654412182e1f9"
+  integrity sha512-E7ZkrVqPNBUWy/Rmg8DEIqHNBmElzICE/oxOX5Ekvs2ICQUOK/VkEkMH09JGJu+O/EA0NL31hxlmF+wrwrSLaQ==
   dependencies:
     "@svgdotjs/svg.draggable.js" "^3.0.4"
     "@svgdotjs/svg.filter.js" "^3.0.8"
@@ -7339,10 +7339,10 @@ create-require@^1.1.1:
   resolved "https://registry.yarnpkg.com/create-require/-/create-require-1.1.1.tgz#c1d7e8f1e5f6cfc9ff65f9cd352d37348756c333"
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
 
-cronstrue@^2.54.0:
-  version "2.54.0"
-  resolved "https://registry.yarnpkg.com/cronstrue/-/cronstrue-2.54.0.tgz#67a10f083ef97dd26ae87f64de0007bd3eced413"
-  integrity sha512-vyp5NklDxA5MjPfQgkn0bA+0vRQe7Q9keX7RPdV6rMgd7LtDvbuKgnT+3T5ZAX16anSP5HmahcRp8mziXsLfaw==
+cronstrue@^2.55.0:
+  version "2.55.0"
+  resolved "https://registry.yarnpkg.com/cronstrue/-/cronstrue-2.55.0.tgz#c7dd69628556c53df925179a9500f0986379c961"
+  integrity sha512-ZsBZNtQWb0Rk6CNGJlzpPBYqNE7t93Aez5ZCExLihGwmIpE5qThSTDQzDV8Z1Nw6ksmLkwI98nPKyciZ5sH7dw==
 
 cross-spawn@7.0.3, cross-spawn@^7.0.0, cross-spawn@^7.0.2, cross-spawn@^7.0.3:
   version "7.0.3"
@@ -13394,10 +13394,10 @@ ms@2.1.3, ms@^2.1.1:
   resolved "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-msw@^2.7.0:
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/msw/-/msw-2.7.0.tgz#d13ff87f7e018fc4c359800ff72ba5017033fb56"
-  integrity sha512-BIodwZ19RWfCbYTxWTUfTXc+sg4OwjCAgxU1ZsgmggX/7S3LdUifsbUPJs61j0rWb19CZRGY5if77duhc0uXzw==
+msw@^2.7.1:
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/msw/-/msw-2.7.1.tgz#8d470c3753a6bbd8a9b7ed4f0377196b1cf3c94b"
+  integrity sha512-TVT65uoWt9LE4lMTLBdClHBQVwvZv5ofac1YyE119nCrNyXf4ktdeVnWH9Fyt94Ifmiedhw6Npp4DSuVRSuRpw==
   dependencies:
     "@bundled-es-modules/cookie" "^2.0.1"
     "@bundled-es-modules/statuses" "^1.0.1"
