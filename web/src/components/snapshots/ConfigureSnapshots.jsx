@@ -73,9 +73,8 @@ class ConfigureSnapshots extends Component {
         ariaHideApp={false}
         contentLabel="Modal"
         className="Modal ConfigureSnapshots"
-        data-testid="configure-snapshots-modal"
       >
-        <div className="Modal-body">
+        <div className="Modal-body" data-testid="configure-snapshots-modal">
           <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--20">
             Add a new destination
           </p>

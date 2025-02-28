@@ -5,9 +5,9 @@ export const validateInitialConfig = async (page: Page, expect: Expect) => {
   await expect(sidebar).toContainText('Nginx Config', { timeout: 15000 });
   await expect(sidebar).toContainText('Nginx port');
   await sidebar.getByText('My Example Config').click();
-  await expect(sidebar).toContainText('a bool field');
+  await expect(sidebar.getByText('a bool field')).toBeVisible();
   await sidebar.getByText('My Example Config').click();
-  await expect(sidebar).not.toContainText('a bool field');
+  await expect(sidebar.getByText('a bool field')).not.toBeVisible();
   
   const configArea = page.getByTestId('config-area');
   await expect(configArea).toContainText('Nginx Config');

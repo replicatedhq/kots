@@ -9,32 +9,32 @@ import {
 
 const { execSync } = require("child_process");
 
-export const deleteKurlConfigMap = (testIsAirgapped: boolean, testSshToAirgappedInstance?: string) => {
+export const deleteKurlConfigMap = (isAirgapped: boolean, sshToAirgappedInstance?: string) => {
   let deleteConfigmapCommand = `kubectl delete configmap kurl-config --namespace kube-system --ignore-not-found`;
-  if (testIsAirgapped) {
-    deleteConfigmapCommand = `${testSshToAirgappedInstance} "${deleteConfigmapCommand}"`;
+  if (isAirgapped) {
+    deleteConfigmapCommand = `${sshToAirgappedInstance} "${deleteConfigmapCommand}"`;
   }
   console.log(deleteConfigmapCommand, "\n");
   execSync(deleteConfigmapCommand, {stdio: 'inherit'});
 };
 
 type RegistryCredentials = {
-  testKurlRegistryIP: string;
-  testKurlRegistryUsername: string;
-  testKurlRegistryPassword: string;
+  registryIP: string;
+  registryUsername: string;
+  registryPassword: string;
 };
 
-export const getRegistryCredentials = (testIsAirgapped: boolean, testIsExistingCluster: boolean, testSshToAirgappedInstance?: string): RegistryCredentials => {
+export const getRegistryCredentials = (isAirgapped: boolean, isExistingCluster: boolean, sshToAirgappedInstance?: string): RegistryCredentials => {
   let secretName = "registry-creds";
 
-  if (testIsExistingCluster) {
+  if (isExistingCluster) {
     /**
      * this is a hack to work around the fact that kotsadm will automatically hide the registry settings in the airgap upload page if this secret exists
      * so we copy the secret with a different name and delete the old one
      */
     let getSecretCommand = `kubectl get secret ${secretName} -oyaml --ignore-not-found`;
-    if (testIsAirgapped) {
-      getSecretCommand = `${testSshToAirgappedInstance} "${getSecretCommand}"`;
+    if (isAirgapped) {
+      getSecretCommand = `${sshToAirgappedInstance} "${getSecretCommand}"`;
     }
     console.log(getSecretCommand, "\n");
     const secretYaml = execSync(getSecretCommand).toString();
@@ -42,15 +42,15 @@ export const getRegistryCredentials = (testIsAirgapped: boolean, testIsExistingC
     const newSecretName = "playwright-registry-creds";
     if(secretYaml !== "") {
       let copySecretCommand = `kubectl get secret ${secretName} -oyaml | sed s/'name: ${secretName}'/'name: ${newSecretName}'/ | kubectl apply -n default -f -`;
-      if (testIsAirgapped) {
-        copySecretCommand = `${testSshToAirgappedInstance} "${copySecretCommand}"`;
+      if (isAirgapped) {
+        copySecretCommand = `${sshToAirgappedInstance} "${copySecretCommand}"`;
       }
       console.log(copySecretCommand, "\n");
       execSync(copySecretCommand, {stdio: 'inherit'});
 
       let deleteSecretCommand = `kubectl delete secret ${secretName}`;
-      if (testIsAirgapped) {
-        deleteSecretCommand = `${testSshToAirgappedInstance} "${deleteSecretCommand}"`;
+      if (isAirgapped) {
+        deleteSecretCommand = `${sshToAirgappedInstance} "${deleteSecretCommand}"`;
       }
       console.log(deleteSecretCommand, "\n");
       execSync(deleteSecretCommand, {stdio: 'inherit'});
@@ -60,8 +60,8 @@ export const getRegistryCredentials = (testIsAirgapped: boolean, testIsExistingC
   }
 
   let getCredsSecretCommand = `kubectl get secret ${secretName} -o=json`;
-  if (testIsAirgapped) {
-    getCredsSecretCommand = `${testSshToAirgappedInstance} "${getCredsSecretCommand}"`;
+  if (isAirgapped) {
+    getCredsSecretCommand = `${sshToAirgappedInstance} "${getCredsSecretCommand}"`;
   }
   console.log(getCredsSecretCommand, "\n");
   const secretStr = execSync(getCredsSecretCommand).toString();
@@ -73,9 +73,9 @@ export const getRegistryCredentials = (testIsAirgapped: boolean, testIsExistingC
   const ip = Object.keys(auths)[0];
   
   return {
-    testKurlRegistryIP: ip,
-    testKurlRegistryUsername: auths[ip].username, 
-    testKurlRegistryPassword: auths[ip].password
+    registryIP: ip,
+    registryUsername: auths[ip].username, 
+    registryPassword: auths[ip].password
   };
 };
 
@@ -88,12 +88,11 @@ export const installVeleroAWS = (veleroVersion: string, veleroAwsPluginVersion: 
   execSync(deleteNSCommand, {stdio: 'inherit'});
 
   // write creds to a file
-  const AWS_SECRET_ACCESS_KEY = "test-secret-access-key"; // TODO NOW: get key from GA secrets
   const credsFileName = "aws-creds.txt";
   const credsCommand = `cat >${credsFileName} <<EOL
 [default]
 aws_access_key_id = ${AWS_ACCESS_KEY_ID}
-aws_secret_access_key = ${AWS_SECRET_ACCESS_KEY} 
+aws_secret_access_key = ${process.env.AWS_SECRET_ACCESS_KEY} 
 EOL`;
   execSync(credsCommand, {stdio: 'inherit'});
 

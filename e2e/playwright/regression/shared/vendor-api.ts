@@ -1,8 +1,5 @@
 import { VENDOR_APP_ID } from './constants';
 
-// TODO NOW: get from GA secrets
-const apiToken = "test-api-token";
-
 export async function promoteVendorRelease(
   releaseSequence: number,
   channelId: string,
@@ -13,7 +10,7 @@ export async function promoteVendorRelease(
     {
       method: 'POST',
       headers: {
-        'Authorization': apiToken,
+        'Authorization': process.env.VENDOR_API_TOKEN!,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

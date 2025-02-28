@@ -3,6 +3,8 @@ import { Page, Expect } from '@playwright/test';
 import { ensureVeleroPermissions } from './cli';
 
 export const addSnapshotsRBAC = async (page: Page, expect: Expect, namespace: string) => {
+  await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
+
   const configureSnapshotsModal = page.getByTestId("configure-snapshots-modal");
   await expect(configureSnapshotsModal).toBeVisible({ timeout: 10000 });
   await configureSnapshotsModal.getByText("I've already installed Velero").click();
