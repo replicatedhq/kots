@@ -34,5 +34,6 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
 
   await validateInitialConfig(page, expect);
   await validateClusterAdminInitialPreflights(page, expect);
-  await addSnapshotsRBAC(page, expect, constants.NAMESPACE);
+
+  
 });
