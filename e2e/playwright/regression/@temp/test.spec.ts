@@ -11,6 +11,7 @@ import {
   validateInitialConfig,
   validateClusterAdminInitialPreflights,
   validateDashboardInfo,
+  validateDashboardAutomaticUpdates,
 } from '../shared';
 
 test('type=existing cluster, env=online, phase=new install, rbac=cluster admin', async ({ page }) => {
@@ -35,4 +36,5 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await validateInitialConfig(page, expect);
   await validateClusterAdminInitialPreflights(page, expect);
   await validateDashboardInfo(page, expect);
+  await validateDashboardAutomaticUpdates(page, expect);
 });

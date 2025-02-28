@@ -26,3 +26,23 @@ export const validateDashboardInfo = async (page: Page, expect: Expect) => {
   await expect(snapshotsCard.getByText("Start snapshot")).toBeVisible();
   await expect(snapshotsCard.getByText("See all snapshots")).toBeVisible();
 };
+
+export const validateDashboardAutomaticUpdates = async (page: Page, expect: Expect) => {
+  await page.getByText('Configure automatic updates').click();
+  const automaticUpdatesModal = page.getByTestId('automatic-updates-modal');
+  await expect(automaticUpdatesModal).toBeVisible();
+
+  await automaticUpdatesModal.locator(".replicated-select__control").click();
+  await page.waitForTimeout(1000);
+  await automaticUpdatesModal.locator(".replicated-select__option").getByText("Custom", { exact: true }).click();
+  await page.waitForTimeout(1000);
+  await expect(automaticUpdatesModal.getByTestId("update-checker-spec")).toHaveValue("0 2 * * WED,SAT");
+  await expect(automaticUpdatesModal).toContainText("At 02:00 AM, only on Wednesday and Saturday");
+  
+  await automaticUpdatesModal.getByTestId("update-checker-spec").click();
+  await page.waitForTimeout(1000);
+  await automaticUpdatesModal.getByTestId("update-checker-spec").fill("0 2 * * SUN");
+  await expect(automaticUpdatesModal).toContainText("At 02:00 AM, only on Sunday");
+  await automaticUpdatesModal.getByRole("button", { name: "Update", exact: true }).click();
+  await expect(automaticUpdatesModal).not.toBeVisible();
+};
