@@ -610,6 +610,7 @@ class UploadAirgapBundle extends Component {
           <span
             className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium"
             onClick={this.handleOnlineInstall}
+            data-testid="download-app-from-internet"
           >
             Optionally you can{" "}
             <span className="link">

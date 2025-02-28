@@ -24,6 +24,7 @@ spec:
       containers:
       - name: kotsadm-web
         image: kotsadm-web-dev
+        imagePullPolicy: Never
         volumeMounts:
         - name: dev
           mountPath: /replicatedhq/kots/web # workdir in the container

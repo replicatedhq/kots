@@ -181,9 +181,9 @@ function PreflightResultPage(props: Props) {
             </>
           )}
           {preflightCheck?.showPreflightResults && (
-            <div className="tw-mt-6">
+            <div className="tw-mt-6" data-testid="preflight-results-wrapper">
               <div className="flex flex1 tw-justify-between tw-items-end">
-                <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
+                <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold" data-testid="preflight-results-heading">
                   Results
                 </p>
                 {preflightCheck?.shouldShowRerunPreflight && (
@@ -191,6 +191,7 @@ function PreflightResultPage(props: Props) {
                     type="button"
                     className="btn primary blue"
                     onClick={() => rerunPreflights()}
+                    data-testid="preflight-results-rerun-button"
                   >
                     Rerun
                   </button>

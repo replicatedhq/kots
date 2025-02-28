@@ -1,0 +1,16 @@
+export const APP_SLUG = "qakotsregression";
+export const VENDOR_APP_ID = "1qlR7WFWhwNh2cxkPzx540ku63q";
+export const AWS_ACCESS_KEY_ID = "AKIAWH2JTJB7HVJEZFR3";
+export const AWS_BUCKET_NAME = "kots-testim-snapshots";
+export const AWS_REGION = "us-east-1";
+export const LICENSE_PATH = "./license.yaml";
+export const CONFIG_PATH = "./config.yaml";
+export const INITIAL_VERSION_BUNDLE_PATH = "./initial-app-release.airgap";
+export const NEW_VERSION_BUNDLE_PATH = "./new-app-release.airgap";
+export const SNAPSHOTS_HOST_PATH = "/tmp/hostpath-for-snapshots";
+export const SSH_USER = "ubuntu";
+export const K8S_DISTRO = "";
+export const IDENTITY_SERVICE_OKTA_USERNAME = "salah+testim.identity.service@replicated.com";
+export const IDENTITY_SERVICE_OKTA_APP_ID = "0oa6s7995wt2UIQoR5d7";
+export const IDENTITY_SERVICE_OKTA_CLIENT_ID = "0oa6s7995wt2UIQoR5d7";
+export const IDENTITY_SERVICE_OKTA_DOMAIN = "dev-88212807.okta.com";

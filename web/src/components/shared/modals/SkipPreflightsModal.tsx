@@ -26,6 +26,7 @@ export default function SkipPreflightsModal(props: Props) {
       contentLabel="Ignore preflight checks"
       ariaHideApp={false}
       className="Modal PreflightModal"
+      data-testid="skip-preflights-modal"
     >
       <div className="Modal-body">
         <div className="flex flex-column justifyContent--center alignItems--center">
@@ -44,6 +45,7 @@ export default function SkipPreflightsModal(props: Props) {
               type="button"
               className="btn blue primary"
               onClick={hideSkipModal}
+              data-testid="wait-for-preflights-to-finish"
             >
               Wait for Preflights to finish
             </button>
@@ -51,6 +53,7 @@ export default function SkipPreflightsModal(props: Props) {
               <span
                 className="tw-text-center u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
                 onClick={() => onForceDeployClick(false)}
+                data-testid="ignore-preflights-and-deploy"
               >
                 Ignore Preflights {!isEmbeddedCluster && "and deploy"}
               </span>

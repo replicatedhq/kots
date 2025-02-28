@@ -73,6 +73,7 @@ class ConfigureSnapshots extends Component {
         ariaHideApp={false}
         contentLabel="Modal"
         className="Modal ConfigureSnapshots"
+        data-testid="configure-snapshots-modal"
       >
         <div className="Modal-body">
           <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--20">
@@ -137,6 +138,7 @@ class ConfigureSnapshots extends Component {
                     Command has been copied to your clipboard
                   </span>
                 }
+                dataTestId="ensure-permissions-command"
               >
                 {`kubectl kots velero ensure-permissions --namespace ${minimalRBACKotsadmNamespace} --velero-namespace <velero-namespace>`}
               </CodeSnippet>

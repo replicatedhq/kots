@@ -22,6 +22,7 @@ class CodeSnippet extends Component {
     language: PropTypes.string,
     copyDelay: PropTypes.number,
     variant: PropTypes.string,
+    dataTestId: PropTypes.string,
   };
 
   static defaultProps = {
@@ -94,6 +95,7 @@ class CodeSnippet extends Component {
       onCopyText,
       variant,
       trimWhitespace = true,
+      dataTestId,
     } = this.props;
 
     const { didCopy } = this.state;
@@ -106,6 +108,7 @@ class CodeSnippet extends Component {
     return (
       <div
         className={classNames("CodeSnippet", `variant-${variant}`, className)}
+        data-testid={dataTestId}
       >
         <div className="CodeSnippet-content">
           {preText && isValidElement(preText) ? (

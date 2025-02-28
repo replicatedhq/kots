@@ -530,6 +530,7 @@ export const AppConfig = ({
           <div
             id="configSidebarWrapper"
             className="config-sidebar-wrapper card-bg clickable"
+            data-testid="config-sidebar-wrapper"
           >
             {configGroups?.map((group: ConfigGroup, i: string) => {
               if (
