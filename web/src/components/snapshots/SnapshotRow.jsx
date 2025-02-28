@@ -34,7 +34,7 @@ class SnapshotRow extends Component {
   };
 
   render() {
-    const { snapshot, app, hideRestore } = this.props;
+    const { snapshot, app, hideRestore, index } = this.props;
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot?.expiresAt);
 
     return (
@@ -44,6 +44,7 @@ class SnapshotRow extends Component {
         } ${snapshot?.status === "InProgress" && "in-progress"} ${
           isExpired && "is-expired"
         }`}
+        data-testid={`snapshot-row-${index}`}
         onClick={() => this.handleSnapshotClick()}
       >
         <div className="flex-column flex1" style={{ maxWidth: "700px" }}>
@@ -75,7 +76,7 @@ class SnapshotRow extends Component {
                 style={{ gap: "60px" }}
               >
                 {snapshot?.volumeSizeHuman && (
-                  <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center">
+                  <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center" data-testid="snapshot-volume-size">
                     <span className="icon snapshot-volume-size-icon" />{" "}
                     {snapshot?.volumeSizeHuman}{" "}
                   </p>
@@ -116,6 +117,7 @@ class SnapshotRow extends Component {
                   icon="sync"
                   size={20}
                   className="clickable"
+                  data-testid="snapshot-restore-button"
                   onClick={(e) => this.handleRestoreClick(e, snapshot)}
                   data-tip="Restore from this backup"
                 />
@@ -127,6 +129,7 @@ class SnapshotRow extends Component {
                 icon="trash"
                 size={20}
                 className="clickable u-marginLeft--20 error-color"
+                data-testid="snapshot-delete-button"
                 onClick={(e) => this.handleDeleteClick(e, snapshot)}
               />
             )}

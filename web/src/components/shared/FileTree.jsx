@@ -62,6 +62,7 @@ export default class FileTree extends Component {
               >
                 <input
                   type="checkbox"
+                  data-testid={file.path}
                   checked={
                     this.state.selected.hasOwnProperty(file.path)
                       ? this.state.selected[file.path]
@@ -99,6 +100,7 @@ export default class FileTree extends Component {
                 className={`u-position--relative is-file ${
                   selectedFile.includes(file.path) ? "is-selected" : ""
                 }`}
+                data-testid={file.path}
                 onClick={() => this.handleFileSelect(file.path)}
               >
                 <div>{file.name}</div>

@@ -314,7 +314,7 @@ const AppLicenseComponent = () => {
   let nextModalBody: ReactNode;
   if (gitops?.isConnected) {
     nextModalBody = (
-      <div className="Modal-body">
+      <div className="Modal-body" data-testid="license-next-step-modal-gitops">
         <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
           The license for {appName} has been updated. A new commit has been made
           to the gitops repository with these changes. Please head to the{" "}
@@ -341,7 +341,7 @@ const AppLicenseComponent = () => {
     );
   } else {
     nextModalBody = (
-      <div className="Modal-body">
+      <div className="Modal-body" data-testid="license-next-step-modal">
         <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
           The license for {appName} has been updated. A new version is available
           on the version history page with these changes.
@@ -368,7 +368,7 @@ const AppLicenseComponent = () => {
     <div className="flex flex-column justifyContent--center alignItems--center">
       <KotsPageTitle pageName="License" showAppSlug />
       {size(appLicense) > 0 ? (
-        <div className="License--wrapper flex-column card-bg">
+        <div className="License--wrapper flex-column card-bg" data-testid="license-card">
           <div className="flex flex-auto alignItems--center">
             <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal card-title">
               {" "}
@@ -394,12 +394,12 @@ const AppLicenseComponent = () => {
             <div className=" flex flex1 justifyContent--spaceBetween">
               <div className="flex1 flex-column u-paddingRight--20">
                 <div className="flex flex-auto alignItems--center">
-                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal card-item-title break-word">
+                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal card-item-title break-word" data-testid="license-customer-name">
                     {" "}
                     {appLicense.assignee}{" "}
                   </span>
                   {appLicense?.channelName && (
-                    <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">
+                    <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10" data-testid="license-channel-name">
                       {" "}
                       {appLicense.channelName}{" "}
                     </span>
@@ -408,6 +408,7 @@ const AppLicenseComponent = () => {
                 <div className="flex flex1 alignItems--center u-marginTop--5">
                   <div
                     className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto flex-verticalCenter alignItems--center`}
+                    data-testid="license-type"
                   >
                     <Icon
                       icon={
@@ -433,6 +434,7 @@ const AppLicenseComponent = () => {
                         ? "u-textColor--error"
                         : "u-textColor--bodyCopy"
                     }`}
+                    data-testid="license-expiration-date"
                   >
                     {expiresAt === "Never"
                       ? "Does not expire"
@@ -548,6 +550,7 @@ const AppLicenseComponent = () => {
               >
                 <span
                   className={`u-fontWeight--bold u-cursor--pointer`}
+                  data-testid="view-license-entitlements-button"
                   style={{ whiteSpace: "pre" }}
                   onClick={(e) => {
                     e.stopPropagation();

@@ -639,7 +639,7 @@ const Root = () => {
             isSnapshotsSupported={isSnapshotsSupported()}
             errLoggingOut={state.errLoggingOut}
           />
-          <div className="tw-flex flex1">
+          <div className="tw-flex flex1" data-testid="root-container">
             {(state.adminConsoleMetadata?.isKurl ||
               state.adminConsoleMetadata?.isEmbeddedCluster) &&
               Utilities.isInitialAppInstall(state.appsList[0]) &&

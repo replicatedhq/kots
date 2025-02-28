@@ -299,7 +299,7 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
         ariaHideApp={false}
         className="Modal SmallSize ConfigureUpdatesModal"
       >
-        <div className="u-position--relative flex-column u-padding--20">
+        <div className="u-position--relative flex-column u-padding--20" data-testid="automatic-updates-modal">
           <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">
             Configure automatic updates
           </span>
@@ -330,6 +330,7 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
                 <input
                   type="text"
                   className="Input u-marginBottom--5"
+                  data-testid="update-checker-spec"
                   placeholder="0 0 * * MON"
                   value={updateCheckerSpec}
                   onChange={(e) => {

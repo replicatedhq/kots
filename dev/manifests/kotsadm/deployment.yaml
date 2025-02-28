@@ -17,8 +17,8 @@ spec:
         kots.io/backup: velero
       annotations:
         backup.velero.io/backup-volumes: backup
-        pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "curl -f http://kotsadm:password@kotsadm-rqlite:4001/db/backup -o /backup/kotsadm-rqlite.sql"]'
-        pre.hook.backup.velero.io/timeout: 3m
+        pre.hook.backup.velero.io/command: '["/scripts/backup.sh"]'
+        pre.hook.backup.velero.io/timeout: 10m
     spec:
       restartPolicy: Always
       serviceAccountName: kotsadm
@@ -49,6 +49,11 @@ spec:
                 secretKeyRef:
                   name: kotsadm-rqlite # This secret is created in the migrations directory
                   key: uri
+            - name: RQLITE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kotsadm-rqlite
+                  key: password
             - name: S3_BUCKET_NAME
               value: "shipbucket"
             - name: S3_ENDPOINT

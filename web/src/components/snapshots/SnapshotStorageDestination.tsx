@@ -903,6 +903,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <input
                   type="text"
                   className="Input"
+                  data-testid="snapshots-aws-bucket"
                   placeholder="Bucket name"
                   value={this.state.s3bucket}
                   onChange={(e) => this.handleFormChange("s3bucket", e)}
@@ -915,6 +916,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <input
                   type="text"
                   className="Input"
+                  data-testid="snapshots-aws-region"
                   placeholder="Bucket region"
                   value={this.state.s3Region}
                   onChange={(e) => this.handleFormChange("s3Region", e)}
@@ -929,6 +931,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <input
                   type="text"
                   className="Input"
+                  data-testid="snapshots-aws-prefix"
                   placeholder="/path/to/destination"
                   value={this.state.s3Path}
                   onChange={(e) => this.handleFormChange("s3Path", e)}
@@ -971,6 +974,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   <input
                     type="text"
                     className="Input"
+                    data-testid="snapshots-aws-access-key-id"
                     placeholder="key ID"
                     value={this.state.s3KeyId}
                     onChange={(e) => this.handleFormChange("s3KeyId", e)}
@@ -995,6 +999,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     id={"access-key"}
                     autoFocus={undefined}
                     helperText={undefined}
+                    dataTestId="snapshots-aws-secret-access-key"
                   />
                 </div>
               </div>
@@ -1769,7 +1774,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         .
                       </div>
                     )}
-                  <div className="flex1">
+                  <div className="flex1" data-testid="snapshot-storage-destination">
                     {availableDestinations.length > 1 ? (
                       <Select
                         className="replicated-select-container"

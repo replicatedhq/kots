@@ -74,7 +74,7 @@ class ConfigureSnapshots extends Component {
         contentLabel="Modal"
         className="Modal ConfigureSnapshots"
       >
-        <div className="Modal-body">
+        <div className="Modal-body" data-testid="configure-snapshots-modal">
           <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--20">
             Add a new destination
           </p>
@@ -137,6 +137,7 @@ class ConfigureSnapshots extends Component {
                     Command has been copied to your clipboard
                   </span>
                 }
+                dataTestId="ensure-permissions-command"
               >
                 {`kubectl kots velero ensure-permissions --namespace ${minimalRBACKotsadmNamespace} --velero-namespace <velero-namespace>`}
               </CodeSnippet>

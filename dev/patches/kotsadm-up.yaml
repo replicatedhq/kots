@@ -23,12 +23,14 @@ spec:
       initContainers:
       - name: schemahero-plan
         image: kotsadm-migrations-dev
+        imagePullPolicy: Never
       - name: schemahero-apply
         image: kotsadm-migrations-dev
 {{- end }}
       containers:
       - name: kotsadm
         image: kotsadm-api-dev
+        imagePullPolicy: Never
         command: ["/bin/bash"]
         args: ["-c", "while true; do sleep 30; done;"]
         volumeMounts:

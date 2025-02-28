@@ -29,7 +29,7 @@ export default function ShowLogsModal(props) {
       ariaHideApp={false}
       className="Modal logs-modal"
     >
-      <div className="Modal-body flex flex1">
+      <div className="Modal-body flex flex1" data-testid="deploy-logs-modal">
         {viewLogsErrMsg ? (
           <div className="flex1 flex-column justifyContent--center alignItems--center">
             <span className="icon redWarningIcon" />
@@ -45,7 +45,7 @@ export default function ShowLogsModal(props) {
           <div className="flex-column flex1">
             <div className="flex-column flex1">
               {!logs.renderError && renderLogsTabs}
-              <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
+              <div className="flex-column flex1 u-border--gray monaco-editor-wrapper" data-testid="deploy-logs-modal-editor">
                 <MonacoEditor
                   language="json"
                   value={logs.renderError || logs[selectedTab]}

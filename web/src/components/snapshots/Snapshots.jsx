@@ -536,11 +536,11 @@ class Snapshots extends Component {
           className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center"
           style={{ maxWidth: "770px" }}
         >
-          <div className="AppSnapshots--wrapper card-bg flex-column u-width--full u-marginTop--20">
+          <div className="AppSnapshots--wrapper card-bg flex-column u-width--full u-marginTop--20" data-testid="full-snapshots-card">
             <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
               <div className="flex1 flex-column">
                 <div className="flex justifyContent--spaceBetween">
-                  <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">
+                  <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal" data-testid="full-snapshots-card-title">
                     {this.props.isEmbeddedCluster
                       ? "Backups"
                       : "Full Snapshots (Instance)"}
@@ -596,7 +596,7 @@ class Snapshots extends Component {
                     )}
                   </div>
                 </div>
-                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
+                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy" data-testid="full-snapshots-card-description">
                   Back up the Admin Console and all application data for
                   disaster recovery.{" "}
                   {!this.props.isEmbeddedCluster && (
@@ -622,8 +622,9 @@ class Snapshots extends Component {
             ) : null}
             {snapshots?.length > 0 && snapshotSettings?.veleroVersion && (
               <div className="flex flex-column">
-                {snapshots?.map((snapshot) => (
+                {snapshots?.map((snapshot, index) => (
                   <SnapshotRow
+                    index={index}
                     key={`snapshot-${snapshot.name}-${snapshot.started}`}
                     snapshot={snapshot}
                     toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}

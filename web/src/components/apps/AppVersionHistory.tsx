@@ -580,6 +580,7 @@ class AppVersionHistory extends Component<Props, State> {
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
+              data-testid={`logs-tab-${tab}`}
               key={tab}
               onClick={() => this.setState({ selectedTab: tab })}
             >
@@ -1184,6 +1185,7 @@ class AppVersionHistory extends Component<Props, State> {
       <div className="flex u-marginLeft--20">
         <button
           className="btn secondary small u-marginRight--10"
+          data-testid="cancel-diff-button"
           onClick={this.onCloseReleasesToDiff}
           data-testid="cancel-diff-button"
         >
@@ -1191,6 +1193,7 @@ class AppVersionHistory extends Component<Props, State> {
         </button>
         <button
           className="btn primary small blue"
+          data-testid="diff-releases-button"
           disabled={checkedReleasesToDiff.length !== 2 || showDiffOverlay}
           onClick={() => {
             if (gitopsIsConnected) {
@@ -1868,6 +1871,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   <Icon
                                     icon="release-notes"
                                     className="clickable"
+                                    data-testid="current-release-notes-icon"
                                     size={24}
                                     onClick={() =>
                                       this.showReleaseNotes(
@@ -1897,6 +1901,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       )
                                     }
                                     data-tip="View deploy logs"
+                                    data-testid="current-deploy-logs-icon"
                                   >
                                     <Icon
                                       icon="view-logs"
@@ -2153,7 +2158,7 @@ class AppVersionHistory extends Component<Props, State> {
 
                 {/* Diff overlay */}
                 {showDiffOverlay && (
-                  <div className="DiffOverlay">
+                  <div className="DiffOverlay" data-testid="diff-overlay">
                     <VersionDiff
                       slug={this.props.params?.slug}
                       firstSequence={firstSequence}

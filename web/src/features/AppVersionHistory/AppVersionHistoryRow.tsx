@@ -265,7 +265,7 @@ function AppVersionHistoryRow(props: Props) {
             {renderReleaseNotes(version)}
             <>
               {version.status === "pending_preflight" ? (
-                <div className="u-position--relative">
+                <div className="u-position--relative" data-testid="preflight-checks-loader-gitops">
                   <Loader size="30" />
                   <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">
                     Running checks
@@ -295,7 +295,7 @@ function AppVersionHistoryRow(props: Props) {
           {renderReleaseNotes(version)}
           <div>
             {version.status === "pending_preflight" ? (
-              <div className="u-position--relative">
+              <div className="u-position--relative" data-testid="preflight-checks-loader-gitops">
                 <Loader size="30" />
                 <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">
                   Running checks
@@ -333,7 +333,7 @@ function AppVersionHistoryRow(props: Props) {
         {renderReleaseNotes(version)}
         <div>
           {version.status === "pending_preflight" ? (
-            <div className="u-marginRight--10 u-position--relative">
+            <div className="u-marginRight--10 u-position--relative" data-testid="preflight-checks-loader">
               <Loader size="30" />
               <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">
                 Running checks
@@ -611,6 +611,7 @@ function AppVersionHistoryRow(props: Props) {
                 { checked: isChecked && !nothingToCommit },
                 { disabled: nothingToCommit }
               )}
+              data-testid="diff-checkbox"
             />
           )}
           <div

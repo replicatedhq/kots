@@ -225,7 +225,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
   /// useEffects /////
 
   return (
-    <div className="flex-column flex1 dashboard-card card-bg">
+    <div className="flex-column flex1 dashboard-card card-bg" data-testid="dashboard-snapshots-card">
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
         <p className="card-title">
           {isEmbeddedCluster ? "Disaster Recovery" : "Snapshots"}

@@ -300,6 +300,7 @@ class SnapshotDetails extends Component {
         {tabs.map((tab) => (
           <div
             className={`tab-item ${tab === selectedTab && "is-active"}`}
+            data-testid={`${tab}-tab`}
             key={tab}
             onClick={() => this.setState({ selectedTab: tab })}
           >
@@ -311,7 +312,7 @@ class SnapshotDetails extends Component {
   };
 
   renderShowAllVolumes = (volumes) => {
-    return volumes.map((volume) => {
+    return volumes.map((volume, i) => {
       const diffMinutes = dayjs(volume?.finishedAt).diff(
         dayjs(volume?.startedAt),
         "minutes"
@@ -320,6 +321,7 @@ class SnapshotDetails extends Component {
         <div
           className="flex flex1 u-borderBottom--gray alignItems--center"
           key={volume.name}
+          data-testid={`snapshot-volume-row-${i}`}
         >
           <div className="flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
             <p className="flex1 u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">
@@ -423,6 +425,7 @@ class SnapshotDetails extends Component {
         <div
           className="flex flex1 u-borderBottom--gray alignItems--center"
           key={`${hook.name}-${hook.phase}-${i}`}
+          data-testid={`${hook.phase}-snapshot-script-row-${i}`}
         >
           <div className="flex flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
             <div className="flex flex-column">
@@ -461,6 +464,7 @@ class SnapshotDetails extends Component {
               (hook.stdout !== "" && (
                 <span
                   className="link u-fontSize--small alignSelf--flexEnd"
+                  data-testid="view-output"
                   onClick={() => this.toggleScriptsOutput(hook)}
                 >
                   {" "}
@@ -699,7 +703,7 @@ class SnapshotDetails extends Component {
     };
 
     return (
-      <div className="card-bg">
+      <div className="card-bg" data-testid="snapshot-details-modal">
         <div className="tw-flex tw-flex-col justifyContent--spaceBetween u-paddingBottom--15">
           <div className="u-lineHeight--normal">
             <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--5">
@@ -708,11 +712,11 @@ class SnapshotDetails extends Component {
             <div className="tw-flex tw-items-center tw-gap-4">
               <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
                 Total size:{" "}
-                <span className="u-fontWeight--bold u-textColor--accent">
+                <span className="u-fontWeight--bold u-textColor--accent" data-testid="snapshot-volume-size">
                   {backup?.volumeSizeHuman}
                 </span>
               </p>
-              <p className="u-fontSize--normal u-fontWeight--normal">
+              <p className="u-fontSize--normal u-fontWeight--normal" data-testid="snapshot-status">
                 Status:{" "}
                 <span
                   className={`tw-mb-4 status-indicator ${backup?.status?.toLowerCase()} u-marginLeft--5`}
@@ -782,6 +786,7 @@ class SnapshotDetails extends Component {
                       <button
                         onClick={() => toggleAccordion(snapshotDetail.name)}
                         className="tw-rounded-lg tw-border-0 tw-w-full tw-px-4 tw-py-3 tw-flex tw-items-center tw-justify-between hover:tw-bg-slate-50 tw-bg-white"
+                        data-testid={`snapshot-type-${snapshotDetail?.type}`}
                       >
                         <div className="tw-flex tw-items-center">
                           <span className="tw-text-lg tw-font-semibold">
@@ -813,6 +818,7 @@ class SnapshotDetails extends Component {
                             ? "tw-max-h-[2000px] tw-opacity-100 tw-p-4"
                             : "tw-max-h-0 tw-opacity-0"
                         } tw-overflow-hidden`}
+                        data-testid={`snapshot-type-${snapshotDetail?.type}-content`}
                       >
                         <div>
                           <div className="tw-flex tw-items-center tw-gap-4 tw-mb-2">
@@ -836,6 +842,7 @@ class SnapshotDetails extends Component {
                             {snapshotDetail?.status !== "InProgress" && (
                               <span
                                 className="link"
+                                data-testid="view-logs-button"
                                 onClick={() =>
                                   this.viewLogs(snapshotDetail?.name)
                                 }
@@ -862,7 +869,7 @@ class SnapshotDetails extends Component {
                             !isEmpty(
                               this.postSnapshotScripts(snapshotDetail)
                             ) ? (
-                              <div className="flex-column flex-auto card-item u-padding--15 u-marginBottom--30">
+                              <div className="flex-column flex-auto card-item u-padding--15 u-marginBottom--30" data-testid="snapshot-timeline">
                                 <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
                                   {Utilities.toTitleCase(featureName)} timeline
                                 </p>
@@ -885,7 +892,7 @@ class SnapshotDetails extends Component {
                                 className="flex flex1"
                                 style={{ gap: "15px" }}
                               >
-                                <div className="card-item u-padding--15 flex1">
+                                <div className="card-item u-padding--15 flex1" data-testid="snapshot-volumes-card">
                                   <div className="flex flex1 alignItems--center u-paddingBottom--10 u-borderBottom--gray">
                                     <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold">
                                       Volumes
@@ -894,6 +901,7 @@ class SnapshotDetails extends Component {
                                       <div className="flex flex1 justifyContent--flexEnd">
                                         <span
                                           className="link u-fontSize--small"
+                                          data-testid="show-all-volumes-button"
                                           onClick={() =>
                                             this.toggleShowAllVolumes()
                                           }
@@ -918,7 +926,7 @@ class SnapshotDetails extends Component {
                                     </div>
                                   )}
                                 </div>
-                                <div className="card-item u-padding--15 flex1">
+                                <div className="card-item u-padding--15 flex1" data-testid="snapshot-scripts-card">
                                   <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
                                     <div className="flex flex1">
                                       <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
@@ -931,6 +939,7 @@ class SnapshotDetails extends Component {
                                         <div className="flex flex1 justifyContent--flexEnd">
                                           <span
                                             className="link u-fontSize--small"
+                                            data-testid="show-all-pre-scripts-button"
                                             onClick={() =>
                                               this.toggleShowAllPreScripts()
                                             }
@@ -1152,7 +1161,7 @@ class SnapshotDetails extends Component {
       <div className="container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <div className="flex tw-items-center tw-justify-between u-marginBottom--30">
           <p className=" u-fontSize--small u-textColor--accent u-fontWeight--medium">
-            <span className="link" onClick={() => this.props.navigate(-1)}>
+            <span className="link" onClick={() => this.props.navigate(-1)} data-testid="back-button">
               {Utilities.toTitleCase(featureName)}
             </span>
             <span className="u-textColor--bodyCopy"> &gt; </span>
@@ -1170,7 +1179,7 @@ class SnapshotDetails extends Component {
             ariaHideApp={false}
             className="Modal logs-modal"
           >
-            <div className="Modal-body flex flex1 flex-column">
+            <div className="Modal-body flex flex1 flex-column" data-testid="snapshot-script-output-modal">
               {!selectedTab ? (
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <Loader size="60" />
@@ -1178,7 +1187,7 @@ class SnapshotDetails extends Component {
               ) : (
                 <div className="flex-column flex1">
                   {this.renderOutputTabs()}
-                  <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
+                  <div className="flex-column flex1 u-border--gray monaco-editor-wrapper" data-testid="script-output-editor">
                     <MonacoEditor
                       language="json"
                       value={scriptOutput[selectedTab]}

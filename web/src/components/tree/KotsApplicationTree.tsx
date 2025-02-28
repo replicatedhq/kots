@@ -113,7 +113,7 @@ class KotsApplicationTree extends Component<Props, State> {
       : "";
 
     return (
-      <div className="flex-column flex1 ApplicationTree--wrapper u-paddingBottom--30">
+      <div className="flex-column flex1 ApplicationTree--wrapper u-paddingBottom--30" data-testid="view-files-page">
         <KotsPageTitle pageName="View Files" showAppSlug />
         {!this.props.isEmbeddedCluster && (
           <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">
@@ -129,7 +129,7 @@ class KotsApplicationTree extends Component<Props, State> {
         )}
         <div className="flex flex1 u-marginLeft--30 u-marginRight--30 u-marginTop--10">
           <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden">
-            <div className="u-overflow--auto dirtree">
+            <div className="u-overflow--auto dirtree" data-testid="file-tree">
               <FileTree
                 files={applicationTree}
                 isRoot={true}
@@ -143,11 +143,11 @@ class KotsApplicationTree extends Component<Props, State> {
               )}
             </div>
           </div>
-          <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative">
+          <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative" data-testid="file-editor">
             {this.state.selectedFile === "" ||
             this.state.selectedFile === "/" ? (
               <div className="flex-column flex1 alignItems--center justifyContent--center">
-                <p className="u-textColor--bodyCopy u-fontSize--normal u-fontWeight--medium">
+                <p className="u-textColor--bodyCopy u-fontSize--normal u-fontWeight--medium" data-testid="file-editor-empty-state">
                   Select a file from the file explorer to view it here.
                 </p>
               </div>

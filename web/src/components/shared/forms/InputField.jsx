@@ -18,7 +18,7 @@ const InputField = ({
   showError = false,
   disabled = false,
   readOnly = false,
-  dataTestId = "",
+  dataTestId = null
 }) => {
   const [show, setShow] = useState(false);
 

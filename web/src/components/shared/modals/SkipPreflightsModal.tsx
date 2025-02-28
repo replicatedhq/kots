@@ -27,10 +27,10 @@ export default function SkipPreflightsModal(props: Props) {
       ariaHideApp={false}
       className="Modal PreflightModal"
     >
-      <div className="Modal-body">
+      <div className="Modal-body" data-testid="skip-preflights-modal">
         <div className="flex flex-column justifyContent--center alignItems--center">
           <span className="icon yellowWarningIcon" />
-          <p className="u-fontSize--jumbo2 u-fontWeight--bold u-lineHeight--medium u-textColor--warning u-marginTop--20">
+          <p className="u-fontSize--jumbo2 u-fontWeight--bold u-lineHeight--medium u-textColor--warning u-marginTop--20" data-testid="skip-preflights-modal-title">
             {" "}
             Ignoring Preflights is NOT Recommended{" "}
           </p>
@@ -44,6 +44,7 @@ export default function SkipPreflightsModal(props: Props) {
               type="button"
               className="btn blue primary"
               onClick={hideSkipModal}
+              data-testid="wait-for-preflights-to-finish"
             >
               Wait for Preflights to finish
             </button>
@@ -51,6 +52,7 @@ export default function SkipPreflightsModal(props: Props) {
               <span
                 className="tw-text-center u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
                 onClick={() => onForceDeployClick(false)}
+                data-testid="ignore-preflights-and-deploy"
               >
                 Ignore Preflights {!isEmbeddedCluster && "and deploy"}
               </span>
@@ -58,6 +60,7 @@ export default function SkipPreflightsModal(props: Props) {
               <span
                 className="tw-text-center u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
                 onClick={onIgnorePreflightsAndDeployClick}
+                data-testid="ignore-preflights-and-deploy"
               >
                 Ignore Preflights {!isEmbeddedCluster && "and deploy"}
               </span>

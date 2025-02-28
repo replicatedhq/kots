@@ -18,8 +18,8 @@ class DeployWarningModal extends Component {
         ariaHideApp={false}
         className="Modal MediumSize"
       >
-        <div className="Modal-body">
-          <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
+        <div className="Modal-body" data-testid="deploy-warning-modal">
+          <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20" data-testid="deploy-warning-modal-text">
             Preflight checks for this version are currently failing. Are you
             sure you want to make this the current version?
           </p>
