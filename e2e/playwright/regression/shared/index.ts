@@ -6,3 +6,4 @@ export * from './cli';
 export * from './config';
 export * from './preflights';
 export * from './snapshots';
+export * from './dashboard';

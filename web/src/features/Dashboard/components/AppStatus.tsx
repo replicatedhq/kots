@@ -105,6 +105,7 @@ export default class AppStatus extends Component<Props, State> {
                   ? "u-textColor--warning"
                   : "u-textColor--error"
               }`}
+              data-testid="dashboard-app-status"
             >
               {Utilities.toTitleCase(appStatus)}
             </span>
@@ -149,6 +150,7 @@ export default class AppStatus extends Component<Props, State> {
             <Link
               to={`config/${app?.downstream?.currentVersion?.sequence}`}
               className="link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10 u-fontSize--small"
+              data-testid="dashboard-edit-config"
             >
               Edit config
             </Link>
@@ -174,6 +176,7 @@ export default class AppStatus extends Component<Props, State> {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="link"
+                data-testid="dashboard-app-link"
               >
                 {" "}
                 {links[0].title}{" "}
