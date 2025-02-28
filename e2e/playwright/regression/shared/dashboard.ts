@@ -38,11 +38,37 @@ export const validateDashboardAutomaticUpdates = async (page: Page, expect: Expe
   await page.waitForTimeout(1000);
   await expect(automaticUpdatesModal.getByTestId("update-checker-spec")).toHaveValue("0 2 * * WED,SAT");
   await expect(automaticUpdatesModal).toContainText("At 02:00 AM, only on Wednesday and Saturday");
-  
+
   await automaticUpdatesModal.getByTestId("update-checker-spec").click();
   await page.waitForTimeout(1000);
   await automaticUpdatesModal.getByTestId("update-checker-spec").fill("0 2 * * SUN");
   await expect(automaticUpdatesModal).toContainText("At 02:00 AM, only on Sunday");
   await automaticUpdatesModal.getByRole("button", { name: "Update", exact: true }).click();
   await expect(automaticUpdatesModal).not.toBeVisible();
+};
+
+export const validateDashboardGraphs = async (page: Page, expect: Expect) => {
+  // TODO NOW: use http://prometheus-k8s.monitoring.svc.cluster.local:9090
+  const graphsCard = page.getByTestId("dashboard-graphs-card");
+  await expect(graphsCard).toBeVisible();
+  await graphsCard.getByTestId("prometheus-endpoint").click();
+  await graphsCard.getByTestId("prometheus-endpoint").fill("http://prometheus-operated.monitoring.svc.cluster.local:9090");
+  await graphsCard.getByRole('button', { name: 'Save' }).click();
+
+  await expect(graphsCard).toContainText("Disk Usage");
+  await expect(graphsCard).toContainText("CPU Usage");
+  await expect(graphsCard).toContainText("Memory Usage");
+
+  const diskUsageGraph = graphsCard.getByTestId("graph-disk-usage");
+  await expect(diskUsageGraph).toBeVisible();
+  await expect(diskUsageGraph).toContainText("Used");
+  await expect(diskUsageGraph).toContainText("Available");
+
+  const cpuUsageGraph = graphsCard.getByTestId("graph-cpu-usage");
+  await expect(cpuUsageGraph).toBeVisible();
+  await expect(cpuUsageGraph).toContainText("kotsadm-rqlite");
+
+  const memoryUsageGraph = graphsCard.getByTestId("graph-memory-usage");
+  await expect(memoryUsageGraph).toBeVisible();
+  await expect(memoryUsageGraph).toContainText("kotsadm-rqlite");
 };

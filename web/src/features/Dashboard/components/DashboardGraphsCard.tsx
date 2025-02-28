@@ -53,11 +53,12 @@ export default class DashboardGraphsCard extends Component<Props, State> {
     };
   }
 
-  toggleConfigureGraphs = () => {
-    const { showConfigureGraphs } = this.state;
-    this.setState({
-      showConfigureGraphs: !showConfigureGraphs,
-    });
+  openConfigureGraphsModal = () => {
+    this.setState({ showConfigureGraphs: true });
+  };
+
+  closeConfigureGraphsModal = () => {
+    this.setState({ showConfigureGraphs: false });
   };
 
   updatePromValue = () => {
@@ -89,7 +90,7 @@ export default class DashboardGraphsCard extends Component<Props, State> {
           }
           throw new Error(`Unexpected status code ${res.status}`);
         }
-        this.toggleConfigureGraphs();
+        this.closeConfigureGraphsModal();
         this.setState({ savingPromValue: false, savingPromError: "" });
       })
       .catch((err) => {
@@ -213,6 +214,7 @@ export default class DashboardGraphsCard extends Component<Props, State> {
       <div
         className="dashboard-card graph GraphCard-content--wrapper flex-column"
         key={chart.title}
+        data-testid={`graph-${chart.title?.toLowerCase().replaceAll(/\s+/g, '-')}`}
       >
         <XYPlot
           width={344}
@@ -289,6 +291,7 @@ export default class DashboardGraphsCard extends Component<Props, State> {
         className={`${
           !prometheusAddress ? "inverse-card" : ""
         } card-bg flex-column flex1`}
+        data-testid="dashboard-graphs-card"
       >
         <div className="flex justifyContent--spaceBetween alignItems--center">
           <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
@@ -302,7 +305,7 @@ export default class DashboardGraphsCard extends Component<Props, State> {
             />
             <span
               className="link u-fontSize--small"
-              onClick={this.toggleConfigureGraphs}
+              onClick={this.openConfigureGraphsModal}
             >
               Configure Prometheus Address
             </span>
@@ -324,14 +327,14 @@ export default class DashboardGraphsCard extends Component<Props, State> {
         )}
         <Modal
           isOpen={showConfigureGraphs}
-          onRequestClose={this.toggleConfigureGraphs}
+          onRequestClose={this.closeConfigureGraphsModal}
           shouldReturnFocusAfterClose={false}
           contentLabel="Configure prometheus value"
           ariaHideApp={false}
           className="Modal"
         >
           <ConfigureGraphs
-            toggleConfigureGraphs={this.toggleConfigureGraphs}
+            closeConfigureGraphsModal={this.closeConfigureGraphsModal}
             updatePromValue={this.updatePromValue}
             promValue={promValue}
             savingPromValue={savingPromValue}
