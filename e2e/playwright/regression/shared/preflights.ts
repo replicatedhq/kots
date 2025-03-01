@@ -23,8 +23,7 @@ export const validateClusterAdminInitialPreflights = async (page: Page, expect: 
   await expect(resultsWrapper.getByTestId("preflight-message-row").nth(1)).toContainText('Your cluster meets the recommended and required versions of Kubernetes.');
 
   await expect(resultsWrapper.getByTestId("preflight-message-title").nth(2)).toContainText('Said hi!');
-  // TODO NOW: uncomment this
-  // await expect(resultsWrapper.getByTestId("preflight-message-row").nth(2)).toContainText('Said hi!');
+  await expect(resultsWrapper.getByTestId("preflight-message-row").nth(2)).toContainText('Said hi!');
 
   await page.getByRole('button', { name: 'Deploy' }).click();
 };

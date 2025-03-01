@@ -22,8 +22,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   deleteKurlConfigMap(constants.IS_AIRGAPPED);
   const registryCreds = getRegistryCredentials(constants.IS_AIRGAPPED, constants.IS_EXISTING_CLUSTER);
 
-  // TODO NOW: uncomment this
-  // installVeleroAWS(constants.VELERO_VERSION, constants.VELERO_AWS_PLUGIN_VERSION);
+  installVeleroAWS(constants.VELERO_VERSION, constants.VELERO_AWS_PLUGIN_VERSION);
   await promoteVendorRelease(constants.VENDOR_INITIAL_RELEASE_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
 
   await page.goto('/');
