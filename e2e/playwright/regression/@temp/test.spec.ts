@@ -13,6 +13,7 @@ import {
   validateDashboardInfo,
   validateDashboardAutomaticUpdates,
   validateDashboardGraphs,
+  updateConfig,
 } from '../shared';
 
 test('type=existing cluster, env=online, phase=new install, rbac=cluster admin', async ({ page }) => {
@@ -39,4 +40,5 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await validateDashboardInfo(page, expect);
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect);
+  await updateConfig(page, expect);
 });

@@ -927,7 +927,7 @@ class AppConfig extends Component<Props, State> {
           className="Modal MediumSize"
         >
           {gitops?.isConnected ? (
-            <div className="Modal-body">
+            <div className="Modal-body" data-testid="config-next-step-modal-gitops">
               {
                 <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                   The config for {app.name} has been updated. A new commit has
@@ -955,7 +955,7 @@ class AppConfig extends Component<Props, State> {
               </div>
             </div>
           ) : (
-            <div className="Modal-body">
+            <div className="Modal-body" data-testid="config-next-step-modal">
               {isNewVersion ? (
                 <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                   The config for {app?.name} has been updated. A new version is
