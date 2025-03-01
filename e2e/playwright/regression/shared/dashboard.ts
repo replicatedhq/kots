@@ -48,11 +48,10 @@ export const validateDashboardAutomaticUpdates = async (page: Page, expect: Expe
 };
 
 export const validateDashboardGraphs = async (page: Page, expect: Expect) => {
-  // TODO NOW: use http://prometheus-k8s.monitoring.svc.cluster.local:9090
   const graphsCard = page.getByTestId("dashboard-graphs-card");
   await expect(graphsCard).toBeVisible();
   await graphsCard.getByTestId("prometheus-endpoint").click();
-  await graphsCard.getByTestId("prometheus-endpoint").fill("http://prometheus-operated.monitoring.svc.cluster.local:9090");
+  await graphsCard.getByTestId("prometheus-endpoint").fill("http://prometheus-k8s.monitoring.svc.cluster.local:9090");
   await graphsCard.getByRole('button', { name: 'Save' }).click();
 
   await expect(graphsCard).toContainText("Disk Usage");
