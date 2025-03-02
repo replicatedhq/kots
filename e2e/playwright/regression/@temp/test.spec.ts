@@ -14,6 +14,11 @@ import {
   validateDashboardAutomaticUpdates,
   validateDashboardGraphs,
   updateConfig,
+  validateIgnorePreflightsModal,
+  validateVersionHistoryAutomaticUpdates,
+  validateCurrentVersionCard,
+  validateCurrentReleaseNotes,
+  validateCurrentClusterAdminPreflights,
 } from '../shared';
 
 test('type=existing cluster, env=online, phase=new install, rbac=cluster admin', async ({ page }) => {
@@ -40,4 +45,12 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect);
   await updateConfig(page, expect);
+
+  await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
+  await validateIgnorePreflightsModal(page, expect);
+  await validateVersionHistoryAutomaticUpdates(page, expect);
+
+  await validateCurrentVersionCard(page, expect, "1.0.0", 0);
+  await validateCurrentReleaseNotes(page, expect, "release notes - updates");
+  await validateCurrentClusterAdminPreflights(page, expect);
 });

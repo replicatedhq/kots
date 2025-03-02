@@ -40,7 +40,7 @@ const PreflightIcon = ({
   }
 
   return (
-    <div className="tw-relative">
+    <div className="tw-relative" data-testid="preflight-icon">
       <Link
         to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
         className={`tw-relative ${className}`}

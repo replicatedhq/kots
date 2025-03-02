@@ -7,3 +7,4 @@ export * from './config';
 export * from './preflights';
 export * from './snapshots';
 export * from './dashboard';
+export * from './version-history';

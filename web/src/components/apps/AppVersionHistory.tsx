@@ -1811,7 +1811,7 @@ class AppVersionHistory extends Component<Props, State> {
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
                 >
-                  <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper">
+                  <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper" data-testid="current-version-card">
                     <p className="u-fontSize--large card-title u-fontWeight--bold">
                       {currentDownstreamVersion?.versionLabel
                         ? "Currently deployed version"
@@ -1855,6 +1855,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   <Icon
                                     icon="release-notes"
                                     className="clickable"
+                                    data-testid="current-release-notes-icon"
                                     size={24}
                                     onClick={() =>
                                       this.showReleaseNotes(

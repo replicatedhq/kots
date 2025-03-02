@@ -16,15 +16,17 @@ const ReleaseNotesModal = ({
       ariaHideApp={false}
       className="Modal MediumSize"
     >
-      <div className="flex-column">
-        <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
-          {releaseNotes || ""}
-        </MarkdownRenderer>
-      </div>
-      <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
-        <button className="btn primary" onClick={hideReleaseNotes}>
-          Close
-        </button>
+      <div data-testid="release-notes-modal">
+        <div className="flex-column">
+          <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
+            {releaseNotes || ""}
+          </MarkdownRenderer>
+        </div>
+        <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
+          <button className="btn primary" onClick={hideReleaseNotes}>
+            Close
+          </button>
+        </div>
       </div>
     </Modal>
   );
