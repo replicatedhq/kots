@@ -117,6 +117,16 @@ func MultiAppTest() Test {
 	}
 }
 
+func NewMinKotsVersionOnline() Test {
+	return Test{
+		ID:                     "@min-kots-version-online",
+		Namespace:              "min-kots-version",
+		AppSlug:                "min-kots-version",
+		UpstreamURI:            "min-kots-version/automated",
+		SkipCompatibilityCheck: true,
+	}
+}
+
 func NewMinKotsVersionAirgap() Test {
 	return Test{
 		ID:                     "@min-kots-version-airgap",

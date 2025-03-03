@@ -16,3 +16,52 @@ export async function downloadAirgapBundle(
   const downloadCommand = `curl '${bundleUrl}' -o ${destPath}`;
   execSync(downloadCommand, {stdio: 'inherit'});
 }
+
+export async function listReleases(
+  appId: string,
+  channelId: string
+) {
+  const response = await fetch(
+    `https://api.replicated.com/vendor/v3/app/${appId}/channel/${channelId}/releases`,
+    {
+      headers: {
+        'Authorization': process.env.REPLICATED_API_TOKEN!,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to list releases: ${response.status}`);
+  }
+
+  return (await response.json()).releases;
+}
+
+export async function promoteRelease(
+  appId: string,
+  releaseSequence: number,
+  channelId: string,
+  versionLabel: string
+) {
+  const response = await fetch(
+    `https://api.replicated.com/vendor/v3/app/${appId}/release/${releaseSequence}/promote`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': process.env.REPLICATED_API_TOKEN!,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        channelIds: [
+          channelId
+        ],
+        versionLabel: versionLabel
+      })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to promote vendor release sequence: ${response.status}`);
+  }
+}

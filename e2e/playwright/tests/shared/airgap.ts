@@ -14,6 +14,12 @@ export const airgapInstall = async (page: Page, expect: Expect, host: string, us
   await page.getByTestId("upload-airgap-bundle-button").click();
 };
 
+export const airgapOnlineInstall = async (page: Page, expect: Expect) => {
+  await expect(page.locator("#app")).toContainText("Install in airgapped environment", { timeout: 15000 });
+  await page.getByText(/download .* from the Internet/).click();
+  await expect(page.locator("#app")).toContainText("Installing your license");
+};
+
 export const airgapInstallErrorMessage = (page: Page): Locator => {
   return page.getByTestId("airgap-bundle-upload-error");
 };

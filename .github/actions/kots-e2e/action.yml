@@ -61,7 +61,7 @@ inputs:
     default: "false"
     required: false
   replicated-api-token:
-    description: 'Replicated API token for C11y matrix'
+    description: 'Replicated API token'
     required: false
 
 outputs:

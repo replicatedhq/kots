@@ -1185,6 +1185,7 @@ class AppVersionHistory extends Component<Props, State> {
         <button
           className="btn secondary small u-marginRight--10"
           onClick={this.onCloseReleasesToDiff}
+          data-testid="cancel-diff-button"
         >
           Cancel
         </button>
@@ -1212,6 +1213,7 @@ class AppVersionHistory extends Component<Props, State> {
               });
             }
           }}
+          data-testid="diff-versions-button"
         >
           Diff versions
         </button>
@@ -1220,6 +1222,7 @@ class AppVersionHistory extends Component<Props, State> {
       <div
         className="flex-auto flex alignItems--center u-marginLeft--20"
         onClick={this.onSelectReleasesToDiff}
+        data-testid="diff-versions-button"
       >
         <Icon
           icon="diff-icon"
@@ -1986,7 +1989,10 @@ class AppVersionHistory extends Component<Props, State> {
 
                       {!gitopsIsConnected &&
                         !this.props.outletContext.isEmbeddedCluster && (
-                          <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                          <div
+                            className="TableDiff--Wrapper card-bg u-marginBottom--30"
+                            data-testid="new-version-card"
+                          >
                             <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
                                 {this.state.updatesAvailable
@@ -2030,6 +2036,7 @@ class AppVersionHistory extends Component<Props, State> {
                                           <span
                                             className="flex-auto flex alignItems--center link u-fontSize--small"
                                             onClick={this.onCheckForUpdates}
+                                            data-testid="check-for-update-button"
                                           >
                                             <Icon
                                               icon="check-update"
