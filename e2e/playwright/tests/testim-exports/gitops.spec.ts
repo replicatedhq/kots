@@ -75,7 +75,7 @@ async function export_gitops_variables() {
   await page.evaluate(() => {
     exports.gitopsOwner = 'replicated-testim-kotsadm-gitops';
     exports.gitopsRepo = 'qakots-kotsadm-gitops';
-    exports.githubToken = 'a926f4a1f09a0a51c3be620b24cd484dee2736c4';
+    exports.githubToken = 'TODO_ADD_GITHUB_TOKEN_FROM_SECRET';
     exports.testAppSlug = 'gitops-bobcat';
     
   });

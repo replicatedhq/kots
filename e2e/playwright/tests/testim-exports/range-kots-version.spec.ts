@@ -69,7 +69,7 @@ async function export_test_vars() {
     exportsTest.testVendorPermissiveReleaseSemver = "v1.0.0";
     exportsTest.testRestrictiveTargetKotsVersion = "11000.0.0";
     exportsTest.testPermissiveTargetKotsVersion = "10000.0.0";
-    exportsTest.testReplicatedApiToken = "7d4e9288551b389d556a74b629f9cf851eadf5392554f5a86013a1939d314a45";
+    exportsTest.testReplicatedApiToken = "TODO_ADD_REPLICATED_API_TOKEN_FROM_SECRET";
     
   });
 }
