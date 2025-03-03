@@ -9,10 +9,10 @@ export default class MountAware extends Component {
   }
 
   render() {
-    const { children, className } = this.props;
+    const { children, className, dataTestId } = this.props;
 
     return (
-      <div id="mount-aware-wrapper" className={className}>
+      <div id="mount-aware-wrapper" className={className} data-testid={dataTestId}>
         {children}
       </div>
     );

@@ -1,0 +1,9 @@
+export const APP_SLUG = "min-kots-version";
+export const VENDOR_APP_ID = "24Z2xiGw7IQCtMofnzmsZzXKM61";
+export const CHANNEL_ID = "24Z37fX3oWkM4LjYCiByrewT5oZ";
+export const CUSTOMER_ID = "24Z4ipS4YlhDAk7PIcxshHCxHiz";
+export const VENDOR_RESTRICTIVE_RELEASE_SEMVER = "v1.0.1";
+export const VENDOR_RESTRICTIVE_CHANNEL_SEQUENCE = 7;
+export const VENDOR_PERMISSIVE_RELEASE_SEMVER = "v1.0.0";
+export const RESTRICTIVE_MIN_KOTS_VERSION = "10000.0.0";
+export const DOWNLOAD_PORTAL_BASE64_PASSWORD = "a21YaVVCUktBbGRROXRmSA==";

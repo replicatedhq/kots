@@ -1,4 +1,6 @@
-export const login = async (page) => {
+import { Page } from '@playwright/test';
+
+export const login = async (page: Page) => {
   await page.goto('/');
   await page.getByPlaceholder('password').click();
   await page.getByPlaceholder('password').fill('password');

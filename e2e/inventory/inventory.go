@@ -120,8 +120,8 @@ func MultiAppTest() Test {
 func NewMinKotsVersion() Test {
 	return Test{
 		ID:                     "@min-kots-version",
-		TestimSuite:            "min-kots-version",
 		Namespace:              "min-kots-version",
+		AppSlug:                "min-kots-version",
 		UpstreamURI:            "min-kots-version/automated",
 		SkipCompatibilityCheck: true,
 	}

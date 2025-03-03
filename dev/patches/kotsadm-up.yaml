@@ -10,7 +10,7 @@ spec:
         hostPath:
           path: {{ .Env.PROJECT_DIR }}/deploy/assets
           type: Directory
-{{- if .Env.EC_NODE  }}
+{{- if .Env.EC_NODE }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -20,12 +20,12 @@ spec:
                 operator: In
                 values:
                 - {{ .Env.EC_NODE }}
-{{- end  }}
       initContainers:
       - name: schemahero-plan
         image: kotsadm-migrations-dev
       - name: schemahero-apply
         image: kotsadm-migrations-dev
+{{- end }}
       containers:
       - name: kotsadm
         image: kotsadm-api-dev
