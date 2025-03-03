@@ -117,9 +117,9 @@ func MultiAppTest() Test {
 	}
 }
 
-func NewMinKotsVersion() Test {
+func NewMinKotsVersionAirgap() Test {
 	return Test{
-		ID:                     "@min-kots-version",
+		ID:                     "@min-kots-version-airgap",
 		Namespace:              "min-kots-version",
 		AppSlug:                "min-kots-version",
 		UpstreamURI:            "min-kots-version/automated",

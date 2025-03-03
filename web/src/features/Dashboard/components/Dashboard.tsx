@@ -652,7 +652,10 @@ const Dashboard = (props: Props) => {
           </div>
         ))}
       {app && (
-        <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20" data-testid="page-dashboard">
+        <div
+          className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20"
+          data-testid="page-dashboard"
+        >
           <KotsPageTitle pageName="Dashboard" showAppSlug />
           <div className="Dashboard flex flex-auto justifyContent--center alignSelf--center alignItems--center">
             <div className="flex1 flex-column">

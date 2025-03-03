@@ -2341,7 +2341,7 @@ jobs:
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
-  validate-min-kots-version:
+  validate-min-kots-version-airgap:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     env:
@@ -2374,7 +2374,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
         with:
-          test-id: '@min-kots-version'
+          test-id: '@min-kots-version-airgap'
           kots-namespace: 'min-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -4412,7 +4412,7 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       - validate-version-history-pagination
-      - validate-min-kots-version
+      - validate-min-kots-version-airgap
       - validate-target-kots-version
       - validate-range-kots-version
       - validate-airgap-smoke-test

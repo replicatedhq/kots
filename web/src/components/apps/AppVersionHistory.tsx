@@ -1341,7 +1341,10 @@ class AppVersionHistory extends Component<Props, State> {
     let updateText;
     if (this.state.airgapUploadError) {
       updateText = (
-        <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium" data-testid="airgap-bundle-upload-error">
+        <p
+          className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium"
+          data-testid="airgap-bundle-upload-error"
+        >
           {this.state.airgapUploadError}
         </p>
       );

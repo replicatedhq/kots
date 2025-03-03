@@ -557,7 +557,10 @@ class UploadAirgapBundle extends Component {
                   )}
                 </div>
                 {errorMessage && (
-                  <div className="u-marginTop--10" data-testid="airgap-bundle-upload-error">
+                  <div
+                    className="u-marginTop--10"
+                    data-testid="airgap-bundle-upload-error"
+                  >
                     <span className="u-textColor--error">{errorMessage}</span>
                     {this.state.showSupportBundleCommand ? (
                       <div className="u-marginTop--10">
