@@ -1341,7 +1341,7 @@ class AppVersionHistory extends Component<Props, State> {
     let updateText;
     if (this.state.airgapUploadError) {
       updateText = (
-        <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">
+        <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium" data-testid="airgap-bundle-upload-error">
           {this.state.airgapUploadError}
         </p>
       );
@@ -1997,6 +1997,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       onMount={(el: Element) =>
                                         airgapUploader?.assignElement(el)
                                       }
+                                      dataTestId="airgap-bundle-drop-zone"
                                     >
                                       <div className="flex alignItems--center">
                                         <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />

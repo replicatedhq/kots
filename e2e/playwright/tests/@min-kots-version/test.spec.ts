@@ -1,27 +1,27 @@
-import { test, expect, Page } from '@playwright/test';
-import { login, uploadLicense, downloadAirgapBundle } from '../shared';
+import { test, expect, Page, Expect } from '@playwright/test';
 import * as constants from './constants';
+import {
+  login,
+  uploadLicense,
+  downloadAirgapBundle,
+  airgapInstall,
+  airgapInstallErrorMessage,
+  appIsReady,
+  airgapUpdate,
+  airgapUpdateErrorMessage,
+} from '../shared';
 
 test('min kots version', async ({ page }) => {
-  test.slow();
+  test.setTimeout(5 * 60 * 1000); // 5 minutes
+
   await login(page);
   await uploadLicense(page, expect);
-  await validateAirgapInstall(page);
+  await validateAirgapInstallRestrictive(page, expect);
+  await validateAirgapInstallPermissive(page, expect);
+  await validateAirgapUpdateRestrictive(page, expect);
 });
 
-const validateAirgapInstall = async (page: Page) => {
-  await expect(page.locator("#app")).toContainText("Install in airgapped environment", { timeout: 15000 });
-  await page.getByTestId("download-app-from-internet").click();
-
-  await page.getByTestId("airgap-registry-hostname").click();
-  await page.getByTestId("airgap-registry-hostname").fill('ttl.sh');
-  await page.getByTestId("airgap-registry-username").click();
-  await page.getByTestId("airgap-registry-username").fill('admin');
-  await page.getByTestId("airgap-registry-password").click();
-  await page.getByTestId("airgap-registry-password").fill('password');
-  await page.getByTestId("airgap-registry-namespace").click();
-  await page.getByTestId("airgap-registry-namespace").fill('test');
-
+const validateAirgapInstallRestrictive = async (page: Page, expect: Expect) => {
   await downloadAirgapBundle(
     constants.CUSTOMER_ID,
     constants.VENDOR_RESTRICTIVE_CHANNEL_SEQUENCE,
@@ -29,11 +29,36 @@ const validateAirgapInstall = async (page: Page) => {
     '/tmp/app.airgap'
   );
 
-  await page.setInputFiles('[data-testid="airgap-bundle-drop-zone"] input', '/tmp/app.airgap');
-  await page.getByTestId("upload-airgap-bundle-button").click();
+  await airgapInstall(page, expect, 'ttl.sh', 'admin', 'password', 'test', '/tmp/app.airgap');
 
-  const errorMessage = await page.getByTestId("airgap-bundle-upload-error");
+  const errorMessage = airgapInstallErrorMessage(page);
   await expect(errorMessage).toContainText("requires");
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
 };
 
+const validateAirgapInstallPermissive = async (page: Page, expect: Expect) => {
+  await downloadAirgapBundle(
+    constants.CUSTOMER_ID,
+    constants.VENDOR_PERMISSIVE_CHANNEL_SEQUENCE,
+    constants.DOWNLOAD_PORTAL_BASE64_PASSWORD,
+    '/tmp/app.airgap'
+  );
+
+  await airgapInstall(page, expect, 'ttl.sh', 'admin', 'password', 'test', '/tmp/app.airgap');
+  await appIsReady(page, expect);
+};
+
+const validateAirgapUpdateRestrictive = async (page: Page, expect: Expect) => {
+  await downloadAirgapBundle(
+    constants.CUSTOMER_ID,
+    constants.VENDOR_RESTRICTIVE_CHANNEL_SEQUENCE,
+    constants.DOWNLOAD_PORTAL_BASE64_PASSWORD,
+    '/tmp/app.airgap'
+  );
+
+  await airgapUpdate(page, expect, '/tmp/app.airgap');
+
+  const errorMessage = airgapUpdateErrorMessage(page);
+  await expect(errorMessage).toContainText("requires");
+  await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
+};
