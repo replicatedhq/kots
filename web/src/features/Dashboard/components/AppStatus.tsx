@@ -105,6 +105,7 @@ export default class AppStatus extends Component<Props, State> {
                   ? "u-textColor--warning"
                   : "u-textColor--error"
               }`}
+              data-testid="app-status-status"
             >
               {Utilities.toTitleCase(appStatus)}
             </span>

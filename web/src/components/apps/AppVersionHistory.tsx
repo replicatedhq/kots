@@ -1185,6 +1185,7 @@ class AppVersionHistory extends Component<Props, State> {
         <button
           className="btn secondary small u-marginRight--10"
           onClick={this.onCloseReleasesToDiff}
+          data-testid="cancel-diff-button"
         >
           Cancel
         </button>
@@ -1212,6 +1213,7 @@ class AppVersionHistory extends Component<Props, State> {
               });
             }
           }}
+          data-testid="diff-releases-button"
         >
           Diff versions
         </button>
@@ -1220,6 +1222,7 @@ class AppVersionHistory extends Component<Props, State> {
       <div
         className="flex-auto flex alignItems--center u-marginLeft--20"
         onClick={this.onSelectReleasesToDiff}
+        data-testid="select-releases-to-diff-button"
       >
         <Icon
           icon="diff-icon"
@@ -1341,7 +1344,10 @@ class AppVersionHistory extends Component<Props, State> {
     let updateText;
     if (this.state.airgapUploadError) {
       updateText = (
-        <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">
+        <p
+          className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium"
+          data-testid="airgap-bundle-upload-error"
+        >
           {this.state.airgapUploadError}
         </p>
       );
@@ -1425,7 +1431,10 @@ class AppVersionHistory extends Component<Props, State> {
     const { currentPage, pageSize, totalCount, loadingPage } = this.state;
 
     return (
-      <div className="TableDiff--Wrapper card-bg">
+      <div
+        className="TableDiff--Wrapper card-bg"
+        data-testid="all-versions-card"
+      >
         <div className="flex u-marginBottom--15 justifyContent--spaceBetween">
           <p className="u-fontSize--normal u-fontWeight--medium card-title">
             All versions
@@ -1568,7 +1577,7 @@ class AppVersionHistory extends Component<Props, State> {
       });
   };
 
-  renderAppVersionHistoryRow = (version: Version, index?: number) => {
+  renderAppVersionHistoryRow = (version: Version, index: number) => {
     if (
       !version ||
       isEmpty(version) ||
@@ -1592,6 +1601,7 @@ class AppVersionHistory extends Component<Props, State> {
     return (
       <Fragment key={index}>
         <AppVersionHistoryRow
+          index={index}
           navigate={this.props.navigate}
           adminConsoleMetadata={this.props.outletContext.adminConsoleMetadata}
           isEmbeddedCluster={this.props.outletContext.isEmbeddedCluster}
@@ -1811,7 +1821,10 @@ class AppVersionHistory extends Component<Props, State> {
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
                 >
-                  <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper">
+                  <div
+                    className="card-bg TableDiff--Wrapper currentVersionCard--wrapper"
+                    data-testid="current-version-card"
+                  >
                     <p className="u-fontSize--large card-title u-fontWeight--bold">
                       {currentDownstreamVersion?.versionLabel
                         ? "Currently deployed version"
@@ -1983,7 +1996,10 @@ class AppVersionHistory extends Component<Props, State> {
 
                       {!gitopsIsConnected &&
                         !this.props.outletContext.isEmbeddedCluster && (
-                          <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                          <div
+                            className="TableDiff--Wrapper card-bg u-marginBottom--30"
+                            data-testid="available-updates-card"
+                          >
                             <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
                                 {this.state.updatesAvailable
@@ -1997,6 +2013,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       onMount={(el: Element) =>
                                         airgapUploader?.assignElement(el)
                                       }
+                                      dataTestId="airgap-bundle-drop-zone"
                                     >
                                       <div className="flex alignItems--center">
                                         <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
@@ -2026,6 +2043,7 @@ class AppVersionHistory extends Component<Props, State> {
                                           <span
                                             className="flex-auto flex alignItems--center link u-fontSize--small"
                                             onClick={this.onCheckForUpdates}
+                                            data-testid="check-for-update-button"
                                           >
                                             <Icon
                                               icon="check-update"
@@ -2066,7 +2084,7 @@ class AppVersionHistory extends Component<Props, State> {
                               </div>
                             </div>
                             {pendingVersion ? (
-                              this.renderAppVersionHistoryRow(pendingVersion)
+                              this.renderAppVersionHistoryRow(pendingVersion, 0)
                             ) : (
                               <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
                                 <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">

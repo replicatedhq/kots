@@ -519,6 +519,7 @@ class UploadAirgapBundle extends Component {
                         "has-file": hasFile,
                         "has-error": errorMessage,
                       })}
+                      dataTestId="airgap-bundle-drop-zone"
                     >
                       {hasFile ? (
                         <div className="has-file-wrapper">
@@ -546,6 +547,7 @@ class UploadAirgapBundle extends Component {
                       <button
                         type="button"
                         className="btn primary large flex-auto"
+                        data-testid="upload-airgap-bundle-button"
                         onClick={this.uploadAirgapBundle}
                         disabled={fileUploading || !hasFile}
                       >
@@ -555,7 +557,10 @@ class UploadAirgapBundle extends Component {
                   )}
                 </div>
                 {errorMessage && (
-                  <div className="u-marginTop--10">
+                  <div
+                    className="u-marginTop--10"
+                    data-testid="airgap-bundle-upload-error"
+                  >
                     <span className="u-textColor--error">{errorMessage}</span>
                     {this.state.showSupportBundleCommand ? (
                       <div className="u-marginTop--10">
@@ -610,6 +615,7 @@ class UploadAirgapBundle extends Component {
           <span
             className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium"
             onClick={this.handleOnlineInstall}
+            data-testid="download-app-from-internet"
           >
             Optionally you can{" "}
             <span className="link">

@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { login, uploadLicense } from "../shared";
-
-const { execSync } = require("child_process");
+import { execSync } from 'child_process';
 
 test("smoke test", async ({ page }) => {
   test.setTimeout(5 * 60 * 1000); // 5 minutes
