@@ -88,7 +88,6 @@ test('gitops install', async ({ page }) => {
   // wait 10 seconds for things to actually be committed
   await page.waitForTimeout(10000);
   await trivialConfig(page, true);
-  
 
   const commitResponse = await fetch(`https://api.github.com/repos/${gitopsOwner}/${gitopsRepo}/commits?sha=${randomBranch}`, {
     headers: {
@@ -119,13 +118,19 @@ test('gitops install', async ({ page }) => {
   // turn off gitops so we can test the behavior of kots afterwards
   await resetGithub(githubToken, gitopsOwner, gitopsRepo, keyId, randomBranch);
 
-  await page.getByText('GitOps').click();
+  await page.locator('span').filter({ hasText: 'GitOps' }).click();
   await page.getByText('Disable GitOps for this app').click();
   await expect(page.getByText('Are you sure you want to disable GitOps for this application?')).toBeVisible();
-  await page.getByText('Disable GitOps').click();
+  await page.getByRole('button', { name: 'Disable GitOps' }).click();
   await expect(page.getByText('Are you sure you want to disable GitOps for this application?')).not.toBeVisible();
+  await expect(page.getByText('Not Enabled')).toBeVisible();
 
   // TODO: visit application page, ensure deploy and redeploy buttons are visible, deploy new version
+  await page.getByText('Application', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Redeploy' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Deploy', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Deploy', exact: true }).click();
+  await page.getByRole('button', { name: 'Yes, Deploy' }).click();
 
   // TODO: test reenabling gitops but with a failed ssh connection
 
@@ -133,7 +138,7 @@ test('gitops install', async ({ page }) => {
 });
 
 async function trivialConfig(page: Page, isGitops: boolean) {
-  await page.getByRole('link', { name: 'Config', exact: true }).click();
+  await page.getByRole('list').getByRole('link', { name: 'Config' }).click();
   await page.getByLabel('Trivial Config').check();
   await page.getByRole('button', { name: 'Save config' }).click();
   if (!isGitops) {
