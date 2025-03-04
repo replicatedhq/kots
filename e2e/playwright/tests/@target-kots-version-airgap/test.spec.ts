@@ -8,7 +8,6 @@ import {
   airgapInstallErrorMessage,
   appIsReady,
   airgapUpdate,
-  airgapUpdateErrorMessage,
 } from '../shared';
 
 test('target kots version', async ({ page }) => {
