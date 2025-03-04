@@ -2371,6 +2371,17 @@ jobs:
           chmod +x bin/*
           cp ./bin/kots /usr/local/bin/kubectl-kots
           sudo apt-get update -y && sudo apt-get install jq -y
+      - name: install replicated cli
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download --repo replicatedhq/replicated --pattern '*_linux_amd64.tar.gz' --output /tmp/replicated.tar.gz --clobber
+          tar -xzf /tmp/replicated.tar.gz -C /tmp
+          mv /tmp/replicated /usr/local/bin/replicated
+      - name: promote permissive release
+        env:
+          REPLICATED_APP: min-kots-version
+        run: replicated release promote 6 24Z37fX3oWkM4LjYCiByrewT5oZ --version v1.0.0
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
         with:
