@@ -63,6 +63,9 @@ inputs:
   replicated-api-token:
     description: 'Replicated API token for C11y matrix'
     required: false
+  gitops-github-token:
+    description: 'GitHub token for GitOps tests'
+    required: false
 
 outputs:
   cluster-id:
@@ -96,6 +99,7 @@ runs:
       env:
         TESTIM_ACCESS_TOKEN: ${{ inputs.testim-access-token }}
         REPLICATED_API_TOKEN: ${{ inputs.replicated-api-token }}
+        GITOPS_GITHUB_TOKEN: ${{ inputs.gitops-github-token }}
         KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
       run: |
         make -C e2e test \
