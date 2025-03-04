@@ -636,6 +636,7 @@ function AppVersionHistoryRow(props: Props) {
             <p
               className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium"
               style={{ marginTop: "2px" }}
+              data-testid="version-sequence"
             >
               Sequence {version.sequence}
             </p>

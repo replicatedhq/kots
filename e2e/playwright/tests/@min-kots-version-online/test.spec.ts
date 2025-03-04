@@ -78,10 +78,23 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   await page.getByTestId("cancel-diff-button").click();
   await expect(card).toBeVisible();
 
+  // A license sync may happen on installation and there will be a "License changed" version in the
+  // list
+  const versionSequence = card.getByTestId("version-sequence");
+  const versionSequenceText = await versionSequence.textContent();
+  const versionSequenceNumber = versionSequenceText.match(/\d+/);
+  if (!versionSequenceNumber || versionSequenceNumber.length !== 1) {
+    throw new Error(`version sequence number not found in text "${versionSequenceText}"`);
+  }
+  const versionSequenceNumberInt = parseInt(versionSequenceNumber[0]);
+  if (isNaN(versionSequenceNumberInt)) {
+    throw new Error(`version sequence number is not a number "${versionSequenceNumber}"`);
+  }
+
   // Click the "View files" tab and validate that the url has the correct sequence as the
   // restrictive version was unable to download
   await page.getByTestId("console-subnav").getByRole("link", { name: "View files" }).click();
-  await expect(page).toHaveURL(/.*\/tree\/0$/);
+  await expect(page).toHaveURL(new RegExp(`.*\/tree\/${versionSequenceNumberInt-1}$`));
 };
 
 const promoteReleaseBySemver = async (semver: string) => {
