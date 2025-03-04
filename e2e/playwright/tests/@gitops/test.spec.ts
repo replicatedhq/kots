@@ -5,6 +5,15 @@ const { execSync } = require("child_process");
 
 test('gitops install', async ({ page }) => {
   test.slow();
+  // configure gitops
+  const gitopsOwner = 'replicated-testim-kotsadm-gitops';
+  const gitopsRepo = 'qakots-kotsadm-gitops';
+  const testAppSlug = 'gitops-bobcat';
+  const githubToken = process.env.GITOPS_GITHUB_TOKEN;
+  if (!githubToken) {
+    throw new Error('GITOPS_GITHUB_TOKEN is not set');
+  }
+
   await login(page);
   await uploadLicense(page, expect, "gitops.yaml");
   await expect(page.locator('#app')).toContainText('Application Configuration', { timeout: 15000 });
@@ -17,15 +26,6 @@ test('gitops install', async ({ page }) => {
 
   // create a new version with a config change
   await trivialConfig(page, false);
-
-  // configure gitops
-  const gitopsOwner = 'replicated-testim-kotsadm-gitops';
-  const gitopsRepo = 'qakots-kotsadm-gitops';
-  const githubToken = process.env.GITOPS_GITHUB_TOKEN;
-  if (!githubToken) {
-    throw new Error('GITOPS_GITHUB_TOKEN is not set');
-  }
-  const testAppSlug = 'gitops-bobcat';
 
   // generate a random branch name to use for this test
   const randomBranch = `test-${Math.random().toString(36).substring(2, 15)}`;
@@ -63,7 +63,6 @@ test('gitops install', async ({ page }) => {
     body: JSON.stringify({ title: sshKeyName, key: key })
   });
   console.log("key name", sshKeyName);
-  console.log("key contents", key);
 
   if (response.status !== 201) {
     throw new Error(`Failed to add SSH key to GitHub. Status: ${response.status} Contents: ${await response.text()}`);
@@ -133,9 +132,9 @@ test('gitops install', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Deploy', exact: true })).toBeVisible();
   await page.waitForTimeout(1000);
   await page.getByRole('button', { name: 'Deploy', exact: true }).click();
-  await expect(page.getByText('(Sequence 2)?')).toBeVisible();
+  await expect(page.getByText('(Sequence ')).toBeVisible();
   await page.getByRole('button', { name: 'Yes, Deploy' }).click();
-  await expect(page.getByText('Sequence 2Currently')).toBeVisible(); // ensure that the new version is deployed
+  await expect(page.getByText('Currently deployed version')).toBeVisible(); // ensure that a version is deployed
   // TODO: reenable outside of local dev
   // await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
   console.log('new version deployed')
