@@ -113,7 +113,6 @@ runs:
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
           KOTS_DOCKERHUB_USERNAME=${{ inputs.kots-dockerhub-username }} \
           KOTS_DOCKERHUB_PASSWORD=${{ inputs.kots-dockerhub-password }} \
-          GITOPS_GITHUB_TOKEN=${{ inputs.gitops-github-token }} \
           AIRGAP=${{ inputs.kots-airgap }} \
           IS_OPENSHIFT=${{ inputs.k8s-distribution == 'openshift' && 'true' || 'false' }} \
           IS_EKS=${{ inputs.k8s-distribution == 'eks' && 'true' || 'false' }} \

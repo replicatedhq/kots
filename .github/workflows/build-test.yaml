@@ -4026,7 +4026,6 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
           gitops-github-token: '${{ secrets.E2E_GITOPS_GITHUB_TOKEN }}'
 
-
   validate-get-set-config:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
