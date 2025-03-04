@@ -2485,7 +2485,84 @@ jobs:
           cluster-id: ${{ steps.kots-e2e.outputs.cluster-id }}
 
 
-  validate-target-kots-version:
+  validate-target-kots-version-online:
+    runs-on: ubuntu-24.04
+    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0}
+        ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: download e2e deps
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e
+          path: e2e/bin/
+      - name: download kots binary
+        uses: actions/download-artifact@v4
+        with:
+          name: kots
+          path: bin/
+      - run: |
+          docker load -i e2e/bin/e2e-deps.tar
+          chmod +x e2e/bin/*
+          chmod +x bin/*
+          cp ./bin/kots /usr/local/bin/kubectl-kots
+          sudo apt-get update -y && sudo apt-get install jq -y
+      - name: install replicated cli
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download --repo replicatedhq/replicated --pattern '*_linux_amd64.tar.gz' --output /tmp/replicated.tar.gz --clobber
+          tar -xzf /tmp/replicated.tar.gz -C /tmp
+          mv /tmp/replicated /usr/local/bin/replicated
+      - name: promote permissive release
+        env:
+          REPLICATED_APP: min-kots-version
+          REPLICATED_API_TOKEN: ${{ secrets.C11Y_MATRIX_TOKEN }}
+        run: replicated release promote 6 24Z37fX3oWkM4LjYCiByrewT5oZ --version v1.0.0
+      - uses: ./.github/actions/kots-e2e
+        id: kots-e2e
+        with:
+          test-id: '@target-kots-version-online'
+          kots-namespace: 'target-kots-version'
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+          k8s-cluster-skip-teardown: true
+
+      - name: validate that kots install fails early
+        run: |
+          set +e
+
+          result=$(kubectl kots install target-kots-version/automated --no-port-forward --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
+          echo "$result"
+
+          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"1.0.0"* ]]; then
+            exit 0
+          else
+            exit 1
+          fi
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.kots-e2e.outputs.cluster-id }}
+
+
+  validate-target-kots-version-airgap:
     runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     strategy:
@@ -2516,7 +2593,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
         with:
-          test-id: '@target-kots-version'
+          test-id: '@target-kots-version-airgap'
           kots-namespace: 'target-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -4490,7 +4567,6 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       - validate-version-history-pagination
-      - validate-target-kots-version
       - validate-range-kots-version
       - validate-airgap-smoke-test
       - validate-support-bundle
@@ -4503,6 +4579,8 @@ jobs:
       - validate-change-channel
       - validate-min-kots-version-online
       - validate-min-kots-version-airgap
+      - validate-target-kots-version-online
+      - validate-target-kots-version-airgap
       - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       - validate-change-license

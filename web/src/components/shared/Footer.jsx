@@ -84,7 +84,10 @@ export class Footer extends Component {
                 size={28}
                 className="flex u-marginRight--10 gray-color"
               />
-              <p className="u-fontSize--small u-fontWeight--bold">
+              <p
+                className="u-fontSize--small u-fontWeight--bold"
+                data-testid="footer-target-kots-version"
+              >
                 {" "}
                 v{this.state.targetKotsVersion} available.{" "}
               </p>
