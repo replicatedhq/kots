@@ -41,13 +41,14 @@ const validateOnlineInstallPermissive = async (page: Page, expect: Expect) => {
 const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
 
-  await onlineCheckForUpdates(page, expect);
-
   await page.getByTestId("console-subnav").getByRole("link", { name: "Version history" }).click();
+
+  await expect(page.getByTestId("footer-target-kots-version")).toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
+
+  await onlineCheckForUpdates(page, expect);
 
   const availableUpdateCard = page.getByTestId("available-updates-card");
   await expect(availableUpdateCard).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
 
-  const footerTargetKotsVersion = page.getByTestId("footer-target-kots-version");
-  await expect(footerTargetKotsVersion).toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
+  await expect(page.getByTestId("footer-target-kots-version")).not.toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
 };

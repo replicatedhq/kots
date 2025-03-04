@@ -56,11 +56,14 @@ const validateAirgapUpdateRestrictive = async (page: Page, expect: Expect) => {
     '/tmp/app.airgap'
   );
 
+  await page.getByTestId("console-subnav").getByRole("link", { name: "Version history" }).click();
+
+  await expect(page.getByTestId("footer-target-kots-version")).toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
+
   await airgapUpdate(page, expect, '/tmp/app.airgap');
 
   const availableUpdateCard = page.getByTestId("available-updates-card");
   await expect(availableUpdateCard).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, { timeout: 2 * 60 * 1000 }); // 2 minutes
 
-  const footerTargetKotsVersion = page.getByTestId("footer-target-kots-version");
-  await expect(footerTargetKotsVersion).toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
+  await expect(page.getByTestId("footer-target-kots-version")).not.toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
 };
