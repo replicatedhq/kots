@@ -3,12 +3,11 @@ import * as constants from './constants';
 import {
   login,
   uploadLicense,
-  listReleases,
-  promoteRelease,
   appIsReady,
   airgapInstallErrorMessage,
   airgapOnlineInstall,
   onlineCheckForUpdates,
+  promoteReleaseBySemver,
 } from '../shared';
 
 test('target kots version', async ({ page }) => {
@@ -22,7 +21,7 @@ test('target kots version', async ({ page }) => {
 });
 
 const validateOnlineInstallRestrictive = async (page: Page, expect: Expect) => {
-  await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
+  await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
 
   await airgapOnlineInstall(page, expect);
 
@@ -32,7 +31,7 @@ const validateOnlineInstallRestrictive = async (page: Page, expect: Expect) => {
 };
 
 const validateOnlineInstallPermissive = async (page: Page, expect: Expect) => {
-  await promoteReleaseBySemver(constants.VENDOR_PERMISSIVE_RELEASE_SEMVER);
+  await promoteReleaseBySemver(constants.VENDOR_PERMISSIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
 
   await airgapOnlineInstall(page, expect);
 
@@ -40,7 +39,7 @@ const validateOnlineInstallPermissive = async (page: Page, expect: Expect) => {
 };
 
 const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
-  await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
+  await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
 
   await onlineCheckForUpdates(page, expect);
 
@@ -51,22 +50,4 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
 
   const footerTargetKotsVersion = page.getByTestId("footer-target-kots-version");
   await expect(footerTargetKotsVersion).toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
-};
-
-const promoteReleaseBySemver = async (semver: string) => {
-  const releases = await listReleases(constants.VENDOR_APP_ID, constants.CHANNEL_ID);
-
-  let releaseToPromote = null;
-  for (const release of releases) {
-    if (release.semver === semver) {
-      releaseToPromote = release;
-      break;
-    }
-  }
-
-  if (!releaseToPromote) {
-    throw new Error(`release not found for semver ${semver}`);
-  }
-
-  await promoteRelease(constants.VENDOR_APP_ID, releaseToPromote.sequence, constants.CHANNEL_ID, semver);
 };
