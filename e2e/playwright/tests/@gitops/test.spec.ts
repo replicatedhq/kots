@@ -21,7 +21,10 @@ test('gitops install', async ({ page }) => {
   // configure gitops
   const gitopsOwner = 'replicated-testim-kotsadm-gitops';
   const gitopsRepo = 'qakots-kotsadm-gitops';
-  const githubToken = 'TODO_ADD_GITHUB_TOKEN_FROM_SECRET';
+  const githubToken = process.env.GITOPS_GITHUB_TOKEN;
+  if (!githubToken) {
+    throw new Error('GITOPS_GITHUB_TOKEN is not set');
+  }
   const testAppSlug = 'gitops-bobcat';
 
   // generate a random branch name to use for this test
@@ -44,13 +47,13 @@ test('gitops install', async ({ page }) => {
   await expect(page.getByText('ssh-ed25519')).toBeVisible();
   await expect(page.getByText('Copy key')).toBeVisible();
   // get the key text
-  const key = page.getByText('ssh-ed25519').textContent();
+  const key = await page.getByText('ssh-ed25519').textContent();
 
   // generate a name for the SSH key
   const sshKeyName = `test-${Math.random().toString(36).substring(2, 15)}`;
 
   // add the SSH key to GitHub
-  const response = await fetch('https://api.github.com/user/keys', {
+  const response = await fetch(`https://api.github.com/repos/${gitopsOwner}/${gitopsRepo}/keys`, {
     method: 'POST',
     headers: {
       'Authorization': `token ${githubToken}`,
@@ -59,18 +62,21 @@ test('gitops install', async ({ page }) => {
     },
     body: JSON.stringify({ title: sshKeyName, key: key })
   });
+  console.log("key name", sshKeyName);
+  console.log("key contents", key);
 
   if (response.status !== 201) {
-    throw new Error(`Failed to add SSH key to GitHub. Status: ${response.status}`);
+    throw new Error(`Failed to add SSH key to GitHub. Status: ${response.status} Contents: ${await response.text()}`);
   }
 
   // get the key ID from the response
   const data = await response.json();
   const keyId = data.id;
   // at the end of the test, or on failure, reset the GitHub repo
-  test.afterAll(async () => {
-    await resetGithub(githubToken, gitopsOwner, gitopsRepo, keyId, randomBranch);
-  });
+  // TODO: figure out how to do this
+  // test.afterAll(async () => {
+  //   await resetGithub(githubToken, gitopsOwner, gitopsRepo, keyId, randomBranch);
+  // });
 
   // enable gitops now that the key is added
   await page.getByText('Test connection to repository').click();
@@ -91,7 +97,7 @@ test('gitops install', async ({ page }) => {
     }
   })
   if (commitResponse.status !== 200) {
-    throw new Error(`Failed to get commits from GitHub. Status: ${commitResponse.status}`);
+    throw new Error(`Failed to get commits from GitHub. Status: ${commitResponse.status} Contents: ${await commitResponse.text()}`);
   }
   const commits = await commitResponse.json();
   console.log(commits);
@@ -104,7 +110,7 @@ test('gitops install', async ({ page }) => {
     }
   })
   if (contentResponse.status !== 200) {
-    throw new Error(`Failed to get content from GitHub. Status: ${contentResponse.status}`);
+    throw new Error(`Failed to get content from GitHub. Status: ${contentResponse.status} Contents: ${await contentResponse.text()}`);
   }
   const content = await contentResponse.json();
   console.log(content);
@@ -130,7 +136,7 @@ async function trivialConfig(page: Page, isGitops: boolean) {
   await page.getByRole('link', { name: 'Config', exact: true }).click();
   await page.getByLabel('Trivial Config').check();
   await page.getByRole('button', { name: 'Save config' }).click();
-  if (isGitops) {
+  if (!isGitops) {
     await page.getByRole('button', { name: 'Go to updated version' }).click();
   } else {
     await page.getByRole('button', { name: 'Ok, got it!' }).click();
