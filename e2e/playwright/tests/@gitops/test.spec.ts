@@ -133,7 +133,6 @@ test('gitops install', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Deploy', exact: true })).toBeVisible();
   await page.waitForTimeout(1000);
   await page.getByRole('button', { name: 'Deploy', exact: true }).click();
-  await page.getByRole('button', { name: 'Deploy', exact: true }).click();
   await expect(page.getByText('(Sequence 2)?')).toBeVisible();
   await page.getByRole('button', { name: 'Yes, Deploy' }).click();
   await expect(page.getByText('Sequence 2Currently')).toBeVisible(); // ensure that the new version is deployed
