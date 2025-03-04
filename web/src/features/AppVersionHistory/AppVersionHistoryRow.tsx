@@ -17,6 +17,7 @@ import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
 import PreflightIcon from "@features/App/PreflightIcon";
 
 interface Props {
+  index: number;
   adminConsoleMetadata: Metadata;
   isEmbeddedCluster: boolean;
   deployVersion: (version: Version) => void;
@@ -567,6 +568,7 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const {
+    index,
     version,
     selectedDiffReleases,
     nothingToCommit,
@@ -598,6 +600,7 @@ function AppVersionHistoryRow(props: Props) {
       )}
       style={{ minHeight: "60px" }}
       onClick={handleSelectReleasesToDiff}
+      data-testid={`version-history-row-${index}`}
     >
       <>
         <div className="VersionHistoryRow flex flex-auto">

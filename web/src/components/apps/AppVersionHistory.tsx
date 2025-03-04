@@ -1213,7 +1213,7 @@ class AppVersionHistory extends Component<Props, State> {
               });
             }
           }}
-          data-testid="diff-versions-button"
+          data-testid="diff-releases-button"
         >
           Diff versions
         </button>
@@ -1222,7 +1222,7 @@ class AppVersionHistory extends Component<Props, State> {
       <div
         className="flex-auto flex alignItems--center u-marginLeft--20"
         onClick={this.onSelectReleasesToDiff}
-        data-testid="diff-versions-button"
+        data-testid="select-releases-to-diff-button"
       >
         <Icon
           icon="diff-icon"
@@ -1431,7 +1431,7 @@ class AppVersionHistory extends Component<Props, State> {
     const { currentPage, pageSize, totalCount, loadingPage } = this.state;
 
     return (
-      <div className="TableDiff--Wrapper card-bg">
+      <div className="TableDiff--Wrapper card-bg" data-testid="all-versions-card">
         <div className="flex u-marginBottom--15 justifyContent--spaceBetween">
           <p className="u-fontSize--normal u-fontWeight--medium card-title">
             All versions
@@ -1574,7 +1574,7 @@ class AppVersionHistory extends Component<Props, State> {
       });
   };
 
-  renderAppVersionHistoryRow = (version: Version, index?: number) => {
+  renderAppVersionHistoryRow = (version: Version, index: number) => {
     if (
       !version ||
       isEmpty(version) ||
@@ -1598,6 +1598,7 @@ class AppVersionHistory extends Component<Props, State> {
     return (
       <Fragment key={index}>
         <AppVersionHistoryRow
+          index={index}
           navigate={this.props.navigate}
           adminConsoleMetadata={this.props.outletContext.adminConsoleMetadata}
           isEmbeddedCluster={this.props.outletContext.isEmbeddedCluster}
@@ -1817,7 +1818,7 @@ class AppVersionHistory extends Component<Props, State> {
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
                 >
-                  <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper">
+                  <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper" data-testid="current-version-card">
                     <p className="u-fontSize--large card-title u-fontWeight--bold">
                       {currentDownstreamVersion?.versionLabel
                         ? "Currently deployed version"
@@ -1991,7 +1992,7 @@ class AppVersionHistory extends Component<Props, State> {
                         !this.props.outletContext.isEmbeddedCluster && (
                           <div
                             className="TableDiff--Wrapper card-bg u-marginBottom--30"
-                            data-testid="new-version-card"
+                            data-testid="available-updates-card"
                           >
                             <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
@@ -2077,7 +2078,7 @@ class AppVersionHistory extends Component<Props, State> {
                               </div>
                             </div>
                             {pendingVersion ? (
-                              this.renderAppVersionHistoryRow(pendingVersion)
+                              this.renderAppVersionHistoryRow(pendingVersion, 0)
                             ) : (
                               <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
                                 <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">

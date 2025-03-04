@@ -46,37 +46,40 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
 
   await page.getByTestId("console-subnav").getByRole("link", { name: "Version history" }).click();
 
-  const newVersionCard = page.getByTestId("new-version-card");
-  await expect(newVersionCard.getByTestId("version-label")).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
-  await expect(newVersionCard.getByTestId("version-action-button")).toContainText("Download");
-  await expect(newVersionCard.getByTestId("version-status")).toContainText("Pending download");
+  const availableUpdateCard = page.getByTestId("available-updates-card");
+  let card = availableUpdateCard.getByTestId("version-history-row-0");
+  await expect(card.getByTestId("version-label")).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
+  await expect(card.getByTestId("version-action-button")).toContainText("Download");
+  await expect(card.getByTestId("version-status")).toContainText("Pending download");
 
-  let errorMessage = newVersionCard.getByTestId("version-download-status");
-  await expect(errorMessage).toContainText("requires");
+  let errorMessage = card.getByTestId("version-download-status");
+  await expect(errorMessage).toContainText("requires", { timeout: 5 * 1000 }); // 5 seconds
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
 
-  // Click the download button and validate that you once again see the error message
-  await newVersionCard.getByTestId("version-action-button").click();
+  var allVersionsCard = page.getByTestId("all-versions-card");
+  card = allVersionsCard.getByTestId("version-history-row-0");
+  await expect(card.getByTestId("version-label")).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
+
+  // Click the download button and validate that you cannot download it
+  await card.getByTestId("version-action-button").click();
   await page.waitForTimeout(1 * 1000); // 1 second
-  await expect(newVersionCard.getByTestId("version-downloading-status")).not.toContainText("Downloading");
+  await expect(card.getByTestId("version-downloading-status")).not.toContainText("Downloading");
 
-  errorMessage = newVersionCard.getByTestId("version-downloading-status");
-  await expect(errorMessage).toContainText("requires");
+  errorMessage = card.getByTestId("version-downloading-status");
+  await expect(errorMessage).toContainText("requires", { timeout: 5 * 1000 }); // 5 seconds
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
 
-  // Click the diff button and validate that you can no longer see the version card
-  await newVersionCard.getByTestId("diff-versions-button").click();
-  await expect(newVersionCard.getByTestId("version-label")).not.toBeVisible();
-  await expect(newVersionCard.getByTestId("version-action-button")).not.toBeVisible();
-  await expect(newVersionCard.getByTestId("version-status")).not.toBeVisible();
+  // Click the diff button and validate that you cannot select this version to diff because it was
+  // unable to download
+  await page.getByTestId("select-releases-to-diff-button").click();
+  await expect(card).not.toBeVisible();
 
   // Click the cancel button and validate that you can see the version card again
-  await newVersionCard.getByTestId("cancel-diff-button").click();
-  await expect(newVersionCard.getByTestId("version-label")).toBeVisible();
-  await expect(newVersionCard.getByTestId("version-action-button")).toBeVisible();
-  await expect(newVersionCard.getByTestId("version-status")).toBeVisible();
+  await page.getByTestId("cancel-diff-button").click();
+  await expect(card).toBeVisible();
 
-  // Click the "View files" tab and validate that the url has the correct sequence
+  // Click the "View files" tab and validate that the url has the correct sequence as the
+  // restrictive version was unable to download
   await page.getByTestId("console-subnav").getByRole("link", { name: "View files" }).click();
   await expect(page).toHaveURL(/.*\/tree\/0$/);
 };
