@@ -2381,6 +2381,7 @@ jobs:
       - name: promote permissive release
         env:
           REPLICATED_APP: min-kots-version
+          REPLICATED_API_TOKEN: ${{ secrets.C11Y_MATRIX_TOKEN }}
         run: replicated release promote 6 24Z37fX3oWkM4LjYCiByrewT5oZ --version v1.0.0
       - uses: ./.github/actions/kots-e2e
         id: kots-e2e
