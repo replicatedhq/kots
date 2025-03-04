@@ -19,8 +19,7 @@ test('gitops install', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Application Configuration', { timeout: 15000 });
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
-  // TODO: reenable outside of local dev
-  // await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
+  await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
 
   // the app is now installed and ready, and the real test can begin
 
@@ -135,8 +134,7 @@ test('gitops install', async ({ page }) => {
   await expect(page.getByText('(Sequence ')).toBeVisible();
   await page.getByRole('button', { name: 'Yes, Deploy' }).click();
   await expect(page.getByText('Currently deployed version')).toBeVisible(); // ensure that a version is deployed
-  // TODO: reenable outside of local dev
-  // await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
+  await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
   console.log('new version deployed')
 
   // test reenabling gitops but with a failed ssh connection
