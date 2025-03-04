@@ -1431,7 +1431,10 @@ class AppVersionHistory extends Component<Props, State> {
     const { currentPage, pageSize, totalCount, loadingPage } = this.state;
 
     return (
-      <div className="TableDiff--Wrapper card-bg" data-testid="all-versions-card">
+      <div
+        className="TableDiff--Wrapper card-bg"
+        data-testid="all-versions-card"
+      >
         <div className="flex u-marginBottom--15 justifyContent--spaceBetween">
           <p className="u-fontSize--normal u-fontWeight--medium card-title">
             All versions
@@ -1818,7 +1821,10 @@ class AppVersionHistory extends Component<Props, State> {
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
                 >
-                  <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper" data-testid="current-version-card">
+                  <div
+                    className="card-bg TableDiff--Wrapper currentVersionCard--wrapper"
+                    data-testid="current-version-card"
+                  >
                     <p className="u-fontSize--large card-title u-fontWeight--bold">
                       {currentDownstreamVersion?.versionLabel
                         ? "Currently deployed version"
