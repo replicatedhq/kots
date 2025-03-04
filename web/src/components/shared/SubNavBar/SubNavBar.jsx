@@ -67,7 +67,10 @@ export default function SubNavBar({
   ];
 
   return (
-    <div className={classNames("details-subnav", className)}>
+    <div
+      className={classNames("details-subnav", className)}
+      data-testid="console-subnav"
+    >
       <ul>
         {isAccess
           ? accessConfig

@@ -2,8 +2,7 @@ import { test, expect } from '@playwright/test';
 import parse_duration from 'parse-duration';
 import { retry } from 'ts-retry';
 import { login, uploadLicense } from '../shared';
-
-const { execSync } = require("child_process");
+import { execSync } from 'child_process';
 
 test('backup and restore', async ({ page }) => {
   test.setTimeout(10 * 60 * 1000); // 10 minutes

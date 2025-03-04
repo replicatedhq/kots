@@ -473,6 +473,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
               <input
                 type="text"
                 className={`Input ${disableRegistryFields && "is-disabled"}`}
+                data-testid="airgap-registry-hostname"
                 disabled={disableRegistryFields}
                 placeholder="artifactory.some-big-bank.com"
                 value={hostname || ""}
@@ -491,6 +492,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
               <input
                 type="text"
                 className="Input"
+                data-testid="airgap-registry-username"
                 placeholder="username"
                 value={username || ""}
                 autoComplete="username"
@@ -508,6 +510,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                 autoFocus
                 type={"password"}
                 className="tw-gap-0"
+                dataTestId="airgap-registry-password"
                 placeholder="password"
                 value={password || ""}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => {
@@ -576,6 +579,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
               <input
                 type="text"
                 className={`Input ${disableRegistryFields && "is-disabled"}`}
+                data-testid="airgap-registry-namespace"
                 placeholder="namespace"
                 disabled={disableRegistryFields}
                 value={namespace || ""}

@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    "types": ["node", "@playwright/test"],
+    "esModuleInterop": true
+  }
+} 

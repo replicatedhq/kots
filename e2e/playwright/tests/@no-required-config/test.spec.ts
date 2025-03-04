@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { login, uploadLicense } from '../shared';
-
-const { execSync } = require("child_process");
+import { execSync } from 'child_process';
 
 test('no required config', async ({ page }) => {
   await login(page);

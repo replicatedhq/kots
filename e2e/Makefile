@@ -59,7 +59,7 @@ test:
 			--kots-helm-chart-version=$(KOTS_HELM_CHART_VERSION) \
 			--kots-dockerhub-username=$(KOTS_DOCKERHUB_USERNAME) \
 			--kots-dockerhub-password=$(KOTS_DOCKERHUB_PASSWORD) \
-			--skip-teardown=$(SKIP_TEARDOWN) 
+			--skip-teardown=$(SKIP_TEARDOWN)
 
 .PHONY: path
 path:

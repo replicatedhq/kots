@@ -17,6 +17,7 @@ import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
 import PreflightIcon from "@features/App/PreflightIcon";
 
 interface Props {
+  index: number;
   adminConsoleMetadata: Metadata;
   isEmbeddedCluster: boolean;
   deployVersion: (version: Version) => void;
@@ -197,6 +198,7 @@ function AppVersionHistoryRow(props: Props) {
             className={"btn secondary blue"}
             disabled={props.isDownloading}
             onClick={() => actionFn(version)}
+            data-testid="version-action-button"
           >
             {buttonText}
           </button>
@@ -566,6 +568,7 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const {
+    index,
     version,
     selectedDiffReleases,
     nothingToCommit,
@@ -597,6 +600,7 @@ function AppVersionHistoryRow(props: Props) {
       )}
       style={{ minHeight: "60px" }}
       onClick={handleSelectReleasesToDiff}
+      data-testid={`version-history-row-${index}`}
     >
       <>
         <div className="VersionHistoryRow flex flex-auto">
@@ -615,7 +619,10 @@ function AppVersionHistoryRow(props: Props) {
             } flex-column flex1 u-paddingRight--20`}
           >
             <div className="flex alignItems--center">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
+              <p
+                className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title"
+                data-testid="version-label"
+              >
                 {version.versionLabel || version.title}
               </p>
 
@@ -629,6 +636,7 @@ function AppVersionHistoryRow(props: Props) {
             <p
               className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium"
               style={{ marginTop: "2px" }}
+              data-testid="version-sequence"
             >
               Sequence {version.sequence}
             </p>
@@ -673,7 +681,10 @@ function AppVersionHistoryRow(props: Props) {
               {version.source}
             </p>
             {gitopsEnabled && version.status !== "pending_download" ? null : (
-              <div className="flex flex-auto u-marginTop--10">
+              <div
+                className="flex flex-auto u-marginTop--10"
+                data-testid="version-status"
+              >
                 {renderVersionStatus(version)}
               </div>
             )}
@@ -694,13 +705,17 @@ function AppVersionHistoryRow(props: Props) {
                   ? "u-textColor--error"
                   : ""
               }`}
+              data-testid="version-download-status"
             >
               {version.downloadStatus.message}
             </span>
           </div>
         )}
         {props.showVersionDownloadingStatus && (
-          <div className="flex alignItems--center justifyContent--flexEnd">
+          <div
+            className="flex alignItems--center justifyContent--flexEnd"
+            data-testid="version-downloading-status"
+          >
             {props.versionDownloadStatus?.downloadingVersion && (
               <Loader className="u-marginRight--5" size="15" />
             )}

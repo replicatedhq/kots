@@ -18,6 +18,7 @@ const InputField = ({
   showError = false,
   disabled = false,
   readOnly = false,
+  dataTestId = "",
 }) => {
   const [show, setShow] = useState(false);
 
@@ -47,6 +48,7 @@ const InputField = ({
         <input
           autoFocus={!!autoFocus}
           className={`Input ${showError ? "has-error" : ""}`}
+          data-testid={dataTestId}
           type={calculateType()}
           id={id}
           placeholder={placeholder}
@@ -84,7 +86,7 @@ const InputField = ({
   return (
     <>
       {type === "password" ? (
-        <div className={`password-input-wrapper flex-column ${className} `}>
+        <div className={`password-input-wrapper flex-column ${className}`}>
           {component}
         </div>
       ) : (
