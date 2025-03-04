@@ -2522,7 +2522,7 @@ jobs:
           mv /tmp/replicated /usr/local/bin/replicated
       - name: promote permissive release
         env:
-          REPLICATED_APP: min-kots-version
+          REPLICATED_APP: target-kots-version
           REPLICATED_API_TOKEN: ${{ secrets.C11Y_MATRIX_TOKEN }}
         run: replicated release promote 6 24Z39v7whc7juc34k7ITiMtZxDy --version v1.0.0
       - uses: ./.github/actions/kots-e2e
