@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   can-run-ci:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     # if the event is pull_request and:
     #   - it is not a fork OR
     #   - it has the label '@actions/safe-to-test'
@@ -32,7 +32,7 @@ jobs:
 
   # Use this to disable tests when iterating on a specific test to save time
   enable-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: ok
         # change 0 to a positive integer to prevent all tests from running
@@ -40,7 +40,7 @@ jobs:
 
 
   generate-tag:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     outputs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
@@ -52,7 +52,7 @@ jobs:
 
 
   deps-web:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
     steps:
       - name: Checkout
@@ -79,7 +79,7 @@ jobs:
 
 
   lint-web:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, deps-web ]
     steps:
       - name: Checkout
@@ -106,7 +106,7 @@ jobs:
 
 
   unit-test-web:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, deps-web ]
     steps:
       - name: Checkout
@@ -133,7 +133,7 @@ jobs:
 
 
   build-web:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, deps-web, generate-tag ]
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
@@ -170,7 +170,7 @@ jobs:
           path: ./web/dist
 
   deps-kots:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
     steps:
       - uses: actions/checkout@v4
@@ -186,7 +186,7 @@ jobs:
       - run: go mod download
 
   vet-kots:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, deps-kots ]
     steps:
       - uses: actions/checkout@v4
@@ -203,7 +203,7 @@ jobs:
         run: make vet
 
   ci-test-kots:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, deps-kots ]
     steps:
       - uses: actions/checkout@v4
@@ -221,7 +221,7 @@ jobs:
 
 
   build-kots:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
 
     steps:
@@ -258,7 +258,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-20.04, arch: amd64},
+          {name: ubuntu-24.04, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -275,7 +275,7 @@ jobs:
           arch: ${{ matrix.runner.arch }}
 
   build-kotsadm:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, generate-tag, build-kotsadm-melange-packages ]
     steps:
       - uses: actions/checkout@v4
@@ -291,7 +291,7 @@ jobs:
 
 
   build-kots-helm:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
 
     steps:
@@ -321,7 +321,7 @@ jobs:
 
 
   build-e2e:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
     steps:
       - uses: actions/setup-go@v5
@@ -356,7 +356,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-20.04, arch: amd64},
+          {name: ubuntu-24.04, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -373,7 +373,7 @@ jobs:
           arch: ${{ matrix.runner.arch }}
 
   build-kurl-proxy:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, generate-tag, build-kurl-proxy-melange-packages ]
     steps:
       - uses: actions/checkout@v4
@@ -394,7 +394,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-20.04, arch: amd64},
+          {name: ubuntu-24.04, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -411,7 +411,7 @@ jobs:
           arch: ${{ matrix.runner.arch }}
 
   build-migrations:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, generate-tag, build-migrations-melange-packages ]
     steps:
       - uses: actions/checkout@v4
@@ -426,7 +426,7 @@ jobs:
           image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
 
   push-minio:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
@@ -448,7 +448,7 @@ jobs:
 
 
   push-rqlite:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
@@ -469,7 +469,7 @@ jobs:
         run: skopeo copy --all docker://kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
 
   push-dex:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
@@ -491,7 +491,7 @@ jobs:
 
   # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
   kurl-addon-changes-filter:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ can-run-ci, enable-tests ]
     outputs:
       ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
@@ -505,7 +505,7 @@ jobs:
               - 'deploy/kurl/kotsadm/template/**'
               - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
   validate-kurl-addon:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
     needs: [ can-run-ci, enable-tests, generate-tag, kurl-addon-changes-filter, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-dex ]
     steps:
@@ -554,7 +554,7 @@ jobs:
 
 
   cmx-versions:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci ]
     steps:
       - uses: actions/checkout@v4
@@ -570,7 +570,7 @@ jobs:
 
 
   validate-existing-online-install-minimal:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     steps:
       - name: Checkout
@@ -603,7 +603,7 @@ jobs:
 
 
   validate-smoke-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -639,7 +639,7 @@ jobs:
 
 
   validate-minimal-rbac:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -860,7 +860,7 @@ jobs:
 
 
   validate-backup-and-restore:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -896,7 +896,7 @@ jobs:
 
 
   validate-no-required-config:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -932,7 +932,7 @@ jobs:
 
 
   validate-strict-preflight-checks:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1086,7 +1086,7 @@ jobs:
 
 
   validate-config:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1122,7 +1122,7 @@ jobs:
 
 
   validate-version-history-pagination:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1158,7 +1158,7 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
   validate-change-license:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1193,7 +1193,7 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
   validate-change-channel:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1228,7 +1228,7 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
   validate-minimal-rbac-override:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1402,7 +1402,7 @@ jobs:
 
 
   validate-multi-namespace:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1514,7 +1514,7 @@ jobs:
 
 
   validate-kots-pull:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1623,7 +1623,7 @@ jobs:
 
 
   validate-app-version-label:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1780,7 +1780,7 @@ jobs:
 
 
   validate-helm-install-order:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1877,7 +1877,7 @@ jobs:
 
 
   validate-no-redeploy-on-restart:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -1998,7 +1998,7 @@ jobs:
 
 
   validate-kubernetes-installer-preflight:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -2127,7 +2127,7 @@ jobs:
 
 
   validate-kots-push-images-anonymous:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     steps:
       - name: Checkout
@@ -2148,7 +2148,7 @@ jobs:
 
 
   validate-kots-admin-console-generate-manifests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -2342,7 +2342,7 @@ jobs:
 
 
   validate-min-kots-version-online:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     env:
       APP_SLUG: min-kots-version
@@ -2419,7 +2419,7 @@ jobs:
 
 
   validate-min-kots-version-airgap:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     env:
       APP_SLUG: min-kots-version
@@ -2485,7 +2485,7 @@ jobs:
 
 
   validate-target-kots-version:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     strategy:
       fail-fast: false
@@ -2550,7 +2550,7 @@ jobs:
 
 
   validate-range-kots-version:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     strategy:
       fail-fast: false
@@ -2615,7 +2615,7 @@ jobs:
 
 
   validate-kots-upgrade:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -2756,7 +2756,7 @@ jobs:
 
 
   validate-kots-helm-release-secret-migration:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -2942,7 +2942,7 @@ jobs:
 
 
   validate-multi-app-backup-and-restore:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -2978,7 +2978,7 @@ jobs:
 
 
   validate-multi-app-install:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -3014,7 +3014,7 @@ jobs:
 
 
   validate-airgap-smoke-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -3053,7 +3053,7 @@ jobs:
 
 
   validate-remove-app:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -3231,7 +3231,7 @@ jobs:
 
 
   validate-registry-check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -3325,7 +3325,7 @@ jobs:
 
 
   validate-native-helm-v2:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -3550,7 +3550,7 @@ jobs:
 
 
   validate-deployment-orchestration:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -3717,7 +3717,7 @@ jobs:
 
 
   validate-replicated-sdk:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -4026,7 +4026,7 @@ jobs:
 
 
   validate-support-bundle:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -4065,7 +4065,7 @@ jobs:
 
 
   validate-gitops:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -4103,7 +4103,7 @@ jobs:
 
 
   validate-get-set-config:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -4364,7 +4364,7 @@ jobs:
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
   validate-custom-cas:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
@@ -4479,7 +4479,7 @@ jobs:
 
 
   validate-pr-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs:
       # static and unit tests
       - lint-web
@@ -4533,7 +4533,7 @@ jobs:
   # this job will validate that the kurl add-on validation did not fail and that all pr-tests succeed
   # it is used for the github branch protection rule
   validate-success:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs:
       - validate-kurl-addon
       - validate-pr-tests
