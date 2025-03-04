@@ -98,9 +98,11 @@ test('gitops install', async ({ page }) => {
   if (commitResponse.status !== 200) {
     throw new Error(`Failed to get commits from GitHub. Status: ${commitResponse.status} Contents: ${await commitResponse.text()}`);
   }
-  const commits = await commitResponse.json();
-  console.log(commits);
-  // TODO validate that appropriate commits are present
+  const commitResponseJson = await commitResponse.json();
+  // there should be 3 commits - one for the initial version, and then two for the two config changes
+  checkCommitMessageExists(commitResponseJson, 'Updating GitOps to version 2')
+  checkCommitMessageExists(commitResponseJson, 'Updating GitOps to version 1')
+  checkCommitMessageExists(commitResponseJson, 'Updating GitOps to version 0')
 
   const contentResponse = await fetch(`https://api.github.com/repos/${gitopsOwner}/${gitopsRepo}/contents/${randomPath}/${testAppSlug}.yaml?ref=${randomBranch}`, {
     headers: {
@@ -111,9 +113,8 @@ test('gitops install', async ({ page }) => {
   if (contentResponse.status !== 200) {
     throw new Error(`Failed to get content from GitHub. Status: ${contentResponse.status} Contents: ${await contentResponse.text()}`);
   }
-  const content = await contentResponse.json();
-  console.log(content);
-  // TODO validate that the content is correct
+  const contentResponseJson = await contentResponse.json();
+  checkFilePathExists(contentResponseJson, `${randomPath}/${testAppSlug}.yaml`)
 
   // turn off gitops so we can test the behavior of kots afterwards
   await resetGithub(githubToken, gitopsOwner, gitopsRepo, keyId, randomBranch);
@@ -124,22 +125,56 @@ test('gitops install', async ({ page }) => {
   await page.getByRole('button', { name: 'Disable GitOps' }).click();
   await expect(page.getByText('Are you sure you want to disable GitOps for this application?')).not.toBeVisible();
   await expect(page.getByText('Not Enabled')).toBeVisible();
+  console.log('gitops disabled')
 
-  // TODO: visit application page, ensure deploy and redeploy buttons are visible, deploy new version
+  // visit application page, ensure deploy and redeploy buttons are visible, deploy new version
   await page.getByText('Application', { exact: true }).click();
   await expect(page.getByRole('button', { name: 'Redeploy' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Deploy', exact: true })).toBeVisible();
+  await page.waitForTimeout(1000);
   await page.getByRole('button', { name: 'Deploy', exact: true }).click();
+  await page.getByRole('button', { name: 'Deploy', exact: true }).click();
+  await expect(page.getByText('(Sequence 2)?')).toBeVisible();
   await page.getByRole('button', { name: 'Yes, Deploy' }).click();
+  await expect(page.getByText('Sequence 2Currently')).toBeVisible(); // ensure that the new version is deployed
+  // TODO: reenable outside of local dev
+  // await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
+  console.log('new version deployed')
 
-  // TODO: test reenabling gitops but with a failed ssh connection
-
-  await page.getByText('DoesNotExist')  
+  // test reenabling gitops but with a failed ssh connection
+  await page.locator('div').filter({ hasText: /^GitOps$/ }).click();
+  await page.getByPlaceholder('owner').click();
+  await page.getByPlaceholder('owner').fill(gitopsOwner);
+  await page.getByPlaceholder('Repository').click();
+  await page.getByPlaceholder('Repository').fill(gitopsRepo);
+  await page.getByPlaceholder('main').click();
+  await page.getByPlaceholder('main').fill(randomBranch);
+  await page.getByPlaceholder('/path/to-deployment').click();
+  await page.getByPlaceholder('/path/to-deployment').fill(randomPath);
+  await page.getByRole('button', { name: 'Generate SSH key' }).click();
+  await page.getByRole('button', { name: 'Test connection to repository' }).click();
+  await expect(page.getByText('Connection to repository failed')).toBeVisible(); // there is no key in the repo
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(page.getByText('Connection to repository failed')).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await page.getByRole('button', { name: 'Back to configuration' }).click();
+  await expect(page.getByText('Repository access needed')).toBeVisible(); // ensure that the 'there's no key in the repo' message is now visible
+  await page.getByText('Application', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Redeploy' })).toBeVisible(); // ensure that we're still in non-gitops mode
+  console.log('test complete')
 });
 
+let isChecked = false;
 async function trivialConfig(page: Page, isGitops: boolean) {
   await page.getByRole('list').getByRole('link', { name: 'Config' }).click();
-  await page.getByLabel('Trivial Config').check();
+  await expect(page.getByText('A trivial config item')).toBeVisible();
+  if (isChecked) {
+    await page.getByLabel('Trivial Config').uncheck();
+    isChecked = false;
+  } else {
+    await page.getByLabel('Trivial Config').check();
+    isChecked = true;
+  }
   await page.getByRole('button', { name: 'Save config' }).click();
   if (!isGitops) {
     await page.getByRole('button', { name: 'Go to updated version' }).click();
@@ -148,7 +183,6 @@ async function trivialConfig(page: Page, isGitops: boolean) {
     await page.waitForTimeout(3000);
   }
 }
-
 
 let hasResetGithub = false; 
 async function resetGithub(ghToken: string, owner: string, repo: string, keyId: string, branch: string) {
@@ -167,10 +201,34 @@ async function resetGithub(ghToken: string, owner: string, repo: string, keyId: 
   // delete the branch from GitHub
   await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, {
     method: 'DELETE',
-    headers: {
+   headers: {
       'Authorization': `token ${ghToken}`,
       'Accept': 'application/vnd.github.v3+json'
     }
   });
   hasResetGithub = true;
+  console.log('github has been reset')
+}
+
+interface GitHubCommit {
+  commit: {
+    message: string;
+  };
+}
+
+interface GitHubFile {
+  path: string;
+}
+
+function checkCommitMessageExists(commits: GitHubCommit[], message: string) {
+  const commit = commits.find((c) => c.commit.message === message);
+  if (!commit) {
+    throw new Error(`Commit message "${message}" not found in commits`);
+  }
+}
+
+function checkFilePathExists(file: GitHubFile, path: string) {
+  if ("/"+file.path !== path) {
+    throw new Error(`File path "${path}" not found. Got "/${file.path}" instead`);
+  }
 }
