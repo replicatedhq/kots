@@ -4490,8 +4490,6 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       - validate-version-history-pagination
-      - validate-min-kots-version-online
-      - validate-min-kots-version-airgap
       - validate-target-kots-version
       - validate-range-kots-version
       - validate-airgap-smoke-test
@@ -4503,6 +4501,8 @@ jobs:
       - validate-no-required-config
       - validate-config
       - validate-change-channel
+      - validate-min-kots-version-online
+      - validate-min-kots-version-airgap
       - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       - validate-change-license
