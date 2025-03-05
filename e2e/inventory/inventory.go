@@ -157,11 +157,21 @@ func NewTargetKotsVersionAirgap() Test {
 	}
 }
 
-func NewRangeKotsVersion() Test {
+func NewRangeKotsVersionOnline() Test {
 	return Test{
-		ID:                     "@range-kots-version",
-		TestimSuite:            "range-kots-version",
+		ID:                     "@range-kots-version-online",
 		Namespace:              "range-kots-version",
+		AppSlug:                "range-kots-version",
+		UpstreamURI:            "range-kots-version/automated",
+		SkipCompatibilityCheck: true,
+	}
+}
+
+func NewRangeKotsVersionAirgap() Test {
+	return Test{
+		ID:                     "@range-kots-version-airgap",
+		Namespace:              "range-kots-version",
+		AppSlug:                "range-kots-version",
 		UpstreamURI:            "range-kots-version/automated",
 		SkipCompatibilityCheck: true,
 	}
