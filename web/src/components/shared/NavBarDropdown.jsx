@@ -55,7 +55,7 @@ const NavBarDropdown = ({ handleLogOut, isEmbeddedCluster }) => {
           </li>
         )}
         <li>
-          <p data-qa="Navbar--logOutButton" onClick={handleLogOut}>
+          <p data-qa="Navbar--logOutButton" onClick={handleLogOut} data-testid="log-out">
             Log out
           </p>
         </li>

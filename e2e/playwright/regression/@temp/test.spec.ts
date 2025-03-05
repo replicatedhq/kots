@@ -40,7 +40,8 @@ import {
   validateViewFiles,
   updateRegistrySettings,
   validateCheckForUpdates,
-  validateDuplicateLicenseUpload
+  validateDuplicateLicenseUpload,
+  logout
 } from '../shared';
 
 test('type=existing cluster, env=online, phase=new install, rbac=cluster admin', async ({ page }) => {
@@ -103,4 +104,5 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await updateRegistrySettings(page, expect, registryInfo);
   await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_RELEASE_SEQUENCE, 4, false);
   await validateDuplicateLicenseUpload(page, expect);
+  await logout(page, expect);
 });
