@@ -4,6 +4,7 @@ import { execSync } from 'child_process';
 
 test('version history pagination', async ({ page }) => {
   test.slow();
+  test.setTimeout(300000); // 300 seconds, 5 minutes
   const testAppSlug = "version-history-pagination";
   const testNamespace = "version-history-pagination";
   const testNumOfVersions = 251;
@@ -24,8 +25,11 @@ test('version history pagination', async ({ page }) => {
     const commandEndTime = Date.now();
     const commandDuration = (commandEndTime - commandStartTime) / 1000; // Convert to seconds
     const totalDuration = (commandEndTime - startTime) / 1000; // Convert to seconds
-    console.log(`creating version ${i} (took ${commandDuration.toFixed(2)}s) (average ${totalDuration / (i + 1)}s)`);
+    console.log(`creating version ${i+1} of ${testNumOfVersions} (took ${commandDuration.toFixed(2)}s, average ${(totalDuration / (i + 1)).toFixed(2)}s)`);
   }
+  const endTime = Date.now();
+  const totalDuration = (endTime - startTime) / 1000; // Convert to seconds
+  console.log(`total time to create ${testNumOfVersions} versions: ${totalDuration.toFixed(2)}s`);
 
   // validate that the versions created via the CLI are visible via the CLI with pagination
   const versionCheckConfig: VersionCheckConfig = {
