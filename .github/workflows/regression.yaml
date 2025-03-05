@@ -307,16 +307,16 @@ jobs:
               "scp ubuntu@$control_plane_private_ip:/home/ubuntu/playwright-report.tar.gz /home/ubuntu/playwright-report.tar.gz"
 
           # Copy tarball from jumpbox to local machine
-          scp -i ssh.pem ubuntu@$jumpbox_public_ip:/home/ubuntu/playwright-report.tar.gz ./e2e/playwright/playwright-report.tar.gz
+          scp -i ssh.pem ubuntu@$jumpbox_public_ip:/home/ubuntu/playwright-report.tar.gz ./playwright-report.tar.gz
 
           # Extract tarball
-          tar -xzf ./e2e/playwright/playwright-report.tar.gz -C ./e2e/playwright
+          tar -xzf ./playwright-report.tar.gz
 
       - uses: ./.github/actions/upload-playwright-report
         if: failure()
         with:
           name: ${{ github.job }}-${{ matrix.test.name }}
-          report-path: ./e2e/playwright/playwright-report/
+          report-path: ./playwright-report/
 
       - name: Notify Slack
         if: always() && github.ref_name == 'main'
