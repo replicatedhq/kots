@@ -5,7 +5,7 @@ import { execSync } from 'child_process';
 test('version history pagination', async ({ page }) => {
   test.slow();
   const testAppSlug = "version-history-pagination";
-  const testNamespace = "default";
+  const testNamespace = "version-history-pagination";
   const testNumOfVersions = 251;
   const testLatestSequence = 251;
   const testDefaultPageSize = 20;
