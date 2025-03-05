@@ -4139,7 +4139,6 @@ jobs:
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
-
   validate-gitops:
     runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
@@ -4171,12 +4170,10 @@ jobs:
           kots-namespace: 'gitops'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-
+          gitops-github-token: '${{ secrets.E2E_GITOPS_GITHUB_TOKEN }}'
 
   validate-get-set-config:
     runs-on: ubuntu-24.04
@@ -4568,7 +4565,6 @@ jobs:
       - validate-range-kots-version
       - validate-airgap-smoke-test
       - validate-support-bundle
-      - validate-gitops
       # playwright tests
       - validate-smoke-test
       - validate-backup-and-restore
@@ -4582,6 +4578,7 @@ jobs:
       - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       - validate-change-license
+      - validate-gitops
       # non-testim tests
       - validate-minimal-rbac
       - validate-minimal-rbac-override
