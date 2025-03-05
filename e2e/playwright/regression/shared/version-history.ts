@@ -147,7 +147,7 @@ export const deployVersion = async (page: Page, expect: Expect, rowIndex: number
     const confirmDeploymentModal = page.getByTestId('confirm-deployment-modal');
     await expect(confirmDeploymentModal).toBeVisible();
     await expect(confirmDeploymentModal.getByTestId('confirm-deployment-modal-text')).toBeVisible();
-    await confirmDeploymentModal.getByRole('button', { name: 'Deploy', exact: true }).click();
+    await confirmDeploymentModal.getByRole('button', { name: 'Yes, deploy', exact: true }).click();
     await expect(confirmDeploymentModal).not.toBeVisible();
   }
 

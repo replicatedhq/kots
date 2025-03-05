@@ -116,6 +116,7 @@ runs:
       shell: bash
 
     - uses: ./.github/actions/upload-playwright-report
+      if: ${{ failure() }}
       with:
         name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
         report-path: ./e2e/playwright/playwright-report/

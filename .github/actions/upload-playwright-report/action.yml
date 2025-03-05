@@ -13,13 +13,12 @@ runs:
   steps:
     - id: upload-playwright-report
       uses: actions/upload-artifact@v4
-      if: ${{ failure() }}
       with:
         name: ${{ inputs.name }}-playwright-report
         path: ${{ inputs.report-path }}
 
     - name: Print instructions to view Playwright report
-      if: ${{ failure() && steps.upload-playwright-report.outputs.artifact-url != '' }}
+      if: ${{ steps.upload-playwright-report.outputs.artifact-url != '' }}
       run: |
         echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
         echo -e "\e[1;33m                                  To view the Playwright test report:                                   \e[0m"

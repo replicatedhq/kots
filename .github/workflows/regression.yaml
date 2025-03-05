@@ -291,6 +291,7 @@ jobs:
           ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
 
       - name: Copy playwright report from remote machine
+        if: failure()
         working-directory: automation/cluster
         run: |
           jumpbox_public_ip=$(terraform output -raw jumpbox_public_ip)
@@ -312,6 +313,7 @@ jobs:
           tar -xzf ./e2e/playwright/playwright-report.tar.gz -C ./e2e/playwright
 
       - uses: ./.github/actions/upload-playwright-report
+        if: failure()
         with:
           name: ${{ github.job }}-${{ matrix.test.name }}
           report-path: ./e2e/playwright/playwright-report/
