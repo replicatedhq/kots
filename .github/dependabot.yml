@@ -3,6 +3,7 @@ version: 2
 updates:
 
   # Npm
+
   - package-ecosystem: "npm"
     directory: "/web"
     open-pull-requests-limit: 2

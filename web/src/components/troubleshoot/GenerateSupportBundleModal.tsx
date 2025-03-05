@@ -267,7 +267,11 @@ const GenerateSupportBundleModal = ({
       onRequestClose={toggleModal}
       ariaHideApp={false}
     >
-      <div className="u-padding--25" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="u-padding--25"
+        onClick={(e) => e.stopPropagation()}
+        data-testid="modal-generate-support-bundle"
+      >
         <span className="u-fontWeight--medium card-title u-fontSize--larger">
           Generate a support bundle
         </span>
@@ -291,6 +295,7 @@ const GenerateSupportBundleModal = ({
                 onClick={() =>
                   collectBundle(selectedApp?.downstream?.cluster?.id)
                 }
+                data-testid="btn-analyze-app"
               >
                 Analyze
               </button>
@@ -328,6 +333,7 @@ const GenerateSupportBundleModal = ({
                         Command has been copied to your clipboard
                       </span>
                     }
+                    dataTestId="code-snippet-support-bundle-command"
                   >
                     {state.bundleCommand}
                   </CodeSnippet>
@@ -352,7 +358,11 @@ const GenerateSupportBundleModal = ({
             <div className="u-marginTop--15">
               <span className="u-fontSize--normal">
                 Or{" "}
-                <a href="#" onClick={toggleShowGetBundleSpec}>
+                <a
+                  href="#"
+                  onClick={toggleShowGetBundleSpec}
+                  data-testid="link-generate-support-bundle-command"
+                >
                   click here
                 </a>{" "}
                 to get a command to manually generate a support bundle. This is
@@ -378,6 +388,7 @@ const GenerateSupportBundleModal = ({
               accept="application/gzip, .gz"
               onDropAccepted={onDrop}
               multiple={false}
+              data-testid="dropzone-support-bundle-file"
             >
               {!hasFile && (
                 <div className="u-textAlign--center">
@@ -430,7 +441,11 @@ const GenerateSupportBundleModal = ({
         )}
 
         <div className="flex u-marginTop--30">
-          <button className="btn primary" onClick={toggleModal}>
+          <button
+            className="btn primary"
+            onClick={toggleModal}
+            data-testid="btn-generate-support-bundle-modal-close"
+          >
             Ok, got it!
           </button>
         </div>

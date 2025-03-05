@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -465,14 +464,16 @@ func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 // UploadSupportBundle route is UNAUTHENTICATED
 // This request comes from the `kubectl support-bundle` command.
 func (h *Handler) UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
-	bundleContents, err := ioutil.ReadAll(r.Body)
+	logger.Info("Uploading support bundle")
+
+	bundleContents, err := io.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to read request body"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	tmpFile, err := ioutil.TempFile("", "kots")
+	tmpFile, err := os.CreateTemp("", "kots")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create temp file"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -480,7 +481,7 @@ func (h *Handler) UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(tmpFile.Name())
 
-	err = ioutil.WriteFile(tmpFile.Name(), bundleContents, 0644)
+	err = os.WriteFile(tmpFile.Name(), bundleContents, 0644)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to save bundle to temp file"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -500,6 +501,8 @@ func (h *Handler) UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	logger.Info("Support bundle uploaded")
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -562,7 +565,7 @@ func (h *Handler) GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.
 // SetSupportBundleRedactions route is UNAUTHENTICATED
 // This request comes from the `kubectl support-bundle` command.
 func (h *Handler) SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
-	redactionsBody, err := ioutil.ReadAll(r.Body)
+	redactionsBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

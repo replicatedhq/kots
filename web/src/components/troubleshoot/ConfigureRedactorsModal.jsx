@@ -198,11 +198,13 @@ export default class ConfigureRedactorsModal extends Component {
               onChange={(e) => {
                 this.setState({ redactorUri: e.target.value });
               }}
+              data-testid="input-redactor-uri"
             />
             <div className="u-marginTop--10 flex alignItems--center">
               <button
                 className="btn secondary blue u-marginRight--10"
                 onClick={this.props.onClose}
+                data-testid="btn-redactor-modal-close"
               >
                 Close
               </button>
@@ -210,6 +212,7 @@ export default class ConfigureRedactorsModal extends Component {
                 className="btn primary"
                 onClick={this.saveRedactor}
                 disabled={savingRedactor}
+                data-testid="btn-redactor-modal-save"
               >
                 {savingRedactor ? "Saving" : "Save"}
               </button>
@@ -321,7 +324,7 @@ export default class ConfigureRedactorsModal extends Component {
             : "MediumSize"
         }`}
       >
-        <div className="Modal-body">
+        <div className="Modal-body" data-testid="modal-configure-redaction">
           <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-textColor--primary u-marginBottom--small">
             Configure redaction
           </p>
@@ -341,6 +344,7 @@ export default class ConfigureRedactorsModal extends Component {
                       : ""
                   } tab-item`}
                   onClick={() => this.toggleRedactorAction("linkSpec")}
+                  data-testid="link-redactors-link-to-a-spec"
                 >
                   Link to a spec
                 </span>
@@ -351,6 +355,7 @@ export default class ConfigureRedactorsModal extends Component {
                       : ""
                   } tab-item`}
                   onClick={() => this.toggleRedactorAction("writeSpec")}
+                  data-testid="link-redactors-write-your-own-spec"
                 >
                   Write your own spec
                 </span>

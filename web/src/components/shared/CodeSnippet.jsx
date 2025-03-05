@@ -87,6 +87,7 @@ class CodeSnippet extends Component {
   render() {
     const {
       className,
+      dataTestId,
       children,
       language,
       preText,
@@ -125,6 +126,7 @@ class CodeSnippet extends Component {
                 "is-copied": didCopy,
               })}
               onClick={this.copySnippet}
+              data-testid="btn-copy-code-snippet"
             >
               {didCopy ? onCopyText : copyText}
             </span>

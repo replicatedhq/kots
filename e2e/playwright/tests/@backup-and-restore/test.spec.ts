@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import parse_duration from 'parse-duration';
+import parse from 'parse-duration';
 import { retry } from 'ts-retry';
 import { login, uploadLicense } from '../shared';
 import { execSync } from 'child_process';
@@ -31,11 +31,11 @@ test('backup and restore', async ({ page }) => {
   // validate that only the admin console was restored
   const getKotsadmPodAgeCommand = `kubectl get pod -l app=kotsadm -n ${process.env.NAMESPACE} | awk 'NR>1 {print $5}'`;
   console.log(getKotsadmPodAgeCommand, "\n");
-  let kotsadmPodAge = parse_duration(execSync(getKotsadmPodAgeCommand).toString().trim());
+  let kotsadmPodAge = parse(execSync(getKotsadmPodAgeCommand).toString().trim());
 
   const getAppPodAgeCommand = `kubectl get pod -l app=example,component=nginx -n ${process.env.NAMESPACE} | awk 'NR>1 {print $5}'`;
   console.log(getAppPodAgeCommand, "\n");
-  let appPodAge = parse_duration(execSync(getAppPodAgeCommand).toString().trim());
+  let appPodAge = parse(execSync(getAppPodAgeCommand).toString().trim());
 
   // app pod should be older than kotsadm pod
   let ageDiff = appPodAge! - kotsadmPodAge!;
@@ -59,10 +59,10 @@ test('backup and restore', async ({ page }) => {
 
   // validate that only the app was restored
   console.log(getAppPodAgeCommand, "\n");
-  appPodAge = parse_duration(execSync(getAppPodAgeCommand).toString().trim());
+  appPodAge = parse(execSync(getAppPodAgeCommand).toString().trim());
 
   console.log(getKotsadmPodAgeCommand, "\n");
-  kotsadmPodAge = parse_duration(execSync(getKotsadmPodAgeCommand).toString().trim());
+  kotsadmPodAge = parse(execSync(getKotsadmPodAgeCommand).toString().trim());
 
   // kotsadm pod should be older than app pod
   ageDiff = kotsadmPodAge! - appPodAge!;

@@ -3,20 +3,24 @@ import classNames from "classnames";
 
 interface Props {
   className?: string;
+  dataTestId?: string;
   displayBlock?: boolean;
   size?: string;
 }
 
 export default class Loader extends Component<Props> {
   render() {
-    const { className, displayBlock, size } = this.props;
+    const { className, dataTestId, displayBlock, size } = this.props;
 
     const displayClassName = displayBlock
       ? "u-display--block"
       : "u-display--inlineBlock";
 
     return (
-      <div className={classNames("Loader", className, displayClassName)}>
+      <div
+        className={classNames("Loader", className, displayClassName)}
+        data-testid={dataTestId}
+      >
         <svg
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
