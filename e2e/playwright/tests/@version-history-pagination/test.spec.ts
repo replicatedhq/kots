@@ -17,7 +17,7 @@ test('version history pagination', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
   
-  // // create many versions via the CLI
+  // create many versions via the CLI
   const startTime = Date.now();
   for (let i = 0; i < testNumOfVersions; i++) {
     const commandStartTime = Date.now();
