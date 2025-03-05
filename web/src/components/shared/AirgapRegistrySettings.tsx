@@ -457,7 +457,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
     const showStatusError = rewriteStatus === "failed";
 
     return (
-      <div className="card-item u-padding--15">
+      <div className="card-item u-padding--15" data-testid="airgap-registry-settings-card">
         <form>
           <div className="flex u-marginBottom--20">
             <div className="flex1">
@@ -526,7 +526,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
             </div>
           </div>
           {hideTestConnection ? null : (
-            <div className="test-connection-box u-marginBottom--20">
+            <div className="test-connection-box u-marginBottom--20" data-testid="test-connection-box">
               <div className="flex">
                 <div>
                   <button
@@ -534,6 +534,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                     disabled={this.state.hostname === ""}
                     className="btn secondary"
                     onClick={this.testRegistryConnection}
+                    data-testid="test-connection-button"
                   >
                     Test connection
                   </button>
@@ -598,6 +599,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                 <input
                   type="checkbox"
                   className="u-cursor--pointer"
+                  data-testid="disable-pushing-images-checkbox"
                   id="ingressEnabled"
                   checked={isReadOnly}
                   onChange={(e) => {
@@ -625,9 +627,9 @@ class AirgapRegistrySettings extends Component<Props, State> {
         {hideCta ? null : (
           <div className="u-paddingTop--10">
             {showProgress ? (
-              <div className="u-marginTop--20">
+              <div className="u-marginTop--20" data-testid="airgap-registry-settings-progress">
                 <Loader size="30" />
-                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10">
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10" data-testid="progress-text">
                   {statusText}
                 </p>
               </div>

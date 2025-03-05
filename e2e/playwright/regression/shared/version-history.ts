@@ -99,13 +99,17 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isO
   await expect(secondRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 };
 
-export const deployVersion = async (page: Page, expect: Expect, index: number, sequence: number, isMinimalRBAC: boolean) => {
+export const deployVersion = async (page: Page, expect: Expect, index: number, sequence: number, source: string, isMinimalRBAC: boolean) => {
+  await page.locator('.NavItem').getByText('Application', { exact: true }).click();
+  await page.getByRole('link', { name: 'Version history', exact: true }).click();
+
   const allVersionsCard = page.getByTestId('all-versions-card');
-  await expect(allVersionsCard).toBeVisible();
+  await expect(allVersionsCard).toBeVisible({ timeout: 15000 });
 
   const versionRow = allVersionsCard.getByTestId(`version-history-row-${index}`);
   await expect(versionRow).toBeVisible();
   await expect(versionRow).toContainText(`Sequence ${sequence}`);
+  await expect(versionRow).toContainText(source);
 
   const preflightChecksLoader = versionRow.getByTestId('preflight-checks-loader');
   await expect(preflightChecksLoader).not.toBeVisible({ timeout: 180000 });

@@ -9,3 +9,4 @@ export * from './snapshots';
 export * from './dashboard';
 export * from './version-history';
 export * from './view-files';
+export * from './registry-settings';

@@ -37,7 +37,8 @@ import {
   createFullSnapshot,
   restoreFullSnapshot,
   deleteFullSnapshot,
-  validateViewFiles
+  validateViewFiles,
+  updateRegistrySettings
 } from '../shared';
 
 test('type=existing cluster, env=online, phase=new install, rbac=cluster admin', async ({ page }) => {
@@ -75,14 +76,14 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
   await validateVersionHistoryRows(page, expect, true);
-  await deployVersion(page, expect, 0, 1, false);
+  await deployVersion(page, expect, 0, 1, 'Config Change', false);
 
   await validateCurrentLicense(page, expect, constants.CUSTOMER_NAME, constants.CHANNEL_NAME, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
   const newIntEntitlement = await updateOnlineLicense(page, constants.CUSTOMER_ID, constants.CUSTOMER_NAME, constants.CHANNEL_ID, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
   await validateUpdatedLicense(page, expect, newIntEntitlement);
 
   await validateVersionDiff(page, expect, 2, 1);
-  await deployVersion(page, expect, 0, 2, false);
+  await deployVersion(page, expect, 0, 2, 'License Change', false);
 
   await validateSnapshotsAWSConfig(page, expect);
   await validateAutomaticFullSnapshots(page, expect);
@@ -97,4 +98,5 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await deleteFullSnapshot(page, expect);
 
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
+  await updateRegistrySettings(page, expect, registryInfo);
 });
