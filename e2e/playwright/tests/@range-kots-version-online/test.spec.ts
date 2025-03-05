@@ -27,6 +27,7 @@ const validateOnlineInstallRestrictive = async (page: Page, expect: Expect) => {
 
   const errorMessage = airgapInstallErrorMessage(page);
   await expect(errorMessage).toContainText("requires");
+  await expect(errorMessage).toContainText("Install KOTS");
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_TARGET_KOTS_VERSION);
 };
 
@@ -58,6 +59,7 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
 
   let errorMessage = card.getByTestId("version-download-status");
   await expect(errorMessage).toContainText("requires", { timeout: 5 * 1000 }); // 5 seconds
+  await expect(errorMessage).toContainText("Upgrade KOTS");
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_TARGET_KOTS_VERSION);
 
   var allVersionsCard = page.getByTestId("all-versions-card");
@@ -71,6 +73,7 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
 
   errorMessage = card.getByTestId("version-downloading-status");
   await expect(errorMessage).toContainText("requires", { timeout: 5 * 1000 }); // 5 seconds
+  await expect(errorMessage).toContainText("Upgrade KOTS");
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_TARGET_KOTS_VERSION);
 
   // Click the diff button and validate that you cannot select this version to diff because it was

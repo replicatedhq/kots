@@ -33,6 +33,7 @@ const validateAirgapInstallRestrictive = async (page: Page, expect: Expect) => {
 
   const errorMessage = airgapInstallErrorMessage(page);
   await expect(errorMessage).toContainText("requires");
+  await expect(errorMessage).toContainText("Install KOTS");
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
 };
 
@@ -61,5 +62,6 @@ const validateAirgapUpdateRestrictive = async (page: Page, expect: Expect) => {
 
   const errorMessage = airgapUpdateErrorMessage(page);
   await expect(errorMessage).toContainText("requires");
+  await expect(errorMessage).toContainText("Upgrade KOTS");
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
 };
