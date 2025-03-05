@@ -65,3 +65,25 @@ export async function promoteRelease(
     throw new Error(`Failed to promote vendor release sequence: ${response.status}`);
   }
 }
+
+export async function promoteReleaseBySemver(
+  semver: string,
+  appId: string,
+  channelId: string,
+) {
+  const releases = await listReleases(appId, channelId);
+
+  let releaseToPromote = null;
+  for (const release of releases) {
+    if (release.semver === semver) {
+      releaseToPromote = release;
+      break;
+    }
+  }
+
+  if (!releaseToPromote) {
+    throw new Error(`release not found for semver ${semver}`);
+  }
+
+  await promoteRelease(appId, releaseToPromote.sequence, channelId, semver);
+};
