@@ -118,11 +118,12 @@ test('gitops install', async ({ page }) => {
   await resetGithub(githubToken, gitopsOwner, gitopsRepo, keyId, randomBranch);
 
   await page.locator('span').filter({ hasText: 'GitOps' }).click();
+  await expect(page.getByTestId('gitops-enabled')).toBeVisible();
   await page.getByText('Disable GitOps for this app').click();
   await expect(page.getByText('Are you sure you want to disable GitOps for this application?')).toBeVisible();
   await page.getByRole('button', { name: 'Disable GitOps' }).click();
   await expect(page.getByText('Are you sure you want to disable GitOps for this application?')).not.toBeVisible();
-  await expect(page.getByText('Not Enabled')).toBeVisible();
+  await expect(page.getByTestId('gitops-not-enabled')).toBeVisible();
   console.log('gitops disabled')
 
   // visit application page, ensure deploy and redeploy buttons are visible, deploy new version
@@ -154,7 +155,7 @@ test('gitops install', async ({ page }) => {
   await expect(page.getByText('Connection to repository failed')).toBeVisible();
   await page.getByRole('button', { name: 'Cancel' }).click();
   await page.getByRole('button', { name: 'Back to configuration' }).click();
-  await expect(page.getByText('Repository access needed')).toBeVisible(); // ensure that the 'there's no key in the repo' message is now visible
+  await expect(page.getByTestId('gitops-repository-access-needed')).toBeVisible(); // ensure that the 'there's no key in the repo' message is now visible
   await page.getByText('Application', { exact: true }).click();
   await expect(page.getByRole('button', { name: 'Redeploy' })).toBeVisible(); // ensure that we're still in non-gitops mode
   console.log('test complete')
