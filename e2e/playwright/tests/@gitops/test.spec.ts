@@ -163,7 +163,7 @@ test('gitops install', async ({ page }) => {
 async function trivialConfig(page: Page, isGitops: boolean) {
   await page.getByRole('list').getByRole('link', { name: 'Config' }).click();
   await expect(page.getByText('A trivial config item')).toBeVisible();
-  if (page.getByLabel('Trivial Config').isChecked()) {
+  if (await page.getByLabel('Trivial Config').isChecked()) {
     await page.getByLabel('Trivial Config').uncheck();
   } else {
     await page.getByLabel('Trivial Config').check();
