@@ -2,7 +2,6 @@ import * as semverjs from "semver";
 import * as uuid from "uuid";
 
 import {
-  AWS_ACCESS_KEY_ID,
   AWS_BUCKET_NAME,
   AWS_REGION
 } from './constants';
@@ -91,7 +90,7 @@ export const installVeleroAWS = (veleroVersion: string, veleroAwsPluginVersion: 
   const credsFileName = "aws-creds.txt";
   const credsCommand = `cat >${credsFileName} <<EOL
 [default]
-aws_access_key_id = ${AWS_ACCESS_KEY_ID}
+aws_access_key_id = ${process.env.AWS_ACCESS_KEY_ID}
 aws_secret_access_key = ${process.env.AWS_SECRET_ACCESS_KEY} 
 EOL`;
   execSync(credsCommand, {stdio: 'inherit'});

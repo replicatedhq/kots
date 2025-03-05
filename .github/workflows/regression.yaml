@@ -57,6 +57,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
   TF_VAR_replicated_api_token: ${{ secrets.REPLICATED_QA_API_TOKEN }}
+  TF_VAR_aws_access_key_id: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   TF_VAR_aws_secret_access_key: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
 
@@ -312,11 +313,29 @@ jobs:
           # Extract tarball
           tar -xzf ./playwright-report.tar.gz
 
-      - uses: ./.github/actions/upload-playwright-report
-        if: failure()
+      - id: upload-playwright-report
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
         with:
           name: ${{ github.job }}-${{ matrix.test.name }}
-          report-path: ./playwright-report/
+          path: ./playwright-report/
+  
+      - name: Print instructions to view Playwright report
+        if: ${{ failure() && steps.upload-playwright-report.outputs.artifact-url != '' }}
+        run: |
+          echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
+          echo -e "\e[1;33m                                  To view the Playwright test report:                                   \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   1- Download & extract the report from:                                                               \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;34m      ${{ steps.upload-playwright-report.outputs.artifact-url }}                                        \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   2- From inside the extracted directory, run:                                                         \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;32m      npx playwright show-report .                                                                      \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
+        shell: bash
 
       - name: Notify Slack
         if: always() && github.ref_name == 'main'

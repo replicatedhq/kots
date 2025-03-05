@@ -115,11 +115,29 @@ runs:
           SKIP_TEARDOWN=1
       shell: bash
 
-    - uses: ./.github/actions/upload-playwright-report
+    - id: upload-playwright-report
+      uses: actions/upload-artifact@v4
       if: ${{ failure() }}
       with:
-        name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
-        report-path: ./e2e/playwright/playwright-report/
+        name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}-playwright-report
+        path: ./e2e/playwright/playwright-report/
+
+    - name: Print instructions to view Playwright report
+      if: ${{ failure() && steps.upload-playwright-report.outputs.artifact-url != '' }}
+      run: |
+        echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
+        echo -e "\e[1;33m                                  To view the Playwright test report:                                   \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;33m   1- Download & extract the report from:                                                               \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;34m      ${{ steps.upload-playwright-report.outputs.artifact-url }}                                        \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;33m   2- From inside the extracted directory, run:                                                         \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;32m      npx playwright show-report .                                                                      \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
+      shell: bash
 
     - name: Print logs on failure
       if: ${{ failure() }}

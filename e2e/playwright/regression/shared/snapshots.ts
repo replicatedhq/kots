@@ -8,7 +8,6 @@ import { validateDashboardInfo } from './dashboard';
 import {
   AWS_BUCKET_NAME,
   AWS_REGION,
-  AWS_ACCESS_KEY_ID,
   APP_SLUG
 } from "./constants";
 
@@ -49,7 +48,7 @@ export const validateSnapshotsAWSConfig = async (page: Page, expect: Expect) => 
   await expect(page.getByTestId('snapshot-storage-destination')).toContainText('Amazon S3');
   await expect(page.getByTestId('snapshots-aws-bucket')).toHaveValue(AWS_BUCKET_NAME);
   await expect(page.getByTestId('snapshots-aws-region')).toHaveValue(AWS_REGION);
-  await expect(page.getByTestId('snapshots-aws-access-key-id')).toHaveValue(AWS_ACCESS_KEY_ID);
+  await expect(page.getByTestId('snapshots-aws-access-key-id')).toHaveValue(process.env.AWS_ACCESS_KEY_ID);
 };
 
 export const validateAutomaticFullSnapshots = async (page: Page, expect: Expect) => {

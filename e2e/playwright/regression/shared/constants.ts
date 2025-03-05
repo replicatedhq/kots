@@ -1,6 +1,5 @@
 export const APP_SLUG = "qakotsregression";
 export const VENDOR_APP_ID = "1qlR7WFWhwNh2cxkPzx540ku63q";
-export const AWS_ACCESS_KEY_ID = "AKIAWH2JTJB7HVJEZFR3";
 export const AWS_BUCKET_NAME = "kots-testim-snapshots";
 export const AWS_REGION = "us-east-1";
 export const LICENSE_PATH = "./license.yaml";
