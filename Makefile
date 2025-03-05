@@ -201,8 +201,14 @@ sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx
 	tar -czf sbom/kots-sbom.tgz sbom/spdx/*.spdx
 
 sbom: sbom/kots-sbom.tgz
-	cosign sign-blob -key ./cosign.key sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
-	cosign public-key -key ./cosign.key -outfile ./sbom/key.pub
+
+	cosign sign-blob \
+		--key ./cosign.key \
+		--tlog-upload \
+		--rekor-url=https://rekor.sigstore.dev \
+		sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
+
+	cosign public-key --key ./cosign.key --outfile ./sbom/key.pub
 
 # npm packages scans are ignored(only go modules are scanned)
 .PHONY: scan
