@@ -583,12 +583,13 @@ const UploadLicenseFile = (props: Props) => {
                 )}
               </div>
               {errorMessage && (
-                <div className="u-marginTop--10">
+                <div className="u-marginTop--10" data-testid="upload-license-error">
                   <span className="u-fontSize--small u-textColor--error u-marginRight--5 u-fontWeight--bold">
                     Unable to install license
                   </span>
                   <span
                     className="u-fontSize--small link"
+                    data-testid="view-more-button"
                     onClick={toggleViewErrorMessage}
                   >
                     view more
@@ -636,7 +637,7 @@ const UploadLicenseFile = (props: Props) => {
         ariaHideApp={false}
         className="Modal"
       >
-        <div className="Modal-body">
+        <div className="Modal-body" data-testid="upload-license-error-modal">
           <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
             <p className="u-fontSize--small u-fontWeight--bold u-textColor--primary u-marginBottom--5">
               Error description
@@ -664,7 +665,7 @@ const UploadLicenseFile = (props: Props) => {
                 </CodeSnippet>
               </div>
             ) : (
-              <div className="flex flex-column">
+              <div className="flex flex-column" data-testid="remove-app-instructions">
                 <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">
                   Run this command to remove the app
                 </p>

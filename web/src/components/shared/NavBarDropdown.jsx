@@ -36,8 +36,8 @@ const NavBarDropdown = ({ handleLogOut, isEmbeddedCluster }) => {
   }, [showDropdown]);
 
   return (
-    <div className="navbar-dropdown-container">
-      <span tabIndex={0} onClick={() => setShowDropdown(!showDropdown)}>
+    <div className="navbar-dropdown-container" data-testid="navbar-dropdown-container">
+      <span tabIndex={0} onClick={() => setShowDropdown(!showDropdown)} data-testid="navbar-dropdown-button">
         <Icon icon="more-circle-outline" size={20} className="gray-color" />
       </span>
       <ul
@@ -50,7 +50,7 @@ const NavBarDropdown = ({ handleLogOut, isEmbeddedCluster }) => {
           <p onClick={() => setShowModal(true)}>Change password</p>
         </li>
         {!isEmbeddedCluster && (
-          <li onMouseDown={handleNav}>
+          <li onMouseDown={handleNav} data-testid="add-new-application">
             <p>Add new application</p>
           </li>
         )}

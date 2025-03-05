@@ -8,6 +8,26 @@ export const uploadLicense = async (page: Page, expect: Expect, licenseFile = "l
   await expect(page.locator('#app')).toContainText('Installing your license');
 };
 
+export const validateDuplicateLicenseUpload = async (page: Page, expect: Expect) => {
+  const navbarDropdownContainer = page.getByTestId("navbar-dropdown-container");
+  await expect(navbarDropdownContainer).toBeVisible();
+  await navbarDropdownContainer.getByTestId("navbar-dropdown-button").click();
+  await navbarDropdownContainer.getByTestId("add-new-application").click();
+
+  await uploadLicense(page, expect);
+
+  const uploadLicenseError = page.getByTestId("upload-license-error");
+  await expect(uploadLicenseError).toBeVisible({ timeout: 15000 });
+  await uploadLicenseError.getByTestId("view-more-button").click();
+
+  const uploadLicenseErrorModal = page.getByTestId("upload-license-error-modal");
+  await expect(uploadLicenseErrorModal).toBeVisible();
+  await expect(uploadLicenseErrorModal).toContainText("License already exist");
+  await expect(uploadLicenseErrorModal.getByTestId("remove-app-instructions")).toBeVisible();
+  await uploadLicenseErrorModal.getByRole('button', { name: 'Ok, got it!' }).click();
+  await expect(uploadLicenseErrorModal).not.toBeVisible();
+};
+
 export const validateCurrentLicense = async (page: Page, expect: Expect, customerName: string, channelName: string, isAirgapSupported: boolean, isEC: boolean) => {
   await page.getByRole('link', { name: 'License', exact: true }).click();
 
