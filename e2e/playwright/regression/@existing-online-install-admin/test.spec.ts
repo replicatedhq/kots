@@ -101,7 +101,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await deleteFullSnapshot(page, expect);
 
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
-  await updateRegistrySettings(page, expect, registryInfo);
+  await updateRegistrySettings(page, expect, registryInfo, false);
   await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_RELEASE_SEQUENCE, 4, false);
   await validateDuplicateLicenseUpload(page, expect);
   await logout(page, expect);

@@ -290,9 +290,31 @@ jobs:
           chmod 600 ssh.pem
           ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
 
+      - name: Copy playwright report from remote machine
+        working-directory: automation/cluster
+        run: |
+          jumpbox_public_ip=$(terraform output -raw jumpbox_public_ip)
+          control_plane_private_ip=$(terraform output -raw control_plane_private_ip)
+
+          # Create tarball of playwright report on control plane
+          ssh -i ssh.pem "ubuntu@$jumpbox_public_ip" \
+              "ssh -t ubuntu@$control_plane_private_ip \
+              'cd /home/ubuntu/kots/e2e/playwright && tar -czf /home/ubuntu/playwright-report.tar.gz playwright-report'"
+
+          # Copy tarball from control plane to jumpbox
+          ssh -i ssh.pem ubuntu@$jumpbox_public_ip \
+              "scp ubuntu@$control_plane_private_ip:/home/ubuntu/playwright-report.tar.gz /home/ubuntu/playwright-report.tar.gz"
+
+          # Copy tarball from jumpbox to local machine
+          scp -i ssh.pem ubuntu@$jumpbox_public_ip:/home/ubuntu/playwright-report.tar.gz ./e2e/playwright/playwright-report.tar.gz
+
+          # Extract tarball
+          tar -xzf ./e2e/playwright/playwright-report.tar.gz -C ./e2e/playwright
+
       - uses: ./.github/actions/upload-playwright-report
         with:
           name: ${{ github.job }}-${{ matrix.test.name }}
+          report-path: ./e2e/playwright/playwright-report/
 
       - name: Notify Slack
         if: always() && github.ref_name == 'main'

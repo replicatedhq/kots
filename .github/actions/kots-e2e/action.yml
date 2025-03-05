@@ -118,6 +118,7 @@ runs:
     - uses: ./.github/actions/upload-playwright-report
       with:
         name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
+        report-path: ./e2e/playwright/playwright-report/
 
     - name: Print logs on failure
       if: ${{ failure() }}

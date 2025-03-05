@@ -11,7 +11,7 @@ export async function promoteRelease(
     {
       method: 'POST',
       headers: {
-        'Authorization': process.env.VENDOR_API_TOKEN!,
+        'Authorization': process.env.REPLICATED_API_TOKEN!,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -42,7 +42,7 @@ export async function updateCustomer(
     {
       method: 'PUT',
       headers: {
-        'Authorization': process.env.VENDOR_API_TOKEN!,
+        'Authorization': process.env.REPLICATED_API_TOKEN!,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
