@@ -42,6 +42,7 @@ test('version history pagination', async ({ page }) => {
   checkVersions(versionCheckConfig);
 
   // validate that the versions created via the CLI are visible via the UI
+  console.log("validating the first page of versions via the UI");
   await page.getByRole('link', { name: 'Version history' }).click();
   await expect(page.getByText('All versions')).toBeVisible();
   // should be 251 (new version available at top of page)
@@ -57,8 +58,9 @@ test('version history pagination', async ({ page }) => {
   // should be 232 (last entry in first page of all versions card)
   await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toBeVisible();
   await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - 19}`);
-
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 1 - 20 of ${testNumOfVersions + 1}`);
+
+  console.log("validating the second page of versions via the UI");
   await page.getByText('Next').click();
   // should be 21 - 40 of 252
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 21 - 40 of ${testNumOfVersions + 1}`);
@@ -67,6 +69,7 @@ test('version history pagination', async ({ page }) => {
   await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - testDefaultPageSize - 19}`);
 
   // make sure that going further forward and backward works
+  console.log("validating going further forward and backward in the UI");
   await page.getByText('Next').click();
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 41 - 60 of ${testNumOfVersions + 1}`);
   await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - (testDefaultPageSize * 2) - 19}`);
@@ -82,6 +85,7 @@ test('version history pagination', async ({ page }) => {
   await expect(page.getByTestId('app-status-status')).toBeVisible();
 
   // enter the version history page and set the page size to 100
+  console.log("validating setting the page size to 100 via the UI");
   await page.getByRole('link', { name: 'Version history' }).click();
   await expect(page.getByText('New version available')).toBeVisible();
   await page.getByRole('combobox').selectOption('100');
@@ -90,6 +94,8 @@ test('version history pagination', async ({ page }) => {
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 101 - 200 of ${testNumOfVersions + 1}`);
   // the bottom of the second page should be the 199th-from-latest version (52)
   await expect(page.getByTestId('version-history-row-99').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - (100 * 1) - 99}`);
+  
+  console.log("validating deploying the a specific older version via the UI");
   await page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByRole('button', { name: 'Deploy' }).click();
   // the first version on the second page should be the 100th-from-latest version (151)
   await expect(page.getByLabel('Confirm deployment').getByRole('paragraph')).toContainText(`(Sequence ${testLatestSequence - 100})?`);
