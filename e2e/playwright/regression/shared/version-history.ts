@@ -2,7 +2,10 @@ import { Page, Expect } from '@playwright/test';
 import * as uuid from "uuid";
 
 import { promoteRelease } from './vendor-api';
-import { validateClusterAdminPreflightResults } from './preflights';
+import {
+  validateClusterAdminPreflightResults,
+  validateMinimalRBACPreflights
+} from './preflights';
 
 export const validateCurrentVersionCard = async (page: Page, expect: Expect, versionLabel: string, sequence: number) => {
   const currentVersionCard = page.getByTestId("current-version-card");
@@ -25,6 +28,20 @@ export const validateCurrentClusterAdminPreflights = async (page: Page, expect: 
   const currentVersionCard = page.getByTestId("current-version-card");
   await currentVersionCard.getByTestId("preflight-icon").click();
   await validateClusterAdminPreflightResults(page, expect, 15000);
+  await page.getByTestId("preflight-results-back-button").click();
+};
+
+export const validateVersionMinimalRBACPreflights = async (page: Page, expect: Expect, rowIndex: number, sequence: number) => {
+  const allVersionsCard = page.getByTestId('all-versions-card');
+  await expect(allVersionsCard).toBeVisible({ timeout: 15000 });
+
+  const versionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex}`);
+  await expect(versionRow).toBeVisible();
+  await expect(versionRow).toContainText(`Sequence ${sequence}`);
+
+  await versionRow.getByTestId("preflight-icon").click();
+  await validateMinimalRBACPreflights(page, expect, 15000);
+  await page.getByTestId("preflight-results-back-button").click();
 };
 
 export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {

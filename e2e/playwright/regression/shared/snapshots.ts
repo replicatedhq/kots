@@ -1,6 +1,6 @@
 import { Page, Expect } from '@playwright/test';
 
-import { ensureVeleroPermissions, runCommand } from './cli';
+import { runCommand } from './cli';
 import { login } from './login';
 import { validateCurrentlyDeployedVersionInfo } from './version-history';
 import { validateDashboardInfo } from './dashboard';
@@ -12,17 +12,33 @@ import {
   APP_SLUG
 } from "./constants";
 
-export const addSnapshotsRBAC = async (page: Page, expect: Expect, namespace: string) => {
+export const addSnapshotsRBAC = async (page: Page, expect: Expect, isAirgapped: boolean, sshToAirgappedInstance?: string) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
 
   const configureSnapshotsModal = page.getByTestId("configure-snapshots-modal");
   await expect(configureSnapshotsModal).toBeVisible({ timeout: 10000 });
-  await configureSnapshotsModal.getByText("I've already installed Velero").click();
-  await expect(configureSnapshotsModal.getByTestId("ensure-permissions-command")).toContainText('kubectl kots velero ensure-permissions --namespace default --velero-namespace <velero-namespace>');
+
+  await expect(configureSnapshotsModal.getByTestId("velero-not-installed-tab")).toBeVisible();
+  await expect(configureSnapshotsModal.getByTestId("velero-already-installed-tab")).toBeVisible();
+  await expect(configureSnapshotsModal.getByTestId("velero-status-box")).toBeVisible();
+  
+  await configureSnapshotsModal.getByTestId("velero-already-installed-tab").click();
+  await expect(configureSnapshotsModal.getByTestId("velero-status-box")).toBeVisible();
+  await expect(configureSnapshotsModal.getByTestId("velero-namespace-access-required")).toBeVisible();
+
+  const ensurePermissionsSnippet = configureSnapshotsModal.getByTestId('ensure-permissions-command');
+  await expect(ensurePermissionsSnippet).toBeVisible();
+  let ensurePermissionsCommand = await ensurePermissionsSnippet.locator(".react-prism.language-bash").textContent();
+  expect(ensurePermissionsCommand).not.toBeNull();
+
+  ensurePermissionsCommand = ensurePermissionsCommand.replace(/<velero-namespace>/g, "velero");
+  runCommand(ensurePermissionsCommand, isAirgapped, sshToAirgappedInstance);
+
+  await configureSnapshotsModal.getByRole('button', { name: 'Check for Velero' }).click();
+  await expect(configureSnapshotsModal.getByTestId("velero-is-installed-message")).toBeVisible({ timeout: 15000 });
+
   await configureSnapshotsModal.getByRole('button', { name: 'Ok, got it!' }).click();
   await expect(configureSnapshotsModal).not.toBeVisible();
-
-  ensureVeleroPermissions(namespace);
 };
 
 export const validateSnapshotsAWSConfig = async (page: Page, expect: Expect) => {
@@ -438,7 +454,7 @@ export const restoreFullSnapshot = async (
   await expect(restoreCommandSnippet).toBeVisible();
   const restoreCommand = await restoreCommandSnippet.locator(".react-prism.language-bash").textContent();
   expect(restoreCommand).not.toBeNull();
-  runCommand(restoreCommand!, isAirgapped, sshToAirgappedInstance);
+  runCommand(restoreCommand, isAirgapped, sshToAirgappedInstance);
 
   await page.waitForTimeout(5000);
   await page.reload();

@@ -88,7 +88,7 @@ function PreflightResultPage(props: Props) {
       )}
       <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]">
         {location.pathname.includes("version-history") && (
-          <div className="u-fontWeight--bold link" onClick={() => navigate(-1)}>
+          <div className="u-fontWeight--bold link" onClick={() => navigate(-1)} data-testid="preflight-results-back-button">
             <Icon
               icon="prev-arrow"
               size={12}
@@ -282,7 +282,7 @@ function PreflightResultPage(props: Props) {
         ariaHideApp={false}
         className="Modal"
       >
-        <div className="Modal-body tw-w-[300px]">
+        <div className="Modal-body tw-w-[300px]" data-testid="continue-with-failed-preflights-modal">
           <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20 tw-text-center">
             Some preflight checks did not pass. <br /> Are you sure you want to
             deploy?

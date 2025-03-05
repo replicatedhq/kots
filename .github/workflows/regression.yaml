@@ -26,6 +26,8 @@ on:
         required: true
       E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
         required: true
+      REPLICATED_QA_API_TOKEN:
+        required: true
       E2E_GH_PAT:
         required: true
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL:

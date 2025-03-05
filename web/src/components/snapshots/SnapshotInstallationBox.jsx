@@ -109,7 +109,7 @@ export default class SnapshotInstallationBox extends Component {
     } = this.props;
 
     return (
-      <div className="flex1 flex-column">
+      <div className="flex1 flex-column" data-testid="velero-status-box">
         {this.renderVeleroErrors(snapshotSettings)}
         {this.renderNodeAgentErrors(snapshotSettings)}
         <div className="CheckVelero--wrapper flex1 flex-column justifyContent--center">
@@ -129,7 +129,7 @@ export default class SnapshotInstallationBox extends Component {
             renderNotVeleroMessage()
           )}
           {snapshotSettings?.veleroVersion ? (
-            <span className="flex alignItems--center u-marginTop--10 u-fontSize--small u-fontWeight--medium u-textColor--primary">
+            <span className="flex alignItems--center u-marginTop--10 u-fontSize--small u-fontWeight--medium u-textColor--primary" data-testid="velero-is-installed-message">
               <Icon
                 icon="check-circle-filled"
                 size={16}

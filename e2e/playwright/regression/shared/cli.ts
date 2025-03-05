@@ -128,12 +128,6 @@ export const resetPassword = (namespace: string, isAirgapped: boolean, sshToAirg
   execSync(resetCommand, {stdio: 'inherit'});
 };
 
-export const ensureVeleroPermissions = (namespace: string) => {
-  const command = `kubectl kots velero ensure-permissions --namespace ${namespace} --velero-namespace velero`;
-  console.log(command, "\n");
-  execSync(command, {stdio: 'inherit'});
-};
-
 export const runCommand = (command: string, isAirgapped: boolean, sshToAirgappedInstance?: string) => {
   if (isAirgapped) {
     command = `${sshToAirgappedInstance} "${command}"`;

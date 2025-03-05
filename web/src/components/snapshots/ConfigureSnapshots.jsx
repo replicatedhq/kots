@@ -93,6 +93,7 @@ class ConfigureSnapshots extends Component {
                       ? "is-active"
                       : ""
                   } tab-item blue`}
+                  data-testid="velero-not-installed-tab"
                   onClick={() =>
                     this.toggleScheduleAction(VELERO_IS_NOT_INSTALLED_TAB)
                   }
@@ -105,6 +106,7 @@ class ConfigureSnapshots extends Component {
                       ? "is-active"
                       : ""
                   } tab-item blue`}
+                  data-testid="velero-already-installed-tab"
                   onClick={() =>
                     this.toggleScheduleAction(VELERO_IS_INSTALLED_TAB)
                   }
@@ -116,7 +118,7 @@ class ConfigureSnapshots extends Component {
           )}
           {activeTab === VELERO_IS_INSTALLED_TAB ? (
             <div className="flex-column u-marginTop--12">
-              <p className="u-fontSize--large u-fontWeight--bold u-textColor--secondary u-marginBottom--10">
+              <p className="u-fontSize--large u-fontWeight--bold u-textColor--secondary u-marginBottom--10" data-testid="velero-namespace-access-required">
                 Velero namespace access required
               </p>
               <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
@@ -152,7 +154,7 @@ class ConfigureSnapshots extends Component {
               </p>
             </div>
           ) : (
-            <div className="flex-column u-marginTop--12">
+            <div className="flex-column u-marginTop--12" data-testid="velero-install-instructions">
               <div className="InstallVelero--wrapper flex flex-column">
                 <p className="u-textColor--secondary u-fontSize--large u-fontWeight--bold">
                   To install Velero
