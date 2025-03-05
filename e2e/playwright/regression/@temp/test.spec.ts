@@ -38,7 +38,8 @@ import {
   restoreFullSnapshot,
   deleteFullSnapshot,
   validateViewFiles,
-  updateRegistrySettings
+  updateRegistrySettings,
+  validateCheckForUpdates
 } from '../shared';
 
 test('type=existing cluster, env=online, phase=new install, rbac=cluster admin', async ({ page }) => {
@@ -99,4 +100,5 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
 
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
   await updateRegistrySettings(page, expect, registryInfo);
+  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_RELEASE_SEQUENCE, 4, false);
 });

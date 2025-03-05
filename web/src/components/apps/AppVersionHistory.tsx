@@ -2032,7 +2032,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       {checkingForUpdates &&
                                       !this.props.outletContext
                                         .isBundleUploading ? (
-                                        <div className="flex alignItems--center u-marginRight--20">
+                                        <div className="flex alignItems--center u-marginRight--20" data-testid="check-for-update-progress">
                                           <Loader
                                             className="u-marginRight--5"
                                             size="15"

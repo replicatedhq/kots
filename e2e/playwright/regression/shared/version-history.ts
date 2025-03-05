@@ -1,5 +1,7 @@
 import { Page, Expect } from '@playwright/test';
+import * as uuid from "uuid";
 
+import { promoteRelease } from './vendor-api';
 import { validateClusterAdminPreflightResults } from './preflights';
 
 export const validateCurrentVersionCard = async (page: Page, expect: Expect, versionLabel: string, sequence: number) => {
@@ -99,14 +101,16 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isO
   await expect(secondRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 };
 
-export const deployVersion = async (page: Page, expect: Expect, index: number, sequence: number, source: string, isMinimalRBAC: boolean) => {
-  await page.locator('.NavItem').getByText('Application', { exact: true }).click();
-  await page.getByRole('link', { name: 'Version history', exact: true }).click();
+export const deployVersion = async (page: Page, expect: Expect, rowIndex: number, sequence: number, source: string, isMinimalRBAC: boolean, skipNavigation: boolean = false) => {
+  if (!skipNavigation) {
+    await page.locator('.NavItem').getByText('Application', { exact: true }).click();
+    await page.getByRole('link', { name: 'Version history', exact: true }).click();
+  }
 
   const allVersionsCard = page.getByTestId('all-versions-card');
   await expect(allVersionsCard).toBeVisible({ timeout: 15000 });
 
-  const versionRow = allVersionsCard.getByTestId(`version-history-row-${index}`);
+  const versionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex}`);
   await expect(versionRow).toBeVisible();
   await expect(versionRow).toContainText(`Sequence ${sequence}`);
   await expect(versionRow).toContainText(source);
@@ -134,7 +138,7 @@ export const deployVersion = async (page: Page, expect: Expect, index: number, s
   await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
-  const previousVersionRow = allVersionsCard.getByTestId(`version-history-row-${index + 1}`);
+  const previousVersionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex + 1}`);
   await expect(previousVersionRow).toContainText(`Sequence ${sequence - 1}`);
   await expect(previousVersionRow).toContainText('Previously deployed');
   await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible();
@@ -147,14 +151,14 @@ export const deployVersion = async (page: Page, expect: Expect, index: number, s
   await expect(updatesCard).toContainText("Application up to date.");
 };
 
-export const rollbackToVersion = async (page: Page, expect: Expect, index: number, sequence: number) => {
+export const rollbackToVersion = async (page: Page, expect: Expect, rowIndex: number, sequence: number) => {
   await page.locator('.NavItem').getByText('Application', { exact: true }).click();
   await page.getByRole('link', { name: 'Version history', exact: true }).click();
 
   const allVersionsCard = page.getByTestId('all-versions-card');
   await expect(allVersionsCard).toBeVisible({ timeout: 15000 });
 
-  const versionRow = allVersionsCard.getByTestId(`version-history-row-${index}`);
+  const versionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex}`);
   await expect(versionRow).toBeVisible();
   await expect(versionRow).toContainText(`Sequence ${sequence}`);
 
@@ -172,12 +176,12 @@ export const rollbackToVersion = async (page: Page, expect: Expect, index: numbe
   await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
-  const nextVersionRow = allVersionsCard.getByTestId(`version-history-row-${index - 1}`);
+  const nextVersionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex - 1}`);
   await expect(nextVersionRow).toContainText(`Sequence ${sequence + 1}`);
   await expect(nextVersionRow).toContainText('Previously deployed');
   await expect(nextVersionRow.getByRole('button', { name: 'Deploy', exact: true })).toBeVisible();
 
-  const previousVersionRow = allVersionsCard.getByTestId(`version-history-row-${index + 1}`);
+  const previousVersionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex + 1}`);
   await expect(previousVersionRow).toContainText(`Sequence ${sequence - 1}`);
   await expect(previousVersionRow).toContainText('Previously deployed');
   await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible();
@@ -236,7 +240,7 @@ export const validateVersionDiff = async (page: Page, expect: Expect, firstSeque
   await expect(diffOverlay).not.toBeVisible();
 };
 
-export const validateCurrentlyDeployedVersionInfo = async (page: Page, expect: Expect, expectedIndex: number, expectedSequence: number, expectedUpToDate: boolean) => {
+export const validateCurrentlyDeployedVersionInfo = async (page: Page, expect: Expect, expectedRowIndex: number, expectedSequence: number, expectedUpToDate: boolean) => {
   await page.locator('.NavItem').getByText('Application', { exact: true }).click();
   await page.getByRole('link', { name: 'Version history', exact: true }).click();
 
@@ -246,7 +250,7 @@ export const validateCurrentlyDeployedVersionInfo = async (page: Page, expect: E
 
   const allVersionsCard = page.getByTestId('all-versions-card');
   await expect(allVersionsCard).toBeVisible();
-  const versionRow = allVersionsCard.getByTestId(`version-history-row-${expectedIndex}`);
+  const versionRow = allVersionsCard.getByTestId(`version-history-row-${expectedRowIndex}`);
   await expect(versionRow).toBeVisible();
   await expect(versionRow).toContainText(`Sequence ${expectedSequence}`);
   await expect(versionRow).toContainText('Currently deployed version');
@@ -256,4 +260,34 @@ export const validateCurrentlyDeployedVersionInfo = async (page: Page, expect: E
     await expect(updatesCard).toBeVisible();
     await expect(updatesCard).toContainText("Application up to date.");
   }
+};
+
+export const validateCheckForUpdates = async (page: Page, expect: Expect, channelId: string, vendorReleaseSequence: number, expectedSequence: number, isMinimalRBAC: boolean) => {
+  await page.getByRole('link', { name: 'Version history', exact: true }).click();
+
+  const newVersionLabel = `1.0.0+${uuid.v4()}`;
+  const newReleaseNotes = `notes-${uuid.v4()}`;
+  await promoteRelease(vendorReleaseSequence, channelId, newVersionLabel, newReleaseNotes);
+
+  const availableUpdatesCard = page.getByTestId('available-updates-card');
+  await expect(availableUpdatesCard).toBeVisible();
+
+  await availableUpdatesCard.getByTestId('check-for-update-button').click();
+  await expect(availableUpdatesCard.getByTestId('check-for-update-progress').locator('.Loader')).toBeVisible();
+  await expect(availableUpdatesCard.getByTestId('check-for-update-progress')).toContainText('ing', { timeout: 30000 });
+  await expect(availableUpdatesCard.getByTestId('check-for-update-progress')).not.toBeVisible({ timeout: 240000 });
+
+  const updateRow = availableUpdatesCard.getByTestId('version-history-row-0');
+  await expect(updateRow).toBeVisible();
+  await expect(updateRow).toContainText('Upstream Update');
+  await expect(updateRow).toContainText(newVersionLabel);
+
+  await updateRow.getByTestId('release-notes-icon').click();
+  const releaseNotesModal = page.getByTestId("release-notes-modal");
+  await expect(releaseNotesModal).toBeVisible();
+  await expect(releaseNotesModal).toContainText(newReleaseNotes);
+  await releaseNotesModal.getByRole("button", { name: "Close" }).click();
+  await expect(releaseNotesModal).not.toBeVisible();
+
+  await deployVersion(page, expect, 0, expectedSequence, 'Upstream Update', isMinimalRBAC, true);
 };

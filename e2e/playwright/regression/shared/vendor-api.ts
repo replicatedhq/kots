@@ -3,8 +3,9 @@ import { VENDOR_APP_ID } from './constants';
 export async function promoteRelease(
   releaseSequence: number,
   channelId: string,
-  versionLabel: string
-) {
+  versionLabel: string,
+  releaseNotes?: string
+): Promise<void> {
   const response = await fetch(
     `https://api.replicated.com/vendor/v3/app/${VENDOR_APP_ID}/release/${releaseSequence}/promote`,
     {
@@ -17,7 +18,8 @@ export async function promoteRelease(
         channelIds: [
           channelId
         ],
-        versionLabel: versionLabel
+        versionLabel: versionLabel,
+        releaseNotes: releaseNotes
       })
     }
   );
@@ -34,7 +36,7 @@ export async function updateCustomer(
   isAirgapSupported: boolean,
   isEC: boolean,
   intEntitlement: number
-) {
+): Promise<void> {
   const response = await fetch(
     `https://api.replicated.com/vendor/v3/customer/${customerId}`,
     {

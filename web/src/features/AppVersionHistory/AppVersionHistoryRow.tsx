@@ -147,6 +147,7 @@ function AppVersionHistoryRow(props: Props) {
           onClick={() => props.showReleaseNotes(version?.releaseNotes)}
           data-tip="View release notes"
           className="u-marginRight--10 clickable"
+          data-testid="release-notes-icon"
         />
         <ReactTooltip effect="solid" className="replicated-tooltip" />
       </div>
