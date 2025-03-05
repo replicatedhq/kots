@@ -6,6 +6,8 @@ on:
       - "v*.*.*"
     branches:
       - main
+      # TODO NOW: revert this!
+      - move-regression-tests-to-playwright
 
 permissions:
   contents: write
