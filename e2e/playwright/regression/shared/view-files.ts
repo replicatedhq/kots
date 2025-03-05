@@ -20,7 +20,7 @@ export const validateViewFiles = async (
   await page.getByRole('link', { name: 'View files', exact: true }).click();
 
   const viewFilesPage = page.getByTestId('view-files-page');
-  await expect(viewFilesPage).toBeVisible();
+  await expect(viewFilesPage).toBeVisible({ timeout: 15000 });
   await expect(viewFilesPage.getByTestId('file-editor-empty-state')).toBeVisible();
 
   const fileTree = viewFilesPage.getByTestId('file-tree');
@@ -110,6 +110,31 @@ export const validateViewFiles = async (
     expect(kustomizationYAML).toContain(`newName: proxy.replicated.com/proxy/${APP_SLUG}/quay.io/replicatedcom/qa-kots`);
     expect(kustomizationYAML).toContain(`newName: proxy.replicated.com/proxy/${APP_SLUG}/gcr.io/replicated-qa/dnsutils`);
   }
+
+  // resize page back to default size
+  await page.setViewportSize({ width: 1280, height: 720 });
+};
+
+export const validateRegistryChangeKustomization = async (page: Page, expect: Expect, registryInfo: RegistryInfo) => {
+  // resize page so that the entire editor content is visible for text detection
+  await page.setViewportSize({ width: 3840, height: 2160 });
+
+  await page.locator('.NavItem').getByText('Application', { exact: true }).click();
+  await page.getByRole('link', { name: 'View files', exact: true }).click();
+
+  const viewFilesPage = page.getByTestId('view-files-page');
+  await expect(viewFilesPage).toBeVisible({ timeout: 15000 });
+
+  const fileTree = viewFilesPage.getByTestId('file-tree');
+  await expect(fileTree).toBeVisible({ timeout: 15000 });
+
+  await selectFile(page, fileTree, '/overlays');
+  await selectFile(page, fileTree, '/overlays/midstream');
+  await selectFile(page, fileTree, '/overlays/midstream/kustomization.yaml');
+
+  const editor = viewFilesPage.getByTestId('file-editor');
+  const kustomizationYAML = await getEditorText(editor);
+  expect(kustomizationYAML).toContain(`newName: ${registryInfo.ip}/${APP_SLUG}/`);
 
   // resize page back to default size
   await page.setViewportSize({ width: 1280, height: 720 });

@@ -3,6 +3,7 @@ import { Page, Expect, Locator } from '@playwright/test';
 import { RegistryInfo } from './cli';
 import { APP_SLUG } from './constants';
 import { deployVersion } from './version-history';
+import { validateRegistryChangeKustomization } from './view-files';
 
 export const updateRegistrySettings = async (
   page: Page,
@@ -40,4 +41,6 @@ export const updateRegistrySettings = async (
 
   await page.reload();
   await deployVersion(page, expect, 0, 3, 'Registry Change', false);
+
+  await validateRegistryChangeKustomization(page, expect, registryInfo);
 };
