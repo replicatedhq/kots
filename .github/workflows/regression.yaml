@@ -54,7 +54,7 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  TF_VAR_replicated_api_token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+  TF_VAR_replicated_api_token: ${{ secrets.REPLICATED_QA_API_TOKEN }}
   TF_VAR_aws_secret_access_key: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
 
@@ -287,6 +287,10 @@ jobs:
           terraform output -raw jumpbox_private_key > ssh.pem
           chmod 600 ssh.pem
           ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
+
+      - uses: ./.github/actions/upload-playwright-report
+        with:
+          name: ${{ github.job }}-${{ matrix.test.name }}
 
       - name: Notify Slack
         if: always() && github.ref_name == 'main'
