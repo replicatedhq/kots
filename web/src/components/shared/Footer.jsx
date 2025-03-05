@@ -72,6 +72,7 @@ export class Footer extends Component {
         className={`FooterContent-wrapper flex flex-auto justifyContent--center ${
           this.state.targetKotsVersion && "u-padding--5"
         } ${this.props.className || ""}`}
+        data-testid="footer"
       >
         <div className="container flex1 flex justifyContent--center alignItems--center">
           <div className="FooterItem-wrapper">
