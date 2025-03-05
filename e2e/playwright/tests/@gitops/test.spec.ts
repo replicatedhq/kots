@@ -77,12 +77,12 @@ test('gitops install', async ({ page }) => {
   // });
 
   // enable gitops now that the key is added
-  await page.getByText('Test connection to repository').click();
+  await page.getByRole('button', { name: 'Test connection to repository' }).click();
   await expect(page.getByText('GitOps is enabled')).toBeVisible();
-  await page.getByText('Go to dashboard').click();
-  await page.getByText('Version history').click();
-  await expect(page.getByText('Deploy')).not.toBeVisible();
-  await expect(page.getByText('Redeploy')).not.toBeVisible();
+  await page.getByRole('button', { name: 'Go to dashboard' }).click();
+  await page.getByRole("link", { name: "Version history" }).click();
+  await expect(page.getByRole('button', { name: 'Deploy', exact: true })).not.toBeVisible();
+  await expect(page.getByRole('button', { name: 'Redeploy', exact: true })).not.toBeVisible();
   // wait 10 seconds for things to actually be committed
   await page.waitForTimeout(10000);
   await trivialConfig(page, true);
@@ -164,7 +164,7 @@ let isChecked = false;
 async function trivialConfig(page: Page, isGitops: boolean) {
   await page.getByRole('list').getByRole('link', { name: 'Config' }).click();
   await expect(page.getByText('A trivial config item')).toBeVisible();
-  if (isChecked) {
+  if (page.getByLabel('Trivial Config').isChecked()) {
     await page.getByLabel('Trivial Config').uncheck();
     isChecked = false;
   } else {
