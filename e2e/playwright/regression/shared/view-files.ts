@@ -24,7 +24,8 @@ export const validateViewFiles = async (
   await expect(viewFilesPage.getByTestId('file-editor-empty-state')).toBeVisible();
 
   const fileTree = viewFilesPage.getByTestId('file-tree');
-  await expect(fileTree).toBeVisible({ timeout: 15000 });
+  await expect(fileTree).toBeVisible();
+  await expect(fileTree.getByTestId('file-tree-empty-state')).not.toBeVisible({ timeout: 15000 });
 
   // Validate upstream directory
   await selectFile(page, fileTree, '/upstream');
@@ -126,7 +127,8 @@ export const validateRegistryChangeKustomization = async (page: Page, expect: Ex
   await expect(viewFilesPage).toBeVisible({ timeout: 15000 });
 
   const fileTree = viewFilesPage.getByTestId('file-tree');
-  await expect(fileTree).toBeVisible({ timeout: 15000 });
+  await expect(fileTree).toBeVisible();
+  await expect(fileTree.getByTestId('file-tree-empty-state')).not.toBeVisible({ timeout: 15000 });
 
   await selectFile(page, fileTree, '/overlays');
   await selectFile(page, fileTree, '/overlays/midstream');

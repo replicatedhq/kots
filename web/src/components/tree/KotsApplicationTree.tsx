@@ -140,7 +140,7 @@ class KotsApplicationTree extends Component<Props, State> {
                 selectedFile={this.state.selectedFile}
               />
               {isEmpty(applicationTree) && (
-                <ul className="FileTree-wrapper">
+                <ul className="FileTree-wrapper" data-testid="file-tree-empty-state">
                   <li>Loading file explorer</li>
                 </ul>
               )}
