@@ -201,7 +201,10 @@ class AirgapUploadProgress extends Component {
     }
 
     return (
-      <div className="AirgapUploadProgress--wrapper flex-1-auto flex-column alignItems--center justifyContent--center u-marginTop--10" data-testid="airgap-upload-progress">
+      <div
+        className="AirgapUploadProgress--wrapper flex-1-auto flex-column alignItems--center justifyContent--center u-marginTop--10"
+        data-testid="airgap-upload-progress"
+      >
         <div className="flex1 flex-column u-textColor--primary">
           {processingImages ? (
             <div className="flex1 flex-column alignItems--center justifyContent--center">
