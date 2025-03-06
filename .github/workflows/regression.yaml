@@ -334,7 +334,6 @@ jobs:
           echo -e "\e[1;32m      npx playwright show-report .                                                                      \e[0m"
           echo -e "\e[1;33m                                                                                                        \e[0m"
           echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
-        shell: bash
 
       - name: Notify Slack
         if: always() && github.ref_name == 'main'
