@@ -26,6 +26,8 @@ on:
         required: true
       E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
         required: true
+      REPLICATED_QA_API_TOKEN:
+        required: true
       E2E_GH_PAT:
         required: true
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL:
@@ -54,6 +56,9 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+  TF_VAR_replicated_api_token: ${{ secrets.REPLICATED_QA_API_TOKEN }}
+  TF_VAR_aws_access_key_id: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+  TF_VAR_aws_secret_access_key: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
 
 jobs:
@@ -263,6 +268,7 @@ jobs:
           fi
           export TF_VAR_kots_addon_package_url="${{ github.event.inputs.addon_package_url || inputs.addon_package_url }}"
           export TF_VAR_testim_branch="master"
+          export TF_VAR_kots_branch="${{ github.ref_name }}"
           export TF_VAR_expires_on="${{ needs.get-workspace-expiration.outputs.expiration }}"
           ./${{ matrix.test.terraform_script }} apply
 
@@ -282,6 +288,52 @@ jobs:
           terraform output -raw jumpbox_private_key > ssh.pem
           chmod 600 ssh.pem
           ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
+
+      - name: Copy playwright report from remote machine
+        if: failure()
+        working-directory: automation/cluster
+        run: |
+          jumpbox_public_ip=$(terraform output -raw jumpbox_public_ip)
+          control_plane_private_ip=$(terraform output -raw control_plane_private_ip)
+
+          # Create tarball of playwright report on control plane
+          ssh -i ssh.pem "ubuntu@$jumpbox_public_ip" \
+              "ssh -t ubuntu@$control_plane_private_ip \
+              'cd /home/ubuntu/kots/e2e/playwright && tar -czf /home/ubuntu/playwright-report.tar.gz playwright-report'"
+
+          # Copy tarball from control plane to jumpbox
+          ssh -i ssh.pem "ubuntu@$jumpbox_public_ip" \
+              "scp ubuntu@$control_plane_private_ip:/home/ubuntu/playwright-report.tar.gz /home/ubuntu/playwright-report.tar.gz"
+
+          # Copy tarball from jumpbox to local machine
+          scp -i ssh.pem "ubuntu@$jumpbox_public_ip:/home/ubuntu/playwright-report.tar.gz" ./playwright-report.tar.gz
+
+          # Extract tarball
+          tar -xzf ./playwright-report.tar.gz
+
+      - name: Upload playwright report
+        id: upload-playwright-report
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: ${{ github.job }}-${{ matrix.test.name }}-playwright-report
+          path: ./automation/cluster/playwright-report/
+  
+      - name: Print instructions to view Playwright report
+        if: ${{ failure() && steps.upload-playwright-report.outputs.artifact-url != '' }}
+        run: |
+          echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
+          echo -e "\e[1;33m                                  To view the Playwright test report:                                   \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   1- Download & extract the report from:                                                               \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;34m      ${{ steps.upload-playwright-report.outputs.artifact-url }}                                        \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   2- From inside the extracted directory, run:                                                         \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;32m      npx playwright show-report .                                                                      \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
 
       - name: Notify Slack
         if: always() && github.ref_name == 'main'

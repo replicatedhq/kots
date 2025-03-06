@@ -24,6 +24,7 @@ spec:
       containers:
       - name: proxy
         image: kurl-proxy-dev
+        imagePullPolicy: Never
         command: ["/bin/bash"]
         args: ["-c", "while true; do sleep 30; done;"]
         volumeMounts:

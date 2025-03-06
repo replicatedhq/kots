@@ -249,6 +249,7 @@ class VersionDiff extends Component<Props, State> {
           {!this.props.hideBackButton && (
             <div
               className="u-fontWeight--bold u-marginRight--20 link"
+              data-testid="diff-back-button"
               onClick={this.goBack}
             >
               <Icon

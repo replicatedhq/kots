@@ -378,6 +378,7 @@ class SecureAdminConsole extends Component<Props, State> {
                     <input
                       type="password"
                       className="Input"
+                      data-testid="login-password-input"
                       placeholder="password"
                       autoComplete="current-password"
                       value={password}

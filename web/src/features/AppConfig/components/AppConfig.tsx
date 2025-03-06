@@ -791,6 +791,7 @@ class AppConfig extends Component<Props, State> {
               <div
                 id="configSidebarWrapper"
                 className="config-sidebar-wrapper card-bg clickable"
+                data-testid="config-sidebar-wrapper"
               >
                 {configGroups?.map((group, i) => {
                   if (
@@ -866,7 +867,10 @@ class AppConfig extends Component<Props, State> {
                 })}
               </div>
             )}
-            <div className="ConfigArea--wrapper !tw-pt-0">
+            <div
+              data-testid="config-area"
+              className="ConfigArea--wrapper !tw-pt-0"
+            >
               <ConfigInfo
                 app={app}
                 fromLicenseFlow={this.props.fromLicenseFlow}
@@ -926,7 +930,10 @@ class AppConfig extends Component<Props, State> {
           className="Modal MediumSize"
         >
           {gitops?.isConnected ? (
-            <div className="Modal-body">
+            <div
+              className="Modal-body"
+              data-testid="config-next-step-modal-gitops"
+            >
               {
                 <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                   The config for {app.name} has been updated. A new commit has
@@ -954,7 +961,7 @@ class AppConfig extends Component<Props, State> {
               </div>
             </div>
           ) : (
-            <div className="Modal-body">
+            <div className="Modal-body" data-testid="config-next-step-modal">
               {isNewVersion ? (
                 <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                   The config for {app?.name} has been updated. A new version is

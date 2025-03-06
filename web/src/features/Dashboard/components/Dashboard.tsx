@@ -664,10 +664,14 @@ const Dashboard = (props: Props) => {
                   <div
                     style={{ backgroundImage: `url(${iconUri})` }}
                     className="Dashboard--appIcon u-position--relative"
+                    data-testid="dashboard-app-icon"
                   />
                 </div>
                 <div className="u-marginLeft--20">
-                  <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold break-word">
+                  <p
+                    className="u-fontSize--30 u-textColor--primary u-fontWeight--bold break-word"
+                    data-testid="dashboard-app-name"
+                  >
                     {appName}
                   </p>
                   <AppStatus

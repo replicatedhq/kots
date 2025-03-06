@@ -5,7 +5,10 @@ import Icon from "./Icon";
 export default class RestoreCompleted extends Component {
   render() {
     return (
-      <div className="u-width--full flex-column flex1 justifyContent--center u-position--relative">
+      <div
+        className="u-width--full flex-column flex1 justifyContent--center u-position--relative"
+        data-testid="restore-completed-view"
+      >
         <div className="u-flexTabletReflow flex1 alignItems--center">
           <div className="Text-wrapper flex justifyContent--center flex1">
             <div className="Text u-textAlign--center">

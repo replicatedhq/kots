@@ -329,19 +329,31 @@ class AppSnapshotRestore extends Component {
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <KotsPageTitle pageName="Snapshot Restore" showAppSlug />
         {!restoreCompleted && !restoreFailing ? (
-          <div className="flex1 flex-column alignItems--center">
-            <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginBottom--10">
+          <div
+            className="flex1 flex-column alignItems--center"
+            data-testid="restore-in-progress-view"
+          >
+            <p
+              className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginBottom--10"
+              data-testid="restore-in-progress-title"
+            >
               {" "}
               Application restore in progress{" "}
             </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
+            <p
+              className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal"
+              data-testid="restore-in-progress-description"
+            >
               {" "}
               After all volumes have been restored you will need to log back in
               to the Admin Console.{" "}
             </p>
             <div className="flex flex-column  u-marginTop--40">
               {restoreLoading && (
-                <div className="flex-column flex1 alignItems--center justifyContent--center">
+                <div
+                  className="flex-column flex1 alignItems--center justifyContent--center"
+                  data-testid="restore-in-progress-loader"
+                >
                   <Loader size="60" />
                 </div>
               )}
@@ -360,6 +372,7 @@ class AppSnapshotRestore extends Component {
                 return (
                   <div
                     className="flex flex1 u-marginTop--30 alignItems--center"
+                    data-testid={`restore-in-progress-volume-${i}`}
                     key={`${volume.name}-${i}`}
                   >
                     <div className="flex flex1">

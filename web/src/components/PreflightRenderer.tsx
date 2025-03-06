@@ -58,10 +58,16 @@ export default function PreflightRenderer(props: Props) {
               />
               <div className="flex flex1">
                 <div className="flex1">
-                  <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">
+                  <p
+                    className="u-textColor--primary u-fontSize--large u-fontWeight--bold"
+                    data-testid="preflight-message-title"
+                  >
                     {row.title}
                   </p>
-                  <div className="PreflightMessageRow u-marginTop--10">
+                  <div
+                    className="PreflightMessageRow u-marginTop--10"
+                    data-testid="preflight-message-row"
+                  >
                     <Markdown source={row.message} />
                   </div>
                   {row.learnMoreUri && (

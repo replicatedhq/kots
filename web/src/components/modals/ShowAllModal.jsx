@@ -12,7 +12,10 @@ export default function ShowAllModal(props) {
       ariaHideApp={false}
       className="MediumSize Modal"
     >
-      <div className="Modal-body flex-column flex1">
+      <div
+        className="Modal-body flex-column flex1"
+        data-testid="show-all-modal"
+      >
         <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 u-borderBottom--gray">
           {name}
         </p>

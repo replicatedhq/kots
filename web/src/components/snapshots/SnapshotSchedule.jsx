@@ -535,7 +535,10 @@ class SnapshotSchedule extends Component {
               </div>
             </div>
           )}
-          <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
+          <div
+            className="flex flex-column snapshot-form-wrapper card-bg u-padding--15"
+            data-testid="snapshots-schedule-card"
+          >
             <p className="card-title">Scheduled {featureName}s</p>
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
@@ -550,6 +553,7 @@ class SnapshotSchedule extends Component {
                     className={`${
                       this.state.activeTab === "full" ? "is-active" : ""
                     } tab-item blue`}
+                    data-testid="full-snapshots-schedule-tab"
                     onClick={() => this.toggleScheduleAction("full")}
                   >
                     Full snapshots (Instance)
@@ -558,6 +562,7 @@ class SnapshotSchedule extends Component {
                     className={`${
                       this.state.activeTab === "partial" ? "is-active" : ""
                     } tab-item blue`}
+                    data-testid="partial-snapshots-schedule-tab"
                     onClick={() => this.toggleScheduleAction("partial")}
                   >
                     Partial snapshots (Application)
@@ -566,7 +571,10 @@ class SnapshotSchedule extends Component {
               </div>
             )}
             {this.state.activeTab === "partial" && (
-              <div className="flex u-marginTop--12 u-marginBottom--15">
+              <div
+                className="flex u-marginTop--12 u-marginBottom--15"
+                data-testid="partial-snapshots-schedule-app-select"
+              >
                 <Select
                   className="replicated-select-container u-width--full"
                   classNamePrefix="replicated-select"
@@ -596,6 +604,7 @@ class SnapshotSchedule extends Component {
                     <input
                       type="checkbox"
                       className="u-cursor--pointer"
+                      data-testid="enable-scheduled-snapshots-checkbox"
                       id="autoEnabled"
                       checked={this.state.autoEnabled}
                       onChange={(e) => {
@@ -618,7 +627,10 @@ class SnapshotSchedule extends Component {
               {this.state.autoEnabled && (
                 <div className="flex-column flex1 u-position--relative u-marginBottom--40">
                   <div className="flex flex1">
-                    <div className="flex1 u-paddingRight--5">
+                    <div
+                      className="flex1 u-paddingRight--5"
+                      data-testid="snapshots-schedule-interval"
+                    >
                       <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                         Schedule
                       </p>
@@ -643,6 +655,7 @@ class SnapshotSchedule extends Component {
                       <input
                         type="text"
                         className="Input"
+                        data-testid="snapshots-schedule-cron-expression"
                         placeholder="0 0 * * MON"
                         value={this.state.frequency}
                         onChange={(e) => this.handleCronChange(e)}
@@ -650,7 +663,10 @@ class SnapshotSchedule extends Component {
                     </div>
                   </div>
                   {hasValidCron ? (
-                    <p className="cron-expression-text">
+                    <p
+                      className="cron-expression-text"
+                      data-testid="snapshots-schedule-human-readable-cron-expression"
+                    >
                       {this.state.humanReadableCron}
                     </p>
                   ) : (
@@ -677,7 +693,10 @@ class SnapshotSchedule extends Component {
                   {updatingSchedule ? "Updating schedule" : "Update schedule"}
                 </button>
                 {updateConfirm && (
-                  <div className="u-marginLeft--10 flex alignItems--center">
+                  <div
+                    className="u-marginLeft--10 flex alignItems--center"
+                    data-testid="snapshots-schedule-update-confirmation"
+                  >
                     <Icon
                       icon="check-circle-filled"
                       size={16}
@@ -702,7 +721,10 @@ class SnapshotSchedule extends Component {
         <div> &nbsp; </div>
         {/*start of retention box*/}
         <div className="flex flex-column">
-          <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
+          <div
+            className="flex flex-column snapshot-form-wrapper card-bg u-padding--15"
+            data-testid="snapshots-retention-policy-card"
+          >
             <p className="card-title">Retention policy</p>
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 retention">
@@ -726,6 +748,7 @@ class SnapshotSchedule extends Component {
                     <input
                       type="text"
                       className="Input"
+                      data-testid="snapshots-retention-value"
                       placeholder="4"
                       value={this.state.retentionInput}
                       onChange={(e) => {
@@ -733,7 +756,10 @@ class SnapshotSchedule extends Component {
                       }}
                     />
                   </div>
-                  <div className="flex1 u-paddingLeft--5">
+                  <div
+                    className="flex1 u-paddingLeft--5"
+                    data-testid="snapshots-retention-unit"
+                  >
                     <Select
                       className="replicated-select-container"
                       classNamePrefix="replicated-select"
@@ -761,7 +787,10 @@ class SnapshotSchedule extends Component {
                     : "Update retention policy"}
                 </button>
                 {updateRetentionConfirm && (
-                  <div className="u-marginLeft--10 flex alignItems--center">
+                  <div
+                    className="u-marginLeft--10 flex alignItems--center"
+                    data-testid="snapshots-retention-policy-update-confirmation"
+                  >
                     <Icon
                       icon="check-circle-filled"
                       size={16}
