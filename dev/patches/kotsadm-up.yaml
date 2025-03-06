@@ -26,6 +26,7 @@ spec:
         imagePullPolicy: Never
       - name: schemahero-apply
         image: kotsadm-migrations-dev
+        imagePullPolicy: Never
 {{- end }}
       containers:
       - name: kotsadm
