@@ -626,7 +626,10 @@ class AppSnapshots extends Component {
           className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center"
           style={{ maxWidth: "770px" }}
         >
-          <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20" data-testid="partial-snapshots-recommendation">
+          <div
+            className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20"
+            data-testid="partial-snapshots-recommendation"
+          >
             <Icon icon="info" className="tw-mr-2" size={22} />
             <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--accent">
               It’s recommended that you use{" "}
@@ -644,7 +647,10 @@ class AppSnapshots extends Component {
               .
             </p>
           </div>
-          <div className="AppSnapshots--wrapper card-bg flex-column u-marginTop--20" data-testid="partial-snapshots-card">
+          <div
+            className="AppSnapshots--wrapper card-bg flex-column u-marginTop--20"
+            data-testid="partial-snapshots-card"
+          >
             <div className="flex flex-column u-marginBottom--15">
               <div className="flex justifyContent--spaceBetween">
                 <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">

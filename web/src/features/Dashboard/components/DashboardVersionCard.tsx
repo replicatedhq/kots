@@ -658,7 +658,9 @@ const DashboardVersionCard = (props: Props) => {
                 Sequence {currentVersion?.sequence}
               </p>
             </div>
-            <div data-testid="current-version-status">{getCurrentVersionStatus(currentVersion)}</div>
+            <div data-testid="current-version-status">
+              {getCurrentVersionStatus(currentVersion)}
+            </div>
             <div className="flex alignItems--center u-marginTop--10">
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
                 {currentVersion?.status === "failed"
@@ -1476,7 +1478,10 @@ const DashboardVersionCard = (props: Props) => {
   }
 
   return (
-    <div className="flex-column flex1 dashboard-card card-bg" data-testid="dashboard-version-card">
+    <div
+      className="flex-column flex1 dashboard-card card-bg"
+      data-testid="dashboard-version-card"
+    >
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
         <p className="card-title">Version</p>
         {!props.adminConsoleMetadata?.isEmbeddedCluster && (

@@ -457,7 +457,10 @@ class AirgapRegistrySettings extends Component<Props, State> {
     const showStatusError = rewriteStatus === "failed";
 
     return (
-      <div className="card-item u-padding--15" data-testid="airgap-registry-settings-card">
+      <div
+        className="card-item u-padding--15"
+        data-testid="airgap-registry-settings-card"
+      >
         <form>
           <div className="flex u-marginBottom--20">
             <div className="flex1">
@@ -526,7 +529,10 @@ class AirgapRegistrySettings extends Component<Props, State> {
             </div>
           </div>
           {hideTestConnection ? null : (
-            <div className="test-connection-box u-marginBottom--20" data-testid="test-connection-box">
+            <div
+              className="test-connection-box u-marginBottom--20"
+              data-testid="test-connection-box"
+            >
               <div className="flex">
                 <div>
                   <button
@@ -627,9 +633,15 @@ class AirgapRegistrySettings extends Component<Props, State> {
         {hideCta ? null : (
           <div className="u-paddingTop--10">
             {showProgress ? (
-              <div className="u-marginTop--20" data-testid="airgap-registry-settings-progress">
+              <div
+                className="u-marginTop--20"
+                data-testid="airgap-registry-settings-progress"
+              >
                 <Loader size="30" />
-                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10" data-testid="progress-text">
+                <p
+                  className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10"
+                  data-testid="progress-text"
+                >
                   {statusText}
                 </p>
               </div>

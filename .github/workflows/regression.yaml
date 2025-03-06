@@ -301,11 +301,11 @@ jobs:
               'cd /home/ubuntu/kots/e2e/playwright && tar -czf /home/ubuntu/playwright-report.tar.gz playwright-report'"
 
           # Copy tarball from control plane to jumpbox
-          ssh -i ssh.pem ubuntu@$jumpbox_public_ip \
+          ssh -i ssh.pem "ubuntu@$jumpbox_public_ip" \
               "scp ubuntu@$control_plane_private_ip:/home/ubuntu/playwright-report.tar.gz /home/ubuntu/playwright-report.tar.gz"
 
           # Copy tarball from jumpbox to local machine
-          scp -i ssh.pem ubuntu@$jumpbox_public_ip:/home/ubuntu/playwright-report.tar.gz ./playwright-report.tar.gz
+          scp -i ssh.pem "ubuntu@$jumpbox_public_ip:/home/ubuntu/playwright-report.tar.gz" ./playwright-report.tar.gz
 
           # Extract tarball
           tar -xzf ./playwright-report.tar.gz

@@ -129,7 +129,10 @@ export default class SnapshotInstallationBox extends Component {
             renderNotVeleroMessage()
           )}
           {snapshotSettings?.veleroVersion ? (
-            <span className="flex alignItems--center u-marginTop--10 u-fontSize--small u-fontWeight--medium u-textColor--primary" data-testid="velero-is-installed-message">
+            <span
+              className="flex alignItems--center u-marginTop--10 u-fontSize--small u-fontWeight--medium u-textColor--primary"
+              data-testid="velero-is-installed-message"
+            >
               <Icon
                 icon="check-circle-filled"
                 size={16}

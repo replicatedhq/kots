@@ -299,7 +299,10 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
         ariaHideApp={false}
         className="Modal SmallSize ConfigureUpdatesModal"
       >
-        <div className="u-position--relative flex-column u-padding--20" data-testid="automatic-updates-modal">
+        <div
+          className="u-position--relative flex-column u-padding--20"
+          data-testid="automatic-updates-modal"
+        >
           <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">
             Configure automatic updates
           </span>

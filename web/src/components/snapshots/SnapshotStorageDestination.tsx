@@ -1774,7 +1774,10 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         .
                       </div>
                     )}
-                  <div className="flex1" data-testid="snapshot-storage-destination">
+                  <div
+                    className="flex1"
+                    data-testid="snapshot-storage-destination"
+                  >
                     {availableDestinations.length > 1 ? (
                       <Select
                         className="replicated-select-container"

@@ -45,7 +45,10 @@ export default function ShowLogsModal(props) {
           <div className="flex-column flex1">
             <div className="flex-column flex1">
               {!logs.renderError && renderLogsTabs}
-              <div className="flex-column flex1 u-border--gray monaco-editor-wrapper" data-testid="deploy-logs-modal-editor">
+              <div
+                className="flex-column flex1 u-border--gray monaco-editor-wrapper"
+                data-testid="deploy-logs-modal-editor"
+              >
                 <MonacoEditor
                   language="json"
                   value={logs.renderError || logs[selectedTab]}

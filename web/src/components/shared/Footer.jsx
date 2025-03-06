@@ -75,7 +75,9 @@ export class Footer extends Component {
       >
         <div className="container flex1 flex justifyContent--center alignItems--center">
           <div className="FooterItem-wrapper">
-            <span className="FooterItem" data-testid="build-version">{getBuildVersion()}</span>
+            <span className="FooterItem" data-testid="build-version">
+              {getBuildVersion()}
+            </span>
           </div>
           {this.state.targetKotsVersion && (
             <div className="TargetKotsVersionWrapper flex u-marginLeft--10">

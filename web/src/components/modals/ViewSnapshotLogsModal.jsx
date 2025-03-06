@@ -23,7 +23,11 @@ export default function ViewSnapshotLogsModal(props) {
       ariaHideApp={false}
       className="Modal FullSize"
     >
-      <div className="Modal-body flex1 flex-column" style={{ height: "97%" }} data-testid="snapshot-logs-modal">
+      <div
+        className="Modal-body flex1 flex-column"
+        style={{ height: "97%" }}
+        data-testid="snapshot-logs-modal"
+      >
         <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--5">
           {snapshotDetails?.name} logs
         </p>

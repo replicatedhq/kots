@@ -76,7 +76,10 @@ class SnapshotRow extends Component {
                 style={{ gap: "60px" }}
               >
                 {snapshot?.volumeSizeHuman && (
-                  <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center" data-testid="snapshot-volume-size">
+                  <p
+                    className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center"
+                    data-testid="snapshot-volume-size"
+                  >
                     <span className="icon snapshot-volume-size-icon" />{" "}
                     {snapshot?.volumeSizeHuman}{" "}
                   </p>

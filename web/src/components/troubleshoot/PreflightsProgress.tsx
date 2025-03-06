@@ -59,7 +59,10 @@ export default function PreflightProgress(props: {
 
   const readableName = getReadableCollectorName(pendingPreflightCheckName);
   let statusDiv = (
-    <div className="u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center" data-testid="preflight-progress-status">
+    <div
+      className="u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center"
+      data-testid="preflight-progress-status"
+    >
       <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary">
         {pendingPreflightCheckName && (
           <Loader className="flex u-marginRight--5" size="24" />
@@ -73,7 +76,10 @@ export default function PreflightProgress(props: {
     <div className="PreflightProgress--wrapper flex-1-auto flex-column alignItems--center justifyContent--center u-marginTop--10">
       <div className="flex1 flex-column u-textColor--primary">
         <div className="flex1 flex-column alignItems--center justifyContent--center">
-          <h1 className="u-fontSize--larger u-fontWeight--bold u-marginBottom--10" data-testid="preflight-progress-heading">
+          <h1
+            className="u-fontSize--larger u-fontWeight--bold u-marginBottom--10"
+            data-testid="preflight-progress-heading"
+          >
             Collecting information about your cluster
           </h1>
           <div className="flex alignItems--center u-marginTop--20">

@@ -113,7 +113,10 @@ class KotsApplicationTree extends Component<Props, State> {
       : "";
 
     return (
-      <div className="flex-column flex1 ApplicationTree--wrapper u-paddingBottom--30" data-testid="view-files-page">
+      <div
+        className="flex-column flex1 ApplicationTree--wrapper u-paddingBottom--30"
+        data-testid="view-files-page"
+      >
         <KotsPageTitle pageName="View Files" showAppSlug />
         {!this.props.isEmbeddedCluster && (
           <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">
@@ -143,11 +146,17 @@ class KotsApplicationTree extends Component<Props, State> {
               )}
             </div>
           </div>
-          <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative" data-testid="file-editor">
+          <div
+            className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative"
+            data-testid="file-editor"
+          >
             {this.state.selectedFile === "" ||
             this.state.selectedFile === "/" ? (
               <div className="flex-column flex1 alignItems--center justifyContent--center">
-                <p className="u-textColor--bodyCopy u-fontSize--normal u-fontWeight--medium" data-testid="file-editor-empty-state">
+                <p
+                  className="u-textColor--bodyCopy u-fontSize--normal u-fontWeight--medium"
+                  data-testid="file-editor-empty-state"
+                >
                   Select a file from the file explorer to view it here.
                 </p>
               </div>

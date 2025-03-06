@@ -129,7 +129,10 @@ const PreflightResultErrors = (props: Props) => {
   const displayErrorString = errors !== undefined ? errors.join("\n") : "";
 
   return (
-    <div className="flex flex1 flex-column" data-testid="preflight-result-errors">
+    <div
+      className="flex flex1 flex-column"
+      data-testid="preflight-result-errors"
+    >
       <div className="flex flex1 u-height--full u-width--full u-marginTop--5 tw-mb-6">
         <div className="flex-column u-width--full u-overflow--hidden u-paddingTop--30 u-paddingBottom--5 alignItems--center justifyContent--center">
           <div className="PreChecksBox-wrapper flex-column u-padding--20">
@@ -151,7 +154,10 @@ const PreflightResultErrors = (props: Props) => {
               </h2>
             </div>
             {props.showRbacError && (
-              <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--normal" data-testid="preflight-rbac-error-message">
+              <p
+                className="u-marginTop--10 u-marginBottom--10 u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--normal"
+                data-testid="preflight-rbac-error-message"
+              >
                 The Kubernetes RBAC policy that the Admin Console is running
                 with does not have access to complete the Preflight Checks. It’s
                 recommended that you run these manually before proceeding.
@@ -187,7 +193,10 @@ const PreflightResultErrors = (props: Props) => {
                 />
               </div>
             )}
-            <div className="u-marginTop--20" data-testid="manual-preflight-instructions">
+            <div
+              className="u-marginTop--20"
+              data-testid="manual-preflight-instructions"
+            >
               <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
                 Run Preflight Checks Manually
               </h2>

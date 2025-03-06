@@ -36,7 +36,10 @@ const ConfirmDeploymentModal = ({
       className="Modal DefaultSize"
     >
       <div className="Modal-body" data-testid="confirm-deployment-modal">
-        <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10" data-testid="confirm-deployment-modal-text">
+        <p
+          className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10"
+          data-testid="confirm-deployment-modal-text"
+        >
           {confirmType === "rollback"
             ? "Rollback to"
             : confirmType === "redeploy"

@@ -583,7 +583,10 @@ const UploadLicenseFile = (props: Props) => {
                 )}
               </div>
               {errorMessage && (
-                <div className="u-marginTop--10" data-testid="upload-license-error">
+                <div
+                  className="u-marginTop--10"
+                  data-testid="upload-license-error"
+                >
                   <span className="u-fontSize--small u-textColor--error u-marginRight--5 u-fontWeight--bold">
                     Unable to install license
                   </span>
@@ -665,7 +668,10 @@ const UploadLicenseFile = (props: Props) => {
                 </CodeSnippet>
               </div>
             ) : (
-              <div className="flex flex-column" data-testid="remove-app-instructions">
+              <div
+                className="flex flex-column"
+                data-testid="remove-app-instructions"
+              >
                 <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">
                   Run this command to remove the app
                 </p>

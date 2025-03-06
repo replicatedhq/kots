@@ -329,19 +329,31 @@ class AppSnapshotRestore extends Component {
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <KotsPageTitle pageName="Snapshot Restore" showAppSlug />
         {!restoreCompleted && !restoreFailing ? (
-          <div className="flex1 flex-column alignItems--center" data-testid="restore-in-progress-view">
-            <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginBottom--10" data-testid="restore-in-progress-title">
+          <div
+            className="flex1 flex-column alignItems--center"
+            data-testid="restore-in-progress-view"
+          >
+            <p
+              className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginBottom--10"
+              data-testid="restore-in-progress-title"
+            >
               {" "}
               Application restore in progress{" "}
             </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal" data-testid="restore-in-progress-description">
+            <p
+              className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal"
+              data-testid="restore-in-progress-description"
+            >
               {" "}
               After all volumes have been restored you will need to log back in
               to the Admin Console.{" "}
             </p>
             <div className="flex flex-column  u-marginTop--40">
               {restoreLoading && (
-                <div className="flex-column flex1 alignItems--center justifyContent--center" data-testid="restore-in-progress-loader">
+                <div
+                  className="flex-column flex1 alignItems--center justifyContent--center"
+                  data-testid="restore-in-progress-loader"
+                >
                   <Loader size="60" />
                 </div>
               )}

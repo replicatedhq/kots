@@ -36,8 +36,15 @@ const NavBarDropdown = ({ handleLogOut, isEmbeddedCluster }) => {
   }, [showDropdown]);
 
   return (
-    <div className="navbar-dropdown-container" data-testid="navbar-dropdown-container">
-      <span tabIndex={0} onClick={() => setShowDropdown(!showDropdown)} data-testid="navbar-dropdown-button">
+    <div
+      className="navbar-dropdown-container"
+      data-testid="navbar-dropdown-container"
+    >
+      <span
+        tabIndex={0}
+        onClick={() => setShowDropdown(!showDropdown)}
+        data-testid="navbar-dropdown-button"
+      >
         <Icon icon="more-circle-outline" size={20} className="gray-color" />
       </span>
       <ul
@@ -55,7 +62,11 @@ const NavBarDropdown = ({ handleLogOut, isEmbeddedCluster }) => {
           </li>
         )}
         <li>
-          <p data-qa="Navbar--logOutButton" onClick={handleLogOut} data-testid="log-out">
+          <p
+            data-qa="Navbar--logOutButton"
+            onClick={handleLogOut}
+            data-testid="log-out"
+          >
             Log out
           </p>
         </li>

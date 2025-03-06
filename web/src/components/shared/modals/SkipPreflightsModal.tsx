@@ -30,7 +30,10 @@ export default function SkipPreflightsModal(props: Props) {
       <div className="Modal-body" data-testid="skip-preflights-modal">
         <div className="flex flex-column justifyContent--center alignItems--center">
           <span className="icon yellowWarningIcon" />
-          <p className="u-fontSize--jumbo2 u-fontWeight--bold u-lineHeight--medium u-textColor--warning u-marginTop--20" data-testid="skip-preflights-modal-title">
+          <p
+            className="u-fontSize--jumbo2 u-fontWeight--bold u-lineHeight--medium u-textColor--warning u-marginTop--20"
+            data-testid="skip-preflights-modal-title"
+          >
             {" "}
             Ignoring Preflights is NOT Recommended{" "}
           </p>

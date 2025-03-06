@@ -214,7 +214,9 @@ export default class DashboardGraphsCard extends Component<Props, State> {
       <div
         className="dashboard-card graph GraphCard-content--wrapper flex-column"
         key={chart.title}
-        data-testid={`graph-${chart.title?.toLowerCase().replaceAll(/\s+/g, '-')}`}
+        data-testid={`graph-${chart.title
+          ?.toLowerCase()
+          .replaceAll(/\s+/g, "-")}`}
       >
         <XYPlot
           width={344}

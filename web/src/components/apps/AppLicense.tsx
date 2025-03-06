@@ -368,7 +368,10 @@ const AppLicenseComponent = () => {
     <div className="flex flex-column justifyContent--center alignItems--center">
       <KotsPageTitle pageName="License" showAppSlug />
       {size(appLicense) > 0 ? (
-        <div className="License--wrapper flex-column card-bg" data-testid="license-card">
+        <div
+          className="License--wrapper flex-column card-bg"
+          data-testid="license-card"
+        >
           <div className="flex flex-auto alignItems--center">
             <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal card-title">
               {" "}
@@ -394,12 +397,18 @@ const AppLicenseComponent = () => {
             <div className=" flex flex1 justifyContent--spaceBetween">
               <div className="flex1 flex-column u-paddingRight--20">
                 <div className="flex flex-auto alignItems--center">
-                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal card-item-title break-word" data-testid="license-customer-name">
+                  <span
+                    className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal card-item-title break-word"
+                    data-testid="license-customer-name"
+                  >
                     {" "}
                     {appLicense.assignee}{" "}
                   </span>
                   {appLicense?.channelName && (
-                    <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10" data-testid="license-channel-name">
+                    <span
+                      className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10"
+                      data-testid="license-channel-name"
+                    >
                       {" "}
                       {appLicense.channelName}{" "}
                     </span>
