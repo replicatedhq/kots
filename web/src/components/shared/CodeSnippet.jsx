@@ -87,7 +87,6 @@ class CodeSnippet extends Component {
   render() {
     const {
       className,
-      dataTestId,
       children,
       language,
       preText,
