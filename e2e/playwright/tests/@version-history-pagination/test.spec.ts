@@ -1,14 +1,10 @@
 import { test, expect, Page } from '@playwright/test';
 import { login, uploadLicense } from '../shared';
 import { execSync } from 'child_process';
+import { NUM_OF_VERSIONS, APP_SLUG, NAMESPACE, DEFAULT_PAGE_SIZE, LATEST_SEQUENCE } from './constants';
 
 test('version history pagination', async ({ page }) => {
   test.setTimeout(300000); // 300 seconds, 5 minutes
-  const testAppSlug = "version-history-pagination";
-  const testNamespace = "version-history-pagination";
-  const testNumOfVersions = 251;
-  const testLatestSequence = 251;
-  const testDefaultPageSize = 20;
   await login(page);
   await uploadLicense(page, expect, "version-history-pagination.yaml");
   await expect(page.locator('#app')).toContainText('Configure Version History Pagination', { timeout: 15000 });
@@ -18,24 +14,24 @@ test('version history pagination', async ({ page }) => {
   
   // create many versions via the CLI
   const startTime = Date.now();
-  for (let i = 0; i < testNumOfVersions; i++) {
+  for (let i = 0; i < NUM_OF_VERSIONS; i++) {
     const commandStartTime = Date.now();
-    execSync(`kubectl kots set config ${testAppSlug} -n ${testNamespace} item_1="version-${i}"`);
+    execSync(`kubectl kots set config ${APP_SLUG} -n ${NAMESPACE} item_1="version-${i}"`);
     const commandEndTime = Date.now();
     const commandDuration = (commandEndTime - commandStartTime) / 1000; // Convert to seconds
     const totalDuration = (commandEndTime - startTime) / 1000; // Convert to seconds
-    console.log(`creating version ${i+1} of ${testNumOfVersions} (took ${commandDuration.toFixed(2)}s, average ${(totalDuration / (i + 1)).toFixed(2)}s)`);
+    console.log(`creating version ${i+1} of ${NUM_OF_VERSIONS} (took ${commandDuration.toFixed(2)}s, average ${(totalDuration / (i + 1)).toFixed(2)}s)`);
   }
   const endTime = Date.now();
   const totalDuration = (endTime - startTime) / 1000; // Convert to seconds
-  console.log(`total time to create ${testNumOfVersions} versions: ${totalDuration.toFixed(2)}s`);
+  console.log(`total time to create ${NUM_OF_VERSIONS} versions: ${totalDuration.toFixed(2)}s`);
 
   // validate that the versions created via the CLI are visible via the CLI with pagination
   const versionCheckConfig: VersionCheckConfig = {
-    testAppSlug: testAppSlug,
-    testNamespace: testNamespace,
-    testDefaultPageSize: testDefaultPageSize,
-    testLatestSequence: testLatestSequence,
+    testAppSlug: APP_SLUG,
+    testNamespace: NAMESPACE,
+    testDefaultPageSize: DEFAULT_PAGE_SIZE,
+    testLatestSequence: LATEST_SEQUENCE,
   };
 
   checkVersions(versionCheckConfig);
@@ -46,38 +42,38 @@ test('version history pagination', async ({ page }) => {
   await expect(page.getByText('All versions')).toBeVisible();
   // should be 251 (new version available at top of page)
   await expect(page.getByTestId('available-updates-card').getByTestId('version-sequence')).toBeVisible();
-  await expect(page.getByTestId('available-updates-card').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence}`);
+  await expect(page.getByTestId('available-updates-card').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE}`);
   // should be 251 (first entry in all versions card)
   await expect(page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByTestId('version-sequence')).toBeVisible();
-  await expect(page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence}`);
+  await expect(page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE}`);
   // should be 250 (second entry in all versions card)
   await expect(page.getByTestId('version-history-row-1').getByTestId('version-sequence')).toBeVisible();
-  await expect(page.getByTestId('version-history-row-1').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - 1}`);
+  await expect(page.getByTestId('version-history-row-1').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - 1}`);
 
   // should be 232 (last entry in first page of all versions card)
   await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toBeVisible();
-  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - 19}`);
-  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 1 - 20 of ${testNumOfVersions + 1}`);
+  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - 19}`);
+  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 1 - 20 of ${NUM_OF_VERSIONS + 1}`);
 
   console.log("validating the second page of versions via the UI");
   await page.getByText('Next').click();
   // should be 21 - 40 of 252
-  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 21 - 40 of ${testNumOfVersions + 1}`);
-  await expect(page.getByTestId('available-updates-card').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence}`);
-  await expect(page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - testDefaultPageSize}`);
-  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - testDefaultPageSize - 19}`);
+  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 21 - 40 of ${NUM_OF_VERSIONS + 1}`);
+  await expect(page.getByTestId('available-updates-card').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE}`);
+  await expect(page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - DEFAULT_PAGE_SIZE}`);
+  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - DEFAULT_PAGE_SIZE - 19}`);
 
   // make sure that going further forward and backward works
   console.log("validating going further forward and backward in the UI");
   await page.getByText('Next').click();
-  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 41 - 60 of ${testNumOfVersions + 1}`);
-  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - (testDefaultPageSize * 2) - 19}`);
+  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 41 - 60 of ${NUM_OF_VERSIONS + 1}`);
+  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (DEFAULT_PAGE_SIZE * 2) - 19}`);
   await page.getByText('Next').click();
-  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 61 - 80 of ${testNumOfVersions + 1}`);
-  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - (testDefaultPageSize * 3) - 19}`);
+  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 61 - 80 of ${NUM_OF_VERSIONS + 1}`);
+  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (DEFAULT_PAGE_SIZE * 3) - 19}`);
   await page.getByText('Prev').click();
-  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 41 - 60 of ${testNumOfVersions + 1}`);
-  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - (testDefaultPageSize * 2) - 19}`);
+  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 41 - 60 of ${NUM_OF_VERSIONS + 1}`);
+  await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (DEFAULT_PAGE_SIZE * 2) - 19}`);
   
   // go back to the dashboard to reset things
   await page.getByRole('link', { name: 'Dashboard' }).click();
@@ -88,23 +84,23 @@ test('version history pagination', async ({ page }) => {
   await page.getByRole('link', { name: 'Version history' }).click();
   await expect(page.getByText('New version available')).toBeVisible();
   await page.getByRole('combobox').selectOption('100');
-  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 1 - 100 of ${testNumOfVersions + 1}`);
+  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 1 - 100 of ${NUM_OF_VERSIONS + 1}`);
   await page.getByText('Next').click();
-  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 101 - 200 of ${testNumOfVersions + 1}`);
+  await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 101 - 200 of ${NUM_OF_VERSIONS + 1}`);
   // the bottom of the second page should be the 199th-from-latest version (52)
-  await expect(page.getByTestId('version-history-row-99').getByTestId('version-sequence')).toContainText(`Sequence ${testLatestSequence - (100 * 1) - 99}`);
+  await expect(page.getByTestId('version-history-row-99').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (DEFAULT_PAGE_SIZE * 1) - 99}`);
   
   console.log("validating deploying the a specific older version via the UI");
   await page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByRole('button', { name: 'Deploy' }).click();
   // the first version on the second page should be the 100th-from-latest version (151)
-  await expect(page.getByLabel('Confirm deployment').getByRole('paragraph')).toContainText(`(Sequence ${testLatestSequence - 100})?`);
+  await expect(page.getByLabel('Confirm deployment').getByRole('paragraph')).toContainText(`(Sequence ${LATEST_SEQUENCE - 100})?`);
   await page.getByRole('button', { name: 'Yes, deploy' }).click();
   await expect(page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByTestId('version-status').locator('span')).toContainText('Currently deployed version');
 
   // ensure that the deployed version and latest version are both visible on the dashboard
   await page.getByRole('link', { name: 'Dashboard' }).click();
-  await expect(page.getByTestId('page-dashboard')).toContainText(`Sequence ${testLatestSequence - 100}`);
-  await expect(page.getByTestId('page-dashboard')).toContainText(`Sequence ${testLatestSequence}`);
+  await expect(page.getByTestId('page-dashboard')).toContainText(`Sequence ${LATEST_SEQUENCE - 100}`);
+  await expect(page.getByTestId('page-dashboard')).toContainText(`Sequence ${LATEST_SEQUENCE}`);
 });
 
 interface VersionCheckConfig {
