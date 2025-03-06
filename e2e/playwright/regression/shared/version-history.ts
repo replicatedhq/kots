@@ -1,10 +1,10 @@
 import { Page, Expect } from '@playwright/test';
 import * as uuid from "uuid";
 
-import { promoteRelease } from './vendor-api';
+import { promoteRelease } from './api';
 import {
   validateClusterAdminPreflightResults,
-  validateMinimalRBACPreflights
+  validateMinimalRBACPreflightsPage
 } from './preflights';
 
 export const validateCurrentVersionCard = async (page: Page, expect: Expect, versionLabel: string, sequence: number) => {
@@ -40,8 +40,7 @@ export const validateVersionMinimalRBACPreflights = async (page: Page, expect: E
   await expect(versionRow).toContainText(`Sequence ${sequence}`);
 
   await versionRow.getByTestId("preflight-icon").click();
-  await validateMinimalRBACPreflights(page, expect, 15000);
-  await page.getByTestId("preflight-results-back-button").click();
+  await validateMinimalRBACPreflightsPage(page, expect, 15000);
 };
 
 export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
