@@ -87,7 +87,7 @@ test('version history pagination', async ({ page }) => {
   await page.getByTestId('pager-next').click();
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 101 - 200 of ${NUM_OF_VERSIONS + 1}`);
   // the bottom of the second page should be the 199th-from-latest version (52)
-  await expect(page.getByTestId('version-history-row-99').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (DEFAULT_PAGE_SIZE * 1) - 99}`);
+  await expect(page.getByTestId('version-history-row-99').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (100 * 1) - 99}`);
   
   console.log("validating deploying the a specific older version via the UI");
   await page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByRole('button', { name: 'Deploy' }).click();
