@@ -626,10 +626,13 @@ class AppSnapshots extends Component {
           className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center"
           style={{ maxWidth: "770px" }}
         >
-          <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
+          <div
+            className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20"
+            data-testid="partial-snapshots-recommendation"
+          >
             <Icon icon="info" className="tw-mr-2" size={22} />
             <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--accent">
-              It’s recommend that you use{" "}
+              It’s recommended that you use{" "}
               <Link to="/snapshots" className="link u-fontSize--small">
                 Full snapshots (Instance){" "}
               </Link>{" "}
@@ -644,7 +647,10 @@ class AppSnapshots extends Component {
               .
             </p>
           </div>
-          <div className="AppSnapshots--wrapper card-bg flex-column u-marginTop--20">
+          <div
+            className="AppSnapshots--wrapper card-bg flex-column u-marginTop--20"
+            data-testid="partial-snapshots-card"
+          >
             <div className="flex flex-column u-marginBottom--15">
               <div className="flex justifyContent--spaceBetween">
                 <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">
@@ -655,6 +661,7 @@ class AppSnapshots extends Component {
                   <Link
                     to={`/snapshots/settings?${selectedApp.slug}`}
                     className="link u-fontSize--small u-fontWeight--bold flex alignItems--center"
+                    data-testid="partial-snapshots-settings-link"
                   >
                     <Icon
                       icon="settings-gear-outline"
@@ -703,7 +710,7 @@ class AppSnapshots extends Component {
               </p>
             </div>
             <div className="flex flex-auto u-marginBottom--15 alignItems--flexStart justifyContent--spaceBetween">
-              <div className="flex">
+              <div className="flex" data-testid="partial-snapshots-app-select">
                 <Select
                   className="replicated-select-container app"
                   classNamePrefix="replicated-select"
@@ -727,8 +734,9 @@ class AppSnapshots extends Component {
             ) : null}
             {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" && (
               <div className="flex flex-column">
-                {snapshots?.map((snapshot) => (
+                {snapshots?.map((snapshot, index) => (
                   <SnapshotRow
+                    index={index}
                     key={`snapshot-${snapshot.name}-${snapshot.started}`}
                     snapshot={snapshot}
                     appSlug={selectedApp.slug}

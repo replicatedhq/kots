@@ -1,6 +1,6 @@
 FROM golang:1.24-alpine AS dlv-builder
 
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.23.1
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.24.0
 
 FROM golang:1.24-alpine
 
@@ -40,6 +40,7 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
 WORKDIR /replicatedhq/kots
 
 COPY --from=dlv-builder /go/bin/dlv /dlv
+COPY ./deploy/assets /scripts
 COPY ./bin/kotsadm /kotsadm
 COPY ./bin/kots /kots
 

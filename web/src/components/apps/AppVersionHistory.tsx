@@ -580,6 +580,7 @@ class AppVersionHistory extends Component<Props, State> {
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
+              data-testid={`logs-tab-${tab}`}
               key={tab}
               onClick={() => this.setState({ selectedTab: tab })}
             >
@@ -1868,6 +1869,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   <Icon
                                     icon="release-notes"
                                     className="clickable"
+                                    data-testid="current-release-notes-icon"
                                     size={24}
                                     onClick={() =>
                                       this.showReleaseNotes(
@@ -1897,6 +1899,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       )
                                     }
                                     data-tip="View deploy logs"
+                                    data-testid="current-deploy-logs-icon"
                                   >
                                     <Icon
                                       icon="view-logs"
@@ -2027,7 +2030,10 @@ class AppVersionHistory extends Component<Props, State> {
                                       {checkingForUpdates &&
                                       !this.props.outletContext
                                         .isBundleUploading ? (
-                                        <div className="flex alignItems--center u-marginRight--20">
+                                        <div
+                                          className="flex alignItems--center u-marginRight--20"
+                                          data-testid="check-for-update-progress"
+                                        >
                                           <Loader
                                             className="u-marginRight--5"
                                             size="15"
@@ -2153,7 +2159,7 @@ class AppVersionHistory extends Component<Props, State> {
 
                 {/* Diff overlay */}
                 {showDiffOverlay && (
-                  <div className="DiffOverlay">
+                  <div className="DiffOverlay" data-testid="diff-overlay">
                     <VersionDiff
                       slug={this.props.params?.slug}
                       firstSequence={firstSequence}

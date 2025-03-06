@@ -45,7 +45,7 @@ export default function BackupRestoreModal(props) {
       contentLabel="Modal"
       className="Modal ConfigureSnapshots"
     >
-      <div className="Modal-body">
+      <div className="Modal-body" data-testid="backup-restore-modal">
         <div className="flex flex-column">
           <div
             className="flex"
@@ -193,6 +193,7 @@ export default function BackupRestoreModal(props) {
                     Command has been copied to your clipboard
                   </span>
                 }
+                dataTestId="restore-command"
               >
                 {restoreCommand}
               </CodeSnippet>

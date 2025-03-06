@@ -36,7 +36,7 @@ export default function DeleteSnapshotModal(props: DeleteSnapshotModalProps) {
       contentLabel="Modal"
       className="Modal DefaultSize"
     >
-      <div className="Modal-body">
+      <div className="Modal-body" data-testid="delete-snapshot-modal">
         <div className="flex flex-column">
           <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">
             Delete {featureName}

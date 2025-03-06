@@ -36,7 +36,10 @@ const ConfigInfo = ({ fromLicenseFlow, app }) => {
   if (size(pendingVersions) > 0 && currentSequence === sequence) {
     return (
       <div className="ConfigInfo current justifyContent--center">
-        <p className="flex alignItems--center u-marginRight--5">
+        <p
+          className="flex alignItems--center u-marginRight--5"
+          data-testid="config-info-current"
+        >
           <Icon icon="info" size={18} className="success-color flex tw-mr-2" />
           This is the currently deployed config. There{" "}
           {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)}{" "}
@@ -45,6 +48,7 @@ const ConfigInfo = ({ fromLicenseFlow, app }) => {
         <Link
           to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`}
           className="link"
+          data-testid="config-info-edit-latest"
         >
           {" "}
           Edit the latest config{" "}
@@ -78,7 +82,10 @@ const ConfigInfo = ({ fromLicenseFlow, app }) => {
     const numVersionsNewer =
       app?.downstream?.pendingVersions?.length - pendingSequenceInxex;
     return (
-      <div className="ConfigInfo newer justifyContent--center">
+      <div
+        className="ConfigInfo newer justifyContent--center"
+        data-testid="config-info-newer"
+      >
         <p className="flex alignItems--center u-marginRight--5">
           <Icon icon="info" size={18} className="flex tw-mr-2" />
           This config is {numVersionsNewer} version

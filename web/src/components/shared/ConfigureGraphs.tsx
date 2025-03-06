@@ -1,7 +1,7 @@
 import { ChangeEvent } from "react";
 
 const ConfigureGraphs = ({
-  toggleConfigureGraphs,
+  closeConfigureGraphsModal,
   updatePromValue,
   promValue,
   savingPromValue,
@@ -9,7 +9,7 @@ const ConfigureGraphs = ({
   onPromValueChange,
   placeholder,
 }: {
-  toggleConfigureGraphs?: () => void;
+  closeConfigureGraphsModal?: () => void;
   updatePromValue?: () => void;
   promValue?: string;
   savingPromValue?: boolean;
@@ -20,10 +20,10 @@ const ConfigureGraphs = ({
   return (
     <div
       className={`${
-        toggleConfigureGraphs ? "Modal-body" : "ConfigureGraphs--wrapper"
+        closeConfigureGraphsModal ? "Modal-body" : "ConfigureGraphs--wrapper"
       } flex-column flex1`}
     >
-      {toggleConfigureGraphs && (
+      {closeConfigureGraphsModal && (
         <h2 className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--10">
           Configure graphs
         </h2>
@@ -42,6 +42,7 @@ const ConfigureGraphs = ({
           <input
             type="text"
             className="Input u-marginRight--10"
+            data-testid="prometheus-endpoint"
             placeholder={
               placeholder ||
               "https://prometheus-k8s.default.svc.cluster.local:9090"
@@ -63,10 +64,10 @@ const ConfigureGraphs = ({
               {savingPromError}
             </span>
           )}
-          {toggleConfigureGraphs && (
+          {closeConfigureGraphsModal && (
             <button
               type="button"
-              onClick={toggleConfigureGraphs}
+              onClick={closeConfigureGraphsModal}
               className="btn secondary force-gray u-marginRight--20"
             >
               Cancel

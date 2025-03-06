@@ -27,7 +27,7 @@ export default function RestoreSnapshotModal(props) {
       contentLabel="Modal"
       className="Modal ConfigureSnapshots"
     >
-      <div className="Modal-body">
+      <div className="Modal-body" data-testid="restore-snapshot-modal">
         <div className="flex flex-column">
           <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">
             Restore from Partial backup (Application)
@@ -96,6 +96,7 @@ export default function RestoreSnapshotModal(props) {
               <input
                 type="text"
                 className="Input u-position--relative"
+                data-testid="app-slug-input"
                 style={{ textIndent: "200px" }}
                 placeholder="type your slug"
                 value={appSlugToRestore}

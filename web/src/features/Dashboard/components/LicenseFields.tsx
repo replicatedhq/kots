@@ -43,6 +43,7 @@ const LicenseFields = ({
   return (
     <CustomerLicenseFields
       className="flex flexWrap--wrap"
+      data-testid="license-entitlements"
       count={entitlements.length}
     >
       {entitlements?.map((entitlement) => {

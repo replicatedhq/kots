@@ -10,7 +10,7 @@ test('version history pagination', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Configure Version History Pagination', { timeout: 15000 });
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
-  await expect(page.getByTestId("app-status-status")).toContainText("Ready", { timeout: 30000 });
+  await expect(page.getByTestId("dashboard-app-status")).toContainText("Ready", { timeout: 30000 });
   // create many versions via the CLI
   const startTime = Date.now();
   for (let i = 0; i < NUM_OF_VERSIONS; i++) {
@@ -76,7 +76,7 @@ test('version history pagination', async ({ page }) => {
   
   // go back to the dashboard to reset things
   await page.getByRole('link', { name: 'Dashboard' }).click();
-  await expect(page.getByTestId('app-status-status')).toBeVisible();
+  await expect(page.getByTestId('dashboard-app-status')).toBeVisible();
 
   // enter the version history page and set the page size to 100
   console.log("validating setting the page size to 100 via the UI");

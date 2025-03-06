@@ -11,6 +11,8 @@
     "@playwright/test": "^1.43.1",
     "@types/node": "^20.17.19",
     "parse-duration": "^1.1.0",
-    "ts-retry": "^4.2.5"
+    "semver": "^7.7.1",
+    "ts-retry": "^4.2.5",
+    "uuid": "^8.3.2"
   }
 }

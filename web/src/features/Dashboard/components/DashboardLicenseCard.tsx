@@ -202,6 +202,7 @@ const DashboardLicenseCard = (props: Props) => {
       className={`${
         isCommunityLicense ? "CommunityLicense--wrapper" : appLicenseClassName
       } ${expiredLicenseClassName} flex-column`}
+      data-testid="dashboard-license-card"
     >
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
         <div className="tw-flex alignItems--center">
