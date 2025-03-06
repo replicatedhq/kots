@@ -137,21 +137,41 @@ func NewMinKotsVersionAirgap() Test {
 	}
 }
 
-func NewTargetKotsVersion() Test {
+func NewTargetKotsVersionOnline() Test {
 	return Test{
-		ID:                     "@target-kots-version",
-		TestimSuite:            "target-kots-version",
+		ID:                     "@target-kots-version-online",
 		Namespace:              "target-kots-version",
+		AppSlug:                "target-kots-version",
 		UpstreamURI:            "target-kots-version/automated",
 		SkipCompatibilityCheck: true,
 	}
 }
 
-func NewRangeKotsVersion() Test {
+func NewTargetKotsVersionAirgap() Test {
 	return Test{
-		ID:                     "@range-kots-version",
-		TestimSuite:            "range-kots-version",
+		ID:                     "@target-kots-version-airgap",
+		Namespace:              "target-kots-version",
+		AppSlug:                "target-kots-version",
+		UpstreamURI:            "target-kots-version/automated",
+		SkipCompatibilityCheck: true,
+	}
+}
+
+func NewRangeKotsVersionOnline() Test {
+	return Test{
+		ID:                     "@range-kots-version-online",
 		Namespace:              "range-kots-version",
+		AppSlug:                "range-kots-version",
+		UpstreamURI:            "range-kots-version/automated",
+		SkipCompatibilityCheck: true,
+	}
+}
+
+func NewRangeKotsVersionAirgap() Test {
+	return Test{
+		ID:                     "@range-kots-version-airgap",
+		Namespace:              "range-kots-version",
+		AppSlug:                "range-kots-version",
 		UpstreamURI:            "range-kots-version/automated",
 		SkipCompatibilityCheck: true,
 	}

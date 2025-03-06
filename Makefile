@@ -118,6 +118,11 @@ dev: dev-deps
 reset:
 	kubectl delete -R -f dev/manifests --ignore-not-found
 
+.PHONY: reset-storage
+reset-storage: reset
+	kubectl delete pvc miniodata-kotsadm-minio-0 kotsadm-rqlite-kotsadm-rqlite-0 --ignore-not-found
+	kubectl delete secret kotsadm-gitops --ignore-not-found
+
 # Debugging
 .PHONY: debug-build
 debug-build:

@@ -36,6 +36,7 @@ test:
 		-e TESTIM_ACCESS_TOKEN \
 		-v $(BIN_DIR)/e2e.test:/usr/local/bin/e2e.test \
 		-e REPLICATED_API_TOKEN \
+		-e GITOPS_GITHUB_TOKEN \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kots \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kubectl-kots \
 		-v $(PLAYWRIGHT_DIR)/playwright-report:/playwright/playwright-report \

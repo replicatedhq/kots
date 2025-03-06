@@ -10,7 +10,7 @@ import {
   promoteReleaseBySemver,
 } from '../shared';
 
-test('min kots version', async ({ page }) => {
+test('range kots version', async ({ page }) => {
   test.setTimeout(2 * 60 * 1000); // 2 minutes
 
   await login(page);
@@ -28,7 +28,7 @@ const validateOnlineInstallRestrictive = async (page: Page, expect: Expect) => {
   const errorMessage = airgapInstallErrorMessage(page);
   await expect(errorMessage).toContainText("requires");
   await expect(errorMessage).toContainText("Install KOTS");
-  await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
+  await expect(errorMessage).toContainText(constants.RESTRICTIVE_TARGET_KOTS_VERSION);
 };
 
 const validateOnlineInstallPermissive = async (page: Page, expect: Expect) => {
@@ -41,6 +41,11 @@ const validateOnlineInstallPermissive = async (page: Page, expect: Expect) => {
 
 const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
+
+  await page.getByTestId("console-subnav").getByRole("link", { name: "Version history" }).click();
+
+  const footer = page.getByTestId("footer");
+  await expect(footer).toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
 
   await onlineCheckForUpdates(page, expect);
 
@@ -55,7 +60,7 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   let errorMessage = card.getByTestId("version-download-status");
   await expect(errorMessage).toContainText("requires", { timeout: 5 * 1000 }); // 5 seconds
   await expect(errorMessage).toContainText("Upgrade KOTS");
-  await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
+  await expect(errorMessage).toContainText(constants.RESTRICTIVE_TARGET_KOTS_VERSION);
 
   var allVersionsCard = page.getByTestId("all-versions-card");
   card = allVersionsCard.getByTestId("version-history-row-0");
@@ -69,7 +74,7 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   errorMessage = card.getByTestId("version-downloading-status");
   await expect(errorMessage).toContainText("requires", { timeout: 5 * 1000 }); // 5 seconds
   await expect(errorMessage).toContainText("Upgrade KOTS");
-  await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
+  await expect(errorMessage).toContainText(constants.RESTRICTIVE_TARGET_KOTS_VERSION);
 
   // Click the diff button and validate that you cannot select this version to diff because it was
   // unable to download

@@ -72,6 +72,7 @@ export class Footer extends Component {
         className={`FooterContent-wrapper flex flex-auto justifyContent--center ${
           this.state.targetKotsVersion && "u-padding--5"
         } ${this.props.className || ""}`}
+        data-testid="footer"
       >
         <div className="container flex1 flex justifyContent--center alignItems--center">
           <div className="FooterItem-wrapper">
@@ -86,7 +87,10 @@ export class Footer extends Component {
                 size={28}
                 className="flex u-marginRight--10 gray-color"
               />
-              <p className="u-fontSize--small u-fontWeight--bold">
+              <p
+                className="u-fontSize--small u-fontWeight--bold"
+                data-testid="footer-target-kots-version"
+              >
                 {" "}
                 v{this.state.targetKotsVersion} available.{" "}
               </p>

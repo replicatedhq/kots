@@ -46,19 +46,21 @@ export const getLabel = (app, isSingleApp) => {
           {!gitopsEnabled && !gitopsConnected ? (
             <div className="flex gray-color" style={{ gap: "5px" }}>
               <img src={not_enabled} alt="not_enabled" />
-              <p>Not Enabled</p>
+              <p data-testid="gitops-not-enabled">Not Enabled</p>
             </div>
           ) : gitopsEnabled && !gitopsConnected ? (
             <div className="flex warning-color" style={{ gap: "5px" }}>
               <img src={warning} alt="warning" />
-              <p>Repository access needed</p>
+              <p data-testid="gitops-repository-access-needed">
+                Repository access needed
+              </p>
             </div>
           ) : (
             gitopsEnabled &&
             gitopsConnected && (
               <div className="flex success-color" style={{ gap: "5px" }}>
                 <img src={enabled} alt="enabled" />
-                <p>Enabled</p>
+                <p data-testid="gitops-enabled">Enabled</p>
               </div>
             )
           )}

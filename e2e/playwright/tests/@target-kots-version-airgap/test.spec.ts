@@ -8,10 +8,9 @@ import {
   airgapInstallErrorMessage,
   appIsReady,
   airgapUpdate,
-  airgapUpdateErrorMessage,
 } from '../shared';
 
-test('min kots version', async ({ page }) => {
+test('target kots version', async ({ page }) => {
   test.setTimeout(5 * 60 * 1000); // 5 minutes
 
   await login(page);
@@ -34,7 +33,7 @@ const validateAirgapInstallRestrictive = async (page: Page, expect: Expect) => {
   const errorMessage = airgapInstallErrorMessage(page);
   await expect(errorMessage).toContainText("requires");
   await expect(errorMessage).toContainText("Install KOTS");
-  await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
+  await expect(errorMessage).toContainText(constants.RESTRICTIVE_TARGET_KOTS_VERSION);
 };
 
 const validateAirgapInstallPermissive = async (page: Page, expect: Expect) => {
@@ -58,10 +57,15 @@ const validateAirgapUpdateRestrictive = async (page: Page, expect: Expect) => {
     '/tmp/app.airgap'
   );
 
+  await page.getByTestId("console-subnav").getByRole("link", { name: "Version history" }).click();
+
+  const footer = page.getByTestId("footer");
+  await expect(footer).toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
+
   await airgapUpdate(page, expect, '/tmp/app.airgap');
 
-  const errorMessage = airgapUpdateErrorMessage(page);
-  await expect(errorMessage).toContainText("requires");
-  await expect(errorMessage).toContainText("Upgrade KOTS");
-  await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
+  const availableUpdateCard = page.getByTestId("available-updates-card");
+  await expect(availableUpdateCard).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, { timeout: 2 * 60 * 1000 }); // 2 minutes
+
+  await expect(footer).not.toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
 };
