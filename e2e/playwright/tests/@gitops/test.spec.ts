@@ -4,7 +4,6 @@ import { login, uploadLicense } from '../shared';
 const { execSync } = require("child_process");
 
 test('gitops install', async ({ page }) => {
-  test.slow();
   test.setTimeout(120000); // 2 minutes
   // configure gitops
   const gitopsOwner = 'replicated-testim-kotsadm-gitops';

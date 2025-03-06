@@ -3,7 +3,6 @@ import { login, uploadLicense } from '../shared';
 import { execSync } from 'child_process';
 
 test('version history pagination', async ({ page }) => {
-  test.slow();
   test.setTimeout(300000); // 300 seconds, 5 minutes
   const testAppSlug = "version-history-pagination";
   const testNamespace = "version-history-pagination";
