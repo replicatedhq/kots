@@ -42,6 +42,7 @@ class Pager extends Component {
                     ? (e) => this.handleGoToPage(this.props.currentPage - 1, e)
                     : null
                 }
+                data-testid="pager-prev"
               >
                 <Icon
                   icon="prev-arrow"
@@ -81,6 +82,7 @@ class Pager extends Component {
                     ? (e) => this.handleGoToPage(this.props.currentPage + 1, e)
                     : null
                 }
+                data-testid="pager-next"
               >
                 Next{" "}
                 <Icon
