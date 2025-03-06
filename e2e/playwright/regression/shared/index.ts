@@ -10,3 +10,4 @@ export * from './dashboard';
 export * from './version-history';
 export * from './view-files';
 export * from './registry-settings';
+export * from './airgap-upload';

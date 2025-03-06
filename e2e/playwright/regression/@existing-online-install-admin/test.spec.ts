@@ -47,11 +47,11 @@ import {
 test('type=existing cluster, env=online, phase=new install, rbac=cluster admin', async ({ page }) => {
   test.setTimeout(30 * 60 * 1000); // 30 minutes
 
-  deleteKurlConfigMap(constants.IS_AIRGAPPED);
-  const registryInfo = getRegistryInfo(constants.IS_AIRGAPPED, constants.IS_EXISTING_CLUSTER);
+  deleteKurlConfigMap();
+  const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
 
   installVeleroAWS(constants.VELERO_VERSION, constants.VELERO_AWS_PLUGIN_VERSION);
-  await promoteRelease(constants.VENDOR_INITIAL_RELEASE_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
+  await promoteRelease(constants.VENDOR_INITIAL_CHANNEL_RELEASE_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
 
   await page.goto('/');
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
@@ -102,7 +102,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
 
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
   await updateRegistrySettings(page, expect, registryInfo, false);
-  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_RELEASE_SEQUENCE, 4, false);
+  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_CHANNEL_RELEASE_SEQUENCE, 4, false);
   await validateDuplicateLicenseUpload(page, expect);
   await logout(page, expect);
 });

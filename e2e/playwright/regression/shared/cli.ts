@@ -8,13 +8,8 @@ import {
 
 const { execSync } = require("child_process");
 
-export const deleteKurlConfigMap = (isAirgapped: boolean, sshToAirgappedInstance?: string) => {
-  let deleteConfigmapCommand = `kubectl delete configmap kurl-config --namespace kube-system --ignore-not-found`;
-  if (isAirgapped) {
-    deleteConfigmapCommand = `${sshToAirgappedInstance} "${deleteConfigmapCommand}"`;
-  }
-  console.log(deleteConfigmapCommand, "\n");
-  execSync(deleteConfigmapCommand, {stdio: 'inherit'});
+export const deleteKurlConfigMap = (sshToAirgappedInstance?: string) => {
+  runCommand(`kubectl delete configmap kurl-config --namespace kube-system --ignore-not-found`, sshToAirgappedInstance);
 };
 
 export type RegistryInfo = {
@@ -23,7 +18,7 @@ export type RegistryInfo = {
   password: string;
 };
 
-export const getRegistryInfo = (isAirgapped: boolean, isExistingCluster: boolean, sshToAirgappedInstance?: string): RegistryInfo => {
+export const getRegistryInfo = (isExistingCluster: boolean, sshToAirgappedInstance?: string): RegistryInfo => {
   let secretName = "registry-creds";
 
   if (isExistingCluster) {
@@ -31,39 +26,18 @@ export const getRegistryInfo = (isAirgapped: boolean, isExistingCluster: boolean
      * this is a hack to work around the fact that kotsadm will automatically hide the registry settings in the airgap upload page if this secret exists
      * so we copy the secret with a different name and delete the old one
      */
-    let getSecretCommand = `kubectl get secret ${secretName} -oyaml --ignore-not-found`;
-    if (isAirgapped) {
-      getSecretCommand = `${sshToAirgappedInstance} "${getSecretCommand}"`;
-    }
-    console.log(getSecretCommand, "\n");
-    const secretYaml = execSync(getSecretCommand).toString();
+    const secretYaml = runCommandWithOutput(`kubectl get secret ${secretName} -oyaml --ignore-not-found`, sshToAirgappedInstance);
 
     const newSecretName = "playwright-registry-creds";
     if(secretYaml !== "") {
-      let copySecretCommand = `kubectl get secret ${secretName} -oyaml | sed s/'name: ${secretName}'/'name: ${newSecretName}'/ | kubectl apply -n default -f -`;
-      if (isAirgapped) {
-        copySecretCommand = `${sshToAirgappedInstance} "${copySecretCommand}"`;
-      }
-      console.log(copySecretCommand, "\n");
-      execSync(copySecretCommand, {stdio: 'inherit'});
-
-      let deleteSecretCommand = `kubectl delete secret ${secretName}`;
-      if (isAirgapped) {
-        deleteSecretCommand = `${sshToAirgappedInstance} "${deleteSecretCommand}"`;
-      }
-      console.log(deleteSecretCommand, "\n");
-      execSync(deleteSecretCommand, {stdio: 'inherit'});
+      runCommand(`kubectl get secret ${secretName} -oyaml | sed s/'name: ${secretName}'/'name: ${newSecretName}'/ | kubectl apply -n default -f -`, sshToAirgappedInstance);
+      runCommand(`kubectl delete secret ${secretName}`, sshToAirgappedInstance);
     }
 
     secretName = newSecretName;
   }
 
-  let getCredsSecretCommand = `kubectl get secret ${secretName} -o=json`;
-  if (isAirgapped) {
-    getCredsSecretCommand = `${sshToAirgappedInstance} "${getCredsSecretCommand}"`;
-  }
-  console.log(getCredsSecretCommand, "\n");
-  const secretStr = execSync(getCredsSecretCommand).toString();
+  const secretStr = runCommandWithOutput(`kubectl get secret ${secretName} -o=json`, sshToAirgappedInstance);
   const parsedSecret = JSON.parse(secretStr);
   const dockerConfig = Buffer.from(parsedSecret.data[".dockerconfigjson"], "base64").toString("utf-8");
   const parsedDockerConfig = JSON.parse(dockerConfig);
@@ -82,29 +56,24 @@ export const installVeleroAWS = (veleroVersion: string, veleroAwsPluginVersion: 
   const isVelero10OrNewer = semverjs.gte(semverjs.coerce(veleroVersion), semverjs.coerce("1.10"));
 
   // delete velero namespace
-  const deleteNSCommand = `kubectl delete namespace velero --ignore-not-found`;
-  console.log(deleteNSCommand, "\n");
-  execSync(deleteNSCommand, {stdio: 'inherit'});
+  runCommand(`kubectl delete namespace velero --ignore-not-found`);
 
   // write creds to a file
   const credsFileName = "aws-creds.txt";
-  const credsCommand = `cat >${credsFileName} <<EOL
+  runCommand(`cat >${credsFileName} <<EOL
 [default]
 aws_access_key_id = ${process.env.AWS_ACCESS_KEY_ID}
 aws_secret_access_key = ${process.env.AWS_SECRET_ACCESS_KEY} 
-EOL`;
-  execSync(credsCommand, {stdio: 'inherit'});
+EOL`);
 
   // download velero binary
-  const downloadCommand = `curl -LO https://github.com/vmware-tanzu/velero/releases/download/${veleroVersion}/velero-${veleroVersion}-linux-amd64.tar.gz && \
+  runCommand(`curl -LO https://github.com/vmware-tanzu/velero/releases/download/${veleroVersion}/velero-${veleroVersion}-linux-amd64.tar.gz && \
 tar zxvf velero-${veleroVersion}-linux-amd64.tar.gz && \
-sudo mv velero-${veleroVersion}-linux-amd64/velero /usr/local/bin/velero`;
-  console.log(downloadCommand, "\n");
-  execSync(downloadCommand, {stdio: 'inherit'});
+sudo mv velero-${veleroVersion}-linux-amd64/velero /usr/local/bin/velero`);
 
   // install velero
   const prefix = uuid.v4();
-  const installCommand = `velero install \
+  runCommand(`velero install \
     --provider aws \
     --plugins velero/velero-plugin-for-aws:${veleroAwsPluginVersion} \
     --bucket ${AWS_BUCKET_NAME} \
@@ -112,25 +81,25 @@ sudo mv velero-${veleroVersion}-linux-amd64/velero /usr/local/bin/velero`;
     --snapshot-location-config region=${AWS_REGION} \
     --secret-file ${credsFileName} \
     --prefix ${prefix} \
-    ${isVelero10OrNewer ? "--use-node-agent --uploader-type=restic" : "--use-restic"}
-`;
-  console.log(installCommand, "\n");
-  execSync(installCommand, {stdio: 'inherit'});
+    ${isVelero10OrNewer ? "--use-node-agent --uploader-type=restic" : "--use-restic"}`);
 };
 
 export const resetPassword = (namespace: string, isAirgapped: boolean, sshToAirgappedInstance: string) => {
-  let resetCommand = `echo 'password' | kubectl kots reset-password -n ${namespace}`;
-  if (isAirgapped) {
-    resetCommand = `${sshToAirgappedInstance} "${resetCommand}"`;
-  }
-  console.log(resetCommand, "\n");
-  execSync(resetCommand, {stdio: 'inherit'});
+  runCommand(`echo 'password' | kubectl kots reset-password -n ${namespace}`, sshToAirgappedInstance);
 };
 
-export const runCommand = (command: string, isAirgapped: boolean, sshToAirgappedInstance?: string) => {
-  if (isAirgapped) {
+export const runCommand = (command: string, sshToAirgappedInstance?: string) => {
+  if (sshToAirgappedInstance) {
     command = `${sshToAirgappedInstance} "${command}"`;
   }
   console.log(command, "\n");
   execSync(command, {stdio: 'inherit'});
+};
+
+export const runCommandWithOutput = (command: string, sshToAirgappedInstance?: string): string => {
+  if (sshToAirgappedInstance) {
+    command = `${sshToAirgappedInstance} "${command}"`;
+  }
+  console.log(command, "\n");
+  return execSync(command).toString();
 };
