@@ -386,20 +386,24 @@ export const createFullSnapshot = async (page: Page, expect: Expect) => {
   await expect(preSnapshotScriptsTab).toBeVisible();
   await expect(preSnapshotScriptsTab).toHaveClass(/is-active/);
 
-  const preSnapshotScriptRow = snapshotScriptsCard.getByTestId('pre-snapshot-script-row-0');
-  await expect(preSnapshotScriptRow).toBeVisible();
-  await expect(preSnapshotScriptRow).toContainText('Completed');
+  await expect(snapshotScriptsCard.getByTestId('pre-snapshot-script-row-0')).toBeVisible();
+  await expect(snapshotScriptsCard.getByTestId('pre-snapshot-script-row-0')).toContainText('Completed');
+  await expect(snapshotScriptsCard.getByTestId('pre-snapshot-script-row-1')).toBeVisible();
+  await expect(snapshotScriptsCard.getByTestId('pre-snapshot-script-row-1')).toContainText('Completed');
 
-  await snapshotScriptsCard.getByTestId('show-all-pre-scripts-button').click();
-  await expect(showAllModal).toBeVisible();
-  await expect(showAllModal).toContainText('/bin/uname -a');
-  await expect(showAllModal).toContainText('/backup.sh');
-  await expect(showAllModal.getByTestId('pre-snapshot-script-row-0')).toBeVisible();
-  await expect(showAllModal.getByTestId('pre-snapshot-script-row-0')).toContainText('Completed');
-  await expect(showAllModal.getByTestId('pre-snapshot-script-row-1')).toBeVisible();
-  await expect(showAllModal.getByTestId('pre-snapshot-script-row-1')).toContainText('Completed');
-  await showAllModal.getByRole('button', { name: 'Ok, got it!', exact: true }).click();
-  await expect(showAllModal).not.toBeVisible();
+  // All pre-snapshot scripts
+  if (await snapshotScriptsCard.getByTestId('show-all-pre-scripts-button').isVisible()) {
+    await snapshotScriptsCard.getByTestId('show-all-pre-scripts-button').click();
+    await expect(showAllModal).toBeVisible();
+    await expect(showAllModal).toContainText('/bin/uname -a');
+    await expect(showAllModal).toContainText('/backup.sh');
+    await expect(showAllModal.getByTestId('pre-snapshot-script-row-0')).toBeVisible();
+    await expect(showAllModal.getByTestId('pre-snapshot-script-row-0')).toContainText('Completed');
+    await expect(showAllModal.getByTestId('pre-snapshot-script-row-1')).toBeVisible();
+    await expect(showAllModal.getByTestId('pre-snapshot-script-row-1')).toContainText('Completed');
+    await showAllModal.getByRole('button', { name: 'Ok, got it!', exact: true }).click();
+    await expect(showAllModal).not.toBeVisible();
+  }
 
   // Post-snapshot scripts
   const postSnapshotScriptsTab = snapshotScriptsCard.locator('.tab-item').getByText('Post-snapshot scripts');

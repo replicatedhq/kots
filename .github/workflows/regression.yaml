@@ -313,12 +313,13 @@ jobs:
           # Extract tarball
           tar -xzf ./playwright-report.tar.gz
 
-      - id: upload-playwright-report
+      - name: Upload playwright report
+        id: upload-playwright-report
         uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
-          name: ${{ github.job }}-${{ matrix.test.name }}
-          path: ./playwright-report/
+          name: ${{ github.job }}-${{ matrix.test.name }}-playwright-report
+          path: ./automation/cluster/playwright-report/
   
       - name: Print instructions to view Playwright report
         if: ${{ failure() && steps.upload-playwright-report.outputs.artifact-url != '' }}
