@@ -1,6 +1,6 @@
 import { Page, Expect } from '@playwright/test';
 
-import { updateCustomer } from './vendor-api';
+import { updateCustomer } from './api';
 
 export const uploadLicense = async (page: Page, expect: Expect, licenseFile = "license.yaml") => {
   await page.setInputFiles('input[type="file"][accept="application/x-yaml,.yaml,.yml,.rli"]', `${process.env.TEST_PATH}/${licenseFile}`);
