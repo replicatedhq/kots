@@ -141,6 +141,7 @@ test('gitops install', async ({ page }) => {
   // test reenabling gitops but with a failed ssh connection
   await page.locator('div').filter({ hasText: /^GitOps$/ }).click();
   await expect(page.getByTestId('gitops-not-enabled')).toBeVisible();
+  await expect(page.getByAltText('not_enabled')).toBeVisible();
   await page.getByPlaceholder('owner').click();
   await page.getByPlaceholder('owner').fill(gitopsOwner);
   await page.getByPlaceholder('Repository').click();
