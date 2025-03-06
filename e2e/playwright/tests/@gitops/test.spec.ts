@@ -34,14 +34,7 @@ test('gitops install', async ({ page }) => {
 
   await page.getByText('GitOps').click();
   await expect(page.getByText('GitHub')).toBeVisible();
-  await page.getByPlaceholder('owner').click();
-  await page.getByPlaceholder('owner').fill(gitopsOwner);
-  await page.getByPlaceholder('Repository').click();
-  await page.getByPlaceholder('Repository').fill(gitopsRepo);
-  await page.getByPlaceholder('main').click();
-  await page.getByPlaceholder('main').fill(randomBranch);
-  await page.getByPlaceholder('/path/to-deployment').click();
-  await page.getByPlaceholder('/path/to-deployment').fill(randomPath);
+  await filloutGitopsForm(page, gitopsOwner, gitopsRepo, randomBranch, randomPath);
   await page.getByRole('button', { name: 'Generate SSH key' }).click();
   await expect(page.getByText('ssh-ed25519')).toBeVisible();
   await expect(page.getByText('Copy key')).toBeVisible();
@@ -140,16 +133,7 @@ test('gitops install', async ({ page }) => {
 
   // test reenabling gitops but with a failed ssh connection
   await page.locator('div').filter({ hasText: /^GitOps$/ }).click();
-  await expect(page.getByTestId('gitops-not-enabled')).toBeVisible();
-  await expect(page.getByAltText('not_enabled')).toBeVisible();
-  await page.getByPlaceholder('owner').click();
-  await page.getByPlaceholder('owner').fill(gitopsOwner);
-  await page.getByPlaceholder('Repository').click();
-  await page.getByPlaceholder('Repository').fill(gitopsRepo);
-  await page.getByPlaceholder('main').click();
-  await page.getByPlaceholder('main').fill(randomBranch);
-  await page.getByPlaceholder('/path/to-deployment').click();
-  await page.getByPlaceholder('/path/to-deployment').fill(randomPath);
+  await filloutGitopsForm(page, gitopsOwner, gitopsRepo, randomBranch, randomPath);
   await page.getByRole('button', { name: 'Generate SSH key' }).click();
   await page.getByRole('button', { name: 'Test connection to repository' }).click();
   await expect(page.getByText('Connection to repository failed')).toBeVisible(); // there is no key in the repo
@@ -226,5 +210,29 @@ function checkCommitMessageExists(commits: GitHubCommit[], message: string) {
 function checkFilePathExists(file: GitHubFile, path: string) {
   if ("/"+file.path !== path) {
     throw new Error(`File path "${path}" not found. Got "/${file.path}" instead`);
+  }
+}
+
+async function filloutGitopsForm(page: Page, owner: string, repo: string, branch: string, path: string) {
+  await expect(page.getByTestId('gitops-not-enabled')).toBeVisible();
+  await expect(page.getByAltText('not_enabled')).toBeVisible();
+  let hasFilledOut = false;
+  while (!hasFilledOut) {
+    await page.getByPlaceholder('owner').click();
+    await page.getByPlaceholder('owner').fill(owner);
+    await page.getByPlaceholder('Repository').click();
+    await page.getByPlaceholder('Repository').fill(repo);
+    await page.getByPlaceholder('main').click();
+    await page.getByPlaceholder('main').fill(branch);
+    await page.getByPlaceholder('/path/to-deployment').click();
+    await page.getByPlaceholder('/path/to-deployment').fill(path);
+
+    // check if the owner field is actually filled out after sitting for 0.1 seconds
+    await page.waitForTimeout(100);
+    if (await page.getByPlaceholder('owner').getAttribute('value') === owner) {
+      hasFilledOut = true;
+    } else {
+      console.log('owner field is not filled out, retrying')
+    }
   }
 }
