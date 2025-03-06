@@ -205,6 +205,7 @@ sbom: sbom/kots-sbom.tgz
 	cosign sign-blob \
 		--key ./cosign.key \
 		--tlog-upload \
+		--yes \
 		--rekor-url=https://rekor.sigstore.dev \
 		sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
 
