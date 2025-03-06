@@ -69,7 +69,8 @@ async function generateSupportBundleCli(page: Page, expect: Expect) {
 
   await runSupportBundleCommand(clipboardContent);
 
-  await expect(page.getByTestId("support-bundle-analysis-bundle-insights-tab")).toBeVisible({ timeout: 2 * 60 * 1000 }); // 2 minutes
+  // this seems to take a really long time on okd
+  await expect(page.getByTestId("support-bundle-analysis-bundle-insights-tab")).toBeVisible({ timeout: 5 * 60 * 1000 }); // 5 minutes
   await page.getByTestId("support-bundle-analysis-bundle-insights-tab").click();
   await expect(page.getByTestId("support-bundle-analysis-bundle-insights")).toContainText("Only show errors and warnings");
 }
