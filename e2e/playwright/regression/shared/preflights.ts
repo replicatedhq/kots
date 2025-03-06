@@ -37,23 +37,12 @@ export const validateIgnorePreflightsModal = async (page: Page, expect: Expect) 
 };
 
 export const validateMinimalRBACInitialPreflights = async (page: Page, expect: Expect, timeout: number = 15000) => {
-  await validateMinimalRBACPreflights(page, expect, timeout);
-
-  await page.getByRole('button', { name: 'Deploy', exact: true }).click();
-
-  const continueWithFailedPreflightsModal = page.getByTestId("continue-with-failed-preflights-modal");
-  await expect(continueWithFailedPreflightsModal).toBeVisible();
-  await continueWithFailedPreflightsModal.getByRole('button', { name: 'Deploy anyway' }).click();
-  await expect(continueWithFailedPreflightsModal).not.toBeVisible();
-};
-
-export const validateMinimalRBACPreflights = async (page: Page, expect: Expect, timeout: number = 15000) => {
   const errorsWrapper = page.getByTestId("preflight-result-errors");
   await expect(errorsWrapper).toBeVisible({ timeout });
   await expect(errorsWrapper.getByTestId("preflight-rbac-error-message")).toBeVisible();
   await expect(errorsWrapper.getByTestId("manual-preflight-instructions")).toBeVisible();
 
-  await page.getByRole('button', { name: /with limited Preflights/ }).click();
+  await page.getByRole('button', { name: 'Proceed with limited Preflights' }).click();
   await expect(page.getByTestId("preflight-progress-heading")).toContainText("Collecting information");
   await expect(page.getByTestId("preflight-progress-bar")).toBeVisible();
   await expect(page.getByTestId("preflight-progress-status")).toContainText("Gathering details");
@@ -61,4 +50,16 @@ export const validateMinimalRBACPreflights = async (page: Page, expect: Expect, 
   const resultsWrapper = page.getByTestId("preflight-results-wrapper");
   await expect(resultsWrapper.getByTestId("preflight-results-heading")).toBeVisible({ timeout });
   await expect(resultsWrapper.getByTestId("preflight-results-rerun-button")).toBeVisible();
+
+  await page.getByRole('button', { name: 'Deploy', exact: true }).click();
+};
+
+export const validateMinimalRBACPreflightsPage = async (page: Page, expect: Expect, timeout: number = 15000) => {
+  const errorsWrapper = page.getByTestId("preflight-result-errors");
+  await expect(errorsWrapper).toBeVisible({ timeout });
+  await expect(errorsWrapper.getByTestId("preflight-rbac-error-message")).toBeVisible();
+  await expect(errorsWrapper.getByTestId("manual-preflight-instructions")).toBeVisible();
+
+  await expect(page.getByRole('button', { name: 'Rerun with limited Preflights' })).toBeVisible();
+  await page.getByTestId("preflight-results-back-button").click();
 };
