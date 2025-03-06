@@ -10,8 +10,7 @@ test('version history pagination', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Configure Version History Pagination', { timeout: 15000 });
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
-  await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
-  
+  await expect(page.getByTestId("app-status-status")).toContainText("Ready", { timeout: 30000 });
   // create many versions via the CLI
   const startTime = Date.now();
   for (let i = 0; i < NUM_OF_VERSIONS; i++) {
