@@ -77,7 +77,6 @@ export default class FileTree extends Component {
                   id={`sub-dir-${file.name}-${file.children.length}-${
                     file.path
                   }-${i}-${this.getLevel()}`}
-                  data-testid={`support-bundle-analysis-file-tree-dir-${file.path}`}
                 />
                 <label
                   htmlFor={`sub-dir-${file.name}-${file.children.length}-${
@@ -103,7 +102,6 @@ export default class FileTree extends Component {
                 }`}
                 data-testid={file.path}
                 onClick={() => this.handleFileSelect(file.path)}
-                data-testid={`support-bundle-analysis-file-tree-file-${file.path}`}
               >
                 <div>{file.name}</div>
               </li>

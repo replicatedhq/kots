@@ -79,10 +79,11 @@ async function validateRedaction(page: Page, expect: Expect) {
   await page.getByTestId("support-bundle-analysis-file-inspector-tab").click();
   await expect(page.getByTestId("support-bundle-analysis-file-inspector")).toBeVisible();
 
-  await expect(page.getByTestId("support-bundle-analysis-file-tree")).toBeVisible();
+  const fileTree = page.getByTestId("support-bundle-analysis-file-tree");
+  await expect(fileTree).toBeVisible();
 
-  await page.getByTestId("support-bundle-analysis-file-tree-dir-cluster-info").check();
-  await page.getByTestId("support-bundle-analysis-file-tree-file-cluster-info/cluster_version.json").click();
+  await fileTree.getByTestId("cluster-info").check();
+  await fileTree.getByTestId("cluster-info/cluster_version.json").click();
 
   await expect(page.getByTestId("support-bundle-analysis-file-inspector-editor")).toContainText("***HIDDEN***");
 
