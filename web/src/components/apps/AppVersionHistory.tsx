@@ -1185,7 +1185,6 @@ class AppVersionHistory extends Component<Props, State> {
       <div className="flex u-marginLeft--20">
         <button
           className="btn secondary small u-marginRight--10"
-          data-testid="cancel-diff-button"
           onClick={this.onCloseReleasesToDiff}
           data-testid="cancel-diff-button"
         >
@@ -1193,7 +1192,6 @@ class AppVersionHistory extends Component<Props, State> {
         </button>
         <button
           className="btn primary small blue"
-          data-testid="diff-releases-button"
           disabled={checkedReleasesToDiff.length !== 2 || showDiffOverlay}
           onClick={() => {
             if (gitopsIsConnected) {
