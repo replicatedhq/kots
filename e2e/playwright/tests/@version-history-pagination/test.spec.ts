@@ -55,7 +55,7 @@ test('version history pagination', async ({ page }) => {
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 1 - 20 of ${NUM_OF_VERSIONS + 1}`);
 
   console.log("validating the second page of versions via the UI");
-  await page.getByText('Next').click();
+  await page.getByTestId('pager-next').click();
   // should be 21 - 40 of 252
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 21 - 40 of ${NUM_OF_VERSIONS + 1}`);
   await expect(page.getByTestId('available-updates-card').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE}`);
@@ -64,13 +64,13 @@ test('version history pagination', async ({ page }) => {
 
   // make sure that going further forward and backward works
   console.log("validating going further forward and backward in the UI");
-  await page.getByText('Next').click();
+  await page.getByTestId('pager-next').click();
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 41 - 60 of ${NUM_OF_VERSIONS + 1}`);
   await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (DEFAULT_PAGE_SIZE * 2) - 19}`);
-  await page.getByText('Next').click();
+  await page.getByTestId('pager-next').click();
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 61 - 80 of ${NUM_OF_VERSIONS + 1}`);
   await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (DEFAULT_PAGE_SIZE * 3) - 19}`);
-  await page.getByText('Prev').click();
+  await page.getByTestId('pager-prev').click();
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 41 - 60 of ${NUM_OF_VERSIONS + 1}`);
   await expect(page.getByTestId('version-history-row-19').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (DEFAULT_PAGE_SIZE * 2) - 19}`);
   
@@ -84,7 +84,7 @@ test('version history pagination', async ({ page }) => {
   await expect(page.getByText('New version available')).toBeVisible();
   await page.getByRole('combobox').selectOption('100');
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 1 - 100 of ${NUM_OF_VERSIONS + 1}`);
-  await page.getByText('Next').click();
+  await page.getByTestId('pager-next').click();
   await expect(page.getByTestId('all-versions-card')).toContainText(`Showing releases 101 - 200 of ${NUM_OF_VERSIONS + 1}`);
   // the bottom of the second page should be the 199th-from-latest version (52)
   await expect(page.getByTestId('version-history-row-99').getByTestId('version-sequence')).toContainText(`Sequence ${LATEST_SEQUENCE - (DEFAULT_PAGE_SIZE * 1) - 99}`);
