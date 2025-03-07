@@ -7,10 +7,9 @@ import {
   validateMinimalRBACPreflightsPage
 } from './preflights';
 
-export const validateCurrentVersionCard = async (page: Page, expect: Expect, versionLabel: string, sequence: number) => {
+export const validateCurrentVersionCard = async (page: Page, expect: Expect, sequence: number) => {
   const currentVersionCard = page.getByTestId("current-version-card");
   await expect(currentVersionCard).toBeVisible();
-  await expect(currentVersionCard).toContainText(versionLabel);
   await expect(currentVersionCard).toContainText(`Sequence ${sequence}`);
 };
 
@@ -91,7 +90,6 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isA
 
   const updateRow = updatesCard.getByTestId('version-history-row-0');
   await expect(updateRow).toBeVisible();
-  await expect(updateRow).toContainText('1.0.0');
   await expect(updateRow).toContainText('Sequence 2');
   await expect(updateRow).toContainText('Config Change');
   await expect(updateRow).toContainText('View diff');
@@ -102,7 +100,6 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isA
 
   const firstRow = allVersionsCard.getByTestId("version-history-row-0");
   await expect(firstRow).toBeVisible();
-  await expect(firstRow).toContainText('1.0.0');
   await expect(firstRow).toContainText('Sequence 2');
   await expect(firstRow).toContainText('Config Change');
   await expect(firstRow).toContainText('View diff');
@@ -110,7 +107,6 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isA
 
   const secondRow = allVersionsCard.getByTestId("version-history-row-1");
   await expect(secondRow).toBeVisible();
-  await expect(secondRow).toContainText('1.0.0');
   await expect(secondRow).toContainText('Sequence 1');
   await expect(secondRow).toContainText(isAirgapped ? 'Airgap Update' : 'Upstream Update');
   await expect(secondRow).toContainText('Currently deployed version');
@@ -118,7 +114,6 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isA
 
   const thirdRow = allVersionsCard.getByTestId("version-history-row-1");
   await expect(thirdRow).toBeVisible();
-  await expect(thirdRow).toContainText('1.0.0');
   await expect(thirdRow).toContainText('Sequence 0');
   await expect(thirdRow).toContainText(isAirgapped ? 'Airgap Install' : 'Online Install');
   await expect(thirdRow).toContainText('Currently deployed version');

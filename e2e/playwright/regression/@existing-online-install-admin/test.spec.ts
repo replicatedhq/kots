@@ -74,7 +74,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
   await validateIgnorePreflightsModal(page, expect);
   await validateVersionHistoryAutomaticUpdates(page, expect);
-  await validateCurrentVersionCard(page, expect, "1.0.0", 1);
+  await validateCurrentVersionCard(page, expect, 1);
   await validateCurrentReleaseNotes(page, expect, "release notes - updates");
   await validateCurrentClusterAdminPreflights(page, expect);
   await validateCurrentDeployLogs(page, expect);

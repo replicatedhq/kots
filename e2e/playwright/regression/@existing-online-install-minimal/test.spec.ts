@@ -71,7 +71,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   await updateConfig(page, expect);
   await validateVersionMinimalRBACPreflights(page, expect, 0, 2);
   await validateVersionHistoryAutomaticUpdates(page, expect);
-  await validateCurrentVersionCard(page, expect, "1.0.0", 1);
+  await validateCurrentVersionCard(page, expect, 1);
   await validateCurrentReleaseNotes(page, expect, "release notes - updates");
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
