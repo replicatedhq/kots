@@ -278,15 +278,15 @@ export const validateCheckForUpdates = async (page: Page, expect: Expect, channe
   const newReleaseNotes = `notes-${uuid.v4()}`;
   await promoteRelease(vendorReleaseSequence, channelId, newVersionLabel, newReleaseNotes);
 
-  const availableUpdatesCard = page.getByTestId('available-updates-card');
-  await expect(availableUpdatesCard).toBeVisible();
+  const updatesCard = page.getByTestId('available-updates-card');
+  await expect(updatesCard).toBeVisible();
 
-  await availableUpdatesCard.getByTestId('check-for-update-button').click();
-  await expect(availableUpdatesCard.getByTestId('check-for-update-progress').locator('.Loader')).toBeVisible();
-  await expect(availableUpdatesCard.getByTestId('check-for-update-progress')).toContainText('ing', { timeout: 30000 });
-  await expect(availableUpdatesCard.getByTestId('check-for-update-progress')).not.toBeVisible({ timeout: 240000 });
+  await updatesCard.getByTestId('check-for-update-button').click();
+  await expect(updatesCard.getByTestId('check-for-update-progress').locator('.Loader')).toBeVisible();
+  await expect(updatesCard.getByTestId('check-for-update-progress')).toContainText('ing', { timeout: 30000 });
+  await expect(updatesCard.getByTestId('check-for-update-progress')).not.toBeVisible({ timeout: 240000 });
 
-  const updateRow = availableUpdatesCard.getByTestId('version-history-row-0');
+  const updateRow = updatesCard.getByTestId('version-history-row-0');
   await expect(updateRow).toBeVisible();
   await expect(updateRow).toContainText('Upstream Update');
   await expect(updateRow).toContainText(newVersionLabel);

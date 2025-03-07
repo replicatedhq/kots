@@ -47,10 +47,10 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   test.setTimeout(30 * 60 * 1000); // 30 minutes
 
   // Initial setup
-  deleteKurlConfigMap(constants.IS_AIRGAPPED);
-  const registryInfo = getRegistryInfo(constants.IS_AIRGAPPED, constants.IS_EXISTING_CLUSTER);
+  deleteKurlConfigMap();
+  const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
   installVeleroAWS(constants.VELERO_VERSION, constants.VELERO_AWS_PLUGIN_VERSION);
-  await promoteRelease(constants.VENDOR_INITIAL_RELEASE_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
+  await promoteRelease(constants.VENDOR_INITIAL_CHANNEL_RELEASE_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
 
   // Login and install
   await page.goto('/');
@@ -62,10 +62,10 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   await validateInitialConfig(page, expect);
   await validateMinimalRBACInitialPreflights(page, expect);
   await addSnapshotsRBAC(page, expect, constants.IS_AIRGAPPED);
-  await validateDashboardInfo(page, expect);
+  await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect);
-  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_RELEASE_SEQUENCE, 1, true);
+  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_CHANNEL_RELEASE_SEQUENCE, 1, true);
 
   // Config update and version history checks
   await updateConfig(page, expect);
@@ -92,7 +92,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   // App snapshot workflow
   await createAppSnapshot(page, expect);
   await rollbackToVersion(page, expect, 1, 2);
-  await restoreAppSnapshot(page, expect, 0, 2, true);
+  await restoreAppSnapshot(page, expect, 0, 2, true, constants.IS_AIRGAPPED);
   await deleteAppSnapshot(page, expect);
 
   // Full snapshot workflow

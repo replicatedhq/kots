@@ -82,7 +82,8 @@ export async function downloadAirgapBundle(
   customerID: string,
   channelSequence: number,
   portalBase64Password: string,
-  destPath: string
+  destPath: string,
+  sshToAirgappedInstance?: string
 ) {
   // get airgap bundle download url
   const getBundleURLCommand = `curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${customerID}&channel_sequence=${channelSequence}" -H 'Authorization: Basic ${portalBase64Password}'`;
@@ -91,6 +92,10 @@ export async function downloadAirgapBundle(
   const bundleUrl = JSON.parse(output).url
 
   // download airgap bundle
-  const downloadCommand = `curl '${bundleUrl}' -o ${destPath}`;
+  let downloadCommand = `curl '${bundleUrl}' -o ${destPath}`;
+  if (sshToAirgappedInstance) {
+    downloadCommand = `curl '${bundleUrl}' | ${sshToAirgappedInstance} "cat > ${destPath}"`;
+  }
+  console.log(downloadCommand, "\n");
   execSync(downloadCommand, {stdio: 'inherit'});
 }

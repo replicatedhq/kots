@@ -250,7 +250,14 @@ export const createAppSnapshot = async (page: Page, expect: Expect) => {
   await page.getByTestId('back-button').click();
 };
 
-export const restoreAppSnapshot = async (page: Page, expect: Expect, expectedIndex: number, expectedSequence: number, expectedUpToDate: boolean) => {
+export const restoreAppSnapshot = async (
+  page: Page,
+  expect: Expect,
+  expectedIndex: number,
+  expectedSequence: number,
+  expectedUpToDate: boolean,
+  isAirgapped: boolean
+) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
   await page.getByRole('link', { name: 'Partial Snapshots (Application)' }).click();
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
@@ -286,7 +293,7 @@ export const restoreAppSnapshot = async (page: Page, expect: Expect, expectedInd
 
   await login(page);
   await validateCurrentlyDeployedVersionInfo(page, expect, expectedIndex, expectedSequence, expectedUpToDate);
-  await validateDashboardInfo(page, expect);
+  await validateDashboardInfo(page, expect, isAirgapped);
 };
 
 export const deleteAppSnapshot = async (page: Page, expect: Expect) => {
@@ -457,7 +464,7 @@ export const restoreFullSnapshot = async (
   await expect(restoreCommandSnippet).toBeVisible();
   const restoreCommand = await restoreCommandSnippet.locator(".react-prism.language-bash").textContent();
   expect(restoreCommand).not.toBeNull();
-  runCommand(restoreCommand, isAirgapped, sshToAirgappedInstance);
+  runCommand(restoreCommand, sshToAirgappedInstance);
 
   await page.waitForTimeout(5000);
   await page.reload();
@@ -468,7 +475,7 @@ export const restoreFullSnapshot = async (
   }
 
   await validateCurrentlyDeployedVersionInfo(page, expect, expectedIndex, expectedSequence, expectedUpToDate);
-  await validateDashboardInfo(page, expect);
+  await validateDashboardInfo(page, expect, isAirgapped);
 };
 
 export const deleteFullSnapshot = async (page: Page, expect: Expect) => {

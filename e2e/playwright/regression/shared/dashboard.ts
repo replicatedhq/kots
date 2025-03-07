@@ -1,6 +1,6 @@
 import { Page, Expect } from '@playwright/test';
 
-export const validateDashboardInfo = async (page: Page, expect: Expect) => {
+export const validateDashboardInfo = async (page: Page, expect: Expect, isAirgapped: boolean) => {
   await page.locator('.NavItem').getByText('Application', { exact: true }).click();
   await page.getByRole('link', { name: 'Dashboard', exact: true }).click();
 
@@ -8,7 +8,9 @@ export const validateDashboardInfo = async (page: Page, expect: Expect) => {
   await expect(page.getByTestId("dashboard-app-name")).toBeVisible();
   await expect(page.getByTestId("dashboard-app-status")).toHaveText("Ready", { timeout: 210000 });
   await expect(page.getByTestId("dashboard-edit-config")).toBeVisible();
-  await expect(page.getByTestId("dashboard-app-link")).toBeVisible();
+  if (!isAirgapped) {
+    await expect(page.getByTestId("dashboard-app-link")).toBeVisible();
+  }
 
   const versionCard = page.getByTestId("dashboard-version-card");
   await expect(versionCard).toBeVisible();
@@ -17,7 +19,7 @@ export const validateDashboardInfo = async (page: Page, expect: Expect) => {
 
   const licenseCard = page.getByTestId("dashboard-license-card");
   await expect(licenseCard).toBeVisible();
-  await expect(licenseCard.getByText("Sync license")).toBeVisible();
+  await expect(licenseCard.getByText(isAirgapped ? "Upload license" : "Sync license")).toBeVisible();
   await expect(licenseCard.getByText("See license details")).toBeVisible();
 
   const snapshotsCard = page.getByTestId("dashboard-snapshots-card");
