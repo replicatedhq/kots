@@ -7,7 +7,7 @@ import {
 } from "../shared";
 import { execSync } from 'child_process';
 
-test("smoke test", async ({ page }) => {
+test("smoke test onine", async ({ page }) => {
   test.setTimeout(5 * 60 * 1000); // 5 minutes
   await login(page);
   await uploadLicense(page, expect);

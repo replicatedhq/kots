@@ -33,7 +33,7 @@ func NewRegressionTest() Test {
 	}
 }
 
-func NewSmokeTest() Test {
+func NewSmokeTestOnline() Test {
 	return Test{
 		ID:             "@smoke-test-online",
 		Namespace:      "smoke-test",
