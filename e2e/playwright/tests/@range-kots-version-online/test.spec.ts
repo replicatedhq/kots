@@ -52,7 +52,7 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   await page.getByTestId("console-subnav").getByRole("link", { name: "Version history" }).click();
 
   const availableUpdateCard = page.getByTestId("available-updates-card");
-  let card = availableUpdateCard.getByTestId("version-history-row-0");
+  const card = availableUpdateCard.getByTestId("version-history-row-0");
   await expect(card.getByTestId("version-label")).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
   await expect(card.getByTestId("version-action-button")).toContainText("Download");
   await expect(card.getByTestId("version-status")).toContainText("Pending download");
@@ -62,16 +62,16 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   await expect(errorMessage).toContainText("Upgrade KOTS");
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_TARGET_KOTS_VERSION);
 
-  var allVersionsCard = page.getByTestId("all-versions-card");
-  card = allVersionsCard.getByTestId("version-history-row-0");
-  await expect(card.getByTestId("version-label")).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
+  const allVersionsCard = page.getByTestId("all-versions-card");
+  const versionRow = allVersionsCard.getByTestId("version-history-row-0");
+  await expect(versionRow.getByTestId("version-label")).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
 
   // Click the download button and validate that you cannot download it
-  await card.getByTestId("version-action-button").click();
+  await versionRow.getByTestId("version-action-button").click();
   await page.waitForTimeout(1 * 1000); // 1 second
-  await expect(card.getByTestId("version-downloading-status")).not.toContainText("Downloading");
+  await expect(versionRow.getByTestId("version-downloading-status")).not.toContainText("Downloading");
 
-  errorMessage = card.getByTestId("version-downloading-status");
+  errorMessage = versionRow.getByTestId("version-downloading-status");
   await expect(errorMessage).toContainText("requires", { timeout: 5 * 1000 }); // 5 seconds
   await expect(errorMessage).toContainText("Upgrade KOTS");
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_TARGET_KOTS_VERSION);
@@ -79,15 +79,15 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   // Click the diff button and validate that you cannot select this version to diff because it was
   // unable to download
   await page.getByTestId("select-releases-to-diff-button").click();
-  await expect(card).not.toBeVisible();
+  await expect(versionRow).not.toBeVisible();
 
   // Click the cancel button and validate that you can see the version card again
   await page.getByTestId("cancel-diff-button").click();
-  await expect(card).toBeVisible();
+  await expect(versionRow).toBeVisible();
 
   // A license sync may happen on installation and there will be a "License changed" version in the
   // list
-  const versionSequence = card.getByTestId("version-sequence");
+  const versionSequence = versionRow.getByTestId("version-sequence");
   const versionSequenceText = await versionSequence.textContent();
   const versionSequenceNumber = versionSequenceText.match(/\d+/);
   if (!versionSequenceNumber || versionSequenceNumber.length !== 1) {

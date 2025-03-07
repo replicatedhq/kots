@@ -1,8 +1,8 @@
-import { Page, Expect, Locator } from '@playwright/test';
+import { Page, Expect } from '@playwright/test';
 
 import { RegistryInfo } from './cli';
 import { APP_SLUG } from './constants';
-import { deployVersion } from './version-history';
+import { deployNewVersion } from './version-history';
 import { validateRegistryChangeKustomization } from './view-files';
 
 export const updateRegistrySettings = async (page: Page, expect: Expect, registryInfo: RegistryInfo, isMinimalRBAC: boolean) => {
@@ -36,7 +36,7 @@ export const updateRegistrySettings = async (page: Page, expect: Expect, registr
   await expect(card.getByTestId("airgap-registry-settings-progress")).not.toBeVisible({ timeout: 240000 });
 
   await page.reload();
-  await deployVersion(page, expect, 0, 3, 'Registry Change', isMinimalRBAC);
+  await deployNewVersion(page, expect, 3, 'Registry Change', isMinimalRBAC);
 
   await validateRegistryChangeKustomization(page, expect, registryInfo);
 };

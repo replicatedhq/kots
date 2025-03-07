@@ -22,7 +22,7 @@ import {
   validateCurrentDeployLogs,
   validateConfigView,
   validateVersionHistoryRows,
-  deployVersion,
+  deployNewVersion,
   validateCurrentLicense,
   updateOnlineLicense,
   validateUpdatedLicense,
@@ -75,14 +75,14 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
   await validateVersionHistoryRows(page, expect, true);
-  await deployVersion(page, expect, 0, 1, 'Config Change', true);
+  await deployNewVersion(page, expect, 1, 'Config Change', true);
 
   await validateCurrentLicense(page, expect, constants.CUSTOMER_NAME, constants.CHANNEL_NAME, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
   const newIntEntitlement = await updateOnlineLicense(page, constants.CUSTOMER_ID, constants.CUSTOMER_NAME, constants.CHANNEL_ID, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
   await validateUpdatedLicense(page, expect, newIntEntitlement);
 
   await validateVersionDiff(page, expect, 2, 1);
-  await deployVersion(page, expect, 0, 2, 'License Change', true);
+  await deployNewVersion(page, expect, 2, 'License Change', true);
 
   await validateSnapshotsAWSConfig(page, expect);
   await validateAutomaticFullSnapshots(page, expect);
@@ -98,7 +98,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
 
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
   await updateRegistrySettings(page, expect, registryInfo, true);
-  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_RELEASE_SEQUENCE, 4, true);
+  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_RELEASE_SEQUENCE, true);
   await validateDuplicateLicenseUpload(page, expect);
   await logout(page, expect);
 });
