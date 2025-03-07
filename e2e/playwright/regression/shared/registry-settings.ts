@@ -5,7 +5,7 @@ import { APP_SLUG } from './constants';
 import { deployNewVersion } from './version-history';
 import { validateRegistryChangeKustomization } from './view-files';
 
-export const updateRegistrySettings = async (page: Page, expect: Expect, registryInfo: RegistryInfo, isMinimalRBAC: boolean) => {
+export const updateRegistrySettings = async (page: Page, expect: Expect, registryInfo: RegistryInfo, expectedSequence: number, isMinimalRBAC: boolean) => {
   await page.getByRole('link', { name: 'Registry settings', exact: true }).click();
 
   const card = page.getByTestId('airgap-registry-settings-card');
@@ -36,7 +36,7 @@ export const updateRegistrySettings = async (page: Page, expect: Expect, registr
   await expect(card.getByTestId("airgap-registry-settings-progress")).not.toBeVisible({ timeout: 240000 });
 
   await page.reload();
-  await deployNewVersion(page, expect, 3, 'Registry Change', isMinimalRBAC);
+  await deployNewVersion(page, expect, expectedSequence, 'Registry Change', isMinimalRBAC);
 
   await validateRegistryChangeKustomization(page, expect, registryInfo);
 };
