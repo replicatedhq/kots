@@ -33,9 +33,9 @@ func NewRegressionTest() Test {
 	}
 }
 
-func NewSmokeTest() Test {
+func NewSmokeTestOnline() Test {
 	return Test{
-		ID:             "@smoke-test",
+		ID:             "@smoke-test-online",
 		Namespace:      "smoke-test",
 		AppSlug:        "qakotstestim",
 		UpstreamURI:    "qakotstestim/github-actions-qa",
@@ -43,11 +43,11 @@ func NewSmokeTest() Test {
 	}
 }
 
-func NewAirgapSmokeTest() Test {
+func NewSmokeTestAirgap() Test {
 	return Test{
-		ID:          "@airgap-smoke-test",
-		TestimSuite: "airgap-smoke-test",
+		ID:          "@smoke-test-airgap",
 		Namespace:   "airgap-smoke-test",
+		AppSlug:     "airgap-smoke-test",
 		UpstreamURI: "airgap-smoke-test/automated",
 	}
 }

@@ -1,0 +1,9 @@
+export const APP_SLUG = "airgap-smoke-test";
+export const VENDOR_APP_ID = "2J0enLZ3hRHnU6ZrjJLIiRHatCV";
+export const CHANNEL_ID = "2J0enLCE1asZNkTJW18nOJbNMQG";
+export const CUSTOMER_ID = "2J0fDpo1znP4CVsE4QtYZ12qGGx";
+export const INSTALL_RELEASE_SEMVER = "0.1.2";
+export const INSTALL_CHANNEL_SEQUENCE = 22;
+export const UPDATE_RELEASE_SEMVER = "0.2.2";
+export const UPDATE_CHANNEL_SEQUENCE = 24;
+export const DOWNLOAD_PORTAL_BASE64_PASSWORD = "UnJpSUY5bzgxQWNoOUlpeg==";
