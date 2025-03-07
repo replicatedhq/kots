@@ -92,13 +92,13 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   // App snapshot workflow
   await createAppSnapshot(page, expect);
   await rollbackToVersion(page, expect, 1, 2);
-  await restoreAppSnapshot(page, expect, 0, 2, true);
+  await restoreAppSnapshot(page, expect, 0, 3, true);
   await deleteAppSnapshot(page, expect);
 
   // Full snapshot workflow
   await createFullSnapshot(page, expect);
   await rollbackToVersion(page, expect, 1, 2);
-  await restoreFullSnapshot(page, expect, 0, 2, true, constants.IS_AIRGAPPED);
+  await restoreFullSnapshot(page, expect, 0, 3, true, constants.IS_AIRGAPPED);
   await deleteFullSnapshot(page, expect);
 
   // Other validation
