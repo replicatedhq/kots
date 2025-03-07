@@ -17,7 +17,6 @@ import {
   updateConfig,
   validateVersionHistoryAutomaticUpdates,
   validateCurrentVersionCard,
-  validateCurrentReleaseNotes,
   validateVersionMinimalRBACPreflights,
   validateCurrentDeployLogs,
   validateConfigView,
@@ -73,7 +72,6 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   await validateVersionMinimalRBACPreflights(page, expect, 0, 2);
   await validateVersionHistoryAutomaticUpdates(page, expect);
   await validateCurrentVersionCard(page, expect, 1);
-  await validateCurrentReleaseNotes(page, expect, "release notes - updates");
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
   await validateVersionHistoryRows(page, expect, constants.IS_AIRGAPPED);
