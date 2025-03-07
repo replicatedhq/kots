@@ -4,7 +4,7 @@ import { execSync } from 'child_process';
 import { NUM_OF_VERSIONS, APP_SLUG, NAMESPACE, DEFAULT_PAGE_SIZE, LATEST_SEQUENCE } from './constants';
 
 test('version history pagination', async ({ page }) => {
-  test.setTimeout(300000); // 300 seconds, 5 minutes
+  test.setTimeout(8 * 60 * 1000); // 8 minutes
   await login(page);
   await uploadLicense(page, expect, "version-history-pagination.yaml");
   await expect(page.locator('#app')).toContainText('Configure Version History Pagination', { timeout: 15000 });
@@ -24,6 +24,8 @@ test('version history pagination', async ({ page }) => {
   const endTime = Date.now();
   const totalDuration = (endTime - startTime) / 1000; // Convert to seconds
   console.log(`total time to create ${NUM_OF_VERSIONS} versions: ${totalDuration.toFixed(2)}s`);
+  // Last time this was run I got:
+  // "total time to create 251 versions: 308.01s"
 
   // validate that the versions created via the CLI are visible via the CLI with pagination
   const versionCheckConfig: VersionCheckConfig = {

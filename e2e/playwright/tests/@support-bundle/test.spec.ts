@@ -12,7 +12,8 @@ import {
 test('target kots version', async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  test.setTimeout(5 * 60 * 1000); // 5 minutes
+  // this seems to take a really long time on okd
+  test.setTimeout(10 * 60 * 1000); // 10 minutes
 
   await login(page);
   await uploadLicense(page, expect);
