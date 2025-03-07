@@ -62,6 +62,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   // Validate install and app updates
   await validateInitialConfig(page, expect);
   await validateMinimalRBACInitialPreflights(page, expect);
+  await addSnapshotsRBAC(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardInfo(page, expect);
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect);
@@ -86,7 +87,6 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   await deployNewVersion(page, expect, 3, 'License Change', true);
 
   // Snapshot validation
-  await addSnapshotsRBAC(page, expect, constants.IS_AIRGAPPED);
   await validateSnapshotsAWSConfig(page, expect);
   await validateAutomaticFullSnapshots(page, expect);
   await validateAutomaticPartialSnapshots(page, expect);
