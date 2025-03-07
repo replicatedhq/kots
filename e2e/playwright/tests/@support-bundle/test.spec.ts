@@ -47,7 +47,8 @@ async function generateSupportBundleUi(page: Page, expect: Expect) {
 
   await expect(page.getByTestId("page-support-bundle-analysis")).toBeVisible({ timeout: 30 * 1000 }); // 30 seconds
   await expect(page.getByTestId("support-bundle-analysis-progress-container")).toBeVisible();
-  await expect(page.getByTestId("support-bundle-analysis-progress-container")).not.toBeVisible({ timeout: 2 * 60 * 1000 }); // 2 minutes
+  // this seems to take a really long time on okd
+  await expect(page.getByTestId("support-bundle-analysis-progress-container")).not.toBeVisible({ timeout: 8 * 60 * 1000 }); // 8 minutes
 
   await expect(page.getByTestId("support-bundle-analysis-bundle-insights-tab")).toBeVisible();
   await page.getByTestId("support-bundle-analysis-bundle-insights-tab").click();
@@ -70,7 +71,7 @@ async function generateSupportBundleCli(page: Page, expect: Expect) {
   await runSupportBundleCommand(clipboardContent);
 
   // this seems to take a really long time on okd
-  await expect(page.getByTestId("support-bundle-analysis-bundle-insights-tab")).toBeVisible({ timeout: 5 * 60 * 1000 }); // 5 minutes
+  await expect(page.getByTestId("support-bundle-analysis-bundle-insights-tab")).toBeVisible({ timeout: 8 * 60 * 1000 }); // 8 minutes
   await page.getByTestId("support-bundle-analysis-bundle-insights-tab").click();
   await expect(page.getByTestId("support-bundle-analysis-bundle-insights")).toContainText("Only show errors and warnings");
 }
