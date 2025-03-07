@@ -74,19 +74,19 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
   await validateIgnorePreflightsModal(page, expect);
   await validateVersionHistoryAutomaticUpdates(page, expect);
-  await validateCurrentVersionCard(page, expect, "1.0.0", 0);
+  await validateCurrentVersionCard(page, expect, "1.0.0", 1);
   await validateCurrentReleaseNotes(page, expect, "release notes - updates");
   await validateCurrentClusterAdminPreflights(page, expect);
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
-  await validateVersionHistoryRows(page, expect, true);
+  await validateVersionHistoryRows(page, expect, constants.IS_AIRGAPPED);
   await deployNewVersion(page, expect, 2, 'Config Change', false);
 
   // License validation
   await validateCurrentLicense(page, expect, constants.CUSTOMER_NAME, constants.CHANNEL_NAME, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
   const newIntEntitlement = await updateOnlineLicense(page, constants.CUSTOMER_ID, constants.CUSTOMER_NAME, constants.CHANNEL_ID, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
   await validateUpdatedLicense(page, expect, newIntEntitlement);
-  await validateVersionDiff(page, expect, 2, 1);
+  await validateVersionDiff(page, expect, 3, 2);
   await deployNewVersion(page, expect, 3, 'License Change', false);
 
   // Snapshot validation
@@ -96,14 +96,14 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
 
   // App snapshot workflow
   await createAppSnapshot(page, expect);
-  await rollbackToVersion(page, expect, 1, 1);
-  await restoreAppSnapshot(page, expect, 0, 2, true);
+  await rollbackToVersion(page, expect, 1, 2);
+  await restoreAppSnapshot(page, expect, 0, 3, true);
   await deleteAppSnapshot(page, expect);
 
   // Full snapshot workflow
   await createFullSnapshot(page, expect);
-  await rollbackToVersion(page, expect, 1, 1);
-  await restoreFullSnapshot(page, expect, 0, 2, true, constants.IS_AIRGAPPED);
+  await rollbackToVersion(page, expect, 1, 2);
+  await restoreFullSnapshot(page, expect, 0, 3, true, constants.IS_AIRGAPPED);
   await deleteFullSnapshot(page, expect);
 
   // Other validation

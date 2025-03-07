@@ -83,7 +83,7 @@ export const validateVersionHistoryAutomaticUpdates = async (page: Page, expect:
   await expect(automaticUpdatesModal).not.toBeVisible();
 };
 
-export const validateVersionHistoryRows = async (page: Page, expect: Expect, isOnline: boolean) => {
+export const validateVersionHistoryRows = async (page: Page, expect: Expect, isAirgapped: boolean) => {
   await page.getByRole('link', { name: 'Version history', exact: true }).click();
 
   const updatesCard = page.getByTestId('available-updates-card');
@@ -92,7 +92,7 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isO
   const updateRow = updatesCard.getByTestId('version-history-row-0');
   await expect(updateRow).toBeVisible();
   await expect(updateRow).toContainText('1.0.0');
-  await expect(updateRow).toContainText('Sequence 1');
+  await expect(updateRow).toContainText('Sequence 2');
   await expect(updateRow).toContainText('Config Change');
   await expect(updateRow).toContainText('View diff');
   await expect(updateRow.getByRole('button', { name: 'Deploy', exact: true })).toBeVisible();
@@ -103,7 +103,7 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isO
   const firstRow = allVersionsCard.getByTestId("version-history-row-0");
   await expect(firstRow).toBeVisible();
   await expect(firstRow).toContainText('1.0.0');
-  await expect(firstRow).toContainText('Sequence 1');
+  await expect(firstRow).toContainText('Sequence 2');
   await expect(firstRow).toContainText('Config Change');
   await expect(firstRow).toContainText('View diff');
   await expect(firstRow.getByRole('button', { name: 'Deploy', exact: true })).toBeVisible();
@@ -111,10 +111,18 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isO
   const secondRow = allVersionsCard.getByTestId("version-history-row-1");
   await expect(secondRow).toBeVisible();
   await expect(secondRow).toContainText('1.0.0');
-  await expect(secondRow).toContainText('Sequence 0');
-  await expect(secondRow).toContainText(isOnline ? 'Online Install' : 'Airgap Install');
+  await expect(secondRow).toContainText('Sequence 1');
+  await expect(secondRow).toContainText(isAirgapped ? 'Airgap Update' : 'Upstream Update');
   await expect(secondRow).toContainText('Currently deployed version');
   await expect(secondRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
+
+  const thirdRow = allVersionsCard.getByTestId("version-history-row-1");
+  await expect(thirdRow).toBeVisible();
+  await expect(thirdRow).toContainText('1.0.0');
+  await expect(thirdRow).toContainText('Sequence 0');
+  await expect(thirdRow).toContainText(isAirgapped ? 'Airgap Install' : 'Online Install');
+  await expect(thirdRow).toContainText('Currently deployed version');
+  await expect(thirdRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 };
 
 export const deployNewVersion = async (page: Page, expect: Expect, expectedSequence: number, expectedSource: string, isMinimalRBAC: boolean, skipNavigation: boolean = false) => {
