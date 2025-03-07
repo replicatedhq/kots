@@ -602,7 +602,7 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
-  validate-smoke-test:
+  validate-smoke-test-online:
     runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
@@ -628,7 +628,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-id: '@smoke-test'
+          test-id: '@smoke-test-online'
           kots-namespace: 'smoke-test'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
@@ -4606,7 +4606,7 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       # playwright tests
-      - validate-smoke-test
+      - validate-smoke-test-online
       - validate-smoke-test-airgap
       - validate-backup-and-restore
       - validate-no-required-config
