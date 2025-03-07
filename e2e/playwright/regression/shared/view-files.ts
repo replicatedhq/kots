@@ -117,10 +117,6 @@ export const validateViewFiles = async (
 };
 
 export const validateRegistryChangeKustomization = async (page: Page, expect: Expect, registryInfo: RegistryInfo) => {
-  // resize page so that the entire editor content is visible for text detection
-  await page.setViewportSize({ width: 3840, height: 2160 });
-
-  await page.locator('.NavItem').getByText('Application', { exact: true }).click();
   await page.getByRole('link', { name: 'View files', exact: true }).click();
 
   const viewFilesPage = page.getByTestId('view-files-page');
@@ -137,9 +133,6 @@ export const validateRegistryChangeKustomization = async (page: Page, expect: Ex
   const editor = viewFilesPage.getByTestId('file-editor');
   const kustomizationYAML = await getEditorText(editor);
   expect(kustomizationYAML).toContain(`newName: ${registryInfo.ip}/${APP_SLUG}/`);
-
-  // resize page back to default size
-  await page.setViewportSize({ width: 1280, height: 720 });
 };
 
 const selectFile = async (page: Page, fileTree: Locator, file: string) => {

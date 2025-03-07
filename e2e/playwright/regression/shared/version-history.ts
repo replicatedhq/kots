@@ -1,4 +1,4 @@
-import { Page, Expect } from '@playwright/test';
+import { Page, Expect, Locator } from '@playwright/test';
 import * as uuid from "uuid";
 
 import { promoteRelease } from './api';
@@ -117,7 +117,7 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isO
   await expect(secondRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 };
 
-export const deployVersion = async (page: Page, expect: Expect, rowIndex: number, sequence: number, source: string, isMinimalRBAC: boolean, skipNavigation: boolean = false) => {
+export const deployNewVersion = async (page: Page, expect: Expect, sequence: number | undefined, source: string, isMinimalRBAC: boolean, skipNavigation: boolean = false) => {
   if (!skipNavigation) {
     await page.locator('.NavItem').getByText('Application', { exact: true }).click();
     await page.getByRole('link', { name: 'Version history', exact: true }).click();
@@ -126,10 +126,14 @@ export const deployVersion = async (page: Page, expect: Expect, rowIndex: number
   const allVersionsCard = page.getByTestId('all-versions-card');
   await expect(allVersionsCard).toBeVisible({ timeout: 15000 });
 
-  const versionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex}`);
+  const versionRow = allVersionsCard.getByTestId('version-history-row-0');
   await expect(versionRow).toBeVisible();
-  await expect(versionRow).toContainText(`Sequence ${sequence}`);
   await expect(versionRow).toContainText(source);
+  if (sequence) {
+    await expect(versionRow).toContainText(`Sequence ${sequence}`);
+  } else {
+    sequence = await sequenceFromVersionRow(versionRow);
+  }
 
   const preflightChecksLoader = versionRow.getByTestId('preflight-checks-loader');
   await expect(preflightChecksLoader).not.toBeVisible({ timeout: 180000 });
@@ -154,10 +158,10 @@ export const deployVersion = async (page: Page, expect: Expect, rowIndex: number
   await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
-  const previousVersionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex + 1}`);
-  await expect(previousVersionRow).toContainText(`Sequence ${sequence - 1}`);
+  const previousVersionRow = allVersionsCard.getByTestId('version-history-row-1');
   await expect(previousVersionRow).toContainText('Previously deployed');
   await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible();
+  await expect(previousVersionRow).toContainText(`Sequence ${sequence - 1}`);
 
   const currentVersionCard = page.getByTestId("current-version-card");
   await expect(currentVersionCard).toContainText(`Sequence ${sequence}`);
@@ -278,7 +282,7 @@ export const validateCurrentlyDeployedVersionInfo = async (page: Page, expect: E
   }
 };
 
-export const validateCheckForUpdates = async (page: Page, expect: Expect, channelId: string, vendorReleaseSequence: number, expectedSequence: number, isMinimalRBAC: boolean) => {
+export const validateCheckForUpdates = async (page: Page, expect: Expect, channelId: string, vendorReleaseSequence: number, isMinimalRBAC: boolean) => {
   await page.getByRole('link', { name: 'Version history', exact: true }).click();
 
   const newVersionLabel = `1.0.0+${uuid.v4()}`;
@@ -305,5 +309,21 @@ export const validateCheckForUpdates = async (page: Page, expect: Expect, channe
   await releaseNotesModal.getByRole("button", { name: "Close" }).click();
   await expect(releaseNotesModal).not.toBeVisible();
 
-  await deployVersion(page, expect, 0, expectedSequence, 'Upstream Update', isMinimalRBAC, true);
+  // multiple instances of the test can run in parallel, each of which will promote a new release
+  // making it difficult to predict what the new sequence will be.
+  await deployNewVersion(page, expect, undefined, 'Upstream Update', isMinimalRBAC, true);
+};
+
+export const sequenceFromVersionRow = async (versionRow: Locator): Promise<number> => {
+  const versionSequence = versionRow.getByTestId("version-sequence");
+  const versionSequenceText = await versionSequence.textContent();
+  const versionSequenceNumber = versionSequenceText.match(/\d+/);
+  if (!versionSequenceNumber || versionSequenceNumber.length !== 1) {
+    throw new Error(`version sequence number not found in text "${versionSequenceText}"`);
+  }
+  const versionSequenceNumberInt = parseInt(versionSequenceNumber[0]);
+  if (isNaN(versionSequenceNumberInt)) {
+    throw new Error(`version sequence number is not a number "${versionSequenceNumber}"`);
+  }
+  return versionSequenceNumberInt;
 };
