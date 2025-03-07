@@ -1794,7 +1794,10 @@ class AppVersionHistory extends Component<Props, State> {
     };
 
     return (
-      <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
+      <div
+        className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20"
+        data-testid="page-app-version-history"
+      >
         <KotsPageTitle pageName="Version History" showAppSlug />
         <div className="flex-column flex1">
           <div className="flex flex1 justifyContent--center">

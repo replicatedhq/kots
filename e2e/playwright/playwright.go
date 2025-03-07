@@ -44,12 +44,17 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 		test.ID,
 	}
 
+	namespace := os.Getenv("NAMESPACE")
+	if namespace == "" {
+		namespace = test.Namespace
+	}
+
 	cmd := exec.Command("npx", args...)
 	cmd.Dir = "/playwright"
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", kubeconfig))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", runOptions.Port))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("NAMESPACE=%s", test.Namespace))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("NAMESPACE=%s", namespace))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("APP_SLUG=%s", test.AppSlug))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_PATH=%s", filepath.Join("tests", test.ID)))
 	cmd.Env = append(cmd.Env, "NODE_OPTIONS=--max-old-space-size=4096")

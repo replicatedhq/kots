@@ -677,7 +677,10 @@ const DashboardVersionCard = (props: Props) => {
             </div>
           </div>
           <div className="flex alignItems--center u-paddingLeft--20">
-            <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default u-marginRight--5">
+            <p
+              className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default u-marginRight--5"
+              data-testid="version-source"
+            >
               {currentVersion?.source}
             </p>
           </div>
@@ -1170,6 +1173,7 @@ const DashboardVersionCard = (props: Props) => {
               }
               deployVersion(version);
             }}
+            data-testid="btn-version-action"
           >
             <span
               key={version.nonDeployableCause}
@@ -1351,7 +1355,7 @@ const DashboardVersionCard = (props: Props) => {
     const isNew = secondsAgo(latestDeployableVersion?.createdOn) < 10;
 
     return (
-      <div className="u-marginTop--20">
+      <div className="u-marginTop--20" data-testid="bottom-section">
         <p className="u-fontSize--normal u-lineHeight--normal u-textColor--info u-fontWeight--medium">
           New version available
         </p>
@@ -1374,7 +1378,10 @@ const DashboardVersionCard = (props: Props) => {
             </a>
           </div>
         )}
-        <div className="VersionCard-content--wrapper card-item u-marginTop--15">
+        <div
+          className="VersionCard-content--wrapper card-item u-marginTop--15"
+          data-testid="new-version-card"
+        >
           <div
             className={`flex ${
               isNew && !selectedApp?.isAirgap ? "is-new" : ""
@@ -1408,7 +1415,10 @@ const DashboardVersionCard = (props: Props) => {
               {renderYamlErrors(latestDeployableVersion)}
             </div>
             <div className="flex alignItems--center u-paddingLeft--20">
-              <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">
+              <p
+                className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default"
+                data-testid="version-source"
+              >
                 {downstreamSource}
               </p>
             </div>
@@ -1491,6 +1501,7 @@ const DashboardVersionCard = (props: Props) => {
                 onMount={(el: Element) =>
                   props.airgapUploader?.assignElement(el)
                 }
+                dataTestId="airgap-bundle-drop-zone"
               >
                 <div className="flex alignItems--center">
                   <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
@@ -1579,7 +1590,10 @@ const DashboardVersionCard = (props: Props) => {
         )}
       </div>
       {currentVersion?.deployedAt ? (
-        <div className="VersionCard-content--wrapper card-item">
+        <div
+          className="VersionCard-content--wrapper card-item"
+          data-testid="current-version-card"
+        >
           {renderCurrentVersion()}
         </div>
       ) : (

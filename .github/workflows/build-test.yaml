@@ -638,6 +638,44 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
+  validate-smoke-test-airgap:
+    runs-on: ubuntu-24.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0}
+        ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: download e2e deps
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v4
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-id: '@smoke-test-airgap'
+          kots-namespace: 'airgap-smoke-test'
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
+          kotsadm-image-registry: ttl.sh
+          kots-airgap: true
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
+
   validate-minimal-rbac:
     runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
@@ -2392,7 +2430,6 @@ jobs:
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-          k8s-cluster-skip-teardown: true
 
       - name: promote restrictive release
         env:
@@ -2460,10 +2497,10 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
+          kots-airgap: true
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-          k8s-cluster-skip-teardown: true
 
       - name: Remove Cluster
         id: remove-cluster
@@ -2526,7 +2563,6 @@ jobs:
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-          k8s-cluster-skip-teardown: true
 
       - name: promote restrictive release
         env:
@@ -2592,10 +2628,10 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
+          kots-airgap: true
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-          k8s-cluster-skip-teardown: true
 
       - name: Remove Cluster
         id: remove-cluster
@@ -2658,7 +2694,6 @@ jobs:
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-          k8s-cluster-skip-teardown: true
 
       - name: promote restrictive release
         env:
@@ -2724,10 +2759,10 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
+          kots-airgap: true
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-          k8s-cluster-skip-teardown: true
 
       - name: Remove Cluster
         id: remove-cluster
@@ -3133,45 +3168,6 @@ jobs:
           kots-namespace: 'multi-app-install'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
-          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-
-
-  validate-airgap-smoke-test:
-    runs-on: ubuntu-24.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
-    strategy:
-      fail-fast: false
-      matrix:
-        cluster: [
-          {distribution: kind, version: v1.28.0}
-        ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: download e2e deps
-        uses: actions/download-artifact@v4
-        with:
-          name: e2e
-          path: e2e/bin/
-      - run: docker load -i e2e/bin/e2e-deps.tar
-      - run: chmod +x e2e/bin/*
-      - name: download kots binary
-        uses: actions/download-artifact@v4
-        with:
-          name: kots
-          path: bin/
-      - run: chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-id: '@airgap-smoke-test'
-          kots-namespace: 'airgap-smoke-test'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          kots-airgap: true
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -4609,9 +4605,9 @@ jobs:
       - ci-test-kots
       # testim tests
       - validate-existing-online-install-minimal
-      - validate-airgap-smoke-test
       # playwright tests
       - validate-smoke-test
+      - validate-smoke-test-airgap
       - validate-backup-and-restore
       - validate-no-required-config
       - validate-config

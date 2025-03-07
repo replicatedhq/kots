@@ -266,6 +266,7 @@ const ConfigGroup = (props) => {
           className={`flex-auto config-item-wrapper card-item u-padding--15 observe-elements ${
             isAtLeastOneItemVisible() ? "u-marginBottom--20" : ""
           } config-groups`}
+          data-testid={`config-group-${item.name}`}
         >
           <h3 className="card-item-title">{item.title}</h3>
           {item.description !== "" ? (

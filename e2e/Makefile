@@ -46,7 +46,7 @@ test:
 		e2e.test \
 			-test.v \
 			--ginkgo.v \
-			--ginkgo.focus="$(FOCUS)" \
+			--ginkgo.focus="^$(FOCUS)$" \
 			--testim-branch=$(TESTIM_BRANCH) \
 			--existing-kubeconfig=$(EXISTING_KUBECONFIG) \
 			--kotsadm-image-registry=$(KOTSADM_IMAGE_REGISTRY) \
