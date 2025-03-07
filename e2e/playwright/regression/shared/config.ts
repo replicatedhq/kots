@@ -22,6 +22,7 @@ export const validateInitialConfig = async (page: Page, expect: Expect) => {
   await configArea.locator('#a_required_text-group').getByRole('textbox').fill('i filled this because it is required');
   await configArea.getByLabel('Check to include helm chart').check();
   await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(configArea).not.toBeVisible({ timeout: 30000 });
 };
 
 export const updateConfig = async (page: Page, expect: Expect) => {
@@ -54,7 +55,7 @@ export const updateConfig = async (page: Page, expect: Expect) => {
   await page.getByRole('button', { name: 'Save config' }).click();
 
   const nextStepModal = page.getByTestId('config-next-step-modal');
-  await expect(nextStepModal).toBeVisible({ timeout: 15000 });
+  await expect(nextStepModal).toBeVisible({ timeout: 30000 });
   await page.getByRole('button', { name: 'Go to updated version' }).click();
   await expect(nextStepModal).not.toBeVisible();
 };

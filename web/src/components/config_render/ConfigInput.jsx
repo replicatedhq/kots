@@ -141,6 +141,7 @@ export default class ConfigInput extends Component {
               <div
                 className="u-marginTop--10"
                 onClick={() => this.props.handleAddItem(this.props.name)}
+                data-testid="link-add-another"
               >
                 <span className="add-btn u-fontSize--small u-fontWeight--bold link">
                   <Icon

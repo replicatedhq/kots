@@ -1,14 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { login, uploadLicense } from "../shared";
+import {
+  login,
+  uploadLicense,
+  airgapOnlineInstall,
+  appIsReady,
+} from "../shared";
 import { execSync } from 'child_process';
 
-test("smoke test", async ({ page }) => {
+test("smoke test onine", async ({ page }) => {
   test.setTimeout(5 * 60 * 1000); // 5 minutes
   await login(page);
   await uploadLicense(page, expect);
-  await expect(page.locator("#app")).toContainText("Install in airgapped environment", { timeout: 15000 });
-  await page.getByTestId("download-app-from-internet").click();
-  await expect(page.locator("#app")).toContainText("Installing your license");
+  await airgapOnlineInstall(page, expect);
   await expect(page.locator("h3")).toContainText("My Example Config", { timeout: 30000 });
   await page.locator("#a_bool-group").getByText("a bool field").click();
   await page.locator("#a_required_text-group").getByRole("textbox").click();
@@ -19,7 +22,7 @@ test("smoke test", async ({ page }) => {
   await expect(page.locator("#app")).toContainText("Sequence is 0");
   await page.getByRole("button", { name: "Deploy" }).click();
   await page.getByRole("button", { name: "Deploy anyway" }).click();
-  await expect(page.locator("#app")).toContainText("Ready", { timeout: 30000 });
+  await appIsReady(page, expect);
   await expect(page.locator("#app")).toContainText("Currently deployed version", { timeout: 30000 });
   await expect(page.locator("#app")).toContainText("Check for update");
   await expect(page.locator("#app")).toContainText("Redeploy", { timeout: 15000 });

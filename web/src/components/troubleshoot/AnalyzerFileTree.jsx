@@ -285,7 +285,10 @@ class AnalyzerFileTree extends Component {
       this.state.currentViewIndex + 1 === this.state.activeMarkers.length;
 
     return (
-      <div className="flex-column flex1 AnalyzerFileTree--wrapper">
+      <div
+        className="flex-column flex1 AnalyzerFileTree--wrapper"
+        data-testid="support-bundle-analysis-file-inspector"
+      >
         {!files || !files.length || isOld ? (
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center">
             <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">
@@ -299,7 +302,10 @@ class AnalyzerFileTree extends Component {
         ) : (
           <div className="flex flex1">
             <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden">
-              <div className="u-overflow--auto dirtree">
+              <div
+                className="u-overflow--auto dirtree"
+                data-testid="support-bundle-analysis-file-tree"
+              >
                 <FileTree
                   files={files}
                   isRoot={true}
@@ -308,7 +314,10 @@ class AnalyzerFileTree extends Component {
                 />
               </div>
             </div>
-            <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative">
+            <div
+              className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative"
+              data-testid="support-bundle-analysis-file-inspector-editor"
+            >
               {this.state.activeMarkers.length > 0 ? (
                 <div className="redactor-pager flex alignItems--center">
                   <div
@@ -331,7 +340,7 @@ class AnalyzerFileTree extends Component {
                     />
                   </div>
                   <div className="flex alignItems--center">
-                    <span>
+                    <span data-testid="support-bundle-analysis-file-inspector-redaction-pager">
                       Redaction {this.state.currentViewIndex + 1} of{" "}
                       {this.state.activeMarkers.length}
                     </span>

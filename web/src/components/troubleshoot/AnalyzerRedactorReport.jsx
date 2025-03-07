@@ -83,7 +83,10 @@ export class AnalyzerRedactorReport extends Component {
     }
 
     return (
-      <div className="flex flex-column">
+      <div
+        className="flex flex-column"
+        data-testid="support-bundle-analysis-redactor-report"
+      >
         {!isEmpty(redactions) ? (
           <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">
             Below is a list of the redactor specs that were applied when

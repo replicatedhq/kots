@@ -911,6 +911,7 @@ class AppConfig extends Component<Props, State> {
                           this.isConfigReadOnly(app)
                         }
                         onClick={this.handleSave}
+                        data-testid="btn-save-config"
                       >
                         {saveButtonText}
                       </button>

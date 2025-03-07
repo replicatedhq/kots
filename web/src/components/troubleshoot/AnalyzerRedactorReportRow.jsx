@@ -50,6 +50,7 @@ class AnalyzerRedactorReportRow extends Component {
       <div
         className="flex flex1 alignItems--center section u-marginTop--10"
         key={`${file.file}-${i}`}
+        data-testid={`link-redactor-report-details-file-${file.file}`}
       >
         <div className="flex u-marginRight--10">
           <span
@@ -70,6 +71,7 @@ class AnalyzerRedactorReportRow extends Component {
           <div
             className="flex flex1 alignItems--center u-cursor--pointer"
             onClick={() => this.goToFile(file?.file)}
+            data-testid={`link-redactor-report-details-go-to-file`}
           >
             <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
               {" "}
@@ -104,6 +106,7 @@ class AnalyzerRedactorReportRow extends Component {
           <span
             className="link u-fontSize--small u-marginLeft--10"
             onClick={this.toggleDetails}
+            data-testid={`link-redactor-report-row-details`}
           >
             {" "}
             {this.state.toggleDetails ? "Hide details" : "Show details"}{" "}
@@ -128,7 +131,11 @@ class AnalyzerRedactorReportRow extends Component {
     );
 
     return (
-      <div className="flex flex-auto RedactorReportRow--wrapper" key={redactor}>
+      <div
+        className="flex flex-auto RedactorReportRow--wrapper"
+        key={redactor}
+        data-testid={`support-bundle-analysis-redactor-report-row-${redactor}`}
+      >
         <div className="flex flex1 alignItems--center">
           <div className="flex flex-column">
             <div className="flex flex1 alignItems--center">

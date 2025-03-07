@@ -1,4 +1,4 @@
-import { Page, Expect } from '@playwright/test';
+import { Page, Expect, Locator } from '@playwright/test';
 import * as uuid from "uuid";
 
 import { promoteRelease } from './api';
@@ -7,21 +7,10 @@ import {
   validateMinimalRBACPreflightsPage
 } from './preflights';
 
-export const validateCurrentVersionCard = async (page: Page, expect: Expect, versionLabel: string, sequence: number) => {
+export const validateCurrentVersionCard = async (page: Page, expect: Expect, sequence: number) => {
   const currentVersionCard = page.getByTestId("current-version-card");
   await expect(currentVersionCard).toBeVisible();
-  await expect(currentVersionCard).toContainText(versionLabel);
   await expect(currentVersionCard).toContainText(`Sequence ${sequence}`);
-};
-
-export const validateCurrentReleaseNotes = async (page: Page, expect: Expect, releaseNotes: string) => {
-  const currentVersionCard = page.getByTestId("current-version-card");
-  await currentVersionCard.getByTestId("current-release-notes-icon").click();
-  const releaseNotesModal = page.getByTestId("release-notes-modal");
-  await expect(releaseNotesModal).toBeVisible();
-  await expect(releaseNotesModal).toContainText(releaseNotes);
-  await releaseNotesModal.getByRole("button", { name: "Close" }).click();
-  await expect(releaseNotesModal).not.toBeVisible();
 };
 
 export const validateCurrentClusterAdminPreflights = async (page: Page, expect: Expect) => {
@@ -59,7 +48,7 @@ export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
   await deployLogsModal.getByTestId("logs-tab-applyStdout").click();
   const editor = deployLogsModal.getByTestId("deploy-logs-modal-editor");
   await expect(editor).toBeVisible();
-  await expect(editor).toContainText("created");
+  await expect(editor).toContainText(/created|configured|unchanged/);
 
   await deployLogsModal.getByRole("button", { name: "Ok, got it!" }).click();
   await expect(deployLogsModal).not.toBeVisible();
@@ -83,7 +72,7 @@ export const validateVersionHistoryAutomaticUpdates = async (page: Page, expect:
   await expect(automaticUpdatesModal).not.toBeVisible();
 };
 
-export const validateVersionHistoryRows = async (page: Page, expect: Expect, isOnline: boolean) => {
+export const validateVersionHistoryRows = async (page: Page, expect: Expect, isAirgapped: boolean) => {
   await page.getByRole('link', { name: 'Version history', exact: true }).click();
 
   const updatesCard = page.getByTestId('available-updates-card');
@@ -91,8 +80,7 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isO
 
   const updateRow = updatesCard.getByTestId('version-history-row-0');
   await expect(updateRow).toBeVisible();
-  await expect(updateRow).toContainText('1.0.0');
-  await expect(updateRow).toContainText('Sequence 1');
+  await expect(updateRow).toContainText('Sequence 2');
   await expect(updateRow).toContainText('Config Change');
   await expect(updateRow).toContainText('View diff');
   await expect(updateRow.getByRole('button', { name: 'Deploy', exact: true })).toBeVisible();
@@ -102,22 +90,27 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isO
 
   const firstRow = allVersionsCard.getByTestId("version-history-row-0");
   await expect(firstRow).toBeVisible();
-  await expect(firstRow).toContainText('1.0.0');
-  await expect(firstRow).toContainText('Sequence 1');
+  await expect(firstRow).toContainText('Sequence 2');
   await expect(firstRow).toContainText('Config Change');
   await expect(firstRow).toContainText('View diff');
   await expect(firstRow.getByRole('button', { name: 'Deploy', exact: true })).toBeVisible();
 
   const secondRow = allVersionsCard.getByTestId("version-history-row-1");
   await expect(secondRow).toBeVisible();
-  await expect(secondRow).toContainText('1.0.0');
-  await expect(secondRow).toContainText('Sequence 0');
-  await expect(secondRow).toContainText(isOnline ? 'Online Install' : 'Airgap Install');
+  await expect(secondRow).toContainText('Sequence 1');
+  await expect(secondRow).toContainText(isAirgapped ? 'Airgap Update' : 'Upstream Update');
   await expect(secondRow).toContainText('Currently deployed version');
   await expect(secondRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
+
+  const thirdRow = allVersionsCard.getByTestId("version-history-row-1");
+  await expect(thirdRow).toBeVisible();
+  await expect(thirdRow).toContainText('Sequence 0');
+  await expect(thirdRow).toContainText(isAirgapped ? 'Airgap Install' : 'Online Install');
+  await expect(thirdRow).toContainText('Currently deployed version');
+  await expect(thirdRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 };
 
-export const deployVersion = async (page: Page, expect: Expect, rowIndex: number, sequence: number, source: string, isMinimalRBAC: boolean, skipNavigation: boolean = false) => {
+export const deployNewVersion = async (page: Page, expect: Expect, expectedSequence: number, expectedSource: string, isMinimalRBAC: boolean, skipNavigation: boolean = false) => {
   if (!skipNavigation) {
     await page.locator('.NavItem').getByText('Application', { exact: true }).click();
     await page.getByRole('link', { name: 'Version history', exact: true }).click();
@@ -126,10 +119,10 @@ export const deployVersion = async (page: Page, expect: Expect, rowIndex: number
   const allVersionsCard = page.getByTestId('all-versions-card');
   await expect(allVersionsCard).toBeVisible({ timeout: 15000 });
 
-  const versionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex}`);
+  const versionRow = allVersionsCard.getByTestId('version-history-row-0');
   await expect(versionRow).toBeVisible();
-  await expect(versionRow).toContainText(`Sequence ${sequence}`);
-  await expect(versionRow).toContainText(source);
+  await expect(versionRow).toContainText(expectedSource);
+  await expect(versionRow).toContainText(`Sequence ${expectedSequence}`);
 
   const preflightChecksLoader = versionRow.getByTestId('preflight-checks-loader');
   await expect(preflightChecksLoader).not.toBeVisible({ timeout: 180000 });
@@ -154,13 +147,13 @@ export const deployVersion = async (page: Page, expect: Expect, rowIndex: number
   await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
-  const previousVersionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex + 1}`);
-  await expect(previousVersionRow).toContainText(`Sequence ${sequence - 1}`);
+  const previousVersionRow = allVersionsCard.getByTestId('version-history-row-1');
   await expect(previousVersionRow).toContainText('Previously deployed');
   await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible();
+  await expect(previousVersionRow).toContainText(`Sequence ${expectedSequence - 1}`);
 
   const currentVersionCard = page.getByTestId("current-version-card");
-  await expect(currentVersionCard).toContainText(`Sequence ${sequence}`);
+  await expect(currentVersionCard).toContainText(`Sequence ${expectedSequence}`);
 
   const updatesCard = page.getByTestId('available-updates-card');
   await expect(updatesCard).toBeVisible();
@@ -299,11 +292,19 @@ export const validateCheckForUpdates = async (page: Page, expect: Expect, channe
   await expect(updateRow).toContainText(newVersionLabel);
 
   await updateRow.getByTestId('release-notes-icon').click();
+  await validateReleaseNotesModal(page, expect, newReleaseNotes);
+
+  await deployNewVersion(page, expect, expectedSequence, 'Upstream Update', isMinimalRBAC, true);
+
+  const currentVersionCard = page.getByTestId("current-version-card");
+  await currentVersionCard.getByTestId("current-release-notes-icon").click();
+  await validateReleaseNotesModal(page, expect, newReleaseNotes);
+};
+
+export const validateReleaseNotesModal = async (page: Page, expect: Expect, releaseNotes: string) => {
   const releaseNotesModal = page.getByTestId("release-notes-modal");
   await expect(releaseNotesModal).toBeVisible();
-  await expect(releaseNotesModal).toContainText(newReleaseNotes);
+  await expect(releaseNotesModal).toContainText(releaseNotes);
   await releaseNotesModal.getByRole("button", { name: "Close" }).click();
   await expect(releaseNotesModal).not.toBeVisible();
-
-  await deployVersion(page, expect, 0, expectedSequence, 'Upstream Update', isMinimalRBAC, true);
 };

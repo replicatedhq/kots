@@ -410,6 +410,7 @@ function AppVersionHistoryRow(props: Props) {
                 actionFn(version);
                 return null;
               }}
+              data-testid="btn-version-action"
             >
               <span
                 key={version.nonDeployableCause}
@@ -688,7 +689,10 @@ function AppVersionHistoryRow(props: Props) {
               nothingToCommit && selectedDiffReleases && "u-opacity--half"
             } flex-column flex1 justifyContent--center`}
           >
-            <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">
+            <p
+              className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default"
+              data-testid="version-source"
+            >
               {version.source}
             </p>
             {gitopsEnabled && version.status !== "pending_download" ? null : (

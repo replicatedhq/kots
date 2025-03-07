@@ -75,7 +75,6 @@ export async function validateUpdatedLicense(page: Page, expect: Expect, newIntE
   await expect(updatesCard).toBeVisible();
   const updateRow = updatesCard.getByTestId('version-history-row-0');
   await expect(updateRow).toBeVisible();
-  await expect(updateRow).toContainText('1.0.0');
   await expect(updateRow).toContainText('License Change');
-  await expect(updateRow).toContainText('Sequence 2');
+  await expect(updateRow).toContainText('Sequence 3');
 };

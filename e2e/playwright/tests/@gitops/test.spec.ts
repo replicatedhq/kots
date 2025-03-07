@@ -1,8 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { login, uploadLicense } from '../shared';
 
-const { execSync } = require("child_process");
-
 test('gitops install', async ({ page }) => {
   test.setTimeout(120000); // 2 minutes
   // configure gitops

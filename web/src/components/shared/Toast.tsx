@@ -23,11 +23,12 @@ const Toast = ({ isToastVisible, type, children }: ToastProps) => {
   return (
     <div
       className={`tw-absolute tw-w-auto tw-h-auto tw-left-6 tw-z-40 
-      tw-bg-white tw-border tw-border-gray-300 tw-rounded 
-      tw-shadow-md tw-p-2 tw-text-gray-700 tw-text-sm toast ${
-        isToastVisible ? "visible" : ""
-      }
-    `}
+        tw-bg-white tw-border tw-border-gray-300 tw-rounded 
+        tw-shadow-md tw-p-2 tw-text-gray-700 tw-text-sm toast ${
+          isToastVisible ? "visible" : ""
+        }
+      `}
+      data-testid="toast"
     >
       <div className="tw-flex tw-items-center">
         <div

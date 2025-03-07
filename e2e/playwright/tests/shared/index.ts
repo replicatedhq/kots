@@ -4,3 +4,4 @@ export * from './api';
 export * from './online';
 export * from './airgap';
 export * from './app';
+export * from './filetree';

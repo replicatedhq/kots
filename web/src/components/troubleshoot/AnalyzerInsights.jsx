@@ -115,7 +115,10 @@ export class AnalyzerInsights extends Component {
     }
 
     return (
-      <div className="flex flex1 u-width--full">
+      <div
+        className="flex flex1 u-width--full"
+        data-testid="support-bundle-analysis-bundle-insights"
+      >
         {isEmpty(insights) ? (
           noInsightsNode
         ) : (
@@ -133,6 +136,7 @@ export class AnalyzerInsights extends Component {
                   onChange={(e) => {
                     this.handleFilterTiles(e.target.checked);
                   }}
+                  data-testid="support-bundle-analysis-bundle-insights-filter-tiles-checkbox"
                 />
                 Only show errors and warnings
               </label>
