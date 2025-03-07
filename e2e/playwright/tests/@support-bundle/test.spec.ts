@@ -9,7 +9,7 @@ import {
   appIsReady,
 } from '../shared';
 
-test('target kots version', async ({ page, context }) => {
+test('support bundle', async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
   // this seems to take a really long time on okd
