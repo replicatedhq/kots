@@ -13,16 +13,6 @@ export const validateCurrentVersionCard = async (page: Page, expect: Expect, seq
   await expect(currentVersionCard).toContainText(`Sequence ${sequence}`);
 };
 
-export const validateCurrentReleaseNotes = async (page: Page, expect: Expect, releaseNotes: string) => {
-  const currentVersionCard = page.getByTestId("current-version-card");
-  await currentVersionCard.getByTestId("current-release-notes-icon").click();
-  const releaseNotesModal = page.getByTestId("release-notes-modal");
-  await expect(releaseNotesModal).toBeVisible();
-  await expect(releaseNotesModal).toContainText(releaseNotes);
-  await releaseNotesModal.getByRole("button", { name: "Close" }).click();
-  await expect(releaseNotesModal).not.toBeVisible();
-};
-
 export const validateCurrentClusterAdminPreflights = async (page: Page, expect: Expect) => {
   const currentVersionCard = page.getByTestId("current-version-card");
   await currentVersionCard.getByTestId("preflight-icon").click();
@@ -302,25 +292,19 @@ export const validateCheckForUpdates = async (page: Page, expect: Expect, channe
   await expect(updateRow).toContainText(newVersionLabel);
 
   await updateRow.getByTestId('release-notes-icon').click();
-  const releaseNotesModal = page.getByTestId("release-notes-modal");
-  await expect(releaseNotesModal).toBeVisible();
-  await expect(releaseNotesModal).toContainText(newReleaseNotes);
-  await releaseNotesModal.getByRole("button", { name: "Close" }).click();
-  await expect(releaseNotesModal).not.toBeVisible();
+  await validateReleaseNotesModal(page, expect, newReleaseNotes);
 
   await deployNewVersion(page, expect, expectedSequence, 'Upstream Update', isMinimalRBAC, true);
+
+  const currentVersionCard = page.getByTestId("current-version-card");
+  await currentVersionCard.getByTestId("current-release-notes-icon").click();
+  await validateReleaseNotesModal(page, expect, newReleaseNotes);
 };
 
-export const sequenceFromVersionRow = async (versionRow: Locator): Promise<number> => {
-  const versionSequence = versionRow.getByTestId("version-sequence");
-  const versionSequenceText = await versionSequence.textContent();
-  const versionSequenceNumber = versionSequenceText.match(/\d+/);
-  if (!versionSequenceNumber || versionSequenceNumber.length !== 1) {
-    throw new Error(`version sequence number not found in text "${versionSequenceText}"`);
-  }
-  const versionSequenceNumberInt = parseInt(versionSequenceNumber[0]);
-  if (isNaN(versionSequenceNumberInt)) {
-    throw new Error(`version sequence number is not a number "${versionSequenceNumber}"`);
-  }
-  return versionSequenceNumberInt;
+export const validateReleaseNotesModal = async (page: Page, expect: Expect, releaseNotes: string) => {
+  const releaseNotesModal = page.getByTestId("release-notes-modal");
+  await expect(releaseNotesModal).toBeVisible();
+  await expect(releaseNotesModal).toContainText(releaseNotes);
+  await releaseNotesModal.getByRole("button", { name: "Close" }).click();
+  await expect(releaseNotesModal).not.toBeVisible();
 };
