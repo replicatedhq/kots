@@ -125,6 +125,7 @@ class CodeSnippet extends Component {
                 "is-copied": didCopy,
               })}
               onClick={this.copySnippet}
+              data-testid="btn-copy-code-snippet"
             >
               {didCopy ? onCopyText : copyText}
             </span>

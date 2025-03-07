@@ -180,8 +180,8 @@ func NewRangeKotsVersionAirgap() Test {
 func NewSupportBundle() Test {
 	return Test{
 		ID:          "@support-bundle",
-		TestimSuite: "support-bundle",
 		Namespace:   "support-bundle",
+		AppSlug:     "support-bundle",
 		UpstreamURI: "support-bundle-halibut/automated",
 	}
 }

@@ -21,6 +21,7 @@ let percentage: number;
 
 type Props = {
   bundle: SupportBundle;
+  index: number;
   isAirgap: boolean;
   isCustomer: boolean;
   isSupportBundleUploadSupported: boolean;
@@ -180,6 +181,7 @@ export const SupportBundleRow = (props: Props) => {
       <span
         onClick={() => setIsCancelled(true)}
         className="tw-underline tw-cursor-pointer"
+        data-testid="btn-support-bundle-delete-undo"
       >
         undo
       </span>
@@ -261,6 +263,7 @@ export const SupportBundleRow = (props: Props) => {
   };
 
   const {
+    index,
     bundle,
     isSupportBundleUploadSupported,
     isAirgap,
@@ -337,7 +340,10 @@ export const SupportBundleRow = (props: Props) => {
   }
 
   return (
-    <div className="SupportBundle--Row u-position--relative">
+    <div
+      className="SupportBundle--Row u-position--relative"
+      data-testid={`support-bundle-row-${index}`}
+    >
       <div>
         <div className={`bundle-row-wrapper card-item ${props.className}`}>
           <div className="bundle-row flex flex1">
@@ -469,6 +475,7 @@ export const SupportBundleRow = (props: Props) => {
                 <span
                   className="u-fontSize--small link u-textDecoration--underlineOnHover"
                   onClick={() => downloadBundle(bundle)}
+                  data-testid={`btn-support-bundle-download`}
                 >
                   <Icon icon="download" size={16} className="clickable" />
                 </span>
@@ -476,6 +483,7 @@ export const SupportBundleRow = (props: Props) => {
               <span
                 className="u-fontSize--small link u-textDecoration--underlineOnHover"
                 onClick={() => deleteBundle(bundle)}
+                data-testid={`btn-support-bundle-delete`}
               >
                 <Icon
                   icon="trash"

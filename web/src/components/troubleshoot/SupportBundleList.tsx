@@ -246,9 +246,10 @@ export const SupportBundleList = (props: Props) => {
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )
-        .map((bundle) => (
+        .map((bundle, index) => (
           <SupportBundleRow
             key={bundle.id}
+            index={index}
             bundle={bundle}
             watchSlug={selectedApp.slug}
             isAirgap={selectedApp?.isAirgap}
@@ -327,6 +328,7 @@ export const SupportBundleList = (props: Props) => {
                       className={`replicated-link flex alignItems--center u-fontSize--small ${
                         loadingBundle ? "generating-bundle" : ""
                       }`}
+                      data-testid="link-support-bundle-generate"
                     >
                       <Icon
                         icon="tools"
@@ -343,6 +345,7 @@ export const SupportBundleList = (props: Props) => {
                         icon="marker-tip-outline"
                         size={18}
                         className="clickable u-marginRight--5"
+                        data-testid="link-configure-redaction"
                       />
                       Configure redaction
                     </span>
@@ -353,6 +356,7 @@ export const SupportBundleList = (props: Props) => {
                 className={`${
                   watch?.downstream ? "flex1 flex-column u-overflow--auto" : ""
                 }`}
+                data-testid="support-bundle-list"
               >
                 {bundlesNode}
               </div>

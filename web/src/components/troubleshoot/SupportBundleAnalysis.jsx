@@ -275,14 +275,25 @@ export class SupportBundleAnalysis extends Component {
 
     let statusDiv = (
       <div className="u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center">
-        <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary">
+        <div
+          className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary"
+          data-testid="support-bundle-analysis-progress-container"
+        >
           {bundleProgress?.message && (
-            <Loader className="flex u-marginRight--5" size="24" />
+            <Loader
+              className="flex u-marginRight--5"
+              size="24"
+              dataTestId="support-bundle-analysis-loader"
+            />
           )}
           {percentage >= 98 ? (
-            <p>Almost done, finalizing your bundle...</p>
+            <p data-testid="support-bundle-analysis-almost-done-message">
+              Almost done, finalizing your bundle...
+            </p>
           ) : (
-            <p>Analyzing {bundleProgress?.message}</p>
+            <p data-testid="support-bundle-analysis-progress-message">
+              Analyzing {bundleProgress?.message}
+            </p>
           )}
         </div>
       </div>
@@ -306,7 +317,10 @@ export class SupportBundleAnalysis extends Component {
     };
 
     return (
-      <div className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column">
+      <div
+        className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column"
+        data-testid="page-support-bundle-analysis"
+      >
         <KotsPageTitle pageName="Support Bundle Analysis" showAppSlug />
         <div className="flex1 flex-column">
           {bundle && (
@@ -318,6 +332,7 @@ export class SupportBundleAnalysis extends Component {
                       <Link
                         to={`/app/${this.props.params.slug}/troubleshoot`}
                         className="link u-marginRight--5"
+                        data-testid="link-support-bundle-analysis-back"
                       >
                         Support bundles
                       </Link>{" "}
@@ -394,6 +409,7 @@ export class SupportBundleAnalysis extends Component {
                               : "primary lightBlue"
                           }`}
                           onClick={() => this.downloadBundle(bundle)}
+                          data-testid="support-bundle-analysis-download-bundle"
                         >
                           {" "}
                           Download bundle{" "}
@@ -453,6 +469,7 @@ export class SupportBundleAnalysis extends Component {
                         onClick={() =>
                           this.toggleAnalysisAction("bundleAnalysis")
                         }
+                        data-testid="support-bundle-analysis-bundle-insights-tab"
                       >
                         Analysis insights
                       </Link>
@@ -462,6 +479,7 @@ export class SupportBundleAnalysis extends Component {
                           this.state.activeTab === "fileTree" ? "is-active" : ""
                         } tab-item blue`}
                         onClick={() => this.toggleAnalysisAction("fileTree")}
+                        data-testid="support-bundle-analysis-file-inspector-tab"
                       >
                         File inspector
                       </Link>
@@ -475,6 +493,7 @@ export class SupportBundleAnalysis extends Component {
                         onClick={() =>
                           this.toggleAnalysisAction("redactorReport")
                         }
+                        data-testid="support-bundle-analysis-redactor-report-tab"
                       >
                         Redactor report
                       </Link>

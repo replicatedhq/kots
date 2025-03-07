@@ -351,7 +351,10 @@ class GenerateSupportBundle extends Component {
       this.props.outletContext?.watch.name;
 
     return (
-      <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+      <div
+        className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center"
+        data-testid="page-generate-support-bundle"
+      >
         <KotsPageTitle pageName="Generate Support Bundle" showAppSlug />
         <div className="GenerateSupportBundle">
           <div className="u-marginTop--15">
@@ -383,6 +386,7 @@ class GenerateSupportBundle extends Component {
                 <span
                   className="link flex alignItems--center u-fontSize--small u-marginLeft--20"
                   onClick={this.toggleRedactorModal}
+                  data-testid="link-configure-redaction"
                 >
                   <Icon
                     icon="marker-tip-outline"
@@ -412,6 +416,7 @@ class GenerateSupportBundle extends Component {
                         this,
                         this.props.outletContext?.watch?.downstream?.cluster?.id
                       )}
+                      data-testid="btn-analyze-app"
                     >
                       Analyze {appTitle}
                     </button>
@@ -433,6 +438,7 @@ class GenerateSupportBundle extends Component {
                             Command has been copied to your clipboard
                           </span>
                         }
+                        dataTestId="code-snippet-support-bundle-command"
                       >
                         {this.state.bundleCommand}
                       </CodeSnippet>
@@ -455,6 +461,7 @@ class GenerateSupportBundle extends Component {
                       <a
                         href="#"
                         onClick={(e) => this.fetchSupportBundleCommand()}
+                        data-testid="link-generate-support-bundle-command"
                       >
                         click here
                       </a>{" "}

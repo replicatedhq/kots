@@ -6,7 +6,7 @@ import {
   AWS_REGION
 } from './constants';
 
-const { execSync } = require("child_process");
+import { execSync } from 'child_process';
 
 export const deleteKurlConfigMap = (isAirgapped: boolean, sshToAirgappedInstance?: string) => {
   let deleteConfigmapCommand = `kubectl delete configmap kurl-config --namespace kube-system --ignore-not-found`;

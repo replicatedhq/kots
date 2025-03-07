@@ -4182,8 +4182,7 @@ jobs:
           kots-namespace: 'support-bundle'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          kotsadm-image-registry: ttl.sh
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -4611,7 +4610,6 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       - validate-airgap-smoke-test
-      - validate-support-bundle
       # playwright tests
       - validate-smoke-test
       - validate-backup-and-restore
@@ -4629,6 +4627,7 @@ jobs:
       - validate-change-license
       - validate-gitops
       - validate-version-history-pagination
+      - validate-support-bundle
       # non-testim tests
       - validate-minimal-rbac
       - validate-minimal-rbac-override
