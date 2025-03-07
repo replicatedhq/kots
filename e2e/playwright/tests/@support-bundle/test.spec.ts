@@ -206,8 +206,8 @@ async function validateSupportBundleDelete(page: Page, expect: Expect) {
   await expect(row).toBeVisible();
 
   // Work around a ui bug in toast where if you cancel and retry too quickly, it will not make the
-  // subsequent request.
-  await page.waitForTimeout(5000);
+  // subsequent request. Toast timeout is 7 seconds.
+  await page.waitForTimeout(8 * 1000); // 8 seconds
 
   // validate the delete button works
   await row.getByTestId("btn-support-bundle-delete").click();
