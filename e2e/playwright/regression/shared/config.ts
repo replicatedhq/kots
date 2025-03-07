@@ -75,3 +75,20 @@ export const validateConfigView = async (page: Page, expect: Expect) => {
   await expect(configArea).toBeVisible();
   await expect(configArea.getByTestId('config-info-newer')).toBeVisible();
 };
+
+export const validateSmallAirgapInitialConfig = async (page: Page, expect: Expect) => {
+  const sidebar = page.getByTestId('config-sidebar-wrapper');
+  await expect(sidebar).toBeVisible({ timeout: 15000 });
+
+  await expect(sidebar.getByText('Use Ingress?')).toBeVisible();
+  await sidebar.getByText('My Example Config').click();
+  await expect(sidebar.getByText('Use Ingress?')).not.toBeVisible();
+  await sidebar.getByText('My Example Config').click();
+  await expect(sidebar.getByText('Use Ingress?')).toBeVisible();
+
+  const configArea = page.getByTestId('config-area');
+  await expect(configArea).toBeVisible();
+  await expect(configArea).toContainText('An example field to toggle inclusion of an Ingress Object');
+
+  await page.getByRole('button', { name: 'Continue' }).click();
+};

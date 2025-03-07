@@ -208,7 +208,7 @@ class AirgapUploadProgress extends Component {
           {processingImages ? (
             <div className="flex1 flex-column alignItems--center justifyContent--center">
               <div className="flex-auto">
-                <h1 className="u-fontSize--larger u-fontWeight--bold u-marginBottom--10 u-textAlign--center">
+                <h1 className="u-fontSize--larger u-fontWeight--bold u-marginBottom--10 u-textAlign--center" data-testid="processing-images-progress-title">
                   Pushing {processingImages?.length} image
                   {processingImages?.length === 1 ? "" : "s"} to your registry
                 </h1>
@@ -262,7 +262,7 @@ class AirgapUploadProgress extends Component {
                       key={`${image.displayName}-${i}`}
                       className="flex1 u-marginTop--20"
                     >
-                      <div className="flex flex1 alignItems--center">
+                      <div className="flex flex1 alignItems--center" data-testid="processing-images-progress-bar">
                         <p
                           className={`u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10 u-textAlign--right flex1 ${
                             image.status === "queued" ? "u-opacity--half" : ""
@@ -285,7 +285,7 @@ class AirgapUploadProgress extends Component {
                       </div>
                       <div className="u-marginTop--5">
                         {currentMessage ? (
-                          <p className="u-textAlign--center u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
+                          <p className="u-textAlign--center u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy" data-testid="processing-images-progress-message">
                             {currentMessage}
                           </p>
                         ) : (
@@ -303,10 +303,11 @@ class AirgapUploadProgress extends Component {
                 className={`${
                   smallSize ? "u-fontSize--large" : "u-fontSize--larger"
                 } u-fontWeight--bold u-marginBottom--10`}
+                data-testid="airgap-upload-progress-title"
               >
                 Uploading your airgap bundle
               </h1>
-              <div className="flex alignItems--center u-marginTop--20">
+              <div className="flex alignItems--center u-marginTop--20" data-testid="airgap-upload-progress-bar">
                 <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
                   {percentage}
                 </span>
