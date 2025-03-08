@@ -131,6 +131,7 @@ jobs:
         working-directory: automation/jumpbox
         run: |
           export TF_VAR_expires_on="${{ needs.get-workspace-expiration.outputs.expiration }}"
+          export TF_VAR_kots_branch="${{ github.ref_name }}"
           terraform apply --auto-approve
 
       - name: Notify Slack
@@ -187,7 +188,7 @@ jobs:
             name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
             terraform_script: "existing-airgapped-install-admin.sh"
-          # },
+          },
           # {
           #   name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
           #   backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
@@ -205,15 +206,15 @@ jobs:
           #   terraform_script: "existing-online-upgrade-minimum.sh",
           #   is_upgrade: "1"
           # },
-          # {
-          #   name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
-          #   backend_config: "existing-online-install-admin-backend-config.tfvars",
-          #   terraform_script: "existing-online-install-admin.sh"
-          # },
-          # {
-          #   name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
-          #   backend_config: "existing-online-install-minimum-backend-config.tfvars",
-          #   terraform_script: "existing-online-install-minimum.sh"
+          {
+            name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
+            backend_config: "existing-online-install-admin-backend-config.tfvars",
+            terraform_script: "existing-online-install-admin.sh"
+          },
+          {
+            name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
+            backend_config: "existing-online-install-minimum-backend-config.tfvars",
+            terraform_script: "existing-online-install-minimum.sh"
           # },
           # {
           #   name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
@@ -271,7 +272,6 @@ jobs:
           fi
           export TF_VAR_kots_addon_package_url="${{ github.event.inputs.addon_package_url || inputs.addon_package_url }}"
           export TF_VAR_testim_branch="master"
-          export TF_VAR_kots_branch="${{ github.ref_name }}"
           export TF_VAR_expires_on="${{ needs.get-workspace-expiration.outputs.expiration }}"
           ./${{ matrix.test.terraform_script }} apply
 
