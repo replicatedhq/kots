@@ -345,7 +345,6 @@ export const validateCliAirgapUpdate = async (
   airgapBundlePath: string,
   namespace: string,
   isExistingCluster: boolean,
-  sshToAirgappedInstance?: string,
   registryInfo?: RegistryInfo
 ) => {
   await page.getByRole('link', { name: 'Version history', exact: true }).click();
@@ -360,7 +359,6 @@ export const validateCliAirgapUpdate = async (
     airgapBundlePath,
     namespace,
     isExistingCluster,
-    sshToAirgappedInstance,
     registryInfo
   );
 

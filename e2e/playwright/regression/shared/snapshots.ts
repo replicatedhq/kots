@@ -12,7 +12,7 @@ import {
   SNAPSHOTS_HOST_PATH
 } from "./constants";
 
-export const addSnapshotsRBAC = async (page: Page, expect: Expect, sshToAirgappedInstance?: string) => {
+export const addSnapshotsRBAC = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
 
   const configureSnapshotsModal = page.getByTestId("configure-snapshots-modal");
@@ -32,7 +32,7 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect, sshToAirgappe
   expect(ensurePermissionsCommand).not.toBeNull();
 
   ensurePermissionsCommand = ensurePermissionsCommand.replace(/<velero-namespace>/g, "velero");
-  runCommand(ensurePermissionsCommand, sshToAirgappedInstance);
+  runCommand(ensurePermissionsCommand);
 
   await configureSnapshotsModal.getByRole('button', { name: 'Check for Velero' }).click();
   await expect(configureSnapshotsModal.getByTestId("velero-is-installed-message")).toBeVisible({ timeout: 15000 });
@@ -453,8 +453,7 @@ export const restoreFullSnapshot = async (
   expectedIndex: number,
   expectedSequence: number,
   expectedUpToDate: boolean,
-  isAirgapped: boolean,
-  sshToAirgappedInstance?: string
+  isAirgapped: boolean
 ) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
   await page.getByRole('link', { name: 'Full Snapshots (Instance)' }).click();
@@ -474,7 +473,7 @@ export const restoreFullSnapshot = async (
   await expect(restoreCommandSnippet).toBeVisible();
   const restoreCommand = await restoreCommandSnippet.locator(".react-prism.language-bash").textContent();
   expect(restoreCommand).not.toBeNull();
-  runCommand(restoreCommand, sshToAirgappedInstance);
+  runCommand(restoreCommand);
 
   await page.waitForTimeout(5000);
   await page.reload();

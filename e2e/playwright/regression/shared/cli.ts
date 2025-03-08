@@ -5,13 +5,14 @@ import {
   AWS_BUCKET_NAME,
   AWS_REGION,
   APP_SLUG,
-  SNAPSHOTS_HOST_PATH
+  SNAPSHOTS_HOST_PATH,
+  SSH_TO_JUMPBOX
 } from './constants';
 
 import { execSync } from 'child_process';
 
-export const deleteKurlConfigMap = (sshToAirgappedInstance?: string) => {
-  runCommand(`kubectl delete configmap kurl-config --namespace kube-system --ignore-not-found`, sshToAirgappedInstance);
+export const deleteKurlConfigMap = () => {
+  runCommand(`kubectl delete configmap kurl-config --namespace kube-system --ignore-not-found`);
 };
 
 export type RegistryInfo = {
@@ -20,7 +21,7 @@ export type RegistryInfo = {
   password: string;
 };
 
-export const getRegistryInfo = (isExistingCluster: boolean, sshToAirgappedInstance?: string): RegistryInfo => {
+export const getRegistryInfo = (isExistingCluster: boolean): RegistryInfo => {
   let secretName = "registry-creds";
 
   if (isExistingCluster) {
@@ -28,18 +29,18 @@ export const getRegistryInfo = (isExistingCluster: boolean, sshToAirgappedInstan
      * this is a hack to work around the fact that kotsadm will automatically hide the registry settings in the airgap upload page if this secret exists
      * so we copy the secret with a different name and delete the old one
      */
-    const secretYaml = runCommandWithOutput(`kubectl get secret ${secretName} -oyaml --ignore-not-found`, sshToAirgappedInstance);
+    const secretYaml = runCommandWithOutput(`kubectl get secret ${secretName} -oyaml --ignore-not-found`);
 
     const newSecretName = "playwright-registry-creds";
     if(secretYaml !== "") {
-      runCommand(`kubectl get secret ${secretName} -oyaml | sed s/'name: ${secretName}'/'name: ${newSecretName}'/ | kubectl apply -n default -f -`, sshToAirgappedInstance);
-      runCommand(`kubectl delete secret ${secretName}`, sshToAirgappedInstance);
+      runCommand(`kubectl get secret ${secretName} -oyaml | sed s/'name: ${secretName}'/'name: ${newSecretName}'/ | kubectl apply -n default -f -`);
+      runCommand(`kubectl delete secret ${secretName}`);
     }
 
     secretName = newSecretName;
   }
 
-  const secretStr = runCommandWithOutput(`kubectl get secret ${secretName} -o=json`, sshToAirgappedInstance);
+  const secretStr = runCommandWithOutput(`kubectl get secret ${secretName} -o=json`);
   const parsedSecret = JSON.parse(secretStr);
   const dockerConfig = Buffer.from(parsedSecret.data[".dockerconfigjson"], "base64").toString("utf-8");
   const parsedDockerConfig = JSON.parse(dockerConfig);
@@ -90,33 +91,32 @@ export const installVeleroHostPath = (
   veleroVersion: string,
   veleroAwsPluginVersion: string,
   registryInfo: RegistryInfo,
-  isAirgapped: boolean,
-  sshToAirgappedInstance?: string
+  isAirgapped: boolean
 ) => {
   // Delete velero namespace
-  runCommand(`kubectl delete namespace velero --ignore-not-found`, sshToAirgappedInstance);
+  runCommand(`kubectl delete namespace velero --ignore-not-found`);
 
   if (isAirgapped) {
-    prepareVeleroImages(veleroVersion, veleroAwsPluginVersion, registryInfo, sshToAirgappedInstance);
+    prepareVeleroImages(veleroVersion, veleroAwsPluginVersion, registryInfo);
   }
 
   // Reset the host path directory for snapshots
-  runCommand(`rm -rf ${SNAPSHOTS_HOST_PATH}`, sshToAirgappedInstance);
-  runCommand(`mkdir -p ${SNAPSHOTS_HOST_PATH}`, sshToAirgappedInstance);
-  runCommand(`chmod a+rwx ${SNAPSHOTS_HOST_PATH}`, sshToAirgappedInstance);
+  runCommand(`rm -rf ${SNAPSHOTS_HOST_PATH}`);
+  runCommand(`mkdir -p ${SNAPSHOTS_HOST_PATH}`);
+  runCommand(`chmod a+rwx ${SNAPSHOTS_HOST_PATH}`);
 
   const isVelero10OrNewer = semverjs.gte(semverjs.coerce(veleroVersion), semverjs.coerce("1.10"));
 
   // Download velero binary
   const veleroBinURL = `https://github.com/vmware-tanzu/velero/releases/download/${veleroVersion}/velero-${veleroVersion}-linux-amd64.tar.gz`;
   if (isAirgapped) {
-    runCommand(`curl -L ${veleroBinURL} | ${sshToAirgappedInstance} "cat > velero-${veleroVersion}-linux-amd64.tar.gz"`);
+    downloadViaJumpbox(veleroBinURL, `velero-${veleroVersion}-linux-amd64.tar.gz`);
   } else {
     runCommand(`curl -LO ${veleroBinURL}`);
   }
 
   // Extract
-  runCommand(`tar zxvf velero-${veleroVersion}-linux-amd64.tar.gz && mv velero-${veleroVersion}-linux-amd64/velero velero`, sshToAirgappedInstance);
+  runCommand(`tar zxvf velero-${veleroVersion}-linux-amd64.tar.gz && mv velero-${veleroVersion}-linux-amd64/velero velero`);
 
   // Install velero
   let installCommand = `./velero install \
@@ -132,28 +132,27 @@ export const installVeleroHostPath = (
     installCommand += ` \
     --plugins velero/velero-plugin-for-aws:${veleroAwsPluginVersion}`;
   }
-  runCommand(installCommand, sshToAirgappedInstance);
+  runCommand(installCommand);
 
   // Configure hostpath backend
   let configureHostpathCommand = `yes | kubectl kots velero configure-hostpath --hostpath ${SNAPSHOTS_HOST_PATH} --namespace ${APP_SLUG}`;
   if (isAirgapped) {
     configureHostpathCommand += ` --kotsadm-registry ${registryInfo.ip} --kotsadm-namespace ${APP_SLUG} --registry-username ${registryInfo.username} --registry-password ${registryInfo.password}`;
   }
-  runCommand(configureHostpathCommand, sshToAirgappedInstance);
+  runCommand(configureHostpathCommand);
 
   if (isAirgapped) {
-    configureVeleroImagePullSecret(registryInfo, sshToAirgappedInstance);
+    configureVeleroImagePullSecret(registryInfo);
   }
 
   // wait for velero to be ready
-  waitForVeleroAndNodeAgent(sshToAirgappedInstance, 60000);
+  waitForVeleroAndNodeAgent(60000);
 }
 
 export const prepareVeleroImages = (
   veleroVersion: string,
   veleroAwsPluginVersion: string,
-  registryInfo: RegistryInfo,
-  sshToAirgappedInstance?: string
+  registryInfo: RegistryInfo
 ) => {
   const isVelero10OrNewer = semverjs.gte(semverjs.coerce(veleroVersion), semverjs.coerce("1.10"));
 
@@ -170,11 +169,11 @@ export const prepareVeleroImages = (
     sudo apt-get update && \
     sudo apt-get -y upgrade && \
     sudo apt-get -y install libgpgme11-dev skopeo; \
-    fi');
+    fi', true);
 
   // Create a NodePort service for the kurl registry so that we can copy images to it using skopeo from the jumpbox
   // Delete the service if it already exists
-  runCommand(`kubectl --namespace kurl delete service registry-node --ignore-not-found`, sshToAirgappedInstance);
+  runCommand(`kubectl --namespace kurl delete service registry-node --ignore-not-found`);
   runCommand(`cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Service
@@ -190,21 +189,21 @@ spec:
     targetPort: 443 
   selector:
     app: registry
-EOF`, sshToAirgappedInstance);
+EOF`);
 
   // Copy velero image from docker to the registry
-  runCommand(`skopeo copy docker://velero/velero:${veleroVersion} docker://${registryInfo.ip}:30443/velero:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`);
+  runCommand(`skopeo copy docker://velero/velero:${veleroVersion} docker://${registryInfo.ip}:30443/velero:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
 
   // Copy velero aws plugin image from docker to the registry
-  runCommand(`skopeo copy docker://velero/velero-plugin-for-aws:${veleroAwsPluginVersion} docker://${registryInfo.ip}:30443/velero-plugin-for-aws:${veleroAwsPluginVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`);
+  runCommand(`skopeo copy docker://velero/velero-plugin-for-aws:${veleroAwsPluginVersion} docker://${registryInfo.ip}:30443/velero-plugin-for-aws:${veleroAwsPluginVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
 
   // Copy restore helper image from docker to the registry
   const restoreHelperImageName = isVelero10OrNewer ? "velero-restore-helper" : "velero-restic-restore-helper";
-  runCommand(`skopeo copy docker://velero/${restoreHelperImageName}:${veleroVersion} docker://${registryInfo.ip}:30443/${restoreHelperImageName}:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`);
+  runCommand(`skopeo copy docker://velero/${restoreHelperImageName}:${veleroVersion} docker://${registryInfo.ip}:30443/${restoreHelperImageName}:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
 
   // Create velero namespace so that applying the restore helper configmap doesn't fail.
   // This could be done after velero is installed, but it is easier to have it as part of the "prepare velero images" section.
-  runCommand(`kubectl create namespace velero`, sshToAirgappedInstance);
+  runCommand(`kubectl create namespace velero`);
 
   // Create restore helper configmap
   runCommand(`cat <<EOF | kubectl apply -f -
@@ -218,27 +217,24 @@ metadata:
     ${isVelero10OrNewer ? "velero.io/pod-volume-restore: RestoreItemAction" : "velero.io/restic: RestoreItemAction"}
 data:
   image: ${registryInfo.ip}/${restoreHelperImageName}:${veleroVersion}
-EOF`, sshToAirgappedInstance);
+EOF`);
 };
 
-const configureVeleroImagePullSecret = (registryInfo: RegistryInfo, sshToAirgappedInstance?: string) => {
+const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
   // delete secret from velero namespace
-  runCommand(`kubectl -n velero delete secret registry-creds --ignore-not-found`, sshToAirgappedInstance);
+  runCommand(`kubectl -n velero delete secret registry-creds --ignore-not-found`);
 
   // create secret in velero namespace from registry info
   runCommand(`kubectl -n velero create secret docker-registry registry-creds --docker-server=${registryInfo.ip} --docker-username=${registryInfo.username} --docker-password=${registryInfo.password}`);
 
   // patch velero deployment
-    const patchCommand = `${sshToAirgappedInstance} bash -s << 'EOF'
-kubectl -n velero patch deployment velero --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'
-EOF`;
-  runCommand(patchCommand);
+  runCommand(`kubectl -n velero patch deployment velero --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'`);
 };
 
-export const waitForVeleroAndNodeAgent = async (sshToAirgappedInstance?: string, timeout: number = 300000): Promise<void> => {
+export const waitForVeleroAndNodeAgent = async (timeout: number = 300000): Promise<void> => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
-    if (isVeleroReady(sshToAirgappedInstance) && isNodeAgentReady(sshToAirgappedInstance)) {
+    if (isVeleroReady() && isNodeAgentReady()) {
       return;
     }
     await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between checks
@@ -246,8 +242,8 @@ export const waitForVeleroAndNodeAgent = async (sshToAirgappedInstance?: string,
   throw new Error(`Timeout waiting for Velero and Node Agent to be ready after ${timeout/1000} seconds`);
 };
 
-const isVeleroReady = (sshToAirgappedInstance?: string): boolean => {
-  const veleroDeployment = runCommandWithOutput(`kubectl get deployment velero -n velero -ojson`, sshToAirgappedInstance);
+const isVeleroReady = (): boolean => {
+  const veleroDeployment = runCommandWithOutput(`kubectl get deployment velero -n velero -ojson`);
   const parsedDeployment = JSON.parse(veleroDeployment);
 
   if (parsedDeployment.status.observedGeneration !== parsedDeployment.metadata.generation) {
@@ -266,9 +262,9 @@ const isVeleroReady = (sshToAirgappedInstance?: string): boolean => {
   return true;
 };
 
-const isNodeAgentReady = (sshToAirgappedInstance?: string): boolean => {
-  const daemonsetName = runCommandWithOutput(`kubectl get ds -n velero | awk 'NR>1 {print $1}' | tr -d '\n'`, sshToAirgappedInstance);
-  const daemonset = runCommandWithOutput(`kubectl get ds ${daemonsetName} -n velero -ojson`, sshToAirgappedInstance);
+const isNodeAgentReady = (): boolean => {
+  const daemonsetName = runCommandWithOutput(`kubectl get ds -n velero | awk 'NR>1 {print $1}' | tr -d '\n'`);
+  const daemonset = runCommandWithOutput(`kubectl get ds ${daemonsetName} -n velero -ojson`);
   const parsedDaemonset = JSON.parse(daemonset);
 
   if (parsedDaemonset.status.observedGeneration !== parsedDaemonset.metadata.generation) {
@@ -297,8 +293,7 @@ export const cliAirgapInstall = (
   licenseFile: string,
   configValuesFile: string,
   namespace: string,
-  isMinimalRBAC: boolean,
-  sshToAirgappedInstance?: string
+  isMinimalRBAC: boolean
 ) => {
   try {
     runCommand(`kubectl kots install ${APP_SLUG} \
@@ -311,7 +306,7 @@ export const cliAirgapInstall = (
       --config-values ${configValuesFile} \
       --namespace ${namespace} \
       --shared-password password \
-      --port-forward=false`, sshToAirgappedInstance);
+      --port-forward=false`);
   } catch (error) {
     if (!isMinimalRBAC) {
       throw error;
@@ -333,48 +328,53 @@ spec:
   - port: 8800
     targetPort: 3000
     nodePort: 8800
-EOF`, sshToAirgappedInstance);
+EOF`);
 };
 
 export const cliAirgapUpdate = (
   newBundlePath: string,
   namespace: string,
   isExistingCluster: boolean,
-  sshToAirgappedInstance?: string,
   registryInfo?: RegistryInfo
 ) => {
   let upgradeCommand = `kubectl kots upstream upgrade ${APP_SLUG} --airgap-bundle ${newBundlePath} -n ${namespace}`;
   if (isExistingCluster) {
     upgradeCommand += ` --kotsadm-namespace ${APP_SLUG} --kotsadm-registry ${registryInfo?.ip} --registry-username ${registryInfo?.username} --registry-password ${registryInfo?.password}`;
   }
-  runCommand(upgradeCommand, sshToAirgappedInstance);
+  runCommand(upgradeCommand);
 };
 
-export const resetPassword = (namespace: string, isAirgapped: boolean, sshToAirgappedInstance: string) => {
-  runCommand(`echo 'password' | kubectl kots reset-password -n ${namespace}`, sshToAirgappedInstance);
+export const resetPassword = (namespace: string) => {
+  runCommand(`echo 'password' | kubectl kots reset-password -n ${namespace}`);
 };
 
-export const removeApp = (namespace: string, sshToAirgappedInstance: string) => {
-  runCommand(`kubectl kots remove ${APP_SLUG} -n ${namespace} --force --undeploy`, sshToAirgappedInstance);
+export const removeApp = (namespace: string) => {
+  runCommand(`kubectl kots remove ${APP_SLUG} -n ${namespace} --force --undeploy`);
 };
 
-export const removeKots = (namespace: string, sshToAirgappedInstance: string) => {
-  runCommand(`kubectl delete namespace ${namespace} --ignore-not-found`, sshToAirgappedInstance);
-  runCommand(`kubectl delete clusterrole kotsadm-role kotsadm-operator-role --ignore-not-found`, sshToAirgappedInstance);
-  runCommand(`kubectl delete clusterrolebinding kotsadm-rolebinding kotsadm-operator-rolebinding --ignore-not-found`, sshToAirgappedInstance);
+export const removeKots = (namespace: string) => {
+  runCommand(`kubectl delete namespace ${namespace} --ignore-not-found`);
+  runCommand(`kubectl delete clusterrole kotsadm-role kotsadm-operator-role --ignore-not-found`);
+  runCommand(`kubectl delete clusterrolebinding kotsadm-rolebinding kotsadm-operator-rolebinding --ignore-not-found`);
 };
 
-export const runCommand = (command: string, sshToAirgappedInstance?: string) => {
-  if (sshToAirgappedInstance) {
-    command = `${sshToAirgappedInstance} "${command}"`;
+export const downloadViaJumpbox = (remoteUrl: string, localPath: string) => {
+  const command = `${SSH_TO_JUMPBOX} "curl -L '${remoteUrl}'" > ${localPath}`;
+  console.log(command, "\n");
+  execSync(command, {stdio: 'inherit'});
+};
+
+export const runCommand = (command: string, runOnJumpbox: boolean = false) => {
+  if (runOnJumpbox) {
+    command = `${SSH_TO_JUMPBOX} "${command}"`;
   }
   console.log(command, "\n");
   execSync(command, {stdio: 'inherit'});
 };
 
-export const runCommandWithOutput = (command: string, sshToAirgappedInstance?: string): string => {
-  if (sshToAirgappedInstance) {
-    command = `${sshToAirgappedInstance} "${command}"`;
+export const runCommandWithOutput = (command: string, runOnJumpbox: boolean = false): string => {
+  if (runOnJumpbox) {
+    command = `${SSH_TO_JUMPBOX} "${command}"`;
   }
   console.log(command, "\n");
   return execSync(command).toString();

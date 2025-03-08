@@ -55,16 +55,15 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
   test.setTimeout(45 * 60 * 1000); // 45 minutes
 
   // Initial setup
-  deleteKurlConfigMap(constants.SSH_TO_AIRGAPPED_INSTANCE);
-  const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER, constants.SSH_TO_AIRGAPPED_INSTANCE);
+  deleteKurlConfigMap();
+  const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
 
   // download initial small airgap bundle for ui install
   await downloadAirgapBundle(
     constants.CUSTOMER_ID,
     constants.INITIAL_SMALL_BUNDLE_CHANNEL_RELEASE_SEQUENCE,
     constants.DOWNLOAD_PORTAL_BASE64_PASSWORD,
-    INITIAL_VERSION_SMALL_BUNDLE_PATH,
-    constants.SSH_TO_AIRGAPPED_INSTANCE
+    INITIAL_VERSION_SMALL_BUNDLE_PATH
   );
 
   // download update small airgap bundle for ui update
@@ -72,8 +71,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
     constants.CUSTOMER_ID,
     constants.UPDATE_SMALL_BUNDLE_CHANNEL_RELEASE_SEQUENCE,
     constants.DOWNLOAD_PORTAL_BASE64_PASSWORD,
-    NEW_VERSION_SMALL_BUNDLE_PATH,
-    constants.SSH_TO_AIRGAPPED_INSTANCE
+    NEW_VERSION_SMALL_BUNDLE_PATH
   );
 
   // download initial airgap bundle
@@ -81,8 +79,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
     constants.CUSTOMER_ID,
     constants.VENDOR_INITIAL_CHANNEL_RELEASE_SEQUENCE,
     constants.DOWNLOAD_PORTAL_BASE64_PASSWORD,
-    INITIAL_VERSION_BUNDLE_PATH,
-    constants.SSH_TO_AIRGAPPED_INSTANCE
+    INITIAL_VERSION_BUNDLE_PATH
   );
 
   // download new airgap bundle
@@ -90,8 +87,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
     constants.CUSTOMER_ID,
     constants.VENDOR_UPDATE_CHANNEL_RELEASE_SEQUENCE,
     constants.DOWNLOAD_PORTAL_BASE64_PASSWORD,
-    NEW_VERSION_BUNDLE_PATH,
-    constants.SSH_TO_AIRGAPPED_INSTANCE
+    NEW_VERSION_BUNDLE_PATH
   );
 
   // Login and license upload
@@ -109,8 +105,8 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
 
   // Clean up UI install so we can test CLI install
   await logout(page, expect);
-  removeApp(constants.NAMESPACE, constants.SSH_TO_AIRGAPPED_INSTANCE);
-  removeKots(constants.NAMESPACE, constants.SSH_TO_AIRGAPPED_INSTANCE);
+  removeApp(constants.NAMESPACE);
+  removeKots(constants.NAMESPACE);
 
   // CLI airgap install
   cliAirgapInstall(
@@ -119,8 +115,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
     `${process.env.TEST_PATH}/license.yaml`,
     `${process.env.TEST_PATH}/config.yaml`,
     constants.NAMESPACE,
-    constants.IS_MINIMAL_RBAC,
-    constants.SSH_TO_AIRGAPPED_INSTANCE
+    constants.IS_MINIMAL_RBAC
   );
 
   // Install Velero for snapshots
@@ -128,8 +123,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
     constants.VELERO_VERSION,
     constants.VELERO_AWS_PLUGIN_VERSION,
     registryInfo,
-    constants.IS_AIRGAPPED,
-    constants.SSH_TO_AIRGAPPED_INSTANCE
+    constants.IS_AIRGAPPED
   );
 
   // Validate CLI install and app updates
@@ -146,7 +140,6 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
     NEW_VERSION_BUNDLE_PATH,
     constants.NAMESPACE,
     constants.IS_EXISTING_CLUSTER,
-    constants.SSH_TO_AIRGAPPED_INSTANCE,
     registryInfo
   );
 

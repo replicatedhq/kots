@@ -1,5 +1,3 @@
-import { SSH_USER } from "../shared/constants";
-
 export const NAMESPACE = "qakotsregression";
 export const INITIAL_SMALL_BUNDLE_CHANNEL_RELEASE_SEQUENCE = 17;
 export const UPDATE_SMALL_BUNDLE_CHANNEL_RELEASE_SEQUENCE = 18;
@@ -21,5 +19,3 @@ export const IS_MINIMAL_RBAC = false;
 export const DOWNLOAD_PORTAL_BASE64_PASSWORD = "SFJZQVlF";
 export const SHOULD_RESET_PASSWORD = false;
 export const IS_VELERO_INSTALLED = false;
-export const SSH_TO_AIRGAPPED_INSTANCE = `ssh ${SSH_USER}@${process.env.AIRGAPPED_INSTANCE_IP}`;
-export const SCP_TO_AIRGAPPED_INSTANCE = `scp %s ${SSH_USER}@${process.env.AIRGAPPED_INSTANCE_IP}:%s`;
