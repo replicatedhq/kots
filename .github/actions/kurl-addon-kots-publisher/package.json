@@ -24,5 +24,8 @@
     "@babel/register": "^7.21.0",
     "chai": "^4.3.7",
     "mocha": "^10.2.0"
+  },
+  "overrides": {
+    "braces": "3.0.3"
   }
 }
