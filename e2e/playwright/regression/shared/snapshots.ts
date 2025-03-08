@@ -8,10 +8,11 @@ import { validateDashboardInfo } from './dashboard';
 import {
   AWS_BUCKET_NAME,
   AWS_REGION,
-  APP_SLUG
+  APP_SLUG,
+  SNAPSHOTS_HOST_PATH
 } from "./constants";
 
-export const addSnapshotsRBAC = async (page: Page, expect: Expect, isAirgapped: boolean, sshToAirgappedInstance?: string) => {
+export const addSnapshotsRBAC = async (page: Page, expect: Expect, sshToAirgappedInstance?: string) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
 
   const configureSnapshotsModal = page.getByTestId("configure-snapshots-modal");
@@ -31,7 +32,7 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect, isAirgapped: 
   expect(ensurePermissionsCommand).not.toBeNull();
 
   ensurePermissionsCommand = ensurePermissionsCommand.replace(/<velero-namespace>/g, "velero");
-  runCommand(ensurePermissionsCommand, isAirgapped, sshToAirgappedInstance);
+  runCommand(ensurePermissionsCommand, sshToAirgappedInstance);
 
   await configureSnapshotsModal.getByRole('button', { name: 'Check for Velero' }).click();
   await expect(configureSnapshotsModal.getByTestId("velero-is-installed-message")).toBeVisible({ timeout: 15000 });
@@ -49,6 +50,15 @@ export const validateSnapshotsAWSConfig = async (page: Page, expect: Expect) => 
   await expect(page.getByTestId('snapshots-aws-bucket')).toHaveValue(AWS_BUCKET_NAME);
   await expect(page.getByTestId('snapshots-aws-region')).toHaveValue(AWS_REGION);
   await expect(page.getByTestId('snapshots-aws-access-key-id')).toHaveValue(process.env.AWS_ACCESS_KEY_ID);
+};
+
+export const validateSnapshotsHostPathConfig = async (page: Page, expect: Expect) => {
+  await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
+  await page.getByRole('link', { name: 'Settings & Schedule' }).click();
+  await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
+
+  await expect(page.getByTestId('snapshot-storage-destination')).toContainText('Host Path');
+  await expect(page.getByTestId('snapshot-hostpath-input')).toHaveValue(SNAPSHOTS_HOST_PATH);
 };
 
 export const validateAutomaticFullSnapshots = async (page: Page, expect: Expect) => {

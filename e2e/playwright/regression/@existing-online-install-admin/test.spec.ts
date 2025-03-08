@@ -66,7 +66,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect);
-  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_CHANNEL_RELEASE_SEQUENCE, 1, false);
+  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_CHANNEL_RELEASE_SEQUENCE, 1, constants.IS_MINIMAL_RBAC);
 
   // Config update and version history checks
   await updateConfig(page, expect);
@@ -78,14 +78,14 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
   await validateVersionHistoryRows(page, expect, constants.IS_AIRGAPPED);
-  await deployNewVersion(page, expect, 2, 'Config Change', false);
+  await deployNewVersion(page, expect, 2, 'Config Change', constants.IS_MINIMAL_RBAC);
 
   // License validation
   await validateCurrentLicense(page, expect, constants.CUSTOMER_NAME, constants.CHANNEL_NAME, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
   const newIntEntitlement = await updateOnlineLicense(page, constants.CUSTOMER_ID, constants.CUSTOMER_NAME, constants.CHANNEL_ID, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
-  await validateUpdatedLicense(page, expect, newIntEntitlement);
+  await validateUpdatedLicense(page, expect, newIntEntitlement, 3);
   await validateVersionDiff(page, expect, 3, 2);
-  await deployNewVersion(page, expect, 3, 'License Change', false);
+  await deployNewVersion(page, expect, 3, 'License Change', constants.IS_MINIMAL_RBAC);
 
   // Snapshot validation
   await validateSnapshotsAWSConfig(page, expect);
@@ -106,7 +106,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=cluster admin',
 
   // Other validation
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
-  await updateRegistrySettings(page, expect, registryInfo, 4, false);
+  await updateRegistrySettings(page, expect, registryInfo, 4, constants.IS_MINIMAL_RBAC);
   await validateDuplicateLicenseUpload(page, expect);
   await logout(page, expect);
 });

@@ -514,6 +514,7 @@ const AppLicenseComponent = () => {
                   {app.isAirgap ? (
                     <Dropzone
                       className="Dropzone-wrapper"
+                      data-testid="license-upload-dropzone"
                       accept={["application/x-yaml", ".yaml", ".yml"]}
                       onDropAccepted={onDrop}
                       multiple={false}

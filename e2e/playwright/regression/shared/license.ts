@@ -58,7 +58,7 @@ export async function updateOnlineLicense(page: Page, customerId: string, custom
   return newIntEntitlement;
 }
 
-export async function validateUpdatedLicense(page: Page, expect: Expect, newIntEntitlement: number) {
+export async function validateUpdatedLicense(page: Page, expect: Expect, newIntEntitlement: number, expectedSequence: number) {
   const nextStepModal = page.getByTestId("license-next-step-modal");
   await expect(nextStepModal).toBeVisible({ timeout: 30000 });
   await nextStepModal.getByRole('button', { name: 'Cancel' }).click();
@@ -76,5 +76,11 @@ export async function validateUpdatedLicense(page: Page, expect: Expect, newIntE
   const updateRow = updatesCard.getByTestId('version-history-row-0');
   await expect(updateRow).toBeVisible();
   await expect(updateRow).toContainText('License Change');
-  await expect(updateRow).toContainText('Sequence 3');
+  await expect(updateRow).toContainText(`Sequence ${expectedSequence}`);
+};
+
+export async function updateAirgappedLicense(page: Page, expect: Expect, newLicenseFile: string) {
+  const licenseCard = page.getByTestId('license-card');
+  await expect(licenseCard).toBeVisible({ timeout: 15000 });
+  await page.setInputFiles('[data-testid="license-upload-dropzone"] input', `${process.env.TEST_PATH}/${newLicenseFile}`);
 };

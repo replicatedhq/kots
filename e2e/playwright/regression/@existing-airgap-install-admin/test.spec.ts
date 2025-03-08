@@ -14,23 +14,19 @@ import {
   downloadAirgapBundle,
   deleteKurlConfigMap,
   getRegistryInfo,
-  uiAirgapInstall,
+  validateUiAirgapInstall,
   validateSmallAirgapInitialConfig,
   validateSmallAirgapInitialPreflights,
-  uiAirgapUpdate,
-  validateInitialConfig,
-  validateClusterAdminInitialPreflights,
+  validateUiAirgapUpdate,
+  validateCliAirgapUpdate,
   validateDashboardInfo,
   removeApp,
   removeKots,
   cliAirgapInstall,
   installVeleroHostPath,
-  validateReleaseNotesModal,
-  validateDashboardAutomaticUpdates,
   validateDashboardGraphs,
   updateConfig,
   validateIgnorePreflightsModal,
-  validateVersionHistoryAutomaticUpdates,
   validateCurrentVersionCard,
   validateCurrentClusterAdminPreflights,
   validateCurrentDeployLogs,
@@ -38,10 +34,10 @@ import {
   validateVersionHistoryRows,
   deployNewVersion,
   validateCurrentLicense,
-  updateOnlineLicense,
+  updateAirgappedLicense,
   validateUpdatedLicense,
   validateVersionDiff,
-  validateSnapshotsAWSConfig,
+  validateSnapshotsHostPathConfig,
   validateAutomaticFullSnapshots,
   validateAutomaticPartialSnapshots,
   createAppSnapshot,
@@ -52,14 +48,15 @@ import {
   restoreFullSnapshot,
   deleteFullSnapshot,
   validateViewFiles,
-  updateRegistrySettings,
-  validateCheckForUpdates,
-  validateDuplicateLicenseUpload,
   logout
 } from '../shared';
 
 test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin', async ({ page }) => {
   test.setTimeout(45 * 60 * 1000); // 45 minutes
+
+  // Initial setup
+  deleteKurlConfigMap(constants.SSH_TO_AIRGAPPED_INSTANCE);
+  const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER, constants.SSH_TO_AIRGAPPED_INSTANCE);
 
   // download initial small airgap bundle for ui install
   await downloadAirgapBundle(
@@ -97,25 +94,25 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
     constants.SSH_TO_AIRGAPPED_INSTANCE
   );
 
-  deleteKurlConfigMap(constants.SSH_TO_AIRGAPPED_INSTANCE);
-  const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER, constants.SSH_TO_AIRGAPPED_INSTANCE);
-
+  // Login and license upload
   await page.goto('/');
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
-
   await login(page);
   await uploadLicense(page, expect);
 
-  await uiAirgapInstall(page, expect, registryInfo, constants.NAMESPACE, INITIAL_VERSION_SMALL_BUNDLE_PATH, constants.IS_EXISTING_CLUSTER);
+  // Validate ui install and app updates
+  await validateUiAirgapInstall(page, expect, registryInfo, constants.NAMESPACE, INITIAL_VERSION_SMALL_BUNDLE_PATH, constants.IS_EXISTING_CLUSTER);
   await validateSmallAirgapInitialConfig(page, expect);
   await validateSmallAirgapInitialPreflights(page, expect);
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
-  await uiAirgapUpdate(page, expect, NEW_VERSION_SMALL_BUNDLE_PATH);
+  await validateUiAirgapUpdate(page, expect, NEW_VERSION_SMALL_BUNDLE_PATH);
 
+  // Clean up UI install so we can test CLI install
   await logout(page, expect);
   removeApp(constants.NAMESPACE, constants.SSH_TO_AIRGAPPED_INSTANCE);
   removeKots(constants.NAMESPACE, constants.SSH_TO_AIRGAPPED_INSTANCE);
 
+  // CLI airgap install
   cliAirgapInstall(
     registryInfo,
     INITIAL_VERSION_BUNDLE_PATH,
@@ -126,6 +123,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
     constants.SSH_TO_AIRGAPPED_INSTANCE
   );
 
+  // Install Velero for snapshots
   installVeleroHostPath(
     constants.VELERO_VERSION,
     constants.VELERO_AWS_PLUGIN_VERSION,
@@ -134,51 +132,60 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
     constants.SSH_TO_AIRGAPPED_INSTANCE
   );
 
+  // Validate CLI install and app updates
   await page.reload();
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await login(page);
-
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardGraphs(page, expect);
+  await validateCliAirgapUpdate(
+    page,
+    expect,
+    1,
+    constants.IS_MINIMAL_RBAC,
+    NEW_VERSION_BUNDLE_PATH,
+    constants.NAMESPACE,
+    constants.IS_EXISTING_CLUSTER,
+    constants.SSH_TO_AIRGAPPED_INSTANCE,
+    registryInfo
+  );
 
-  // await validateDashboardAutomaticUpdates(page, expect);
-  // await validateDashboardGraphs(page, expect);
-  // await updateConfig(page, expect);
+  // Config update and version history checks
+  await updateConfig(page, expect);
+  await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
+  await validateIgnorePreflightsModal(page, expect);
+  await validateCurrentVersionCard(page, expect, 1);
+  await validateCurrentClusterAdminPreflights(page, expect);
+  await validateCurrentDeployLogs(page, expect);
+  await validateConfigView(page, expect);
+  await validateVersionHistoryRows(page, expect, constants.IS_AIRGAPPED);
+  await deployNewVersion(page, expect, 2, 'Config Change', constants.IS_MINIMAL_RBAC);
 
-  // await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
-  // await validateIgnorePreflightsModal(page, expect);
-  // await validateVersionHistoryAutomaticUpdates(page, expect);
+  // License validation
+  await validateCurrentLicense(page, expect, constants.CUSTOMER_NAME, constants.CHANNEL_NAME, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
+  await updateAirgappedLicense(page, expect, 'new-license.yaml');
+  await validateUpdatedLicense(page, expect, 123, 3); // this is the value in the new license file
+  await validateVersionDiff(page, expect, 3, 2);
+  await deployNewVersion(page, expect, 3, 'License Change', constants.IS_MINIMAL_RBAC);
 
-  // await validateCurrentVersionCard(page, expect, "1.0.0", 0);
-  // await validateCurrentReleaseNotes(page, expect, "release notes - updates");
-  // await validateCurrentClusterAdminPreflights(page, expect);
-  // await validateCurrentDeployLogs(page, expect);
-  // await validateConfigView(page, expect);
-  // await validateVersionHistoryRows(page, expect, true);
-  // await deployVersion(page, expect, 0, 1, 'Config Change', false);
+  // // Snapshot validation
+  await validateSnapshotsHostPathConfig(page, expect);
+  await validateAutomaticFullSnapshots(page, expect);
+  await validateAutomaticPartialSnapshots(page, expect);
 
-  // await validateCurrentLicense(page, expect, constants.CUSTOMER_NAME, constants.CHANNEL_NAME, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
-  // const newIntEntitlement = await updateOnlineLicense(page, constants.CUSTOMER_ID, constants.CUSTOMER_NAME, constants.CHANNEL_ID, constants.IS_AIRGAP_SUPPORTED, constants.IS_EC);
-  // await validateUpdatedLicense(page, expect, newIntEntitlement);
+  // App snapshot workflow
+  await createAppSnapshot(page, expect);
+  await rollbackToVersion(page, expect, 1, 2);
+  await restoreAppSnapshot(page, expect, 0, 3, true, constants.IS_AIRGAPPED);
+  await deleteAppSnapshot(page, expect);
 
-  // await validateVersionDiff(page, expect, 2, 1);
-  // await deployVersion(page, expect, 0, 2, 'License Change', false);
+  // Full snapshot workflow
+  await createFullSnapshot(page, expect);
+  await rollbackToVersion(page, expect, 1, 2);
+  await restoreFullSnapshot(page, expect, 0, 3, true, constants.IS_AIRGAPPED);
+  await deleteFullSnapshot(page, expect);
 
-  // await validateSnapshotsAWSConfig(page, expect);
-  // await validateAutomaticFullSnapshots(page, expect);
-  // await validateAutomaticPartialSnapshots(page, expect);
-  // await createAppSnapshot(page, expect);
-  // await rollbackToVersion(page, expect, 1, 1);
-  // await restoreAppSnapshot(page, expect, 0, 2, true, constants.IS_AIRGAPPED);
-  // await deleteAppSnapshot(page, expect);
-  // await createFullSnapshot(page, expect);
-  // await rollbackToVersion(page, expect, 1, 1);
-  // await restoreFullSnapshot(page, expect, 0, 2, true, constants.IS_AIRGAPPED);
-  // await deleteFullSnapshot(page, expect);
-
-  // await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
-  // await updateRegistrySettings(page, expect, registryInfo, false);
-  // await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_CHANNEL_RELEASE_SEQUENCE, 4, false);
-  // await validateDuplicateLicenseUpload(page, expect);
-  // await logout(page, expect);
+  // Other validation
+  await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
+  await logout(page, expect);
 });

@@ -336,6 +336,20 @@ spec:
 EOF`, sshToAirgappedInstance);
 };
 
+export const cliAirgapUpdate = (
+  newBundlePath: string,
+  namespace: string,
+  isExistingCluster: boolean,
+  sshToAirgappedInstance?: string,
+  registryInfo?: RegistryInfo
+) => {
+  let upgradeCommand = `kubectl kots upstream upgrade ${APP_SLUG} --airgap-bundle ${newBundlePath} -n ${namespace}`;
+  if (isExistingCluster) {
+    upgradeCommand += ` --kotsadm-namespace ${APP_SLUG} --kotsadm-registry ${registryInfo?.ip} --registry-username ${registryInfo?.username} --registry-password ${registryInfo?.password}`;
+  }
+  runCommand(upgradeCommand, sshToAirgappedInstance);
+};
+
 export const resetPassword = (namespace: string, isAirgapped: boolean, sshToAirgappedInstance: string) => {
   runCommand(`echo 'password' | kubectl kots reset-password -n ${namespace}`, sshToAirgappedInstance);
 };
