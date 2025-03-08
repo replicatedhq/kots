@@ -22,6 +22,9 @@ import {
   validateClusterAdminInitialPreflights,
   validateDashboardInfo,
   removeApp,
+  removeKots,
+  cliAirgapInstall,
+  installVeleroHostPath,
   validateReleaseNotesModal,
   validateDashboardAutomaticUpdates,
   validateDashboardGraphs,
@@ -29,7 +32,6 @@ import {
   validateIgnorePreflightsModal,
   validateVersionHistoryAutomaticUpdates,
   validateCurrentVersionCard,
-  validateCurrentReleaseNotes,
   validateCurrentClusterAdminPreflights,
   validateCurrentDeployLogs,
   validateConfigView,
@@ -112,6 +114,32 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
 
   await logout(page, expect);
   removeApp(constants.NAMESPACE, constants.SSH_TO_AIRGAPPED_INSTANCE);
+  removeKots(constants.NAMESPACE, constants.SSH_TO_AIRGAPPED_INSTANCE);
+
+  cliAirgapInstall(
+    registryInfo,
+    INITIAL_VERSION_BUNDLE_PATH,
+    `${process.env.TEST_PATH}/license.yaml`,
+    `${process.env.TEST_PATH}/config.yaml`,
+    constants.NAMESPACE,
+    constants.IS_MINIMAL_RBAC,
+    constants.SSH_TO_AIRGAPPED_INSTANCE
+  );
+
+  installVeleroHostPath(
+    constants.VELERO_VERSION,
+    constants.VELERO_AWS_PLUGIN_VERSION,
+    registryInfo,
+    constants.IS_AIRGAPPED,
+    constants.SSH_TO_AIRGAPPED_INSTANCE
+  );
+
+  await page.reload();
+  await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
+  await login(page);
+
+  await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
+  await validateDashboardGraphs(page, expect);
 
   // await validateDashboardAutomaticUpdates(page, expect);
   // await validateDashboardGraphs(page, expect);
