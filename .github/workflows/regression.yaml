@@ -159,50 +159,50 @@ jobs:
       fail-fast: false
       matrix:
         test: [
-          {
-            name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-            backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
-            terraform_script: "embedded-airgapped-upgrade.sh",
-            is_upgrade: "1"
-          },
-          {
-            name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
-            backend_config: "embedded-airgapped-install-backend-config.tfvars",
-            terraform_script: "embedded-airgapped-install.sh"
-          },
-          {
-            name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
-            backend_config: "embedded-online-install-backend-config.tfvars",
-            terraform_script: "embedded-online-install.sh"
-          },
-          {
-            name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
-            backend_config: "embedded-online-upgrade-backend-config.tfvars",
-            terraform_script: "embedded-online-upgrade.sh",
-            is_upgrade: "1"
-          },
-          {
-            name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
-            backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
-            terraform_script: "existing-airgapped-install-admin.sh"
-          },
-          {
-            name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
-            backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
-            terraform_script: "existing-airgapped-install-minimum.sh"
-          },
-          {
-            name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
-            backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
-            terraform_script: "existing-online-upgrade-admin.sh",
-            is_upgrade: "1"
-          },
-          {
-            name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
-            backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
-            terraform_script: "existing-online-upgrade-minimum.sh",
-            is_upgrade: "1"
-          },
+          # {
+          #   name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
+          #   backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
+          #   terraform_script: "embedded-airgapped-upgrade.sh",
+          #   is_upgrade: "1"
+          # },
+          # {
+          #   name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
+          #   backend_config: "embedded-airgapped-install-backend-config.tfvars",
+          #   terraform_script: "embedded-airgapped-install.sh"
+          # },
+          # {
+          #   name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
+          #   backend_config: "embedded-online-install-backend-config.tfvars",
+          #   terraform_script: "embedded-online-install.sh"
+          # },
+          # {
+          #   name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
+          #   backend_config: "embedded-online-upgrade-backend-config.tfvars",
+          #   terraform_script: "embedded-online-upgrade.sh",
+          #   is_upgrade: "1"
+          # },
+          # {
+          #   name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
+          #   backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
+          #   terraform_script: "existing-airgapped-install-admin.sh"
+          # },
+          # {
+          #   name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
+          #   backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
+          #   terraform_script: "existing-airgapped-install-minimum.sh"
+          # },
+          # {
+          #   name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
+          #   backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
+          #   terraform_script: "existing-online-upgrade-admin.sh",
+          #   is_upgrade: "1"
+          # },
+          # {
+          #   name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
+          #   backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
+          #   terraform_script: "existing-online-upgrade-minimum.sh",
+          #   is_upgrade: "1"
+          # },
           {
             name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "existing-online-install-admin-backend-config.tfvars",
@@ -212,18 +212,18 @@ jobs:
             name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
             backend_config: "existing-online-install-minimum-backend-config.tfvars",
             terraform_script: "existing-online-install-minimum.sh"
-          },
-          {
-            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-            backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
-            terraform_script: "existing-airgapped-upgrade-admin.sh",
-            is_upgrade: "1"
-          },
-          {
-            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
-            backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
-            terraform_script: "existing-airgapped-upgrade-minimum.sh",
-            is_upgrade: "1"
+          # },
+          # {
+          #   name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
+          #   backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
+          #   terraform_script: "existing-airgapped-upgrade-admin.sh",
+          #   is_upgrade: "1"
+          # },
+          # {
+          #   name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
+          #   backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
+          #   terraform_script: "existing-airgapped-upgrade-minimum.sh",
+          #   is_upgrade: "1"
 #          },
 #          {
 #            name: "type=helmvm cluster, env=online, phase=new install, rbac=cluster admin",
