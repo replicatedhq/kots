@@ -102,7 +102,7 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isA
   await expect(secondRow).toContainText('Currently deployed version');
   await expect(secondRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
-  const thirdRow = allVersionsCard.getByTestId("version-history-row-1");
+  const thirdRow = allVersionsCard.getByTestId("version-history-row-2");
   await expect(thirdRow).toBeVisible();
   await expect(thirdRow).toContainText('Sequence 0');
   await expect(thirdRow).toContainText(isAirgapped ? 'Airgap Install' : 'Online Install');
