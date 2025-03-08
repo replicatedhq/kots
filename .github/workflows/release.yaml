@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - fix-checking-version-history-rows-for-regression-tests
 
 permissions:
   contents: write
