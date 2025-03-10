@@ -31,9 +31,8 @@ export const validateUiAirgapInstall = async (
 
   const airgapUploadProgress = page.getByTestId("airgap-upload-progress");
   await expect(airgapUploadProgress).toBeVisible({ timeout: 15000 });
-  await expect(airgapUploadProgress.getByTestId("processing-images-progress-title")).toBeVisible();
-  await expect(airgapUploadProgress.getByTestId("processing-images-progress-message")).toBeVisible();
-  await expect(airgapUploadProgress.getByTestId("processing-images-progress-bar")).toBeVisible();
+  await expect(airgapUploadProgress.getByTestId("airgap-upload-progress-title")).toBeVisible();
+  await expect(airgapUploadProgress.getByTestId("airgap-upload-progress-bar")).toBeVisible();
   await expect(airgapUploadProgress).not.toBeVisible({ timeout: 60000 });
 };
 
