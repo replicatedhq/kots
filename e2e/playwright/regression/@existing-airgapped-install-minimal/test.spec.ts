@@ -60,7 +60,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
 
   // install Velero for snapshots
-  installVeleroHostPath(
+  await installVeleroHostPath(
     constants.VELERO_VERSION,
     constants.VELERO_AWS_PLUGIN_VERSION,
     registryInfo,

@@ -111,7 +111,15 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isA
   await expect(thirdRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible();
 };
 
-export const deployNewVersion = async (page: Page, expect: Expect, expectedSequence: number, expectedSource: string, isMinimalRBAC: boolean, skipNavigation: boolean = false) => {
+export const deployNewVersion = async (
+  page: Page,
+  expect: Expect,
+  expectedSequence: number,
+  expectedSource: string,
+  isMinimalRBAC: boolean,
+  skipNavigation: boolean = false,
+  supportsRollback: boolean = true
+) => {
   if (!skipNavigation) {
     await page.locator('.NavItem').getByText('Application', { exact: true }).click();
     await page.getByRole('link', { name: 'Version history', exact: true }).click();
@@ -150,7 +158,7 @@ export const deployNewVersion = async (page: Page, expect: Expect, expectedSeque
 
   const previousVersionRow = allVersionsCard.getByTestId('version-history-row-1');
   await expect(previousVersionRow).toContainText('Previously deployed');
-  await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible();
+  await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible({ visible: supportsRollback });
   await expect(previousVersionRow).toContainText(`Sequence ${expectedSequence - 1}`);
 
   const currentVersionCard = page.getByTestId("current-version-card");
@@ -330,7 +338,7 @@ export const validateUiAirgapUpdate = async (page: Page, expect: Expect, airgapB
 
   // minimal rbac is false because we uploaded the initial bundle via the ui.
   // in airgap, minimal rbac is only detected if the bundle is passed to cli install.
-  await deployNewVersion(page, expect, 1, 'Airgap Update', false);
+  await deployNewVersion(page, expect, 1, 'Airgap Update', false, false);
 
   const currentVersionCard = page.getByTestId("current-version-card");
   await currentVersionCard.getByTestId("current-release-notes-icon").click();

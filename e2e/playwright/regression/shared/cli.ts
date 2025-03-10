@@ -87,7 +87,7 @@ sudo mv velero-${veleroVersion}-linux-amd64/velero /usr/local/bin/velero`);
     ${isVelero10OrNewer ? "--use-node-agent --uploader-type=restic" : "--use-restic"}`);
 };
 
-export const installVeleroHostPath = (
+export const installVeleroHostPath = async (
   veleroVersion: string,
   veleroAwsPluginVersion: string,
   registryInfo: RegistryInfo,
@@ -146,7 +146,7 @@ export const installVeleroHostPath = (
   }
 
   // wait for velero to be ready
-  waitForVeleroAndNodeAgent(60000);
+  await waitForVeleroAndNodeAgent(60000);
 }
 
 export const prepareVeleroImages = (
@@ -222,7 +222,7 @@ const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
   runCommand(`kubectl -n velero patch deployment velero --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'`);
 };
 
-export const waitForVeleroAndNodeAgent = async (timeout: number = 300000): Promise<void> => {
+export const waitForVeleroAndNodeAgent = async (timeout: number): Promise<void> => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     if (isVeleroReady() && isNodeAgentReady()) {
