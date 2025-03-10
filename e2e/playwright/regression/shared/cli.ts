@@ -183,14 +183,14 @@ spec:
 EOF`);
 
   // Copy velero image from docker to the registry
-  runCommand(`skopeo copy docker://velero/velero:${veleroVersion} docker://${registryInfo.ip}:30443/velero:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
+  runCommand(`skopeo copy docker://velero/velero:${veleroVersion} docker://${process.env.PRIVATE_IP}:30443/velero:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
 
   // Copy velero aws plugin image from docker to the registry
-  runCommand(`skopeo copy docker://velero/velero-plugin-for-aws:${veleroAwsPluginVersion} docker://${registryInfo.ip}:30443/velero-plugin-for-aws:${veleroAwsPluginVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
+  runCommand(`skopeo copy docker://velero/velero-plugin-for-aws:${veleroAwsPluginVersion} docker://${process.env.PRIVATE_IP}:30443/velero-plugin-for-aws:${veleroAwsPluginVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
 
   // Copy restore helper image from docker to the registry
   const restoreHelperImageName = isVelero10OrNewer ? "velero-restore-helper" : "velero-restic-restore-helper";
-  runCommand(`skopeo copy docker://velero/${restoreHelperImageName}:${veleroVersion} docker://${registryInfo.ip}:30443/${restoreHelperImageName}:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
+  runCommand(`skopeo copy docker://velero/${restoreHelperImageName}:${veleroVersion} docker://${process.env.PRIVATE_IP}:30443/${restoreHelperImageName}:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
 
   // Create velero namespace so that applying the restore helper configmap doesn't fail.
   // This could be done after velero is installed, but it is easier to have it as part of the "prepare velero images" section.

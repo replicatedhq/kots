@@ -161,7 +161,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
   await validateVersionDiff(page, expect, 3, 2);
   await deployNewVersion(page, expect, 3, 'License Change', constants.IS_MINIMAL_RBAC);
 
-  // // Snapshot validation
+  // Snapshot validation
   await validateSnapshotsHostPathConfig(page, expect);
   await validateAutomaticFullSnapshots(page, expect);
   await validateAutomaticPartialSnapshots(page, expect);
