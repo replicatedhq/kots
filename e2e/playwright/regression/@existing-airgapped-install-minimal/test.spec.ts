@@ -19,6 +19,7 @@ import {
   validateSmallAirgapInitialPreflights,
   validateUiAirgapUpdate,
   validateCliAirgapUpdate,
+  addSnapshotsRBAC,
   validateDashboardInfo,
   removeApp,
   removeKots,
@@ -51,7 +52,7 @@ import {
   logout
 } from '../shared';
 
-test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin', async ({ page }) => {
+test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac', async ({ page }) => {
   test.setTimeout(45 * 60 * 1000); // 45 minutes
 
   // Initial setup
@@ -130,6 +131,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
   await page.reload();
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await login(page);
+  await addSnapshotsRBAC(page, expect);
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardGraphs(page, expect);
   await validateCliAirgapUpdate(

@@ -50,7 +50,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   deleteKurlConfigMap();
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
   installVeleroAWS(constants.VELERO_VERSION, constants.VELERO_AWS_PLUGIN_VERSION);
-  await promoteRelease(constants.VENDOR_INITIAL_CHANNEL_RELEASE_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
+  await promoteRelease(constants.VENDOR_INITIAL_CHANNEL_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
 
   // Login and install
   await page.goto('/');
@@ -65,7 +65,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect);
-  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_CHANNEL_RELEASE_SEQUENCE, 1, constants.IS_MINIMAL_RBAC);
+  await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_CHANNEL_SEQUENCE, 1, constants.IS_MINIMAL_RBAC);
 
   // Config update and version history checks
   await updateConfig(page, expect);

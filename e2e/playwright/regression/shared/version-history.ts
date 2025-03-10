@@ -371,7 +371,7 @@ export const validateCliAirgapUpdate = async (
   await updateRow.getByTestId('release-notes-icon').click();
   await validateReleaseNotesModal(page, expect, 'release notes - updates');
 
-  await deployNewVersion(page, expect, expectedSequence, 'Upstream Update', isMinimalRBAC, true);
+  await deployNewVersion(page, expect, expectedSequence, 'Airgap Update', isMinimalRBAC, true);
 
   const currentVersionCard = page.getByTestId("current-version-card");
   await currentVersionCard.getByTestId("current-release-notes-icon").click();

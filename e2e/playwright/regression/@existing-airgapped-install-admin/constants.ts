@@ -1,8 +1,8 @@
 export const NAMESPACE = "qakotsregression";
-export const INITIAL_SMALL_BUNDLE_CHANNEL_RELEASE_SEQUENCE = 17;
-export const UPDATE_SMALL_BUNDLE_CHANNEL_RELEASE_SEQUENCE = 18;
-export const VENDOR_INITIAL_CHANNEL_RELEASE_SEQUENCE = 13;
-export const VENDOR_UPDATE_CHANNEL_RELEASE_SEQUENCE = 14;
+export const INITIAL_SMALL_BUNDLE_CHANNEL_SEQUENCE = 17;
+export const UPDATE_SMALL_BUNDLE_CHANNEL_SEQUENCE = 18;
+export const VENDOR_INITIAL_CHANNEL_SEQUENCE = 13;
+export const VENDOR_UPDATE_CHANNEL_SEQUENCE = 14;
 export const LICENSE_ID = "1riYWkuo5PdMtD4imgTYX699IdU";
 export const CUSTOMER_ID = "1riYWlpWEbuVSARQtZmZWZOv2TN";
 export const CUSTOMER_NAME = "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin";
