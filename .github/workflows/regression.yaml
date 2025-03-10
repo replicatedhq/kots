@@ -303,7 +303,7 @@ jobs:
         run: |
           terraform output -raw jumpbox_private_key > ssh.pem
           chmod 600 ssh.pem
-          ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo -E /tmp/start.sh\""
+          ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
 
       - name: Copy playwright report from remote machine
         if: failure()

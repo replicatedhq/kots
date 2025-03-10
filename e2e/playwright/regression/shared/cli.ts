@@ -162,15 +162,6 @@ export const prepareVeleroImages = (
 
   console.log("Preparing velero images", "\n");
 
-  // Install skopeo from the jumpbox
-  runCommand('if ! command -v skopeo > /dev/null; then . /etc/os-release && \
-    echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /" | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list && \
-    curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key | sudo apt-key add - && \
-    sudo apt-get update && \
-    sudo apt-get -y upgrade && \
-    sudo apt-get -y install libgpgme11-dev skopeo; \
-    fi', true);
-
   // Create a NodePort service for the kurl registry so that we can copy images to it using skopeo from the jumpbox
   // Delete the service if it already exists
   runCommand(`kubectl --namespace kurl delete service registry-node --ignore-not-found`);

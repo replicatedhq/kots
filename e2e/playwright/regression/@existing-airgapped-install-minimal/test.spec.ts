@@ -27,9 +27,8 @@ import {
   installVeleroHostPath,
   validateDashboardGraphs,
   updateConfig,
-  validateIgnorePreflightsModal,
+  validateVersionMinimalRBACPreflights,
   validateCurrentVersionCard,
-  validateCurrentClusterAdminPreflights,
   validateCurrentDeployLogs,
   validateConfigView,
   validateVersionHistoryRows,
@@ -145,12 +144,12 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
     registryInfo
   );
 
+  // TODO NOW: generate/validate support bundle
+
   // Config update and version history checks
   await updateConfig(page, expect);
-  await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
-  await validateIgnorePreflightsModal(page, expect);
+  await validateVersionMinimalRBACPreflights(page, expect, 0, 2);
   await validateCurrentVersionCard(page, expect, 1);
-  await validateCurrentClusterAdminPreflights(page, expect);
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
   await validateVersionHistoryRows(page, expect, constants.IS_AIRGAPPED);
