@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/bitnami-labs/sealed-secrets v0.27.3
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/containers/image/v5 v5.34.0
+	github.com/containers/image/v5 v5.34.1
 	github.com/coreos/go-oidc v2.3.0+incompatible
 	github.com/distribution/distribution/v3 v3.0.0-rc.3
 	github.com/distribution/reference v0.6.0
@@ -42,7 +42,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/open-policy-agent/opa v0.68.0
-	github.com/opencontainers/image-spec v1.1.0
+	github.com/opencontainers/image-spec v1.1.1
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/otiai10/copy v1.14.1
 	github.com/pact-foundation/pact-go v1.10.0
