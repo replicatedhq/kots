@@ -127,6 +127,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
   );
 
   // Validate CLI install and app updates
+  await page.waitForTimeout(5000);
   await page.reload();
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await login(page);
