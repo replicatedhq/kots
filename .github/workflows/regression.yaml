@@ -194,12 +194,12 @@ jobs:
             backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
             terraform_script: "existing-airgapped-install-admin.sh"
           },
-          # {
-          #   id: "existing-airgapped-install-minimum",
-          #   name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
-          #   backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
-          #   terraform_script: "existing-airgapped-install-minimum.sh"
-          # },
+          {
+            id: "existing-airgapped-install-minimum",
+            name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
+            backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
+            terraform_script: "existing-airgapped-install-minimum.sh"
+          },
           # {
           #   id: "existing-online-upgrade-admin",
           #   name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
