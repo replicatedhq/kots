@@ -214,23 +214,22 @@ function checkFilePathExists(file: GitHubFile, path: string) {
 async function filloutGitopsForm(page: Page, owner: string, repo: string, branch: string, path: string) {
   await expect(page.getByTestId('gitops-not-enabled')).toBeVisible();
   await expect(page.getByAltText('not_enabled')).toBeVisible();
-  let hasFilledOut = false;
-  while (!hasFilledOut) {
-    await page.getByPlaceholder('owner').click();
-    await page.getByPlaceholder('owner').fill(owner);
-    await page.getByPlaceholder('Repository').click();
-    await page.getByPlaceholder('Repository').fill(repo);
-    await page.getByPlaceholder('main').click();
-    await page.getByPlaceholder('main').fill(branch);
-    await page.getByPlaceholder('/path/to-deployment').click();
-    await page.getByPlaceholder('/path/to-deployment').fill(path);
+  await page.waitForTimeout(1000);
+  await page.getByPlaceholder('owner').click();
+  await page.getByPlaceholder('owner').fill(owner);
+  await page.getByPlaceholder('Repository').click();
+  await page.getByPlaceholder('Repository').fill(repo);
+  await page.getByPlaceholder('main').click();
+  await page.getByPlaceholder('main').fill(branch);
+  await page.getByPlaceholder('/path/to-deployment').click();
+  await page.getByPlaceholder('/path/to-deployment').fill(path);
 
-    // check if the owner field is actually filled out after sitting for 0.1 seconds
-    await page.waitForTimeout(100);
-    if (await page.getByPlaceholder('owner').getAttribute('value') === owner) {
-      hasFilledOut = true;
-    } else {
-      console.log('owner field is not filled out, retrying')
-    }
+  // check if the owner field is actually filled out after sitting for 0.1 seconds
+  await page.waitForTimeout(100);
+  const ownerValue = await page.getByPlaceholder('owner').getAttribute('value');
+  if (ownerValue === owner) {
+    console.log('owner field is filled out')
+  } else {
+    throw new Error(`Owner field is not filled out. Got "${ownerValue}" instead of "${owner}"`);
   }
 }
