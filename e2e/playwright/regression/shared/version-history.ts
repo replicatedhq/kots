@@ -117,13 +117,9 @@ export const deployNewVersion = async (
   expectedSequence: number,
   expectedSource: string,
   isMinimalRBAC: boolean,
-  skipNavigation: boolean = false,
   supportsRollback: boolean = true
 ) => {
-  if (!skipNavigation) {
-    await page.locator('.NavItem').getByText('Application', { exact: true }).click();
-    await page.getByRole('link', { name: 'Version history', exact: true }).click();
-  }
+  await page.getByRole('link', { name: 'Version history', exact: true }).click();
 
   const allVersionsCard = page.getByTestId('all-versions-card');
   await expect(allVersionsCard).toBeVisible({ timeout: 15000 });
@@ -303,7 +299,7 @@ export const validateCheckForUpdates = async (page: Page, expect: Expect, channe
   await updateRow.getByTestId('release-notes-icon').click();
   await validateReleaseNotesModal(page, expect, newReleaseNotes);
 
-  await deployNewVersion(page, expect, expectedSequence, 'Upstream Update', isMinimalRBAC, true);
+  await deployNewVersion(page, expect, expectedSequence, 'Upstream Update', isMinimalRBAC);
 
   const currentVersionCard = page.getByTestId("current-version-card");
   await currentVersionCard.getByTestId("current-release-notes-icon").click();
@@ -339,7 +335,7 @@ export const validateUiAirgapUpdate = async (page: Page, expect: Expect, airgapB
   // minimal rbac is false because we uploaded the initial bundle via the ui.
   // in airgap, minimal rbac is only detected if the bundle is passed to cli install.
   // also, the releases associated with ui installs do not support rollback.
-  await deployNewVersion(page, expect, 1, 'Airgap Update', false, false, false);
+  await deployNewVersion(page, expect, 1, 'Airgap Update', false, false);
 
   const currentVersionCard = page.getByTestId("current-version-card");
   await currentVersionCard.getByTestId("current-release-notes-icon").click();
@@ -380,7 +376,7 @@ export const validateCliAirgapUpdate = async (
   await updateRow.getByTestId('release-notes-icon').click();
   await validateReleaseNotesModal(page, expect, 'release notes - updates');
 
-  await deployNewVersion(page, expect, expectedSequence, 'Airgap Update', isMinimalRBAC, true);
+  await deployNewVersion(page, expect, expectedSequence, 'Airgap Update', isMinimalRBAC);
 
   const currentVersionCard = page.getByTestId("current-version-card");
   await currentVersionCard.getByTestId("current-release-notes-icon").click();
