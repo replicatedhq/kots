@@ -59,6 +59,14 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
   deleteKurlConfigMap();
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
 
+  // install Velero for snapshots
+  installVeleroHostPath(
+    constants.VELERO_VERSION,
+    constants.VELERO_AWS_PLUGIN_VERSION,
+    registryInfo,
+    constants.IS_AIRGAPPED
+  );
+
   // download initial small airgap bundle for ui install
   await downloadAirgapBundle(
     constants.CUSTOMER_ID,
@@ -117,14 +125,6 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
     `${process.env.TEST_PATH}/config.yaml`,
     constants.NAMESPACE,
     constants.IS_MINIMAL_RBAC
-  );
-
-  // Install Velero for snapshots
-  installVeleroHostPath(
-    constants.VELERO_VERSION,
-    constants.VELERO_AWS_PLUGIN_VERSION,
-    registryInfo,
-    constants.IS_AIRGAPPED
   );
 
   // Validate CLI install and app updates
