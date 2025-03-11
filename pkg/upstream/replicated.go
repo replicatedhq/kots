@@ -387,9 +387,9 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		if replicatedRegistryDomain == "" {
 			return nil, errors.New("REPLICATED_REGISTRY_DOMAIN environment variable is required")
 		}
-		replicatedProxyDomain = os.Getenv("REPLICATED_PROXY_DOMAIN")
+		replicatedProxyDomain = os.Getenv("PROXY_REGISTRY_DOMAIN")
 		if replicatedProxyDomain == "" {
-			return nil, errors.New("REPLICATED_PROXY_DOMAIN environment variable is required")
+			return nil, errors.New("PROXY_REGISTRY_DOMAIN environment variable is required")
 		}
 	} else {
 		replicatedRegistryDomain = getResp.Header.Get("X-Replicated-ReplicatedRegistryDomain")
