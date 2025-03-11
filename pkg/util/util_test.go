@@ -381,6 +381,16 @@ func Test_ReplicatedAPIEndpoint(t *testing.T) {
 			isEmbedded: true,
 			wantError:  true,
 		},
+		{
+			name: "embedded cluster without env endpoint but with license should error",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint: "https://replicated.app:8443",
+				},
+			},
+			isEmbedded: true,
+			wantError:  true,
+		},
 	}
 
 	for _, tt := range tests {
