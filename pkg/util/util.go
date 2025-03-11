@@ -178,11 +178,7 @@ func ReplicatedAPIEndpoint(license *kotsv1beta1.License) (string, error) {
 		return license.Spec.Endpoint, nil
 	}
 
-	return DefaultReplicatedAPIEndpoint(), nil
-}
-
-func DefaultReplicatedAPIEndpoint() string {
-	return "https://replicated.app"
+	return "https://replicated.app", nil
 }
 
 func DefaultProxyRegistryDomain() string {

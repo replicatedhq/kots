@@ -7,7 +7,6 @@ import (
 
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type ExchangePlatformLicenseRequest struct {
@@ -28,7 +27,7 @@ func (h *Handler) ExchangePlatformLicense(w http.ResponseWriter, r *http.Request
 
 	endpoint := os.Getenv("REPLICATED_API_ENDPOINT")
 	if endpoint == "" {
-		endpoint = util.DefaultReplicatedAPIEndpoint()
+		endpoint = "https://replicated.app"
 	}
 	kotsLicenseData, err := license.GetFromPlatformLicense(endpoint, request.LicenseData)
 	if err != nil {
