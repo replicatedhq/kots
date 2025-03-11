@@ -481,7 +481,9 @@ jobs:
     needs: [ regression-test-setup, generate-tag, build-kots, generate-kurl-addon, build-kotsadm-bundle ]
     uses: ./.github/workflows/regression.yaml
     with:
-      version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
+      # revert this!
+      # version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
+      version_tag_old: v1.124.5
       version_tag_new: ${{ needs.generate-tag.outputs.tag }}
       addon_package_url: ${{ needs.generate-kurl-addon.outputs.addon_package_url }}
       id: ${{ needs.regression-test-setup.outputs.automation_id }}
