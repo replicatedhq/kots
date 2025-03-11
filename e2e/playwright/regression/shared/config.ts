@@ -61,7 +61,9 @@ export const updateConfig = async (page: Page, expect: Expect) => {
 };
 
 export const validateConfigView = async (page: Page, expect: Expect) => {
+  await page.waitForTimeout(1000); // small delay to ensure apps list gets updated
   await page.getByRole('link', { name: 'Config', exact: true }).click();
+
   const sidebar = page.getByTestId('config-sidebar-wrapper');
   await expect(sidebar).toBeVisible({ timeout: 15000 });
 
