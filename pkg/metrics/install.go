@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	DevEndpoint  = "http://localhost:30016"
-	ProdEndpoint = "https://replicated.app"
+	DevEndpoint = "http://localhost:30016"
 )
 
 type InstallMetrics struct {
@@ -107,7 +106,7 @@ func getEndpoint(license *kotsv1beta1.License) string {
 		return license.Spec.Endpoint
 	}
 
-	return ProdEndpoint
+	return util.DefaultReplicatedAPIEndpoint()
 }
 
 func isDevEndpoint(endpoint string) bool {

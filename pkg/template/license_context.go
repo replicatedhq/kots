@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
@@ -93,7 +94,15 @@ func (ctx licenseCtx) licenseDockercfg() string {
 	installation := &kotsv1beta1.Installation{
 		Spec: InstallationSpecFromVersionInfo(ctx.VersionInfo),
 	}
-	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.License, installation, ctx.App)
+	registryProxyInfo, err := registry.GetRegistryProxyInfo(ctx.License, installation, ctx.App)
+	if err != nil {
+		// TODO: log
+		registryProxyInfo = &registry.RegistryProxyInfo{
+			Upstream: util.DefaultReplicatedRegistryDomain(),
+			Registry: util.DefaultReplicatedRegistryDomain(),
+			Proxy:    util.DefaultProxyRegistryDomain(),
+		}
+	}
 
 	dockercfg := map[string]interface{}{
 		"auths": map[string]interface{}{

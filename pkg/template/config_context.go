@@ -13,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -320,7 +321,15 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 	installation := &kotsv1beta1.Installation{
 		Spec: InstallationSpecFromVersionInfo(ctx.VersionInfo),
 	}
-	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
+	registryProxyInfo, err := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
+	if err != nil {
+		// TODO: log
+		registryProxyInfo = &registry.RegistryProxyInfo{
+			Upstream: util.DefaultReplicatedRegistryDomain(),
+			Registry: util.DefaultReplicatedRegistryDomain(),
+			Proxy:    util.DefaultProxyRegistryDomain(),
+		}
+	}
 	registryOptions := dockerregistrytypes.RegistryOptions{
 		Endpoint:         registryProxyInfo.Registry,
 		ProxyEndpoint:    registryProxyInfo.Proxy,
@@ -368,7 +377,15 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 		installation := &kotsv1beta1.Installation{
 			Spec: InstallationSpecFromVersionInfo(ctx.VersionInfo),
 		}
-		registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
+		registryProxyInfo, err := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
+		if err != nil {
+			// TODO: log
+			registryProxyInfo = &registry.RegistryProxyInfo{
+				Upstream: util.DefaultReplicatedRegistryDomain(),
+				Registry: util.DefaultReplicatedRegistryDomain(),
+				Proxy:    util.DefaultProxyRegistryDomain(),
+			}
+		}
 
 		secrets, err := registry.PullSecretForRegistries(
 			registryProxyInfo.ToSlice(),

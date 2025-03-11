@@ -10,9 +10,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 func IsURL(str string) bool {
@@ -145,14 +147,6 @@ func (e ActionableError) Error() string {
 	return fmt.Sprintf("%s", e.Message)
 }
 
-func GetReplicatedAPIEndpoint() string {
-	endpoint := os.Getenv("REPLICATED_API_ENDPOINT")
-	if endpoint != "" {
-		return endpoint
-	}
-	return "https://replicated.app"
-}
-
 func HomeDir() string {
 	if h := os.Getenv("HOME"); h != "" {
 		return h
@@ -170,6 +164,68 @@ func EmbeddedClusterID() string {
 
 func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
+}
+
+func ReplicatedAPIEndpoint(license *kotsv1beta1.License) (string, error) {
+	if IsEmbeddedCluster() {
+		if endpoint := os.Getenv("REPLICATED_API_ENDPOINT"); endpoint != "" {
+			return maybePrependHTTPS(endpoint), nil
+		}
+		return "", errors.New("REPLICATED_API_ENDPOINT environment variable is required")
+	}
+
+	if license != nil && license.Spec.Endpoint != "" {
+		return maybePrependHTTPS(license.Spec.Endpoint), nil
+	}
+	return DefaultReplicatedAPIEndpoint(), nil
+}
+
+func maybePrependHTTPS(endpoint string) string {
+	if !strings.HasPrefix(endpoint, "http") && !strings.HasPrefix(endpoint, "https") {
+		return fmt.Sprintf("https://%s", endpoint)
+	}
+	return endpoint
+}
+
+func DefaultReplicatedAPIEndpoint() string {
+	return "https://replicated.app"
+}
+
+func ProxyRegistryDomain(license *kotsv1beta1.License) (string, error) {
+	if IsEmbeddedCluster() {
+		if domain := os.Getenv("PROXY_REGISTRY_DOMAIN"); domain != "" {
+			return domain, nil
+		}
+		return "", errors.New("PROXY_REGISTRY_DOMAIN environment variable is required")
+	}
+
+	if license != nil {
+		u, err := url.Parse(license.Spec.Endpoint)
+		if err == nil && u.Hostname() == "staging.replicated.app" {
+			return "proxy.staging.replicated.com", nil
+		}
+	}
+
+	return DefaultProxyRegistryDomain(), nil
+}
+
+func DefaultProxyRegistryDomain() string {
+	return "proxy.replicated.com"
+}
+
+func ReplicatedRegistryDomain(license *kotsv1beta1.License) (string, error) {
+	if license != nil {
+		u, err := url.Parse(license.Spec.Endpoint)
+		if err == nil && u.Hostname() == "staging.replicated.app" {
+			return "registry.staging.replicated.com", nil
+		}
+	}
+
+	return DefaultReplicatedRegistryDomain(), nil
+}
+
+func DefaultReplicatedRegistryDomain() string {
+	return "registry.replicated.com"
 }
 
 func IsUpgradeService() bool {
