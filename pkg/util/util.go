@@ -10,11 +10,9 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 func IsURL(str string) bool {
@@ -166,58 +164,12 @@ func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
 }
 
-func ReplicatedAPIEndpoint(license *kotsv1beta1.License) (string, error) {
-	if IsEmbeddedCluster() {
-		if endpoint := os.Getenv("REPLICATED_API_ENDPOINT"); endpoint != "" {
-			return endpoint, nil
-		}
-		return "", errors.New("REPLICATED_API_ENDPOINT environment variable is required")
-	}
-
-	if license != nil && license.Spec.Endpoint != "" {
-		if strings.HasPrefix(license.Spec.Endpoint, "http://") || strings.HasPrefix(license.Spec.Endpoint, "https://") {
-			return license.Spec.Endpoint, nil
-		}
-		return fmt.Sprintf("https://%s", license.Spec.Endpoint), nil
-	}
-	return DefaultReplicatedAPIEndpoint(), nil
-}
-
 func DefaultReplicatedAPIEndpoint() string {
 	return "https://replicated.app"
 }
 
-func ProxyRegistryDomain(license *kotsv1beta1.License) (string, error) {
-	if IsEmbeddedCluster() {
-		if domain := os.Getenv("PROXY_REGISTRY_DOMAIN"); domain != "" {
-			return domain, nil
-		}
-		return "", errors.New("PROXY_REGISTRY_DOMAIN environment variable is required")
-	}
-
-	if license != nil {
-		u, err := url.Parse(license.Spec.Endpoint)
-		if err == nil && u.Hostname() == "staging.replicated.app" {
-			return "proxy.staging.replicated.com", nil
-		}
-	}
-
-	return DefaultProxyRegistryDomain(), nil
-}
-
 func DefaultProxyRegistryDomain() string {
 	return "proxy.replicated.com"
-}
-
-func ReplicatedRegistryDomain(license *kotsv1beta1.License) (string, error) {
-	if license != nil {
-		u, err := url.Parse(license.Spec.Endpoint)
-		if err == nil && u.Hostname() == "staging.replicated.app" {
-			return "registry.staging.replicated.com", nil
-		}
-	}
-
-	return DefaultReplicatedRegistryDomain(), nil
 }
 
 func DefaultReplicatedRegistryDomain() string {
