@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strings"
 
@@ -76,23 +75,14 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 }
 
 func getReplicatedAppEndpoint(license *kotsv1beta1.License) (string, error) {
-	var endpoint string
-
-	if util.IsEmbeddedCluster() {
-		endpoint = os.Getenv("REPLICATED_API_ENDPOINT")
-		if endpoint == "" {
-			return "", errors.New("REPLICATED_API_ENDPOINT environment variable is required")
-		}
-	} else {
-		endpoint = license.Spec.Endpoint
-		if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
-			endpoint = fmt.Sprintf("https://%s", endpoint)
-		}
+	endpoint, err := util.ReplicatedAPIEndpoint(license)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get replicated api endpoint")
 	}
 
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return "", errors.Wrap(err, "parse endpoint")
+		return "", errors.Wrap(err, "failed to parse endpoint")
 	}
 
 	host := u.Hostname()

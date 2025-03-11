@@ -86,7 +86,12 @@ var (
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
-func PullApplicationMetadata(apiEndpoint string, upstreamURI string, license *kotsv1beta1.License, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
+func PullApplicationMetadata(upstreamURI string, license *kotsv1beta1.License, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
+	host, err := util.ReplicatedAPIEndpoint(license)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get replicated api endpoint")
+	}
+
 	uri, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse uri")
@@ -97,7 +102,7 @@ func PullApplicationMetadata(apiEndpoint string, upstreamURI string, license *ko
 		return nil, nil
 	}
 
-	metadata, err := replicatedapp.GetApplicationMetadata(apiEndpoint, uri, versionLabel)
+	metadata, err := replicatedapp.GetApplicationMetadata(host, uri, versionLabel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get application metadata")
 	}

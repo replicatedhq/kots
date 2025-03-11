@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -328,6 +329,82 @@ func TestConvertToSingleDocs(t *testing.T) {
 				}
 				t.Fatal("ConvertToSingleDocs() mismatch")
 			}
+		})
+	}
+}
+
+func Test_ReplicatedAPIEndpoint(t *testing.T) {
+	tests := []struct {
+		name           string
+		license        *kotsv1beta1.License
+		isEmbedded     bool
+		envEndpoint    string
+		expectedResult string
+		expectError    bool
+	}{
+		{
+			name: "license with endpoint",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint: "https://replicated.app",
+				},
+			},
+			isEmbedded:     false,
+			expectedResult: "https://replicated.app",
+		},
+		{
+			name: "license with endpoint including port",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint: "https://replicated.app:8443",
+				},
+			},
+			isEmbedded:     false,
+			expectedResult: "https://replicated.app:8443",
+		},
+		{
+			name:           "no license uses default endpoint",
+			license:        nil,
+			isEmbedded:     false,
+			expectedResult: "https://replicated.app",
+		},
+		{
+			name:           "embedded cluster with env endpoint",
+			license:        nil,
+			isEmbedded:     true,
+			envEndpoint:    "https://replicated.app",
+			expectedResult: "https://replicated.app",
+		},
+		{
+			name:        "embedded cluster without env endpoint",
+			license:     nil,
+			isEmbedded:  true,
+			expectError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			// Setup environment
+			if test.isEmbedded {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "123")
+
+				if test.envEndpoint != "" {
+					t.Setenv("REPLICATED_API_ENDPOINT", test.envEndpoint)
+				}
+			}
+
+			result, err := ReplicatedAPIEndpoint(test.license)
+
+			if test.expectError {
+				req.Error(err)
+				return
+			}
+
+			req.NoError(err)
+			assert.Equal(t, test.expectedResult, result)
 		})
 	}
 }

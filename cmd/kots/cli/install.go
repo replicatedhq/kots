@@ -152,7 +152,10 @@ func InstallCmd() *cobra.Command {
 
 			disableOutboundConnections := registryConfig.OverrideRegistry != "" || isAirgap
 
-			m := metrics.InitInstallMetrics(license, disableOutboundConnections)
+			m, err := metrics.InitInstallMetrics(license, disableOutboundConnections)
+			if err != nil {
+				return errors.Wrap(err, "failed to init install metrics")
+			}
 			m.ReportInstallStart()
 
 			// only handle reporting install failures in a defer statement.
@@ -196,17 +199,7 @@ func InstallCmd() *cobra.Command {
 					return errors.Wrapf(err, "failed to get metadata from %s", airgapBundle)
 				}
 			} else if !v.GetBool("airgap") {
-				var apiEndpoint string
-				if license != nil && license.Spec.Endpoint != "" {
-					apiEndpoint = license.Spec.Endpoint
-				} else {
-					apiEndpoint = os.Getenv("REPLICATED_API_ENDPOINT")
-					if apiEndpoint == "" {
-						apiEndpoint = util.DefaultReplicatedAPIEndpoint()
-					}
-				}
-
-				applicationMetadata, err = pull.PullApplicationMetadata(apiEndpoint, upstream, license, v.GetString("app-version-label"))
+				applicationMetadata, err = pull.PullApplicationMetadata(upstream, license, v.GetString("app-version-label"))
 				if err != nil {
 					// application metadata is required for embedded cluster installations
 					if util.IsEmbeddedCluster() {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 func IsURL(str string) bool {
@@ -162,6 +163,22 @@ func EmbeddedClusterID() string {
 
 func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
+}
+
+func ReplicatedAPIEndpoint(license *kotsv1beta1.License) (string, error) {
+	if ep := os.Getenv("REPLICATED_API_ENDPOINT"); ep != "" {
+		return ep, nil
+	}
+
+	if IsEmbeddedCluster() {
+		return "", errors.New("REPLICATED_API_ENDPOINT environment variable is required")
+	}
+
+	if license != nil {
+		return license.Spec.Endpoint, nil
+	}
+
+	return DefaultReplicatedAPIEndpoint(), nil
 }
 
 func DefaultReplicatedAPIEndpoint() string {
