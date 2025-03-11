@@ -102,8 +102,12 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
 };
 
 const validateCliInstallFailsEarly = () => {
-  const result = execSync(`kubectl kots install "${constants.APP_SLUG}/automated" --no-port-forward --namespace "${constants.APP_SLUG}" --shared-password password 2>&1 >/dev/null`).toString();
-
+  let result = "";
+  try {
+    execSync(`kubectl kots install ${constants.APP_SLUG}/automated --no-port-forward --namespace ${constants.APP_SLUG} --shared-password password`);
+  } catch (error: any) {
+    result = error.stderr.toString();
+  }
   if (!result.includes("requires") || !result.includes(constants.RESTRICTIVE_MIN_KOTS_VERSION)) {
     throw new Error(`Expected error message to contain "requires" and "${constants.RESTRICTIVE_MIN_KOTS_VERSION}" but got: ${result}`);
   }

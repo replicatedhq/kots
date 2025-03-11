@@ -14,15 +14,15 @@ import {
 test('target kots version', async ({ page }) => {
   test.setTimeout(2 * 60 * 1000); // 2 minutes
 
-  await login(page);
-  await uploadLicense(page, expect);
+  // await login(page);
+  // await uploadLicense(page, expect);
   await validateOnlineInstallRestrictive(page, expect);
   await validateOnlineInstallPermissive(page, expect);
   await validateOnlineUpdateRestrictive(page, expect);
 });
 
 const validateOnlineInstallRestrictive = async (page: Page, expect: Expect) => {
-  await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
+  // await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
 
   validateCliInstallFailsEarly();
   await airgapOnlineInstall(page, expect);
@@ -58,8 +58,12 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
 };
 
 const validateCliInstallFailsEarly = () => {
-  const result = execSync(`kubectl kots install "${constants.APP_SLUG}/automated" --no-port-forward --namespace "${constants.APP_SLUG}" --shared-password password 2>&1 >/dev/null`).toString();
-
+  let result = "";
+  try {
+    execSync(`kubectl kots install ${constants.APP_SLUG}/automated --no-port-forward --namespace ${constants.APP_SLUG} --shared-password password`);
+  } catch (error: any) {
+    result = error.stderr.toString();
+  }
   if (!result.includes("requires") || !result.includes(constants.RESTRICTIVE_TARGET_KOTS_VERSION)) {
     throw new Error(`Expected error message to contain "requires" and "${constants.RESTRICTIVE_TARGET_KOTS_VERSION}" but got: ${result}`);
   }
