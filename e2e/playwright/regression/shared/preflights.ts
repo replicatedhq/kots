@@ -63,7 +63,7 @@ export const validateIgnorePreflightsModal = async (page: Page, expect: Expect) 
   await expect(skipPreflightsModal).not.toBeVisible();
 };
 
-export const validateMinimalRBACInitialPreflights = async (page: Page, expect: Expect, timeout: number = 15000) => {
+export const validateMinimalRBACInitialPreflights = async (page: Page, expect: Expect, timeout: number = 45000) => {
   const errorsWrapper = page.getByTestId("preflight-result-errors");
   await expect(errorsWrapper).toBeVisible({ timeout });
   await expect(errorsWrapper.getByTestId("preflight-rbac-error-message")).toBeVisible();

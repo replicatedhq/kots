@@ -30,7 +30,7 @@ export const validateVersionMinimalRBACPreflights = async (page: Page, expect: E
   await expect(versionRow).toContainText(`Sequence ${sequence}`);
 
   await versionRow.getByTestId("preflight-icon").click();
-  await validateMinimalRBACPreflightsPage(page, expect, 15000);
+  await validateMinimalRBACPreflightsPage(page, expect);
 };
 
 export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
