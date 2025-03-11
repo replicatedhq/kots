@@ -60,17 +60,10 @@ var secretAnnotations = map[string]string{
 
 func GetRegistryProxyInfo(license *kotsv1beta1.License, installation *kotsv1beta1.Installation, app *kotsv1beta1.Application) (*RegistryProxyInfo, error) {
 	if util.IsEmbeddedCluster() {
-		registryProxyInfo, err := getEmbeddedClusterRegistryProxyInfo(license)
+		registryProxyInfo, err := getEmbeddedClusterRegistryProxyInfo()
 		if err != nil {
 			return nil, errors.Wrap(err, "embedded cluster")
 		}
-
-		// getting the registry and proxy from the installation spec takes precedence over the application spec
-		_, registryEndpoint := getRegistryProxyEndpointFromKotsInstallation(installation)
-		if registryEndpoint != "" {
-			registryProxyInfo.Registry = registryEndpoint
-		}
-
 		return registryProxyInfo, nil
 	}
 
@@ -129,31 +122,22 @@ func getRegistryProxyEndpointFromKotsApplication(kotsApplication *kotsv1beta1.Ap
 	return proxyEndpoint, registryEndpoint
 }
 
-func getDefaultRegistryProxyInfo() *RegistryProxyInfo {
-	return &RegistryProxyInfo{
+func getEmbeddedClusterRegistryProxyInfo() (*RegistryProxyInfo, error) {
+	info := &RegistryProxyInfo{
 		Upstream: util.DefaultReplicatedRegistryDomain(),
-		Registry: util.DefaultReplicatedRegistryDomain(),
-		Proxy:    util.DefaultProxyRegistryDomain(),
 	}
-}
 
-func getEmbeddedClusterRegistryProxyInfo(license *kotsv1beta1.License) (*RegistryProxyInfo, error) {
-	info := getDefaultRegistryProxyInfo()
+	registryDomain := os.Getenv("REPLICATED_REGISTRY_DOMAIN")
+	if registryDomain == "" {
+		return nil, errors.New("REPLICATED_REGISTRY_DOMAIN environment variable is required")
+	}
+	info.Registry = registryDomain
 
 	proxyDomain := os.Getenv("PROXY_REGISTRY_DOMAIN")
 	if proxyDomain == "" {
 		return nil, errors.New("PROXY_REGISTRY_DOMAIN environment variable is required")
 	}
 	info.Proxy = proxyDomain
-
-	if license != nil {
-		registryDomain := util.DefaultReplicatedRegistryDomain()
-		if strings.Contains(license.Spec.Endpoint, "staging.replicated.app") {
-			registryDomain = "registry.staging.replicated.com"
-		}
-		info.Upstream = registryDomain
-		info.Registry = registryDomain
-	}
 
 	return info, nil
 }
@@ -194,6 +178,14 @@ func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProx
 	}
 
 	return defaultInfo
+}
+
+func getDefaultRegistryProxyInfo() *RegistryProxyInfo {
+	return &RegistryProxyInfo{
+		Upstream: util.DefaultReplicatedRegistryDomain(),
+		Registry: util.DefaultReplicatedRegistryDomain(),
+		Proxy:    util.DefaultProxyRegistryDomain(),
+	}
 }
 
 func (r *RegistryProxyInfo) ToSlice() []string {

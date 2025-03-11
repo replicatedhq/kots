@@ -381,14 +381,18 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
 	isRequiredStr := getResp.Header.Get("X-Replicated-IsRequired")
 	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
-	replicatedRegistryDomain := getResp.Header.Get("X-Replicated-ReplicatedRegistryDomain")
-	var replicatedProxyDomain string
+	var replicatedRegistryDomain, replicatedProxyDomain string
 	if util.IsEmbeddedCluster() {
-		replicatedRegistryDomain = os.Getenv("PROXY_REGISTRY_DOMAIN")
+		replicatedRegistryDomain = os.Getenv("REPLICATED_REGISTRY_DOMAIN")
 		if replicatedRegistryDomain == "" {
-			return nil, errors.New("PROXY_REGISTRY_DOMAIN environment variable is required")
+			return nil, errors.New("REPLICATED_REGISTRY_DOMAIN environment variable is required")
+		}
+		replicatedProxyDomain = os.Getenv("REPLICATED_PROXY_DOMAIN")
+		if replicatedProxyDomain == "" {
+			return nil, errors.New("REPLICATED_PROXY_DOMAIN environment variable is required")
 		}
 	} else {
+		replicatedRegistryDomain = getResp.Header.Get("X-Replicated-ReplicatedRegistryDomain")
 		replicatedProxyDomain = getResp.Header.Get("X-Replicated-ReplicatedProxyDomain")
 	}
 	replicatedChartNamesStr := getResp.Header.Get("X-Replicated-ReplicatedChartNames")

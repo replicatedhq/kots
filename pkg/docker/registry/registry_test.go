@@ -105,17 +105,18 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				app:          nil,
 			},
 			env: map[string]string{
-				"EMBEDDED_CLUSTER_ID":   "123",
-				"PROXY_REGISTRY_DOMAIN": "localhost:30000",
+				"EMBEDDED_CLUSTER_ID":        "123",
+				"REPLICATED_REGISTRY_DOMAIN": "localhost:30000",
+				"PROXY_REGISTRY_DOMAIN":      "localhost:30001",
 			},
 			want: &RegistryProxyInfo{
-				Registry: "registry.replicated.com",
-				Proxy:    "localhost:30000",
+				Registry: "localhost:30000",
+				Proxy:    "localhost:30001",
 				Upstream: "registry.replicated.com",
 			},
 		},
 		{
-			name: "GetRegistryProxyInfo prioritizes installation settings over embedded cluster",
+			name: "GetRegistryProxyInfo does not use installation settings for embedded cluster",
 			args: args{
 				license: nil,
 				installation: &kotsv1beta1.Installation{
@@ -127,12 +128,13 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				app: nil,
 			},
 			env: map[string]string{
-				"EMBEDDED_CLUSTER_ID":   "123",
-				"PROXY_REGISTRY_DOMAIN": "localhost:30000",
+				"EMBEDDED_CLUSTER_ID":        "123",
+				"REPLICATED_REGISTRY_DOMAIN": "localhost:30000",
+				"PROXY_REGISTRY_DOMAIN":      "localhost:30001",
 			},
 			want: &RegistryProxyInfo{
-				Registry: customRegistry,
-				Proxy:    "localhost:30000",
+				Registry: "localhost:30000",
+				Proxy:    "localhost:30001",
 				Upstream: "registry.replicated.com",
 			},
 		},
