@@ -51,7 +51,7 @@ export const updateConfig = async (page: Page, expect: Expect) => {
   await configArea.locator('#a_required_text-group').getByRole('textbox').click();
   await configArea.locator('#a_required_text-group').getByRole('textbox').fill("i want to update this field - " + uuid.v4());
 
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(5000); // config page can take a bit to re-render
   await page.getByRole('button', { name: 'Save config' }).click();
 
   const nextStepModal = page.getByTestId('config-next-step-modal');

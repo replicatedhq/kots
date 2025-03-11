@@ -1,6 +1,6 @@
 import { Page, Expect } from '@playwright/test';
 
-export const validateDashboardInfo = async (page: Page, expect: Expect, isAirgapped: boolean) => {
+export const validateDashboardInfo = async (page: Page, expect: Expect, isAirgapped: boolean, snapshotsConfigured: boolean = true) => {
   await page.locator('.NavItem').getByText('Application', { exact: true }).click();
   await page.getByRole('link', { name: 'Dashboard', exact: true }).click();
 
@@ -22,11 +22,13 @@ export const validateDashboardInfo = async (page: Page, expect: Expect, isAirgap
   await expect(licenseCard.getByText(isAirgapped ? "Upload license" : "Sync license")).toBeVisible();
   await expect(licenseCard.getByText("See license details")).toBeVisible();
 
-  const snapshotsCard = page.getByTestId("dashboard-snapshots-card");
-  await expect(snapshotsCard).toBeVisible();
-  await expect(snapshotsCard.getByText("Snapshot settings")).toBeVisible();
-  await expect(snapshotsCard.getByText("Start snapshot")).toBeVisible();
-  await expect(snapshotsCard.getByText("See all snapshots")).toBeVisible();
+  if (snapshotsConfigured) {
+    const snapshotsCard = page.getByTestId("dashboard-snapshots-card");
+    await expect(snapshotsCard).toBeVisible();
+    await expect(snapshotsCard.getByText("Snapshot settings")).toBeVisible();
+    await expect(snapshotsCard.getByText("Start snapshot")).toBeVisible();
+    await expect(snapshotsCard.getByText("See all snapshots")).toBeVisible();
+  }
 };
 
 export const validateDashboardAutomaticUpdates = async (page: Page, expect: Expect) => {
