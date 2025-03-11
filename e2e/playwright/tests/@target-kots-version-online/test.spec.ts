@@ -1,4 +1,5 @@
 import { test, expect, Page, Expect } from '@playwright/test';
+import { execSync } from 'child_process';
 import * as constants from './constants';
 import {
   login,
@@ -23,6 +24,7 @@ test('target kots version', async ({ page }) => {
 const validateOnlineInstallRestrictive = async (page: Page, expect: Expect) => {
   await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
 
+  validateCliInstallFailsEarly();
   await airgapOnlineInstall(page, expect);
 
   const errorMessage = airgapInstallErrorMessage(page);
@@ -53,4 +55,12 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   await expect(availableUpdateCard).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
 
   await expect(footer).not.toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
+};
+
+const validateCliInstallFailsEarly = () => {
+  const result = execSync(`kubectl kots install "${constants.APP_SLUG}/automated" --no-port-forward --namespace "${constants.APP_SLUG}" --shared-password password 2>&1 >/dev/null`).toString();
+
+  if (!result.includes("requires") || !result.includes(constants.RESTRICTIVE_TARGET_KOTS_VERSION)) {
+    throw new Error(`Expected error message to contain "requires" and "${constants.RESTRICTIVE_TARGET_KOTS_VERSION}" but got: ${result}`);
+  }
 };
