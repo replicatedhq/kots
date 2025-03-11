@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -123,7 +122,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.Initialize()
 
 	if pullOptions.ReportWriter == nil {
-		pullOptions.ReportWriter = ioutil.Discard
+		pullOptions.ReportWriter = io.Discard
 	}
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -648,7 +647,7 @@ func removeUnusedHelmOverlays(overlayRoot string, baseRoot string) error {
 
 func removeUnusedHelmOverlaysRec(overlayRoot string, baseRoot string, overlayRelDir string) error {
 	curMidstreamDir := filepath.Join(overlayRoot, overlayRelDir)
-	midstreamFiles, err := ioutil.ReadDir(curMidstreamDir)
+	midstreamFiles, err := os.ReadDir(curMidstreamDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil

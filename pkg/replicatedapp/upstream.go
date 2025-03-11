@@ -48,7 +48,7 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 		return nil, errors.Wrap(err, "failed to get replicated app endpoint")
 	}
 
-	urlPath := path.Join(endpoint, "release", license.Spec.AppSlug)
+	urlPath := path.Join("release", license.Spec.AppSlug)
 	if r.Channel != nil {
 		urlPath = path.Join(urlPath, *r.Channel)
 	}
@@ -62,7 +62,7 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 	urlValues.Add("isSemverSupported", "true")
 	urlValues.Add("selectedChannelId", selectedChannelID)
 
-	url := fmt.Sprintf("%s?%s", urlPath, urlValues.Encode())
+	url := fmt.Sprintf("%s/%s?%s", endpoint, urlPath, urlValues.Encode())
 
 	req, err := util.NewRequest(method, url, nil)
 	if err != nil {

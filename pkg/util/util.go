@@ -181,10 +181,10 @@ func ReplicatedAPIEndpoint(license *kotsv1beta1.License) (string, error) {
 }
 
 func maybePrependHTTPS(endpoint string) string {
-	if !strings.HasPrefix(endpoint, "http") && !strings.HasPrefix(endpoint, "https") {
-		return fmt.Sprintf("https://%s", endpoint)
+	if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
+		return endpoint
 	}
-	return endpoint
+	return fmt.Sprintf("https://%s", endpoint)
 }
 
 func DefaultReplicatedAPIEndpoint() string {
