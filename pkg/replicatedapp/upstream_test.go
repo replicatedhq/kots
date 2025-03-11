@@ -68,12 +68,12 @@ func Test_parseReplicatedURL(t *testing.T) {
 
 func Test_getReplicatedAppEndpoint(t *testing.T) {
 	tests := []struct {
-		name           string
-		license        *kotsv1beta1.License
-		isEmbedded     bool
-		envEndpoint    string
-		expectedResult string
-		expectError    bool
+		name        string
+		license     *kotsv1beta1.License
+		isEmbedded  bool
+		envEndpoint string
+		want        string
+		wantError   bool
 	}{
 		{
 			name: "kots install with full endpoint",
@@ -82,8 +82,8 @@ func Test_getReplicatedAppEndpoint(t *testing.T) {
 					Endpoint: "https://replicated.app",
 				},
 			},
-			isEmbedded:     false,
-			expectedResult: "https://replicated.app",
+			isEmbedded: false,
+			want:       "https://replicated.app",
 		},
 		{
 			name: "kots install with endpoint including port",
@@ -92,46 +92,46 @@ func Test_getReplicatedAppEndpoint(t *testing.T) {
 					Endpoint: "https://replicated.app:8443",
 				},
 			},
-			isEmbedded:     false,
-			expectedResult: "https://replicated.app:8443",
+			isEmbedded: false,
+			want:       "https://replicated.app:8443",
 		},
 		{
-			name:           "embedded cluster with env endpoint",
-			license:        &kotsv1beta1.License{},
-			isEmbedded:     true,
-			envEndpoint:    "https://replicated.app",
-			expectedResult: "https://replicated.app",
-		},
-		{
-			name:        "embedded cluster without env endpoint",
+			name:        "embedded cluster with env endpoint",
 			license:     &kotsv1beta1.License{},
 			isEmbedded:  true,
-			expectError: true,
+			envEndpoint: "https://replicated.app",
+			want:        "https://replicated.app",
+		},
+		{
+			name:       "embedded cluster without env endpoint",
+			license:    &kotsv1beta1.License{},
+			isEmbedded: true,
+			wantError:  true,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
 			// Setup environment
-			if test.isEmbedded {
+			if tt.isEmbedded {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "123")
 
-				if test.envEndpoint != "" {
-					t.Setenv("REPLICATED_API_ENDPOINT", test.envEndpoint)
+				if tt.envEndpoint != "" {
+					t.Setenv("REPLICATED_API_ENDPOINT", tt.envEndpoint)
 				}
 			}
 
-			result, err := getReplicatedAppEndpoint(test.license)
+			result, err := getReplicatedAppEndpoint(tt.license)
 
-			if test.expectError {
+			if tt.wantError {
 				req.Error(err)
 				return
 			}
 
 			req.NoError(err)
-			assert.Equal(t, test.expectedResult, result)
+			assert.Equal(t, tt.want, result)
 		})
 	}
 }
