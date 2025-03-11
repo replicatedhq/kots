@@ -47,7 +47,7 @@ const validateAirgapInstallPermissive = async (page: Page, expect: Expect) => {
 
   await airgapInstall(page, expect, 'ttl.sh', 'admin', 'password', 'test', '/tmp/app.airgap');
 
-  await appIsReady(page, expect, 1 * 60 * 1000); // 1 minute
+  await appIsReady(page, expect);
 };
 
 const validateAirgapUpdateRestrictive = async (page: Page, expect: Expect) => {

@@ -1414,6 +1414,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 key="filesystem-hostpath"
                 type="text"
                 className="Input"
+                data-testid="snapshot-hostpath-input"
                 placeholder="/path/to/host-directory"
                 value={this.state.fileSystemHostPath}
                 onChange={(e) => this.handleFormChange("fileSystemHostPath", e)}

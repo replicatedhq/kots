@@ -1,6 +1,5 @@
-import { execSync } from 'child_process';
-
 import { VENDOR_APP_ID } from './constants';
+import { runCommandWithOutput, downloadViaJumpbox } from './cli';
 
 export async function promoteRelease(
   releaseSequence: number,
@@ -85,12 +84,9 @@ export async function downloadAirgapBundle(
   destPath: string
 ) {
   // get airgap bundle download url
-  const getBundleURLCommand = `curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${customerID}&channel_sequence=${channelSequence}" -H 'Authorization: Basic ${portalBase64Password}'`;
-  console.log(getBundleURLCommand, "\n");
-  let output = execSync(getBundleURLCommand).toString();
-  const bundleUrl = JSON.parse(output).url
+  const output = runCommandWithOutput(`curl -XGET 'https://api.replicated.com/market/v3/airgap/images/url?customer_id=${customerID}&channel_sequence=${channelSequence}' -H 'Authorization: Basic ${portalBase64Password}'`, true);
+  const bundleUrl = JSON.parse(output).url;
 
-  // download airgap bundle
-  const downloadCommand = `curl '${bundleUrl}' -o ${destPath}`;
-  execSync(downloadCommand, {stdio: 'inherit'});
+  // download airgap bundle through jumpbox
+  downloadViaJumpbox(bundleUrl, destPath);
 }
