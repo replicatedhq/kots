@@ -257,8 +257,6 @@ jobs:
         export TAG
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> "$GITHUB_ENV"
     - uses: sigstore/cosign-installer@v3.8.1
-      with:
-        cosign-release: 'v2.4.3'
     - name: Get Cosign Key
       run: |
         echo "$COSIGN_KEY" | base64 -d > ./cosign.key
