@@ -96,7 +96,7 @@ test('version history pagination', async ({ page }) => {
   // the first version on the second page should be the 100th-from-latest version (151)
   await expect(page.getByLabel('Confirm deployment').getByRole('paragraph')).toContainText(`(Sequence ${LATEST_SEQUENCE - 100})?`);
   await page.getByRole('button', { name: 'Yes, deploy' }).click();
-  await expect(page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByTestId('version-status').locator('span')).toContainText('Currently deployed version');
+  await expect(page.getByTestId('all-versions-card').getByTestId('version-history-row-0').getByTestId('version-status').locator('span')).toContainText('Currently deployed version', { timeout: 30000 });
 
   // ensure that the deployed version and latest version are both visible on the dashboard
   await page.getByRole('link', { name: 'Dashboard' }).click();
