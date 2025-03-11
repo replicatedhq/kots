@@ -169,22 +169,18 @@ func EmbeddedClusterVersion() string {
 func ReplicatedAPIEndpoint(license *kotsv1beta1.License) (string, error) {
 	if IsEmbeddedCluster() {
 		if endpoint := os.Getenv("REPLICATED_API_ENDPOINT"); endpoint != "" {
-			return maybePrependHTTPS(endpoint), nil
+			return endpoint, nil
 		}
 		return "", errors.New("REPLICATED_API_ENDPOINT environment variable is required")
 	}
 
 	if license != nil && license.Spec.Endpoint != "" {
-		return maybePrependHTTPS(license.Spec.Endpoint), nil
+		if strings.HasPrefix(license.Spec.Endpoint, "http://") || strings.HasPrefix(license.Spec.Endpoint, "https://") {
+			return license.Spec.Endpoint, nil
+		}
+		return fmt.Sprintf("https://%s", license.Spec.Endpoint), nil
 	}
 	return DefaultReplicatedAPIEndpoint(), nil
-}
-
-func maybePrependHTTPS(endpoint string) string {
-	if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
-		return endpoint
-	}
-	return fmt.Sprintf("https://%s", endpoint)
 }
 
 func DefaultReplicatedAPIEndpoint() string {
