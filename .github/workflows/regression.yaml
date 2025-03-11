@@ -99,8 +99,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          # revert this!
-          ref: salah/sc-120663/migrate-regression-tests-from-testim-to-playwright-4
+          ref: main
 
       - name: Download kots binary
         uses: actions/download-artifact@v4
@@ -161,33 +160,32 @@ jobs:
       fail-fast: false
       matrix:
         test: [
-          # revert this!
-          # {
-          #   id: "embedded-airgapped-upgrade",
-          #   name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-          #   backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
-          #   terraform_script: "embedded-airgapped-upgrade.sh",
-          #   is_upgrade: "1"
-          # },
-          # {
-          #   id: "embedded-airgapped-install",
-          #   name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
-          #   backend_config: "embedded-airgapped-install-backend-config.tfvars",
-          #   terraform_script: "embedded-airgapped-install.sh"
-          # },
-          # {
-          #   id: "embedded-online-install",
-          #   name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
-          #   backend_config: "embedded-online-install-backend-config.tfvars",
-          #   terraform_script: "embedded-online-install.sh"
-          # },
-          # {
-          #   id: "embedded-online-upgrade",
-          #   name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
-          #   backend_config: "embedded-online-upgrade-backend-config.tfvars",
-          #   terraform_script: "embedded-online-upgrade.sh",
-          #   is_upgrade: "1"
-          # },
+          {
+            id: "embedded-airgapped-upgrade",
+            name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
+            backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
+            terraform_script: "embedded-airgapped-upgrade.sh",
+            is_upgrade: "1"
+          },
+          {
+            id: "embedded-airgapped-install",
+            name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
+            backend_config: "embedded-airgapped-install-backend-config.tfvars",
+            terraform_script: "embedded-airgapped-install.sh"
+          },
+          {
+            id: "embedded-online-install",
+            name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
+            backend_config: "embedded-online-install-backend-config.tfvars",
+            terraform_script: "embedded-online-install.sh"
+          },
+          {
+            id: "embedded-online-upgrade",
+            name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
+            backend_config: "embedded-online-upgrade-backend-config.tfvars",
+            terraform_script: "embedded-online-upgrade.sh",
+            is_upgrade: "1"
+          },
           {
             id: "existing-airgapped-install-admin",
             name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
@@ -200,20 +198,20 @@ jobs:
             backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
             terraform_script: "existing-airgapped-install-minimum.sh"
           },
-          # {
-          #   id: "existing-online-upgrade-admin",
-          #   name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
-          #   backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
-          #   terraform_script: "existing-online-upgrade-admin.sh",
-          #   is_upgrade: "1"
-          # },
-          # {
-          #   id: "existing-online-upgrade-minimum",
-          #   name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
-          #   backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
-          #   terraform_script: "existing-online-upgrade-minimum.sh",
-          #   is_upgrade: "1"
-          # },
+          {
+            id: "existing-online-upgrade-admin",
+            name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
+            backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
+            terraform_script: "existing-online-upgrade-admin.sh",
+            is_upgrade: "1"
+          },
+          {
+            id: "existing-online-upgrade-minimum",
+            name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
+            backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
+            terraform_script: "existing-online-upgrade-minimum.sh",
+            is_upgrade: "1"
+          },
           {
             id: "existing-online-install-admin",
             name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
@@ -225,20 +223,20 @@ jobs:
             name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
             backend_config: "existing-online-install-minimum-backend-config.tfvars",
             terraform_script: "existing-online-install-minimum.sh"
-          # },
-          # {
-          #   id: "existing-airgapped-upgrade-admin",
-          #   name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-          #   backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
-          #   terraform_script: "existing-airgapped-upgrade-admin.sh",
-          #   is_upgrade: "1"
-          # },
-          # {
-          #   id: "existing-airgapped-upgrade-minimum",
-          #   name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
-          #   backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
-          #   terraform_script: "existing-airgapped-upgrade-minimum.sh",
-          #   is_upgrade: "1"
+          },
+          {
+            id: "existing-airgapped-upgrade-admin",
+            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
+            backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
+            terraform_script: "existing-airgapped-upgrade-admin.sh",
+            is_upgrade: "1"
+          },
+          {
+            id: "existing-airgapped-upgrade-minimum",
+            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
+            backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
+            terraform_script: "existing-airgapped-upgrade-minimum.sh",
+            is_upgrade: "1"
           # },
           # {
           #   id: "helmvm-online-install",
@@ -254,8 +252,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          # revert this!
-          ref: salah/sc-120663/migrate-regression-tests-from-testim-to-playwright-4
+          ref: main
 
       - name: Initialize terraform
         if: always()

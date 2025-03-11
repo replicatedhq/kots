@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - salah/sc-120663/migrate-regression-tests-from-testim-to-playwright-4
 
 permissions:
   contents: write
