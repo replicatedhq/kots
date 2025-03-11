@@ -1,5 +1,6 @@
 import * as semverjs from "semver";
 import * as uuid from "uuid";
+import { retry } from 'ts-retry';
 
 import {
   AWS_BUCKET_NAME,
@@ -333,6 +334,33 @@ export const cliAirgapUpdate = (
     upgradeCommand += ` --kotsadm-namespace ${APP_SLUG} --kotsadm-registry ${registryInfo?.ip} --registry-username ${registryInfo?.username} --registry-password ${registryInfo?.password}`;
   }
   runCommand(upgradeCommand);
+};
+
+export const upgradeKots = async (namespace: string, isAirgapped: boolean, registryInfo?: RegistryInfo) => {
+  // get new kots binary
+  runCommand(`sudo cp /tmp/kots-nightly /usr/local/bin/kubectl-kots`);
+
+  if (!isAirgapped) {
+    // upgrade kots
+    runCommand(`kubectl kots admin-console upgrade --namespace ${namespace}`);
+    return;
+  }
+
+  // push images from kotsadm airgap bundle to the registry with retry logic since the kurl registry occasionally returns 500 errors
+  await retry(
+    async () => {
+      runCommand(`kubectl kots admin-console push-images /tmp/kotsadm.tar.gz ${registryInfo?.ip}/${APP_SLUG} --registry-username ${registryInfo?.username} --registry-password ${registryInfo?.password}`);
+    },
+    { delay: 5000, maxTry: 3 }
+  );
+
+  // upgrade kots
+  runCommand(`kubectl kots admin-console upgrade \
+    --namespace ${namespace} \
+    --kotsadm-registry ${registryInfo?.ip} \
+    --registry-username ${registryInfo?.username} \
+    --registry-password ${registryInfo?.password} \
+    --wait-duration 5m`);
 };
 
 export const resetPassword = (namespace: string) => {
