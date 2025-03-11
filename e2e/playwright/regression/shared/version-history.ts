@@ -152,10 +152,12 @@ export const deployNewVersion = async (
   await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
-  const previousVersionRow = allVersionsCard.getByTestId('version-history-row-1');
-  await expect(previousVersionRow).toContainText('Previously deployed');
-  await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible({ visible: supportsRollback });
-  await expect(previousVersionRow).toContainText(`Sequence ${expectedSequence - 1}`);
+  if (expectedSequence > 0) {
+    const previousVersionRow = allVersionsCard.getByTestId('version-history-row-1');
+    await expect(previousVersionRow).toContainText('Previously deployed');
+    await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible({ visible: supportsRollback });
+    await expect(previousVersionRow).toContainText(`Sequence ${expectedSequence - 1}`);
+  }
 
   const currentVersionCard = page.getByTestId("current-version-card");
   await expect(currentVersionCard).toContainText(`Sequence ${expectedSequence}`);

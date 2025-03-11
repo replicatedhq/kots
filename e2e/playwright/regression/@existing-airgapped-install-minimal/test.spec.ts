@@ -132,6 +132,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
   await page.reload();
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await login(page);
+  await deployNewVersion(page, expect, 0, 'Airgap Install', constants.IS_MINIMAL_RBAC);
   await addSnapshotsRBAC(page, expect);
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardGraphs(page, expect);
