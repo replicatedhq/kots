@@ -166,12 +166,17 @@ func EmbeddedClusterVersion() string {
 }
 
 func ReplicatedAPIEndpoint(license *kotsv1beta1.License) (string, error) {
-	if ep := os.Getenv("REPLICATED_API_ENDPOINT"); ep != "" {
+	if ep := os.Getenv("REPLICATED_APP_ENDPOINT"); ep != "" {
 		return ep, nil
 	}
 
 	if IsEmbeddedCluster() {
-		return "", errors.New("REPLICATED_API_ENDPOINT environment variable is required")
+		return "", errors.New("REPLICATED_APP_ENDPOINT environment variable is required")
+	}
+
+	// DEPRECATED: use REPLICATED_APP_ENDPOINT instead
+	if ep := os.Getenv("REPLICATED_API_ENDPOINT"); ep != "" {
+		return ep, nil
 	}
 
 	if license != nil {
