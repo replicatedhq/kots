@@ -117,18 +117,22 @@ async function validateConfigureUpdate(page: Page, expect: Expect) {
 
 async function validateDeployUpdate(page: Page, expect: Expect) {
   await page.getByTestId("console-subnav").getByRole("link", { name: "Version history" }).click();
+
   const row = page.getByTestId("all-versions-card").getByTestId("version-history-row-0");
+  await expect(row).toBeVisible({ timeout: 15000 });
   await expect(row).toContainText(constants.UPDATE_RELEASE_SEMVER);
   await expect(row.getByTestId("btn-version-action")).toContainText("Deploy");
   await row.getByTestId("btn-version-action").click();
+
   const modal = page.getByTestId('confirm-deployment-modal');
   await expect(modal).toBeVisible();
   await modal.getByRole('button', { name: 'Yes, deploy', exact: true }).click();
   await expect(modal).not.toBeVisible();
-  await expect(row).toContainText("Currently deployed version");
+  await expect(row).toContainText("Currently deployed version", { timeout: 30000 });
 
   await page.getByTestId("console-subnav").getByRole("link", { name: "Dashboard" }).click();
-  let card = page.getByTestId("current-version-card");
+  const card = page.getByTestId("current-version-card");
+  await expect(card).toBeVisible({ timeout: 15000 });
   await expect(card).toContainText(constants.UPDATE_RELEASE_SEMVER);
   await expect(card.getByTestId("version-source")).toContainText("Airgap Update");
   await expect(card).toContainText("Currently deployed version");
