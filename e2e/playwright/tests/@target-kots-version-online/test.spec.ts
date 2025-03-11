@@ -14,15 +14,15 @@ import {
 test('target kots version', async ({ page }) => {
   test.setTimeout(2 * 60 * 1000); // 2 minutes
 
-  // await login(page);
-  // await uploadLicense(page, expect);
+  await login(page);
+  await uploadLicense(page, expect);
   await validateOnlineInstallRestrictive(page, expect);
   await validateOnlineInstallPermissive(page, expect);
   await validateOnlineUpdateRestrictive(page, expect);
 });
 
 const validateOnlineInstallRestrictive = async (page: Page, expect: Expect) => {
-  // await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
+  await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
 
   validateCliInstallFailsEarly();
   await airgapOnlineInstall(page, expect);
