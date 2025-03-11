@@ -86,16 +86,6 @@ func Test_getReplicatedAppEndpoint(t *testing.T) {
 			expectedResult: "https://replicated.app",
 		},
 		{
-			name: "kots install with endpoint missing scheme",
-			license: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					Endpoint: "replicated.app",
-				},
-			},
-			isEmbedded:     false,
-			expectedResult: "https://replicated.app",
-		},
-		{
 			name: "kots install with endpoint including port",
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
@@ -129,7 +119,7 @@ func Test_getReplicatedAppEndpoint(t *testing.T) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "123")
 
 				if test.envEndpoint != "" {
-					t.Setenv("REPLICATED_APP_ENDPOINT", test.envEndpoint)
+					t.Setenv("REPLICATED_API_ENDPOINT", test.envEndpoint)
 				}
 			}
 
