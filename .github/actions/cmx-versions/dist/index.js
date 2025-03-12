@@ -7787,7 +7787,6 @@ function sortVersions(latestMajorMinorVersions) {
 }
 
 function getLatestMinorVersions(distribution, majorMinorVersionFilter) {
-    console.log(majorMinorVersionFilter);
     const latestMinorVersions = {};
     distribution.versions.forEach((version) => {
         const parsed = semverCoerce(version);
