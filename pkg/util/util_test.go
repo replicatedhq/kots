@@ -402,7 +402,7 @@ func Test_ReplicatedAPIEndpoint(t *testing.T) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "123")
 
 				if tt.envEndpoint != "" {
-					t.Setenv("REPLICATED_API_ENDPOINT", tt.envEndpoint)
+					t.Setenv("REPLICATED_APP_ENDPOINT", tt.envEndpoint)
 				}
 			}
 
