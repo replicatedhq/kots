@@ -636,7 +636,8 @@ func Test_localImageName(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			newName := test.ctx.localImageName(test.image)
+			newName, err := test.ctx.localImageName(test.image)
+			req.NoError(err)
 			req.Equal(test.expected, newName)
 		})
 	}
@@ -723,7 +724,8 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 				AppSlug:       "myapp",
 			}
 			want := base64.StdEncoding.EncodeToString([]byte(tt.want))
-			got := ctx.localRegistryImagePullSecret()
+			got, err := ctx.localRegistryImagePullSecret()
+			req.NoError(err)
 			req.Equal(want, got)
 		})
 	}

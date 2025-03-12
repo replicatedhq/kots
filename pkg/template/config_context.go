@@ -288,7 +288,7 @@ func (ctx ConfigCtx) localRegistryNamespace() string {
 	return ctx.LocalRegistry.Namespace
 }
 
-func (ctx ConfigCtx) localImageName(imageRef string) string {
+func (ctx ConfigCtx) localImageName(imageRef string) (string, error) {
 	// If there's a private registry. Always rewrite everything. This covers airgap installs too.
 	if ctx.LocalRegistry.Hostname != "" {
 		destRegistry := dockerregistrytypes.RegistryOptions{
@@ -298,9 +298,9 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 		destImage, err := imageutil.DestImage(destRegistry, imageRef)
 		if err != nil {
 			// TODO: log
-			return ""
+			return "", nil
 		}
-		return destImage
+		return destImage, nil
 	}
 
 	// Not airgap and no local registry. Rewrite images that are private only.
@@ -309,18 +309,21 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 		isPrivate, err := image.IsPrivateImage(imageRef, ctx.DockerHubRegistry)
 		if err != nil {
 			// TODO: log
-			return ""
+			return "", nil
 		}
 
 		if !isPrivate {
-			return imageRef
+			return imageRef, nil
 		}
 	}
 
 	installation := &kotsv1beta1.Installation{
 		Spec: InstallationSpecFromVersionInfo(ctx.VersionInfo),
 	}
-	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
+	registryProxyInfo, err := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
+	if err != nil {
+		return "", errors.Wrap(err, "get registry proxy info")
+	}
 	registryOptions := dockerregistrytypes.RegistryOptions{
 		Endpoint:         registryProxyInfo.Registry,
 		ProxyEndpoint:    registryProxyInfo.Proxy,
@@ -335,17 +338,17 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 	newImage, err := image.RewritePrivateImage(registryOptions, imageRef, licenseAppSlug)
 	if err != nil {
 		// TODO: log
-		return ""
+		return "", nil
 	}
 
-	return newImage
+	return newImage, nil
 }
 
 func (ctx ConfigCtx) hasLocalRegistry() bool {
 	return ctx.LocalRegistry.Hostname != ""
 }
 
-func (ctx ConfigCtx) localRegistryImagePullSecret() string {
+func (ctx ConfigCtx) localRegistryImagePullSecret() (string, error) {
 	var secret *corev1.Secret
 	if ctx.LocalRegistry.Hostname != "" {
 		secrets, err := registry.PullSecretForRegistries(
@@ -356,7 +359,8 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 			ctx.AppSlug,
 		)
 		if err != nil {
-			return ""
+			// TODO: log
+			return "", nil
 		}
 		secret = secrets.AppSecret
 	} else {
@@ -368,7 +372,10 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 		installation := &kotsv1beta1.Installation{
 			Spec: InstallationSpecFromVersionInfo(ctx.VersionInfo),
 		}
-		registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
+		registryProxyInfo, err := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
+		if err != nil {
+			return "", errors.Wrap(err, "get registry proxy info")
+		}
 
 		secrets, err := registry.PullSecretForRegistries(
 			registryProxyInfo.ToSlice(),
@@ -378,16 +385,17 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 			ctx.AppSlug,
 		)
 		if err != nil {
-			return ""
+			// TODO: log
+			return "", nil
 		}
 		secret = secrets.AppSecret
 	}
 	dockerConfig, found := secret.Data[".dockerconfigjson"]
 	if !found {
-		return ""
+		return "", nil
 	}
 
-	return base64.StdEncoding.EncodeToString(dockerConfig)
+	return base64.StdEncoding.EncodeToString(dockerConfig), nil
 }
 
 func (ctx ConfigCtx) imagePullSecretName() string {

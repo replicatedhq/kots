@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -88,11 +87,9 @@ var (
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
 func PullApplicationMetadata(upstreamURI string, license *kotsv1beta1.License, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
-	var host string
-	if license != nil && license.Spec.Endpoint != "" {
-		host = license.Spec.Endpoint
-	} else {
-		host = util.GetReplicatedAPIEndpoint()
+	host, err := util.ReplicatedAPIEndpoint(license)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get replicated api endpoint")
 	}
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -125,7 +122,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.Initialize()
 
 	if pullOptions.ReportWriter == nil {
-		pullOptions.ReportWriter = ioutil.Discard
+		pullOptions.ReportWriter = io.Discard
 	}
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -650,7 +647,7 @@ func removeUnusedHelmOverlays(overlayRoot string, baseRoot string) error {
 
 func removeUnusedHelmOverlaysRec(overlayRoot string, baseRoot string, overlayRelDir string) error {
 	curMidstreamDir := filepath.Join(overlayRoot, overlayRelDir)
-	midstreamFiles, err := ioutil.ReadDir(curMidstreamDir)
+	midstreamFiles, err := os.ReadDir(curMidstreamDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
