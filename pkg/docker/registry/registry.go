@@ -124,9 +124,14 @@ func getRegistryProxyEndpointFromKotsApplication(kotsApplication *kotsv1beta1.Ap
 
 func getEmbeddedClusterRegistryProxyInfo() (*RegistryProxyInfo, error) {
 	info := &RegistryProxyInfo{
-		Registry: util.DefaultReplicatedRegistryDomain(),
 		Upstream: util.DefaultReplicatedRegistryDomain(),
 	}
+
+	registryDomain := os.Getenv("REPLICATED_REGISTRY_DOMAIN")
+	if registryDomain == "" {
+		return nil, errors.New("REPLICATED_REGISTRY_DOMAIN environment variable is required")
+	}
+	info.Registry = registryDomain
 
 	proxyDomain := os.Getenv("PROXY_REGISTRY_DOMAIN")
 	if proxyDomain == "" {
