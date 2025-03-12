@@ -51,7 +51,7 @@ export const updateConfig = async (page: Page, expect: Expect) => {
   await configArea.locator('#a_required_text-group').getByRole('textbox').click();
   await configArea.locator('#a_required_text-group').getByRole('textbox').fill("i want to update this field - " + uuid.v4());
 
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(5000); // config page can take a bit to re-render
   await page.getByRole('button', { name: 'Save config' }).click();
 
   const nextStepModal = page.getByTestId('config-next-step-modal');
@@ -61,7 +61,9 @@ export const updateConfig = async (page: Page, expect: Expect) => {
 };
 
 export const validateConfigView = async (page: Page, expect: Expect) => {
+  await page.waitForTimeout(1000); // small delay to ensure apps list gets updated
   await page.getByRole('link', { name: 'Config', exact: true }).click();
+
   const sidebar = page.getByTestId('config-sidebar-wrapper');
   await expect(sidebar).toBeVisible({ timeout: 15000 });
 
@@ -74,4 +76,21 @@ export const validateConfigView = async (page: Page, expect: Expect) => {
   await expect(sidebar).toBeVisible({ timeout: 15000 });
   await expect(configArea).toBeVisible();
   await expect(configArea.getByTestId('config-info-newer')).toBeVisible();
+};
+
+export const validateSmallAirgapInitialConfig = async (page: Page, expect: Expect) => {
+  const sidebar = page.getByTestId('config-sidebar-wrapper');
+  await expect(sidebar).toBeVisible({ timeout: 15000 });
+
+  await expect(sidebar.getByText('Use Ingress?')).toBeVisible();
+  await sidebar.getByText('My Example Config').click();
+  await expect(sidebar.getByText('Use Ingress?')).not.toBeVisible();
+  await sidebar.getByText('My Example Config').click();
+  await expect(sidebar.getByText('Use Ingress?')).toBeVisible();
+
+  const configArea = page.getByTestId('config-area');
+  await expect(configArea).toBeVisible();
+  await expect(configArea).toContainText('An example field to toggle inclusion of an Ingress Object');
+
+  await page.getByRole('button', { name: 'Continue' }).click();
 };

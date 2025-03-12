@@ -1,0 +1,50 @@
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  creationTimestamp: null
+  name: qa-kots
+spec:
+  values:
+    a_bool:
+      default: "0"
+      value: "0"
+    a_hidden_field: {}
+    a_label: {}
+    a_required_text:
+      value: i want to update this field - wn38lG
+    a_templated_label: {}
+    a_templated_text:
+      value: Av_up2vQiQZBod_2diZL_PTTlBJZBTe1FcWVGvCbhSRxG_tFDT2cNZbr0sqGtb13
+    a_text: {}
+    a_textarea: {}
+    a_textarea_default:
+      default: |
+        My
+        default
+        text
+    a_textarea_value:
+      value: |
+        My
+        prepopulated
+        text
+    include_helm_chart:
+      default: "0"
+      value: "1"
+    mysql_password:
+      value: YJ210Au0vc662LmjxFCmPgosy0uua4RcIAtB2DHBGvp7dDiKlR5S8FOYpBjYqY28NUoLeeTXa3lFrrCIc072iBhobySlvWQ7He/kdwloO8izTbS2rpFV0Qgifjw=
+    nginx_port:
+      default: "80"
+    pip_config: {}
+    registry_endpoint_default_2:
+      default: 10.96.1.218
+    registry_endpoint_value_2:
+      value: 10.96.1.218
+    ro_gen_password:
+      value: WoTG8lqpgauet76t73DRIissoFm/QtNROjJM+CbsPc1iZAGvyyF9s321YJW9pIf4YjO047X/hU4=
+    ro_gen_password_default:
+      default: n4gznPRwUKSZykkscx8opALVc6StqI3p_SXsXtrb
+    rw_gen_password:
+      value: ZYmozAymuZeP2aKrxE2qCw9gx0WuH9AJezNVyCmYCas2dD+AzGlSy1ikkl7buKOxOkpQff7UVXNhqLjURWCSgANHGA+CpWM8Wc3wd9w4sKxSAOF73sI7Hjpbb98=
+    rw_gen_password_default:
+      default: 9ccgvHdQhXun0qMPxUil7ADiVKzrRnmRkfCP23wr
+status: {}

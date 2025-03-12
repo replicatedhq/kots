@@ -100,8 +100,9 @@ export class AnalyzerRedactorReport extends Component {
           </p>
         )}
         {!isEmpty(redactions) &&
-          Object.keys(redactions?.byRedactor).map((redactor) => (
+          Object.keys(redactions?.byRedactor).map((redactor, index) => (
             <AnalyzerRedactorReportRow
+              index={index}
               key={`redactor-${redactor}`}
               redactor={redactor}
               redactorFiles={redactions?.byRedactor[redactor]}

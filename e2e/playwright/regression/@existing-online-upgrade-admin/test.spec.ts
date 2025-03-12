@@ -9,15 +9,16 @@ import {
   installVeleroAWS,
   promoteRelease,
   validateInitialConfig,
-  validateMinimalRBACInitialPreflights,
-  addSnapshotsRBAC,
+  validateClusterAdminInitialPreflights,
   validateDashboardInfo,
   validateDashboardAutomaticUpdates,
   validateDashboardGraphs,
+  upgradeKots,
   updateConfig,
+  validateIgnorePreflightsModal,
   validateVersionHistoryAutomaticUpdates,
   validateCurrentVersionCard,
-  validateVersionMinimalRBACPreflights,
+  validateCurrentClusterAdminPreflights,
   validateCurrentDeployLogs,
   validateConfigView,
   validateVersionHistoryRows,
@@ -39,11 +40,10 @@ import {
   validateViewFiles,
   updateRegistrySettings,
   validateCheckForUpdates,
-  validateDuplicateLicenseUpload,
   logout
 } from '../shared';
 
-test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', async ({ page }) => {
+test('type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin', async ({ page }) => {
   test.setTimeout(30 * 60 * 1000); // 30 minutes
 
   // Initial setup
@@ -54,14 +54,22 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
 
   // Login and install
   await page.goto('/');
-  await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
+  await expect(page.getByTestId("build-version")).toHaveText(process.env.OLD_KOTS_VERSION!);
   await login(page);
   await uploadLicense(page, expect);
+  await expect(page.locator("#app")).toContainText("Install in airgapped environment", { timeout: 15000 });
+  await page.getByTestId("download-app-from-internet").click();
 
-  // Validate install and app updates
+  // Validate install
   await validateInitialConfig(page, expect);
-  await validateMinimalRBACInitialPreflights(page, expect);
-  await addSnapshotsRBAC(page, expect);
+  await validateClusterAdminInitialPreflights(page, expect);
+  await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
+
+  // Validate kots upgrade and app updates
+  await upgradeKots(constants.NAMESPACE, constants.IS_AIRGAPPED, registryInfo);
+  await page.waitForTimeout(5000);
+  await page.reload();
+  await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect);
@@ -69,9 +77,11 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
 
   // Config update and version history checks
   await updateConfig(page, expect);
-  await validateVersionMinimalRBACPreflights(page, expect, 0, 2);
+  await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
+  await validateIgnorePreflightsModal(page, expect);
   await validateVersionHistoryAutomaticUpdates(page, expect);
   await validateCurrentVersionCard(page, expect, 1);
+  await validateCurrentClusterAdminPreflights(page, expect);
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
   await validateVersionHistoryRows(page, expect, constants.IS_AIRGAPPED);
@@ -104,6 +114,5 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   // Other validation
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
   await updateRegistrySettings(page, expect, registryInfo, 4, constants.IS_MINIMAL_RBAC);
-  await validateDuplicateLicenseUpload(page, expect);
   await logout(page, expect);
 });

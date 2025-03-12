@@ -1,4 +1,5 @@
 import { test, expect, Page, Expect } from '@playwright/test';
+import { execSync } from 'child_process';
 import * as constants from './constants';
 import {
   login,
@@ -23,6 +24,7 @@ test('min kots version', async ({ page }) => {
 const validateOnlineInstallRestrictive = async (page: Page, expect: Expect) => {
   await promoteReleaseBySemver(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, constants.VENDOR_APP_ID, constants.CHANNEL_ID);
 
+  validateCliInstallFailsEarly();
   await airgapOnlineInstall(page, expect);
 
   const errorMessage = airgapInstallErrorMessage(page);
@@ -97,4 +99,16 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   // restrictive version was unable to download
   await page.getByTestId("console-subnav").getByRole("link", { name: "View files" }).click();
   await expect(page).toHaveURL(new RegExp(`.*\/tree\/${versionSequenceNumberInt-1}$`));
+};
+
+const validateCliInstallFailsEarly = () => {
+  let result = "";
+  try {
+    execSync(`kubectl kots install ${constants.APP_SLUG}/automated --no-port-forward --namespace ${constants.APP_SLUG} --shared-password password`);
+  } catch (error: any) {
+    result = error.stderr?.toString();
+  }
+  if (!result.includes("requires") || !result.includes(constants.RESTRICTIVE_MIN_KOTS_VERSION)) {
+    throw new Error(`Expected error message to contain "requires" and "${constants.RESTRICTIVE_MIN_KOTS_VERSION}" but got: ${result}`);
+  }
 };

@@ -2430,25 +2430,6 @@ jobs:
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-
-      - name: promote restrictive release
-        env:
-          REPLICATED_APP: min-kots-version
-          REPLICATED_API_TOKEN: ${{ secrets.C11Y_MATRIX_TOKEN }}
-        run: replicated release promote 7 24Z37fX3oWkM4LjYCiByrewT5oZ --version v1.0.1
-      - name: validate that kots install fails early
-        run: |
-          set +e
-
-          result=$(kubectl kots install "$APP_SLUG/automated" --no-port-forward --namespace "$APP_SLUG" --shared-password password 2>&1 >/dev/null)
-          echo "$result"
-
-          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"10000.0.0"* ]]; then
-            exit 0
-          else
-            exit 1
-          fi
-
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
@@ -2563,25 +2544,6 @@ jobs:
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-
-      - name: promote restrictive release
-        env:
-          REPLICATED_APP: target-kots-version
-          REPLICATED_API_TOKEN: ${{ secrets.C11Y_MATRIX_TOKEN }}
-        run: replicated release promote 7 24Z39v7whc7juc34k7ITiMtZxDy --version v1.0.1
-      - name: validate that kots install fails early
-        run: |
-          set +e
-
-          result=$(kubectl kots install target-kots-version/automated --no-port-forward --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
-          echo "$result"
-
-          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"1.0.0"* ]]; then
-            exit 0
-          else
-            exit 1
-          fi
-
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
@@ -2694,25 +2656,6 @@ jobs:
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-
-      - name: promote restrictive release
-        env:
-          REPLICATED_APP: range-kots-version
-          REPLICATED_API_TOKEN: ${{ secrets.C11Y_MATRIX_TOKEN }}
-        run: replicated release promote 7 24Z39f0sNqo48VV9ZpLIUtlhHrN --version v1.0.1
-      - name: validate that kots install fails early
-        run: |
-          set +e
-
-          result=$(kubectl kots install range-kots-version/automated --no-port-forward --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
-          echo "$result"
-
-          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"11000.0.0"* ]]; then
-            exit 0
-          else
-            exit 1
-          fi
-
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1

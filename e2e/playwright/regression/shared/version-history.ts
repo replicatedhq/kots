@@ -1,6 +1,7 @@
-import { Page, Expect, Locator } from '@playwright/test';
+import { Page, Expect } from '@playwright/test';
 import * as uuid from "uuid";
 
+import { RegistryInfo, cliAirgapUpdate } from './cli';
 import { promoteRelease } from './api';
 import {
   validateClusterAdminPreflightResults,
@@ -29,7 +30,7 @@ export const validateVersionMinimalRBACPreflights = async (page: Page, expect: E
   await expect(versionRow).toContainText(`Sequence ${sequence}`);
 
   await versionRow.getByTestId("preflight-icon").click();
-  await validateMinimalRBACPreflightsPage(page, expect, 15000);
+  await validateMinimalRBACPreflightsPage(page, expect);
 };
 
 export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
@@ -110,11 +111,15 @@ export const validateVersionHistoryRows = async (page: Page, expect: Expect, isA
   await expect(thirdRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible();
 };
 
-export const deployNewVersion = async (page: Page, expect: Expect, expectedSequence: number, expectedSource: string, isMinimalRBAC: boolean, skipNavigation: boolean = false) => {
-  if (!skipNavigation) {
-    await page.locator('.NavItem').getByText('Application', { exact: true }).click();
-    await page.getByRole('link', { name: 'Version history', exact: true }).click();
-  }
+export const deployNewVersion = async (
+  page: Page,
+  expect: Expect,
+  expectedSequence: number,
+  expectedSource: string,
+  isMinimalRBAC: boolean,
+  supportsRollback: boolean = true
+) => {
+  await page.getByRole('link', { name: 'Version history', exact: true }).click();
 
   const allVersionsCard = page.getByTestId('all-versions-card');
   await expect(allVersionsCard).toBeVisible({ timeout: 15000 });
@@ -147,10 +152,12 @@ export const deployNewVersion = async (page: Page, expect: Expect, expectedSeque
   await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
-  const previousVersionRow = allVersionsCard.getByTestId('version-history-row-1');
-  await expect(previousVersionRow).toContainText('Previously deployed');
-  await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible();
-  await expect(previousVersionRow).toContainText(`Sequence ${expectedSequence - 1}`);
+  if (expectedSequence > 0) {
+    const previousVersionRow = allVersionsCard.getByTestId('version-history-row-1');
+    await expect(previousVersionRow).toContainText('Previously deployed');
+    await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible({ visible: supportsRollback });
+    await expect(previousVersionRow).toContainText(`Sequence ${expectedSequence - 1}`);
+  }
 
   const currentVersionCard = page.getByTestId("current-version-card");
   await expect(currentVersionCard).toContainText(`Sequence ${expectedSequence}`);
@@ -278,15 +285,15 @@ export const validateCheckForUpdates = async (page: Page, expect: Expect, channe
   const newReleaseNotes = `notes-${uuid.v4()}`;
   await promoteRelease(vendorReleaseSequence, channelId, newVersionLabel, newReleaseNotes);
 
-  const availableUpdatesCard = page.getByTestId('available-updates-card');
-  await expect(availableUpdatesCard).toBeVisible();
+  const updatesCard = page.getByTestId('available-updates-card');
+  await expect(updatesCard).toBeVisible();
 
-  await availableUpdatesCard.getByTestId('check-for-update-button').click();
-  await expect(availableUpdatesCard.getByTestId('check-for-update-progress').locator('.Loader')).toBeVisible();
-  await expect(availableUpdatesCard.getByTestId('check-for-update-progress')).toContainText('ing', { timeout: 30000 });
-  await expect(availableUpdatesCard.getByTestId('check-for-update-progress')).not.toBeVisible({ timeout: 240000 });
+  await updatesCard.getByTestId('check-for-update-button').click();
+  await expect(updatesCard.getByTestId('check-for-update-progress').locator('.Loader')).toBeVisible();
+  await expect(updatesCard.getByTestId('check-for-update-progress')).toContainText('ing', { timeout: 30000 });
+  await expect(updatesCard.getByTestId('check-for-update-progress')).not.toBeVisible({ timeout: 240000 });
 
-  const updateRow = availableUpdatesCard.getByTestId('version-history-row-0');
+  const updateRow = updatesCard.getByTestId('version-history-row-0');
   await expect(updateRow).toBeVisible();
   await expect(updateRow).toContainText('Upstream Update');
   await expect(updateRow).toContainText(newVersionLabel);
@@ -294,12 +301,89 @@ export const validateCheckForUpdates = async (page: Page, expect: Expect, channe
   await updateRow.getByTestId('release-notes-icon').click();
   await validateReleaseNotesModal(page, expect, newReleaseNotes);
 
-  await deployNewVersion(page, expect, expectedSequence, 'Upstream Update', isMinimalRBAC, true);
+  await deployNewVersion(page, expect, expectedSequence, 'Upstream Update', isMinimalRBAC);
 
   const currentVersionCard = page.getByTestId("current-version-card");
   await currentVersionCard.getByTestId("current-release-notes-icon").click();
   await validateReleaseNotesModal(page, expect, newReleaseNotes);
 };
+
+export const validateUiAirgapUpdate = async (page: Page, expect: Expect, airgapBundlePath: string) => {
+  await page.getByRole('link', { name: 'Version history', exact: true }).click();
+
+  const updatesCard = page.getByTestId('available-updates-card');
+  await expect(updatesCard).toBeVisible({ timeout: 15000 });
+  await expect(updatesCard).toContainText("Application up to date.");
+
+  await validateCurrentVersionCard(page, expect, 0);
+
+  await page.setInputFiles('[data-testid="airgap-bundle-drop-zone"] input', airgapBundlePath);
+  const airgapUploadProgress = page.getByTestId("airgap-upload-progress");
+  await expect(airgapUploadProgress).toBeVisible({ timeout: 15000 });
+  await expect(airgapUploadProgress.getByTestId("airgap-upload-progress-title")).toBeVisible();
+  await expect(airgapUploadProgress.getByTestId("airgap-upload-progress-bar")).toBeVisible();
+
+  const updateRow = updatesCard.getByTestId('version-history-row-0');
+  await expect(updateRow).toBeVisible({ timeout: 45000 });
+  await expect(updateRow).toContainText('Airgap Update');
+
+  const preflightChecksLoader = updateRow.getByTestId('preflight-checks-loader');
+  await expect(preflightChecksLoader).toBeVisible();
+  await expect(preflightChecksLoader).not.toBeVisible({ timeout: 120000 });
+
+  await updateRow.getByTestId('release-notes-icon').click();
+  await validateReleaseNotesModal(page, expect, "release notes - updates");
+
+  // minimal rbac is false because we uploaded the initial bundle via the ui.
+  // in airgap, minimal rbac is only detected if the bundle is passed to cli install.
+  // also, the releases associated with ui installs do not support rollback.
+  await deployNewVersion(page, expect, 1, 'Airgap Update', false, false);
+
+  const currentVersionCard = page.getByTestId("current-version-card");
+  await currentVersionCard.getByTestId("current-release-notes-icon").click();
+  await validateReleaseNotesModal(page, expect, "release notes - updates");
+};
+
+export const validateCliAirgapUpdate = async (
+  page: Page,
+  expect: Expect,
+  expectedSequence: number,
+  isMinimalRBAC: boolean,
+  airgapBundlePath: string,
+  namespace: string,
+  isExistingCluster: boolean,
+  registryInfo?: RegistryInfo
+) => {
+  await page.getByRole('link', { name: 'Version history', exact: true }).click();
+
+  const updatesCard = page.getByTestId('available-updates-card');
+  await expect(updatesCard).toBeVisible({ timeout: 15000 });
+
+  const updateRow = updatesCard.getByTestId('version-history-row-0');
+  await expect(updateRow).not.toBeVisible();
+
+  cliAirgapUpdate(
+    airgapBundlePath,
+    namespace,
+    isExistingCluster,
+    registryInfo
+  );
+
+  await page.reload();
+
+  await expect(updateRow).toBeVisible({ timeout: 15000 });
+  await expect(updateRow).toContainText('Airgap Update');
+  await expect(updateRow).toContainText(`Sequence ${expectedSequence}`);
+
+  await updateRow.getByTestId('release-notes-icon').click();
+  await validateReleaseNotesModal(page, expect, 'release notes - updates');
+
+  await deployNewVersion(page, expect, expectedSequence, 'Airgap Update', isMinimalRBAC);
+
+  const currentVersionCard = page.getByTestId("current-version-card");
+  await currentVersionCard.getByTestId("current-release-notes-icon").click();
+  await validateReleaseNotesModal(page, expect, "release notes - updates");
+}
 
 export const validateReleaseNotesModal = async (page: Page, expect: Expect, releaseNotes: string) => {
   const releaseNotesModal = page.getByTestId("release-notes-modal");

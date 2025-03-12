@@ -14,10 +14,11 @@ import {
   validateDashboardInfo,
   validateDashboardAutomaticUpdates,
   validateDashboardGraphs,
+  upgradeKots,
   updateConfig,
+  validateVersionMinimalRBACPreflights,
   validateVersionHistoryAutomaticUpdates,
   validateCurrentVersionCard,
-  validateVersionMinimalRBACPreflights,
   validateCurrentDeployLogs,
   validateConfigView,
   validateVersionHistoryRows,
@@ -39,11 +40,10 @@ import {
   validateViewFiles,
   updateRegistrySettings,
   validateCheckForUpdates,
-  validateDuplicateLicenseUpload,
   logout
 } from '../shared';
 
-test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', async ({ page }) => {
+test('type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac', async ({ page }) => {
   test.setTimeout(30 * 60 * 1000); // 30 minutes
 
   // Initial setup
@@ -54,14 +54,21 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
 
   // Login and install
   await page.goto('/');
-  await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
+  await expect(page.getByTestId("build-version")).toHaveText(process.env.OLD_KOTS_VERSION!);
   await login(page);
   await uploadLicense(page, expect);
 
-  // Validate install and app updates
+  // Validate install
   await validateInitialConfig(page, expect);
   await validateMinimalRBACInitialPreflights(page, expect);
   await addSnapshotsRBAC(page, expect);
+  await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
+
+  // Validate kots upgrade and app updates
+  await upgradeKots(constants.NAMESPACE, constants.IS_AIRGAPPED, registryInfo);
+  await page.waitForTimeout(5000);
+  await page.reload();
+  await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect);
@@ -104,6 +111,5 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   // Other validation
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
   await updateRegistrySettings(page, expect, registryInfo, 4, constants.IS_MINIMAL_RBAC);
-  await validateDuplicateLicenseUpload(page, expect);
   await logout(page, expect);
 });

@@ -50,7 +50,7 @@ class AnalyzerRedactorReportRow extends Component {
       <div
         className="flex flex1 alignItems--center section u-marginTop--10"
         key={`${file.file}-${i}`}
-        data-testid={`link-redactor-report-details-file-${file.file}`}
+        data-testid={`link-redactor-report-details-file-row-${i}`}
       >
         <div className="flex u-marginRight--10">
           <span
@@ -124,7 +124,7 @@ class AnalyzerRedactorReportRow extends Component {
   };
 
   render() {
-    const { redactor, redactorFiles } = this.props;
+    const { redactor, redactorFiles, index } = this.props;
     const groupedFiles = groupBy(redactorFiles, "file");
     const groupedFilesArray = Object.keys(groupedFiles).map(
       (i) => groupedFiles[i]
@@ -134,14 +134,17 @@ class AnalyzerRedactorReportRow extends Component {
       <div
         className="flex flex-auto RedactorReportRow--wrapper"
         key={redactor}
-        data-testid={`support-bundle-analysis-redactor-report-row-${redactor}`}
+        data-testid={`support-bundle-analysis-redactor-report-row-${index}`}
       >
         <div className="flex flex1 alignItems--center">
           <div className="flex flex-column">
             <div className="flex flex1 alignItems--center">
               <span className="icon redactor-yaml-icon u-marginRight--10" />
               <div className="flex flex-column">
-                <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-textColor--primary">
+                <p
+                  className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-textColor--primary"
+                  data-testid="redactor-name"
+                >
                   {redactor}
                 </p>
                 {this.renderRedactionDetails(
