@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import * as constants from './constants';
 
 import {
+  NEW_KOTSADM_BUNDLE_PATH,
   INITIAL_VERSION_SMALL_BUNDLE_PATH,
   NEW_VERSION_SMALL_BUNDLE_PATH,
   INITIAL_VERSION_BUNDLE_PATH,
@@ -58,6 +59,15 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
   deleteKurlConfigMap();
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
 
+  // install kots without the app
+  await cliAirgapInstall(
+    constants.CHANNEL_SLUG,
+    registryInfo,
+    NEW_KOTSADM_BUNDLE_PATH,
+    constants.NAMESPACE,
+    constants.IS_MINIMAL_RBAC
+  );
+
   // download initial small airgap bundle for ui install
   await downloadAirgapBundle(
     constants.CUSTOMER_ID,
@@ -109,13 +119,15 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=cluster admi
   removeKots(constants.NAMESPACE);
 
   // CLI airgap install
-  cliAirgapInstall(
+  await cliAirgapInstall(
+    constants.CHANNEL_SLUG,
     registryInfo,
+    NEW_KOTSADM_BUNDLE_PATH,
+    constants.NAMESPACE,
+    constants.IS_MINIMAL_RBAC,
     INITIAL_VERSION_BUNDLE_PATH,
     `${process.env.TEST_PATH}/license.yaml`,
-    `${process.env.TEST_PATH}/config.yaml`,
-    constants.NAMESPACE,
-    constants.IS_MINIMAL_RBAC
+    `${process.env.TEST_PATH}/config.yaml`
   );
 
   // Install and configure Velero for snapshots
