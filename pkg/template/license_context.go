@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"text/template"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
-	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
@@ -82,10 +82,10 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 	}
 }
 
-func (ctx licenseCtx) licenseDockercfg() string {
+func (ctx licenseCtx) licenseDockercfg() (string, error) {
 	// return "" for a nil license - it's better than an error, which makes the template engine return "" for the full string
 	if ctx.License == nil {
-		return ""
+		return "", nil
 	}
 
 	auth := fmt.Sprintf("%s:%s", ctx.License.Spec.LicenseID, ctx.License.Spec.LicenseID)
@@ -96,12 +96,7 @@ func (ctx licenseCtx) licenseDockercfg() string {
 	}
 	registryProxyInfo, err := registry.GetRegistryProxyInfo(ctx.License, installation, ctx.App)
 	if err != nil {
-		// TODO: log
-		registryProxyInfo = &registry.RegistryProxyInfo{
-			Upstream: util.DefaultReplicatedRegistryDomain(),
-			Registry: util.DefaultReplicatedRegistryDomain(),
-			Proxy:    util.DefaultProxyRegistryDomain(),
-		}
+		return "", errors.Wrap(err, "get registry proxy info")
 	}
 
 	dockercfg := map[string]interface{}{
@@ -117,8 +112,9 @@ func (ctx licenseCtx) licenseDockercfg() string {
 
 	b, err := json.Marshal(dockercfg)
 	if err != nil {
-		return ""
+		// TODO: log
+		return "", nil
 	}
 
-	return base64.StdEncoding.EncodeToString(b)
+	return base64.StdEncoding.EncodeToString(b), nil
 }
