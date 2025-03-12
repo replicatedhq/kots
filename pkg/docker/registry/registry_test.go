@@ -105,12 +105,11 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				app:          nil,
 			},
 			env: map[string]string{
-				"EMBEDDED_CLUSTER_ID":        "123",
-				"REPLICATED_REGISTRY_DOMAIN": "localhost:30000",
-				"PROXY_REGISTRY_DOMAIN":      "localhost:30001",
+				"EMBEDDED_CLUSTER_ID":   "123",
+				"PROXY_REGISTRY_DOMAIN": "localhost:30001",
 			},
 			want: &RegistryProxyInfo{
-				Registry: "localhost:30000",
+				Registry: "registry.replicated.com",
 				Proxy:    "localhost:30001",
 				Upstream: "registry.replicated.com",
 			},
@@ -128,12 +127,11 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				app: nil,
 			},
 			env: map[string]string{
-				"EMBEDDED_CLUSTER_ID":        "123",
-				"REPLICATED_REGISTRY_DOMAIN": "localhost:30000",
-				"PROXY_REGISTRY_DOMAIN":      "localhost:30001",
+				"EMBEDDED_CLUSTER_ID":   "123",
+				"PROXY_REGISTRY_DOMAIN": "localhost:30001",
 			},
 			want: &RegistryProxyInfo{
-				Registry: "localhost:30000",
+				Registry: "registry.replicated.com",
 				Proxy:    "localhost:30001",
 				Upstream: "registry.replicated.com",
 			},

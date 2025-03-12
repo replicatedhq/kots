@@ -383,10 +383,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
 	var replicatedRegistryDomain, replicatedProxyDomain string
 	if util.IsEmbeddedCluster() {
-		replicatedRegistryDomain = os.Getenv("REPLICATED_REGISTRY_DOMAIN")
-		if replicatedRegistryDomain == "" {
-			return nil, errors.New("REPLICATED_REGISTRY_DOMAIN environment variable is required")
-		}
+		replicatedRegistryDomain = util.DefaultReplicatedRegistryDomain()
 		replicatedProxyDomain = os.Getenv("PROXY_REGISTRY_DOMAIN")
 		if replicatedProxyDomain == "" {
 			return nil, errors.New("PROXY_REGISTRY_DOMAIN environment variable is required")
