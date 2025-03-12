@@ -232,13 +232,13 @@ jobs:
             backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
             terraform_script: "existing-airgapped-upgrade-admin.sh",
             is_upgrade: "1"
-          # },
-          # {
-          #   id: "existing-airgapped-upgrade-minimum",
-          #   name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
-          #   backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
-          #   terraform_script: "existing-airgapped-upgrade-minimum.sh",
-          #   is_upgrade: "1"
+          },
+          {
+            id: "existing-airgapped-upgrade-minimum",
+            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
+            backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
+            terraform_script: "existing-airgapped-upgrade-minimum.sh",
+            is_upgrade: "1"
           # },
           # {
           #   id: "helmvm-online-install",

@@ -138,7 +138,7 @@ export const installVeleroHostPath = async (
   // Configure hostpath backend
   let configureHostpathCommand = `yes | kubectl kots velero configure-hostpath --hostpath ${SNAPSHOTS_HOST_PATH} --namespace ${APP_SLUG}`;
   if (isAirgapped) {
-    configureHostpathCommand += ` --kotsadm-registry ${registryInfo.ip} --kotsadm-namespace ${APP_SLUG} --registry-username ${registryInfo.username} --registry-password ${registryInfo.password}`;
+    configureHostpathCommand += ` --kotsadm-registry ${registryInfo.ip}/${APP_SLUG} --registry-username ${registryInfo.username} --registry-password ${registryInfo.password}`;
   }
   runCommand(configureHostpathCommand);
 
@@ -367,7 +367,7 @@ export const cliAirgapUpdate = (
 ) => {
   let upgradeCommand = `kubectl kots upstream upgrade ${APP_SLUG} --airgap-bundle ${newBundlePath} -n ${namespace}`;
   if (isExistingCluster) {
-    upgradeCommand += ` --kotsadm-namespace ${APP_SLUG} --kotsadm-registry ${registryInfo?.ip} --registry-username ${registryInfo?.username} --registry-password ${registryInfo?.password}`;
+    upgradeCommand += ` --kotsadm-registry ${registryInfo?.ip}/${APP_SLUG} --registry-username ${registryInfo?.username} --registry-password ${registryInfo?.password}`;
   }
   runCommand(upgradeCommand);
 };
@@ -393,6 +393,7 @@ export const upgradeKots = async (namespace: string, isAirgapped: boolean, regis
   // upgrade kots
   runCommand(`kubectl kots admin-console upgrade \
     --namespace ${namespace} \
+    --kotsadm-namespace ${APP_SLUG} \
     --kotsadm-registry ${registryInfo?.ip} \
     --registry-username ${registryInfo?.username} \
     --registry-password ${registryInfo?.password} \
