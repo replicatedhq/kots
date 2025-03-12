@@ -145,7 +145,8 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 
 			expect := base64.StdEncoding.EncodeToString(expectJson)
 
-			dockercfg := ctx.licenseDockercfg()
+			dockercfg, err := ctx.licenseDockercfg()
+			req.NoError(err)
 			req.Equal(expect, dockercfg)
 		})
 	}

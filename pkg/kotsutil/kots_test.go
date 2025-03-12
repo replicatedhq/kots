@@ -999,8 +999,7 @@ func TestKotsKinds_Marshal(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		preInit func()
-		postRun func()
+		preInit func(t *testing.T)
 		want    string
 	}{
 		{
@@ -1041,11 +1040,8 @@ status: {}
 		},
 		{
 			name: "no backup exists, EC",
-			preInit: func() {
-				os.Setenv("EMBEDDED_CLUSTER_ID", "test")
-			},
-			postRun: func() {
-				os.Setenv("EMBEDDED_CLUSTER_ID", "")
+			preInit: func(t *testing.T) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "test")
 			},
 			args: args{
 				g: "velero.io",
@@ -1062,11 +1058,8 @@ status: {}
 					TypeMeta:   metav1.TypeMeta{APIVersion: "velero.io/v1", Kind: "Backup"},
 				},
 			},
-			preInit: func() {
-				os.Setenv("EMBEDDED_CLUSTER_ID", "test")
-			},
-			postRun: func() {
-				os.Setenv("EMBEDDED_CLUSTER_ID", "")
+			preInit: func(t *testing.T) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "test")
 			},
 			args: args{
 				g: "velero.io",
@@ -1115,12 +1108,9 @@ status: {}
 
 			req := require.New(t)
 			if tt.preInit != nil {
-				tt.preInit()
+				tt.preInit(t)
 			}
 			got, err := o.Marshal(tt.args.g, tt.args.v, tt.args.k)
-			if tt.postRun != nil {
-				tt.postRun()
-			}
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

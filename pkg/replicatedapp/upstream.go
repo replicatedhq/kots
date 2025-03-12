@@ -3,6 +3,7 @@ package replicatedapp
 import (
 	"encoding/base64"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -42,17 +43,12 @@ func ParseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 }
 
 func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.License, cursor string, selectedChannelID string) (*http.Request, error) {
-	u, err := url.Parse(license.Spec.Endpoint)
+	endpoint, err := getReplicatedAppEndpoint(license)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse endpoint from license")
+		return nil, errors.Wrap(err, "failed to get replicated app endpoint")
 	}
 
-	hostname := u.Hostname()
-	if u.Port() != "" {
-		hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
-	}
-
-	urlPath := path.Join(hostname, "release", license.Spec.AppSlug)
+	urlPath := path.Join("release", license.Spec.AppSlug)
 	if r.Channel != nil {
 		urlPath = path.Join(urlPath, *r.Channel)
 	}
@@ -66,7 +62,7 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 	urlValues.Add("isSemverSupported", "true")
 	urlValues.Add("selectedChannelId", selectedChannelID)
 
-	url := fmt.Sprintf("%s://%s?%s", u.Scheme, urlPath, urlValues.Encode())
+	url := fmt.Sprintf("%s/%s?%s", endpoint, urlPath, urlValues.Encode())
 
 	req, err := util.NewRequest(method, url, nil)
 	if err != nil {
@@ -76,4 +72,23 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	return req, nil
+}
+
+func getReplicatedAppEndpoint(license *kotsv1beta1.License) (string, error) {
+	endpoint, err := util.ReplicatedAPIEndpoint(license)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get replicated api endpoint")
+	}
+
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse endpoint")
+	}
+
+	host := u.Hostname()
+	if u.Port() != "" {
+		host = net.JoinHostPort(u.Hostname(), u.Port())
+	}
+
+	return fmt.Sprintf("%s://%s", u.Scheme, host), nil
 }

@@ -1,7 +1,6 @@
 package replicated
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -28,7 +27,7 @@ func Test_PullReplicated(t *testing.T) {
 
 	namespace := "test_ns"
 
-	testDirs, err := ioutil.ReadDir("tests")
+	testDirs, err := os.ReadDir("tests")
 	if err != nil {
 		panic(err)
 	}

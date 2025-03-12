@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 func IsURL(str string) bool {
@@ -145,14 +146,6 @@ func (e ActionableError) Error() string {
 	return fmt.Sprintf("%s", e.Message)
 }
 
-func GetReplicatedAPIEndpoint() string {
-	endpoint := os.Getenv("REPLICATED_API_ENDPOINT")
-	if endpoint != "" {
-		return endpoint
-	}
-	return "https://replicated.app"
-}
-
 func HomeDir() string {
 	if h := os.Getenv("HOME"); h != "" {
 		return h
@@ -170,6 +163,35 @@ func EmbeddedClusterID() string {
 
 func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
+}
+
+func ReplicatedAPIEndpoint(license *kotsv1beta1.License) (string, error) {
+	if ep := os.Getenv("REPLICATED_APP_ENDPOINT"); ep != "" {
+		return ep, nil
+	}
+
+	if IsEmbeddedCluster() {
+		return "", errors.New("REPLICATED_APP_ENDPOINT environment variable is required")
+	}
+
+	// DEPRECATED: use REPLICATED_APP_ENDPOINT instead
+	if ep := os.Getenv("REPLICATED_API_ENDPOINT"); ep != "" {
+		return ep, nil
+	}
+
+	if license != nil {
+		return license.Spec.Endpoint, nil
+	}
+
+	return "https://replicated.app", nil
+}
+
+func DefaultProxyRegistryDomain() string {
+	return "proxy.replicated.com"
+}
+
+func DefaultReplicatedRegistryDomain() string {
+	return "registry.replicated.com"
 }
 
 func IsUpgradeService() bool {

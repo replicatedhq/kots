@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -382,8 +381,20 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
 	isRequiredStr := getResp.Header.Get("X-Replicated-IsRequired")
 	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
-	replicatedRegistryDomain := getResp.Header.Get("X-Replicated-ReplicatedRegistryDomain")
-	replicatedProxyDomain := getResp.Header.Get("X-Replicated-ReplicatedProxyDomain")
+	var replicatedRegistryDomain, replicatedProxyDomain string
+	if util.IsEmbeddedCluster() {
+		replicatedRegistryDomain = os.Getenv("REPLICATED_REGISTRY_DOMAIN")
+		if replicatedRegistryDomain == "" {
+			return nil, errors.New("REPLICATED_REGISTRY_DOMAIN environment variable is required")
+		}
+		replicatedProxyDomain = os.Getenv("PROXY_REGISTRY_DOMAIN")
+		if replicatedProxyDomain == "" {
+			return nil, errors.New("PROXY_REGISTRY_DOMAIN environment variable is required")
+		}
+	} else {
+		replicatedRegistryDomain = getResp.Header.Get("X-Replicated-ReplicatedRegistryDomain")
+		replicatedProxyDomain = getResp.Header.Get("X-Replicated-ReplicatedProxyDomain")
+	}
 	replicatedChartNamesStr := getResp.Header.Get("X-Replicated-ReplicatedChartNames")
 
 	var releasedAt *time.Time
@@ -437,7 +448,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		case tar.TypeDir:
 			continue
 		case tar.TypeReg:
-			content, err := ioutil.ReadAll(tarReader)
+			content, err := io.ReadAll(tarReader)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to read file from tar")
 			}
@@ -498,7 +509,7 @@ func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt 
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to read response body")
 	}

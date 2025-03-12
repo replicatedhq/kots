@@ -153,7 +153,11 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 		images = rewrittenImages
 
 		// Use license to create image pull secrets for all objects that have private images.
-		pullSecretRegistries = registry.GetRegistryProxyInfo(opts.License, &opts.KotsKinds.Installation, &opts.KotsKinds.KotsApplication).ToSlice()
+		registryProxyInfo, err := registry.GetRegistryProxyInfo(opts.License, &opts.KotsKinds.Installation, &opts.KotsKinds.KotsApplication)
+		if err != nil {
+			return nil, errors.Wrap(err, "get registry proxy info")
+		}
+		pullSecretRegistries = registryProxyInfo.ToSlice()
 		pullSecretUsername = opts.License.Spec.LicenseID
 		pullSecretPassword = opts.License.Spec.LicenseID
 	}
