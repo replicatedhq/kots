@@ -152,7 +152,10 @@ func InstallCmd() *cobra.Command {
 
 			disableOutboundConnections := registryConfig.OverrideRegistry != "" || isAirgap
 
-			m := metrics.InitInstallMetrics(license, disableOutboundConnections)
+			m, err := metrics.InitInstallMetrics(license, disableOutboundConnections)
+			if err != nil {
+				return errors.Wrap(err, "failed to init install metrics")
+			}
 			m.ReportInstallStart()
 
 			// only handle reporting install failures in a defer statement.

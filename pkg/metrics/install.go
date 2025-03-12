@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	DevEndpoint  = "http://localhost:30016"
-	ProdEndpoint = "https://replicated.app"
+	DevEndpoint = "http://localhost:30016"
 )
 
 type InstallMetrics struct {
@@ -31,15 +30,20 @@ type InstallMetrics struct {
 	Cause                      string    `json:"cause"`
 }
 
-func InitInstallMetrics(license *kotsv1beta1.License, disableOutboundConnections bool) InstallMetrics {
+func InitInstallMetrics(license *kotsv1beta1.License, disableOutboundConnections bool) (InstallMetrics, error) {
+	endpoint, err := getEndpoint(license)
+	if err != nil {
+		return InstallMetrics{}, errors.Wrap(err, "failed to get endpoint")
+	}
+
 	m := InstallMetrics{
-		endpoint:                   getEndpoint(license),
+		endpoint:                   endpoint,
 		disableOutboundConnections: disableOutboundConnections,
 		InstallID:                  ksuid.New().String(),
 		StartedAt:                  time.Now(),
 		KotsVersion:                buildversion.Version(),
 	}
-	return m
+	return m, nil
 }
 
 func (m InstallMetrics) ReportInstallStart() error {
@@ -98,16 +102,18 @@ func (m InstallMetrics) Post(url string) error {
 	return nil
 }
 
-func getEndpoint(license *kotsv1beta1.License) string {
-	if license != nil {
-		if isDevEndpoint(license.Spec.Endpoint) {
-			// cluster ip services are not resolvable from the cli ...
-			return DevEndpoint
-		}
-		return license.Spec.Endpoint
+func getEndpoint(license *kotsv1beta1.License) (string, error) {
+	endpoint, err := util.ReplicatedAPIEndpoint(license)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get replicated api endpoint")
 	}
 
-	return ProdEndpoint
+	if isDevEndpoint(endpoint) {
+		// cluster ip services are not resolvable from the cli ...
+		return DevEndpoint, nil
+	}
+
+	return endpoint, nil
 }
 
 func isDevEndpoint(endpoint string) bool {

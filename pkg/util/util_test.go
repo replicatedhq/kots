@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -328,6 +329,92 @@ func TestConvertToSingleDocs(t *testing.T) {
 				}
 				t.Fatal("ConvertToSingleDocs() mismatch")
 			}
+		})
+	}
+}
+
+func Test_ReplicatedAPIEndpoint(t *testing.T) {
+	tests := []struct {
+		name        string
+		license     *kotsv1beta1.License
+		isEmbedded  bool
+		envEndpoint string
+		want        string
+		wantError   bool
+	}{
+		{
+			name: "license with endpoint",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint: "https://replicated.app",
+				},
+			},
+			isEmbedded: false,
+			want:       "https://replicated.app",
+		},
+		{
+			name: "license with endpoint including port",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint: "https://replicated.app:8443",
+				},
+			},
+			isEmbedded: false,
+			want:       "https://replicated.app:8443",
+		},
+		{
+			name:       "no license uses default endpoint",
+			license:    nil,
+			isEmbedded: false,
+			want:       "https://replicated.app",
+		},
+		{
+			name:        "embedded cluster with env endpoint",
+			license:     nil,
+			isEmbedded:  true,
+			envEndpoint: "https://replicated.app",
+			want:        "https://replicated.app",
+		},
+		{
+			name:       "embedded cluster without env endpoint",
+			license:    nil,
+			isEmbedded: true,
+			wantError:  true,
+		},
+		{
+			name: "embedded cluster without env endpoint but with license should error",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint: "https://replicated.app:8443",
+				},
+			},
+			isEmbedded: true,
+			wantError:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+
+			// Setup environment
+			if tt.isEmbedded {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "123")
+
+				if tt.envEndpoint != "" {
+					t.Setenv("REPLICATED_APP_ENDPOINT", tt.envEndpoint)
+				}
+			}
+
+			result, err := ReplicatedAPIEndpoint(tt.license)
+
+			if tt.wantError {
+				req.Error(err)
+				return
+			}
+
+			req.NoError(err)
+			assert.Equal(t, tt.want, result)
 		})
 	}
 }

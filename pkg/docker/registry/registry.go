@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 
@@ -57,7 +58,15 @@ var secretAnnotations = map[string]string{
 	"helm.sh/hook-weight":    "-9999",
 }
 
-func GetRegistryProxyInfo(license *kotsv1beta1.License, installation *kotsv1beta1.Installation, app *kotsv1beta1.Application) *RegistryProxyInfo {
+func GetRegistryProxyInfo(license *kotsv1beta1.License, installation *kotsv1beta1.Installation, app *kotsv1beta1.Application) (*RegistryProxyInfo, error) {
+	if util.IsEmbeddedCluster() {
+		registryProxyInfo, err := getEmbeddedClusterRegistryProxyInfo()
+		if err != nil {
+			return nil, errors.Wrap(err, "embedded cluster")
+		}
+		return registryProxyInfo, nil
+	}
+
 	registryProxyInfo := getRegistryProxyInfoFromLicense(license)
 
 	// DEPRECATED: getting the registry and proxy from the application spec is deprecated and should be removed in a future release
@@ -78,7 +87,7 @@ func GetRegistryProxyInfo(license *kotsv1beta1.License, installation *kotsv1beta
 		registryProxyInfo.Registry = registryEndpoint
 	}
 
-	return registryProxyInfo
+	return registryProxyInfo, nil
 }
 
 func getRegistryProxyEndpointFromKotsInstallation(installation *kotsv1beta1.Installation) (proxyEndpoint string, registryEndpoint string) {
@@ -113,12 +122,28 @@ func getRegistryProxyEndpointFromKotsApplication(kotsApplication *kotsv1beta1.Ap
 	return proxyEndpoint, registryEndpoint
 }
 
-func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
-	defaultInfo := &RegistryProxyInfo{
-		Upstream: "registry.replicated.com",
-		Registry: "registry.replicated.com",
-		Proxy:    "proxy.replicated.com",
+func getEmbeddedClusterRegistryProxyInfo() (*RegistryProxyInfo, error) {
+	info := &RegistryProxyInfo{
+		Upstream: util.DefaultReplicatedRegistryDomain(),
 	}
+
+	registryDomain := os.Getenv("REPLICATED_REGISTRY_DOMAIN")
+	if registryDomain == "" {
+		return nil, errors.New("REPLICATED_REGISTRY_DOMAIN environment variable is required")
+	}
+	info.Registry = registryDomain
+
+	proxyDomain := os.Getenv("PROXY_REGISTRY_DOMAIN")
+	if proxyDomain == "" {
+		return nil, errors.New("PROXY_REGISTRY_DOMAIN environment variable is required")
+	}
+	info.Proxy = proxyDomain
+
+	return info, nil
+}
+
+func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
+	defaultInfo := getDefaultRegistryProxyInfo()
 
 	if license == nil {
 		return defaultInfo
@@ -153,6 +178,14 @@ func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProx
 	}
 
 	return defaultInfo
+}
+
+func getDefaultRegistryProxyInfo() *RegistryProxyInfo {
+	return &RegistryProxyInfo{
+		Upstream: util.DefaultReplicatedRegistryDomain(),
+		Registry: util.DefaultReplicatedRegistryDomain(),
+		Proxy:    util.DefaultProxyRegistryDomain(),
+	}
 }
 
 func (r *RegistryProxyInfo) ToSlice() []string {

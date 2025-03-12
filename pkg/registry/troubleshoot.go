@@ -110,7 +110,10 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	updatedCollectors := []*troubleshootv1beta2.Collect{}
 
-	registryProxyInfo := kotsregistry.GetRegistryProxyInfo(license, &installation, kotsApplication)
+	registryProxyInfo, err := kotsregistry.GetRegistryProxyInfo(license, &installation, kotsApplication)
+	if err != nil {
+		return nil, errors.Wrap(err, "get registry proxy info")
+	}
 
 	makeImagePullSecret := func(namespace string) (*troubleshootv1beta2.ImagePullSecrets, error) {
 		pullSecrets, err := kotsregistry.PullSecretForRegistries(registryProxyInfo.ToSlice(), license.Spec.LicenseID, license.Spec.LicenseID, namespace, "")

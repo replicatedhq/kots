@@ -24,6 +24,7 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
+		env  map[string]string
 		want *RegistryProxyInfo
 	}{
 		{
@@ -96,11 +97,60 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				Upstream: "registry.replicated.com",
 			},
 		},
+		{
+			name: "GetRegistryProxyInfo returns embedded cluster registry when EMBEDDED_CLUSTER is set",
+			args: args{
+				license:      nil,
+				installation: nil,
+				app:          nil,
+			},
+			env: map[string]string{
+				"EMBEDDED_CLUSTER_ID":        "123",
+				"REPLICATED_REGISTRY_DOMAIN": "localhost:30000",
+				"PROXY_REGISTRY_DOMAIN":      "localhost:30001",
+			},
+			want: &RegistryProxyInfo{
+				Registry: "localhost:30000",
+				Proxy:    "localhost:30001",
+				Upstream: "registry.replicated.com",
+			},
+		},
+		{
+			name: "GetRegistryProxyInfo does not use installation settings for embedded cluster",
+			args: args{
+				license: nil,
+				installation: &kotsv1beta1.Installation{
+					Spec: kotsv1beta1.InstallationSpec{
+						ReplicatedProxyDomain:    customProxy,
+						ReplicatedRegistryDomain: customRegistry,
+					},
+				},
+				app: nil,
+			},
+			env: map[string]string{
+				"EMBEDDED_CLUSTER_ID":        "123",
+				"REPLICATED_REGISTRY_DOMAIN": "localhost:30000",
+				"PROXY_REGISTRY_DOMAIN":      "localhost:30001",
+			},
+			want: &RegistryProxyInfo{
+				Registry: "localhost:30000",
+				Proxy:    "localhost:30001",
+				Upstream: "registry.replicated.com",
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetRegistryProxyInfo(tt.args.license, tt.args.installation, tt.args.app); !reflect.DeepEqual(got, tt.want) {
+			// Set environment variables for the test
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+
+			got, err := GetRegistryProxyInfo(tt.args.license, tt.args.installation, tt.args.app)
+			if err != nil {
+				t.Errorf("GetRegistryProxyInfo() error = %v", err)
+			} else if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetRegistryProxyInfo() = %v, want %v", got, tt.want)
 			}
 		})

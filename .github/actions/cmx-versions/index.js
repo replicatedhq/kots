@@ -45,9 +45,10 @@ async function getClusterVersions() {
             // filtering out all versions except 4.15.0-okd for now per sc-90893
             versions: new Set(["4.15.0-okd"])
         },
-        oke: {
-            versions: new Set(["1.30.1"])
-        }
+        // disable oke for now per sc-120817
+        // oke: {
+        //     versions: new Set(["1.30.1"])
+        // }
     }
 
     // versions to test looks like this:
