@@ -384,6 +384,7 @@ export class KurlClusterManagement extends Component {
                       <input
                         id="secondaryNode"
                         className="u-cursor--pointer hidden-input"
+                        data-testid="secondary-node-radio"
                         type="radio"
                         name="nodeType"
                         value="secondary"
@@ -431,6 +432,7 @@ export class KurlClusterManagement extends Component {
                             Command has been copied to your clipboard
                           </span>
                         }
+                        data-testid="add-node-command"
                       >
                         {[this.state.command.join(" \\\n  ")]}
                       </CodeSnippet>

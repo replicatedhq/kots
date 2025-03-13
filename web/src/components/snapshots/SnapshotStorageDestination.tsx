@@ -903,7 +903,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <input
                   type="text"
                   className="Input"
-                  data-testid="snapshots-aws-bucket"
+                  data-testid="aws-bucket"
                   placeholder="Bucket name"
                   value={this.state.s3bucket}
                   onChange={(e) => this.handleFormChange("s3bucket", e)}
@@ -916,7 +916,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <input
                   type="text"
                   className="Input"
-                  data-testid="snapshots-aws-region"
+                  data-testid="aws-region"
                   placeholder="Bucket region"
                   value={this.state.s3Region}
                   onChange={(e) => this.handleFormChange("s3Region", e)}
@@ -931,7 +931,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <input
                   type="text"
                   className="Input"
-                  data-testid="snapshots-aws-prefix"
+                  data-testid="aws-prefix"
                   placeholder="/path/to/destination"
                   value={this.state.s3Path}
                   onChange={(e) => this.handleFormChange("s3Path", e)}
@@ -947,6 +947,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   <input
                     type="checkbox"
                     className="u-cursor--pointer"
+                    data-testid="aws-use-instance-role"
                     id="useIamAws"
                     checked={this.state.useIamAws}
                     onChange={(e) => this.handleFormChange("useIamAws", e)}
@@ -974,7 +975,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   <input
                     type="text"
                     className="Input"
-                    data-testid="snapshots-aws-access-key-id"
+                    data-testid="aws-access-key-id"
                     placeholder="key ID"
                     value={this.state.s3KeyId}
                     onChange={(e) => this.handleFormChange("s3KeyId", e)}
@@ -999,7 +1000,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     id={"access-key"}
                     autoFocus={undefined}
                     helperText={undefined}
-                    dataTestId="snapshots-aws-secret-access-key"
+                    dataTestId="aws-secret-access-key"
                   />
                 </div>
               </div>
@@ -1720,6 +1721,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         <div className="flex" style={{ gap: "30px" }}>
           <div
             className="flex flex-column card-bg u-padding--15"
+            data-testid="snapshots-storage-settings-card"
             style={{ maxWidth: "400px" }}
           >
             <div className="flex justifyContent--spaceBetween">
@@ -1777,7 +1779,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     )}
                   <div
                     className="flex1"
-                    data-testid="snapshot-storage-destination"
+                    data-testid="storage-destination"
                   >
                     {availableDestinations.length > 1 ? (
                       <Select
@@ -1834,6 +1836,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     <div className="flex">
                       <button
                         className="btn primary blue"
+                        data-testid="update-storage-settings-button"
                         disabled={updatingSettings}
                         onClick={this.onSubmit}
                       >
@@ -1845,7 +1848,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         <Loader className="u-marginLeft--10" size="32" />
                       )}
                       {updateConfirm && (
-                        <div className="u-marginLeft--10 flex alignItems--center">
+                        <div className="u-marginLeft--10 flex alignItems--center" data-testid="storage-settings-updated-confirmation">
                           <span className="icon checkmark-icon" />
                           <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
                             Settings updated

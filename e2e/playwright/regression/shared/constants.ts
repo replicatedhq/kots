@@ -14,3 +14,4 @@ export const IDENTITY_SERVICE_OKTA_APP_ID = "0oa6s7995wt2UIQoR5d7";
 export const IDENTITY_SERVICE_OKTA_CLIENT_ID = "0oa6s7995wt2UIQoR5d7";
 export const IDENTITY_SERVICE_OKTA_DOMAIN = "dev-88212807.okta.com";
 export const SSH_TO_JUMPBOX = `ssh ubuntu@${process.env.JUMPBOX_PRIVATE_IP}`;
+export const SSH_TO_WORKER = `ssh ubuntu@${process.env.WORKER_PRIVATE_IP}`;

@@ -1,6 +1,7 @@
 import { Page, Expect } from '@playwright/test';
+import * as uuid from "uuid";
 
-import { runCommand } from './cli';
+import { runCommand, waitForVeleroAndNodeAgent } from './cli';
 import { login } from './login';
 import { validateCurrentlyDeployedVersionInfo } from './version-history';
 import { validateDashboardInfo } from './dashboard';
@@ -16,7 +17,7 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
 
   const configureSnapshotsModal = page.getByTestId("configure-snapshots-modal");
-  await expect(configureSnapshotsModal).toBeVisible({ timeout: 10000 });
+  await expect(configureSnapshotsModal).toBeVisible({ timeout: 15000 });
 
   await expect(configureSnapshotsModal.getByTestId("velero-not-installed-tab")).toBeVisible();
   await expect(configureSnapshotsModal.getByTestId("velero-already-installed-tab")).toBeVisible();
@@ -41,24 +42,55 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect) => {
   await expect(configureSnapshotsModal).not.toBeVisible();
 };
 
+export const configureSnapshotsAWSInstanceRole = async (page: Page, expect: Expect) => {
+  await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
+  await page.getByRole('link', { name: 'Settings & Schedule' }).click();
+
+  const storageSettingsCard = page.getByTestId('snapshots-storage-settings-card');
+  await expect(storageSettingsCard).toBeVisible({ timeout: 15000 });
+
+  await storageSettingsCard.locator('.replicated-select__control').click();
+  await page.waitForTimeout(1000);
+  await storageSettingsCard.locator('.replicated-select__option').getByText('Amazon S3', { exact: true }).click();
+  await page.waitForTimeout(1000);
+  await expect(storageSettingsCard.getByTestId('storage-destination')).toContainText('Amazon S3');
+
+  await storageSettingsCard.getByTestId('aws-bucket').fill(AWS_BUCKET_NAME);
+  await storageSettingsCard.getByTestId('aws-region').fill(AWS_REGION);
+  await storageSettingsCard.getByTestId('aws-prefix').fill(uuid.v4());
+  await storageSettingsCard.getByTestId('aws-use-instance-role').click();
+  await expect(storageSettingsCard.getByTestId('aws-access-key-id')).not.toBeVisible();
+  await expect(storageSettingsCard.getByTestId('aws-secret-access-key')).not.toBeVisible();
+
+  await storageSettingsCard.getByTestId('update-storage-settings-button').click();
+  await expect(storageSettingsCard.getByTestId('storage-settings-updated-confirmation')).toBeVisible({ timeout: 15000 });
+  await expect(storageSettingsCard.getByTestId('storage-settings-updated-confirmation')).not.toBeVisible({ timeout: 15000 });
+
+  // wait for velero to be ready
+  await waitForVeleroAndNodeAgent();
+};
+
 export const validateSnapshotsAWSConfig = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
   await page.getByRole('link', { name: 'Settings & Schedule' }).click();
-  await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
 
-  await expect(page.getByTestId('snapshot-storage-destination')).toContainText('Amazon S3');
-  await expect(page.getByTestId('snapshots-aws-bucket')).toHaveValue(AWS_BUCKET_NAME);
-  await expect(page.getByTestId('snapshots-aws-region')).toHaveValue(AWS_REGION);
-  await expect(page.getByTestId('snapshots-aws-access-key-id')).toHaveValue(process.env.AWS_ACCESS_KEY_ID);
+  const storageSettingsCard = page.getByTestId('snapshots-storage-settings-card');
+  await expect(storageSettingsCard).toBeVisible({ timeout: 15000 });
+
+  await expect(storageSettingsCard.getByTestId('storage-destination')).toContainText('Amazon S3');
+  await expect(storageSettingsCard.getByTestId('aws-bucket')).toHaveValue(AWS_BUCKET_NAME);
+  await expect(storageSettingsCard.getByTestId('aws-region')).toHaveValue(AWS_REGION);
 };
 
 export const validateSnapshotsHostPathConfig = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
   await page.getByRole('link', { name: 'Settings & Schedule' }).click();
-  await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
 
-  await expect(page.getByTestId('snapshot-storage-destination')).toContainText('Host Path');
-  await expect(page.getByTestId('snapshot-hostpath-input')).toHaveValue(SNAPSHOTS_HOST_PATH);
+  const storageSettingsCard = page.getByTestId('snapshots-storage-settings-card');
+  await expect(storageSettingsCard).toBeVisible({ timeout: 15000 });
+
+  await expect(storageSettingsCard.getByTestId('storage-destination')).toContainText('Host Path');
+  await expect(storageSettingsCard.getByTestId('snapshot-hostpath-input')).toHaveValue(SNAPSHOTS_HOST_PATH);
 };
 
 export const validateAutomaticFullSnapshots = async (page: Page, expect: Expect) => {

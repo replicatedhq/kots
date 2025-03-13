@@ -147,7 +147,7 @@ export const installVeleroHostPath = async (
   }
 
   // wait for velero to be ready
-  await waitForVeleroAndNodeAgent(60000);
+  await waitForVeleroAndNodeAgent();
 }
 
 export const prepareVeleroImages = (
@@ -223,7 +223,7 @@ const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
   runCommand(`kubectl -n velero patch deployment velero --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'`);
 };
 
-export const waitForVeleroAndNodeAgent = async (timeout: number): Promise<void> => {
+export const waitForVeleroAndNodeAgent = async (timeout: number = 60000): Promise<void> => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     if (isVeleroReady() && isNodeAgentReady()) {
@@ -430,6 +430,49 @@ export const removeKots = (namespace: string) => {
   runCommand(`kubectl delete namespace ${namespace} --ignore-not-found`);
   runCommand(`kubectl delete clusterrole kotsadm-role kotsadm-operator-role --ignore-not-found`);
   runCommand(`kubectl delete clusterrolebinding kotsadm-rolebinding kotsadm-operator-rolebinding --ignore-not-found`);
+};
+
+export const prepareAndJoinWorkerNode = (
+  isAirgapped: boolean,
+  sshUser: string,
+  airgappedInstanceIp: string,
+  workerNodeIp: string,
+  joinCommand: string
+) => {
+  if (isAirgapped) {
+    // Find current installer name from the cluster
+    const listInstallersOutput = runCommandWithOutput(`kubectl get installers -ojson`);
+    const installers = JSON.parse(listInstallersOutput);
+    const installer = installers.items.reduce((a, b) => 
+      (a.metadata.creationTimestamp > b.metadata.creationTimestamp ? a : b)
+    );
+    const airgapBundleName = `${installer.metadata.name}.tar.gz`;
+
+    // Check if airgap bundle exists in root directory
+    const bundleExists = runCommandWithOutput(
+      `if [ -f '${airgapBundleName}' ]; then echo '1' | tr -d '\n'; else echo '0' | tr -d '\n'; fi`
+    );
+
+    const airgapBundlePath = bundleExists === "1" ? airgapBundleName : `upgrade/${airgapBundleName}`;
+
+    // Copy bundle to worker node
+    runCommand(
+      `scp -3 ${sshUser}@${airgappedInstanceIp}:${airgapBundlePath} ${sshUser}@${workerNodeIp}:${airgapBundleName}`
+    );
+
+    // Extract bundle on worker node
+    runCommand(
+      `tar xvzf ${airgapBundleName}`,
+      true // run on remote node via SSH
+    );
+  }
+
+  // Prepare and execute join command
+  let finalJoinCommand = joinCommand.replace(/\\/g, "");
+  finalJoinCommand = `${finalJoinCommand} yes`; // for the nightly release prompt
+  
+  // Run join command in background on worker node
+  runCommand(`${finalJoinCommand} &`, true);
 };
 
 export const downloadViaJumpbox = (remoteUrl: string, localPath: string) => {
