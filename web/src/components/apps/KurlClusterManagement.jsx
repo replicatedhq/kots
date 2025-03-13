@@ -345,7 +345,6 @@ export class KurlClusterManagement extends Component {
                       <input
                         id="primaryNode"
                         className="u-cursor--pointer hidden-input"
-                        data-testid="primary-node-radio"
                         type="radio"
                         name="nodeType"
                         value="primary"
@@ -356,6 +355,7 @@ export class KurlClusterManagement extends Component {
                       <label
                         htmlFor="primaryNode"
                         className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                        data-testid="primary-node-radio"
                       >
                         <div className="flex-auto">
                           <Icon
@@ -386,7 +386,6 @@ export class KurlClusterManagement extends Component {
                       <input
                         id="secondaryNode"
                         className="u-cursor--pointer hidden-input"
-                        data-testid="secondary-node-radio"
                         type="radio"
                         name="nodeType"
                         value="secondary"
@@ -396,6 +395,7 @@ export class KurlClusterManagement extends Component {
                       <label
                         htmlFor="secondaryNode"
                         className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                        data-testid="secondary-node-radio"
                       >
                         <div className="flex-auto">
                           <Icon
