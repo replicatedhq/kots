@@ -434,7 +434,7 @@ export class KurlClusterManagement extends Component {
                             Command has been copied to your clipboard
                           </span>
                         }
-                        data-testid="add-node-command"
+                        dataTestId="add-node-command"
                       >
                         {[this.state.command.join(" \\\n  ")]}
                       </CodeSnippet>
