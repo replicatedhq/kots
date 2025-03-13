@@ -148,7 +148,7 @@ function getLatestMinorVersions(distribution, majorMinorVersionFilter) {
         const parsed = semverCoerce(version);
         // Check if majorVersions is null, undefined, empty, or includes the current version's major
         const majorMinor = `${semverMajor(parsed)}.${semverMinor(parsed)}`;
-        if(majorMinorVersionFilter === null || majorMinorVersionFilter === undefined || majorMinorVersionFilter.size === 0 || majorMinorVersionFilter.includes(majorMinor)) {
+        if(!majorMinorVersionFilter?.length || majorMinorVersionFilter.includes(majorMinor)) {
             if (latestMinorVersions[majorMinor] === undefined) {
                 latestMinorVersions[majorMinor] = version;
             } else {
