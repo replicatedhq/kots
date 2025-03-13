@@ -26,13 +26,14 @@ export default defineConfig({
       This is not enabled by default because it's performance heavy.
       See https://playwright.dev/docs/trace-viewer.
     */
-    trace: 'retain-on-failure',
+    // revert this!
+    trace: 'on',
 
     /* Screenshot on failure. */
     screenshot: 'only-on-failure',
 
     /* Timeout for each action in milliseconds. Defaults to 0 (no limit). */
-    actionTimeout: 15 * 1000,
+    actionTimeout: 30 * 1000,
 
     /* Timeout for each navigation in milliseconds. Defaults to 0 (no limit). */
     navigationTimeout: 30 * 1000,

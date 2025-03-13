@@ -90,3 +90,40 @@ export async function downloadAirgapBundle(
   // download airgap bundle through jumpbox
   downloadViaJumpbox(bundleUrl, destPath);
 }
+
+export async function updateIdentityServiceOktaApp(oktaDomain: string, oktaAppId: string): Promise<any> {
+  let response = await fetch(
+    `https://${oktaDomain}/api/v1/apps/${oktaAppId}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `SSWS ${process.env.IDENTITY_SERVICE_OKTA_ACCESS_TOKEN!}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to get okta app: ${response.status}`);
+  }
+
+  const app = await response.json();
+  app.settings.oauthClient.redirect_uris = [`${process.env.BASE_URL}/dex/callback`];
+  app.settings.oauthClient.post_logout_redirect_uris = [process.env.BASE_URL];
+
+  response = await fetch(
+    `https://${oktaDomain}/api/v1/apps/${oktaAppId}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Authorization': `SSWS ${process.env.IDENTITY_SERVICE_OKTA_ACCESS_TOKEN!}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(app)
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to update okta app: ${response.status}`);
+  }
+}

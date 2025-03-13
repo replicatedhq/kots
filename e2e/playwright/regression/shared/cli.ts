@@ -229,7 +229,7 @@ export const waitForVeleroAndNodeAgent = async (timeout: number = 60000): Promis
     if (isVeleroReady() && isNodeAgentReady()) {
       return;
     }
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between checks
+    await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2 seconds between checks
   }
   throw new Error(`Timeout waiting for Velero and Node Agent to be ready after ${timeout/1000} seconds`);
 };
@@ -417,6 +417,37 @@ spec:
     nodePort: 8800
 EOF`);
 };
+
+export const waitForDex = async (namespace: string, timeout: number = 90000): Promise<void> => {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeout) {
+    if (isDexReady(namespace)) {
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2 seconds between checks
+  }
+  throw new Error(`Timeout waiting for Dex to be ready after ${timeout/1000} seconds`);
+};
+
+export const isDexReady = async (namespace: string) => {
+  const dexDeployment = runCommandWithOutput(`kubectl get deployment kotsadm-dex -n ${namespace} -ojson`);;
+  const parsedDeployment = JSON.parse(dexDeployment);
+
+  if (parsedDeployment.status.observedGeneration !== parsedDeployment.metadata.generation) {
+    console.log(`observedGeneration: ${parsedDeployment.status.observedGeneration}, generation: ${parsedDeployment.metadata.generation}`);
+    return false;
+  }
+  if (parsedDeployment.status.readyReplicas !== parsedDeployment.spec.replicas) {
+    console.log(`readyReplicas: ${parsedDeployment.status.readyReplicas}, replicas: ${parsedDeployment.spec.replicas}`);
+    return false;
+  }
+  if (!!parsedDeployment.status.unavailableReplicas) {
+    console.log(`unavailableReplicas: ${parsedDeployment.status.unavailableReplicas}`);
+    return false;
+  }
+
+  return true;
+}
 
 export const resetPassword = (namespace: string) => {
   runCommand(`echo 'password' | kubectl kots reset-password -n ${namespace}`);

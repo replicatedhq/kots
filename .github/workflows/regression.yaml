@@ -28,6 +28,10 @@ on:
         required: true
       REPLICATED_QA_API_TOKEN:
         required: true
+      IDENTITY_SERVICE_OKTA_PASSWORD:
+        required: true
+      IDENTITY_SERVICE_OKTA_CLIENT_SECRET:
+        required: true
       E2E_GH_PAT:
         required: true
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL:
@@ -59,6 +63,8 @@ env:
   TF_VAR_replicated_api_token: ${{ secrets.REPLICATED_QA_API_TOKEN }}
   TF_VAR_aws_access_key_id: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   TF_VAR_aws_secret_access_key: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+  TF_VAR_identity_service_okta_password: ${{ secrets.IDENTITY_SERVICE_OKTA_PASSWORD }}
+  TF_VAR_identity_service_okta_client_secret: ${{ secrets.IDENTITY_SERVICE_OKTA_CLIENT_SECRET }}
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
 
 jobs:

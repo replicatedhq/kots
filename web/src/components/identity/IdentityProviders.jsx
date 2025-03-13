@@ -580,7 +580,7 @@ class IdentityProviders extends Component {
           <Link to="/access/configure-ingress" className="link u-textDecoration--underlineOnHover"> Configure Ingress </Link>
           </p>
         </div> */}
-        <form className="flex-auto Identity--wrapper u-marginTop--30">
+        <form className="flex-auto Identity--wrapper u-marginTop--30" data-testid="identity-provider-form">
           <div className="flex1 flex-column">
             <p className="u-fontSize--largest u-lineHeight--default u-fontWeight--bold u-textColor--primary">
               {" "}
@@ -715,6 +715,7 @@ class IdentityProviders extends Component {
                   <input
                     type="radio"
                     id="oidcConfig"
+                    data-testid="openid-radio"
                     style={{ display: "none" }}
                     checked={selectedProvider === "oidcConfig"}
                     disabled={syncAppWithGlobal}
@@ -770,6 +771,7 @@ class IdentityProviders extends Component {
                     <input
                       type="text"
                       className="Input u-marginTop--12"
+                      data-testid="connector-name-input"
                       placeholder="OpenID"
                       disabled={syncAppWithGlobal}
                       value={this.state.oidcConfig?.connectorName}
@@ -807,6 +809,7 @@ class IdentityProviders extends Component {
                   <input
                     type="text"
                     className="Input u-marginTop--12"
+                    data-testid="issuer-input"
                     disabled={syncAppWithGlobal}
                     value={this.getRequiredValue("issuer")}
                     onChange={(e) => {
@@ -834,6 +837,7 @@ class IdentityProviders extends Component {
                   <input
                     type="text"
                     className="Input u-marginTop--12"
+                    data-testid="client-id-input"
                     value={this.getRequiredValue("clientId")}
                     disabled={syncAppWithGlobal}
                     onChange={(e) => {
@@ -859,6 +863,7 @@ class IdentityProviders extends Component {
                   <input
                     type="password"
                     className="Input u-marginTop--12"
+                    data-testid="client-secret-input"
                     value={this.getRequiredValue("clientSecret")}
                     disabled={syncAppWithGlobal}
                     onChange={(e) => {
@@ -938,6 +943,7 @@ class IdentityProviders extends Component {
                 <p
                   className="u-fontSize--small u-lineHeight--normal link"
                   onClick={this.toggleAdvancedOptions}
+                  data-testid="advanced-options-toggle"
                 >
                   {" "}
                   Advanced options
@@ -950,7 +956,7 @@ class IdentityProviders extends Component {
                   />
                 </p>
                 {this.state.showAdvancedOptions && (
-                  <div className="flex flex-column u-marginTop--12">
+                  <div className="flex flex-column u-marginTop--12" data-testid="advanced-options-form">
                     <div className="flex flex1 justifyContent--spaceBetween">
                       <div
                         className="flex flex-column justifyContent--flexStart"
@@ -1131,6 +1137,7 @@ class IdentityProviders extends Component {
                           <input
                             type="text"
                             className="Input u-marginTop--12"
+                            data-testid="user-name-key-input"
                             placeholder="name"
                             value={this.state.oidcConfig?.userNameKey}
                             disabled={syncAppWithGlobal}
@@ -1293,6 +1300,7 @@ class IdentityProviders extends Component {
               <div className="flex flex1">
                 <button
                   className="btn primary blue"
+                  data-testid="save-provider-settings-button"
                   disabled={this.state.savingProviderSettings}
                   onClick={this.onSubmit}
                 >
@@ -1301,7 +1309,7 @@ class IdentityProviders extends Component {
                     : "Save provider settings"}
                 </button>
                 {this.state.saveConfirm && (
-                  <div className="u-marginLeft--10 flex alignItems--center">
+                  <div className="u-marginLeft--10 flex alignItems--center" data-testid="provider-settings-saved-confirmation">
                     <Icon
                       icon="check-circle-filled"
                       size={16}
