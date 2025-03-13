@@ -38,6 +38,7 @@ import {
   validateViewFiles,
   updateRegistrySettings,
   validateCheckForUpdates,
+  validateClusterManagement,
   logout
 } from '../shared';
 
@@ -104,5 +105,6 @@ test('type=embedded cluster, env=online, phase=new install, rbac=cluster admin',
   // Other validation
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
   await updateRegistrySettings(page, expect, registryInfo, 4, constants.IS_MINIMAL_RBAC);
+  await validateClusterManagement(page, expect);
   await logout(page, expect);
 });

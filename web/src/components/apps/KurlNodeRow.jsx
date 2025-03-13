@@ -5,7 +5,7 @@ import { getPercentageStatus, Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
 
 export default function KurlNodeRow(props) {
-  const { node } = props;
+  const { node, index } = props;
 
   const DrainDeleteNode = () => {
     const { drainNode, drainNodeSuccessful, drainingNodeName } = props;
@@ -58,10 +58,10 @@ export default function KurlNodeRow(props) {
   };
 
   return (
-    <div className="flex flex-auto KurlNodeRow--wrapper">
+    <div className="flex flex-auto KurlNodeRow--wrapper" data-testid={`kurl-node-row-${index}`}>
       <div className="flex-column flex1">
         <div className="flex flex-auto alignItems--center u-fontWeight--bold u-textColor--primary">
-          <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary">
+          <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary" data-testid="node-name">
             {node?.name}
           </p>
           {node?.isPrimaryNode && (
@@ -72,7 +72,7 @@ export default function KurlNodeRow(props) {
         </div>
         <div className="flex flex1 alignItems--center u-marginTop--10 KurlNodeRow--items">
           <div className="flex-column flex1 u-marginRight--10">
-            <p className="flex1 u-fontSize--small u-fontWeight--medium u-textColor--primary">
+            <p className="flex1 u-fontSize--small u-fontWeight--medium u-textColor--primary" data-testid="node-status">
               <span
                 className={classNames("node-status", {
                   disconnected: !node?.isConnected,
@@ -103,6 +103,7 @@ export default function KurlNodeRow(props) {
                     ) === "danger",
                 }
               )}
+              data-testid="node-pods"
             >
               <span className={classNames("icon kubernetesLogoSmall")} />
               {node?.pods?.available === -1
@@ -138,6 +139,7 @@ export default function KurlNodeRow(props) {
                     ) === "danger",
                 }
               )}
+              data-testid="node-cpu"
             >
               <span className={"icon analysis-os_cpu"} />
               {node?.cpu?.available === -1
@@ -178,6 +180,7 @@ export default function KurlNodeRow(props) {
                     ) === "danger",
                 }
               )}
+              data-testid="node-memory"
             >
               <span className={"icon analysis-os_memory"} />
               {node?.memory?.available === -1
