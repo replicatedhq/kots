@@ -334,7 +334,7 @@ export const validateUiAirgapUpdate = async (page: Page, expect: Expect, airgapB
   await updateRow.getByTestId('release-notes-icon').click();
   await validateReleaseNotesModal(page, expect, "release notes - updates");
 
-  // minimal rbac is false because we uploaded the initial bundle via the ui.
+  // minimal rbac is always false here because we uploaded the initial bundle via the ui.
   // in airgap, minimal rbac is only detected if the bundle is passed to cli install.
   // also, the releases associated with ui installs do not support rollback.
   await deployNewVersion(page, expect, 1, 'Airgap Update', false, false);

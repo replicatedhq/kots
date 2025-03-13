@@ -6,6 +6,7 @@ import {
   uploadLicense,
   deleteKurlConfigMap,
   getRegistryInfo,
+  cliOnlineInstall,
   installVeleroAWS,
   promoteRelease,
   validateInitialConfig,
@@ -49,6 +50,7 @@ test('type=existing cluster, env=online, phase=upgraded install, rbac=cluster ad
   // Initial setup
   deleteKurlConfigMap();
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
+  cliOnlineInstall(constants.CHANNEL_SLUG, constants.NAMESPACE, constants.IS_MINIMAL_RBAC); // install kots without the app
   installVeleroAWS(constants.VELERO_VERSION, constants.VELERO_AWS_PLUGIN_VERSION);
   await promoteRelease(constants.VENDOR_INITIAL_CHANNEL_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -255,8 +254,7 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 			// There's an early check in the handler for the presence of `EMBEDDED_CLUSTER_ID` env var
 			// so we need to set it here whenever the test requires it
 			if test.embeddedClusterID != "" {
-				os.Setenv("EMBEDDED_CLUSTER_ID", test.embeddedClusterID)
-				defer os.Unsetenv("EMBEDDED_CLUSTER_ID")
+				t.Setenv("EMBEDDED_CLUSTER_ID", test.embeddedClusterID)
 			}
 
 			ts := httptest.NewServer(http.HandlerFunc(h.GetEmbeddedClusterNodeJoinCommand))

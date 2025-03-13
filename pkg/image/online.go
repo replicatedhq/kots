@@ -146,7 +146,10 @@ func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kots
 		}
 	}
 
-	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.Installation, &kotsKinds.KotsApplication)
+	replicatedRegistryInfo, err := registry.GetRegistryProxyInfo(license, &kotsKinds.Installation, &kotsKinds.KotsApplication)
+	if err != nil {
+		return errors.Wrap(err, "get registry proxy info")
+	}
 
 	sourceRegistry := dockerregistrytypes.RegistryOptions{
 		Endpoint:         replicatedRegistryInfo.Registry,

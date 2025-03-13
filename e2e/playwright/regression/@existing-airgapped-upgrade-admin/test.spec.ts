@@ -2,35 +2,26 @@ import { test, expect } from '@playwright/test';
 import * as constants from './constants';
 
 import {
-  NEW_KOTSADM_BUNDLE_PATH,
-  INITIAL_VERSION_SMALL_BUNDLE_PATH,
-  NEW_VERSION_SMALL_BUNDLE_PATH,
+  INITIAL_KOTSADM_BUNDLE_PATH,
   INITIAL_VERSION_BUNDLE_PATH,
   NEW_VERSION_BUNDLE_PATH
 } from '../shared/constants';
 
 import {
   login,
-  uploadLicense,
   downloadAirgapBundle,
   deleteKurlConfigMap,
   getRegistryInfo,
-  validateUiAirgapInstall,
-  validateSmallAirgapInitialConfig,
-  validateSmallAirgapInitialPreflights,
-  validateUiAirgapUpdate,
   validateCliAirgapUpdate,
-  addSnapshotsRBAC,
   validateDashboardInfo,
-  removeApp,
-  removeKots,
+  upgradeKots,
   cliAirgapInstall,
   installVeleroHostPath,
   validateDashboardGraphs,
-  validateGenerateSupportBundleUi,
   updateConfig,
-  validateVersionMinimalRBACPreflights,
+  validateIgnorePreflightsModal,
   validateCurrentVersionCard,
+  validateCurrentClusterAdminPreflights,
   validateCurrentDeployLogs,
   validateConfigView,
   validateVersionHistoryRows,
@@ -53,37 +44,12 @@ import {
   logout
 } from '../shared';
 
-test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac', async ({ page }) => {
+test('type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin', async ({ page }) => {
   test.setTimeout(45 * 60 * 1000); // 45 minutes
 
   // Initial setup
   deleteKurlConfigMap();
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
-
-  // install kots without the app
-  await cliAirgapInstall(
-    constants.CHANNEL_SLUG,
-    registryInfo,
-    NEW_KOTSADM_BUNDLE_PATH,
-    constants.NAMESPACE,
-    constants.IS_MINIMAL_RBAC
-  );
-
-  // download initial small airgap bundle for ui install
-  await downloadAirgapBundle(
-    constants.CUSTOMER_ID,
-    constants.INITIAL_SMALL_BUNDLE_CHANNEL_SEQUENCE,
-    constants.DOWNLOAD_PORTAL_BASE64_PASSWORD,
-    INITIAL_VERSION_SMALL_BUNDLE_PATH
-  );
-
-  // download update small airgap bundle for ui update
-  await downloadAirgapBundle(
-    constants.CUSTOMER_ID,
-    constants.UPDATE_SMALL_BUNDLE_CHANNEL_SEQUENCE,
-    constants.DOWNLOAD_PORTAL_BASE64_PASSWORD,
-    NEW_VERSION_SMALL_BUNDLE_PATH
-  );
 
   // download initial airgap bundle
   await downloadAirgapBundle(
@@ -101,29 +67,11 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
     NEW_VERSION_BUNDLE_PATH
   );
 
-  // Login and license upload
-  await page.goto('/');
-  await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
-  await login(page);
-  await uploadLicense(page, expect);
-
-  // Validate ui install and app updates
-  await validateUiAirgapInstall(page, expect, registryInfo, constants.NAMESPACE, INITIAL_VERSION_SMALL_BUNDLE_PATH, constants.IS_EXISTING_CLUSTER);
-  await validateSmallAirgapInitialConfig(page, expect);
-  await validateSmallAirgapInitialPreflights(page, expect);
-  await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED, false);
-  await validateUiAirgapUpdate(page, expect, NEW_VERSION_SMALL_BUNDLE_PATH);
-
-  // Clean up UI install so we can test CLI install
-  await logout(page, expect);
-  removeApp(constants.NAMESPACE);
-  removeKots(constants.NAMESPACE);
-
   // CLI airgap install
   await cliAirgapInstall(
     constants.CHANNEL_SLUG,
     registryInfo,
-    NEW_KOTSADM_BUNDLE_PATH,
+    INITIAL_KOTSADM_BUNDLE_PATH,
     constants.NAMESPACE,
     constants.IS_MINIMAL_RBAC,
     INITIAL_VERSION_BUNDLE_PATH,
@@ -139,13 +87,17 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
     constants.IS_AIRGAPPED
   );
 
-  // Validate CLI install and app updates
+  // Validate install
+  await page.goto('/');
+  await expect(page.getByTestId("build-version")).toHaveText(process.env.OLD_KOTS_VERSION!);
+  await login(page);
+  await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
+
+  // Validate kots upgrade and app updates
+  await upgradeKots(constants.NAMESPACE, constants.IS_AIRGAPPED, registryInfo);
   await page.waitForTimeout(5000);
   await page.reload();
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
-  await login(page);
-  await deployNewVersion(page, expect, 0, 'Airgap Install', constants.IS_MINIMAL_RBAC);
-  await addSnapshotsRBAC(page, expect);
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardGraphs(page, expect);
   await validateCliAirgapUpdate(
@@ -159,13 +111,12 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
     registryInfo
   );
 
-  // Support bundle
-  await validateGenerateSupportBundleUi(page, expect, constants.IS_AIRGAPPED);
-
   // Config update and version history checks
   await updateConfig(page, expect);
-  await validateVersionMinimalRBACPreflights(page, expect, 0, 2);
+  await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
+  await validateIgnorePreflightsModal(page, expect);
   await validateCurrentVersionCard(page, expect, 1);
+  await validateCurrentClusterAdminPreflights(page, expect);
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
   await validateVersionHistoryRows(page, expect, constants.IS_AIRGAPPED);
