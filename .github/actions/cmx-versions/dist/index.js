@@ -3959,6 +3959,20 @@ module.exports = coerce
 
 /***/ }),
 
+/***/ 2156:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const compareBuild = (a, b, loose) => {
+  const versionA = new SemVer(a, loose)
+  const versionB = new SemVer(b, loose)
+  return versionA.compare(versionB) || versionA.compareBuild(versionB)
+}
+module.exports = compareBuild
+
+
+/***/ }),
+
 /***/ 4309:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -4020,6 +4034,16 @@ const parse = (version, options, throwErrors = false) => {
 }
 
 module.exports = parse
+
+
+/***/ }),
+
+/***/ 8701:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compareBuild = __nccwpck_require__(2156)
+const rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose))
+module.exports = rsort
 
 
 /***/ }),
@@ -7624,6 +7648,7 @@ const semverCoerce = __nccwpck_require__(3466);
 const semverMajor = __nccwpck_require__(6688);
 const semverMinor = __nccwpck_require__(8447);
 const semverGt = __nccwpck_require__(4123);
+const semverRSort = __nccwpck_require__(8701);
 
 async function getClusterVersions() {
     const url = 'https://api.replicated.com/vendor/v3/cluster/versions';
@@ -7654,6 +7679,7 @@ async function getClusterVersions() {
     let filters = {
         k3s: {
             latest_minor_versions: true,
+            numOfLatestVersions: 3
         },
         eks: {
             // latest_version: true,
@@ -7715,7 +7741,7 @@ async function getClusterVersions() {
 
         if (!!filters[distroName].latest_minor_versions) {
             // latest minor versions
-            const latestMinorVersions = getLatestMinorVersions(distribution);
+            const latestMinorVersions = getLatestMinorVersions(distribution, getLastMajorMinorVersions(distribution, filters[distroName].numOfLatestVersions)  );
             Object.keys(latestMinorVersions).forEach((minorVersion) => {
                 versionsToTest.push({ distribution: distroName, version: latestMinorVersions[minorVersion], instance_type: instanceType, stage });
             });
@@ -7742,21 +7768,43 @@ function getLatestVersion(distribution) {
     return latestVersion;
 }
 
-function getLatestMinorVersions(distribution) {
+function getLastMajorMinorVersions(distribution, numOfLatestMajorMinorVersions) {
+    var latestMajorMinorVersions = [];
+    distribution.versions.forEach((version) => {
+        const parsed = semverCoerce(version);
+        latestMajorMinorVersions.push(`${semverMajor(parsed)}.${semverMinor(parsed)}`);
+    });
+    latestMajorMinorVersions = sortVersions(latestMajorMinorVersions);
+    return latestMajorMinorVersions.slice(0, numOfLatestMajorMinorVersions);
+}
+
+function sortVersions(latestMajorMinorVersions) {
+    latestMajorMinorVersions = [...new Set(latestMajorMinorVersions)];
+    latestMajorMinorVersions = latestMajorMinorVersions.map(version => version + ".0");
+    latestMajorMinorVersions = semverRSort(latestMajorMinorVersions);
+    latestMajorMinorVersions = latestMajorMinorVersions.map(version => version.replace('.0', ''));
+    return latestMajorMinorVersions;
+}
+
+function getLatestMinorVersions(distribution, majorMinorVersionFilter) {
     const latestMinorVersions = {};
     distribution.versions.forEach((version) => {
         const parsed = semverCoerce(version);
+        // Check if majorVersions is null, undefined, empty, or includes the current version's major
         const majorMinor = `${semverMajor(parsed)}.${semverMinor(parsed)}`;
-        if (latestMinorVersions[majorMinor] === undefined) {
-            latestMinorVersions[majorMinor] = version;
-        } else {
-            const currentVersion = latestMinorVersions[majorMinor];
-            if (semverGt(parsed, semverCoerce(currentVersion))) {
+        if(majorMinorVersionFilter === null || majorMinorVersionFilter === undefined || majorMinorVersionFilter.size === 0 || majorMinorVersionFilter.includes(majorMinor)) {
+            if (latestMinorVersions[majorMinor] === undefined) {
                 latestMinorVersions[majorMinor] = version;
+            } else {
+                const currentVersion = latestMinorVersions[majorMinor];
+                if (semverGt(parsed, semverCoerce(currentVersion))) {
+                    latestMinorVersions[majorMinor] = version;
+                }
             }
         }
-    });
 
+
+    });
     return latestMinorVersions;
 }
 
