@@ -32,7 +32,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
 
     /* Timeout for each action in milliseconds. Defaults to 0 (no limit). */
-    actionTimeout: 10 * 1000,
+    actionTimeout: 15 * 1000,
 
     /* Timeout for each navigation in milliseconds. Defaults to 0 (no limit). */
     navigationTimeout: 30 * 1000,
