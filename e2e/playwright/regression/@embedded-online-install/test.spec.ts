@@ -63,7 +63,7 @@ test('type=embedded cluster, env=online, phase=new install, rbac=cluster admin',
   // Validate install and app updates
   await validateInitialConfig(page, expect);
   await validateClusterAdminInitialPreflights(page, expect);
-  await joinWorkerNode(page, expect, constants.IS_AIRGAPPED); // runs in the background
+  await joinWorkerNode(page, expect); // runs in the background
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect);

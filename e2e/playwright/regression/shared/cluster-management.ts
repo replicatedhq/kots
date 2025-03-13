@@ -3,7 +3,7 @@ import { Page, Expect, Locator } from '@playwright/test';
 import { runCommand } from './cli';
 import { SSH_TO_WORKER } from './constants';
 
-export const joinWorkerNode = async (page: Page, expect: Expect, isAirgapped: boolean) => {
+export const joinWorkerNode = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Cluster Management', { exact: true }).click();
 
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
@@ -20,7 +20,7 @@ export const joinWorkerNode = async (page: Page, expect: Expect, isAirgapped: bo
   addNodeCommand = `${addNodeCommand} yes`; // for the nightly release prompt
   addNodeCommand = `${SSH_TO_WORKER} "${addNodeCommand}" &`; // run this in the background
 
-  runCommand(addNodeCommand, isAirgapped);
+  runCommand(addNodeCommand, true);
 };
 
 export const validateClusterManagement = async (page: Page, expect: Expect) => {
