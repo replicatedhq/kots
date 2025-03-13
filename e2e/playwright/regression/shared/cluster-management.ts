@@ -1,7 +1,10 @@
 import { Page, Expect, Locator } from '@playwright/test';
 
 import { runCommand } from './cli';
-import { SSH_TO_WORKER } from './constants';
+import {
+  SSH_TO_WORKER,
+  SSH_TO_JUMPBOX
+} from './constants';
 
 export const joinWorkerNode = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Cluster Management', { exact: true }).click();
@@ -17,9 +20,10 @@ export const joinWorkerNode = async (page: Page, expect: Expect) => {
   expect(addNodeCommand).not.toBeNull();
 
   addNodeCommand = `${addNodeCommand} yes`; // for the nightly release prompt
-  addNodeCommand = `${SSH_TO_WORKER} '${addNodeCommand}' &`; // run this in the background
+  addNodeCommand = `${SSH_TO_WORKER} '${addNodeCommand}'`; // run on the worker node
+  addNodeCommand = `${SSH_TO_JUMPBOX} "${addNodeCommand}" &`; // via the jumpbox in the background
 
-  runCommand(addNodeCommand, true);
+  runCommand(addNodeCommand);
 };
 
 export const validateClusterManagement = async (page: Page, expect: Expect) => {

@@ -51,14 +51,17 @@ export const validateDashboardAutomaticUpdates = async (page: Page, expect: Expe
   await expect(automaticUpdatesModal).not.toBeVisible();
 };
 
-export const validateDashboardGraphs = async (page: Page, expect: Expect) => {
+export const validateDashboardGraphs = async (page: Page, expect: Expect, isExistingCluster: boolean) => {
   const graphsCard = page.getByTestId("dashboard-graphs-card");
   await expect(graphsCard).toBeVisible();
-  await graphsCard.getByTestId("prometheus-endpoint").click();
-  await graphsCard.getByTestId("prometheus-endpoint").fill("http://prometheus-k8s.monitoring.svc.cluster.local:9090");
-  await graphsCard.getByRole('button', { name: 'Save' }).click();
 
-  await expect(graphsCard).toContainText("Disk Usage");
+  if (isExistingCluster) {
+    await graphsCard.getByTestId("prometheus-endpoint").click();
+    await graphsCard.getByTestId("prometheus-endpoint").fill("http://prometheus-k8s.monitoring.svc.cluster.local:9090");
+    await graphsCard.getByRole('button', { name: 'Save' }).click();
+  }
+
+  await expect(graphsCard).toContainText("Disk Usage", { timeout: 15000 });
   await expect(graphsCard).toContainText("CPU Usage");
   await expect(graphsCard).toContainText("Memory Usage");
 

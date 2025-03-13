@@ -73,7 +73,7 @@ test('type=existing cluster, env=online, phase=upgraded install, rbac=minimal rb
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardAutomaticUpdates(page, expect);
-  await validateDashboardGraphs(page, expect);
+  await validateDashboardGraphs(page, expect, constants.IS_EXISTING_CLUSTER);
   await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_CHANNEL_SEQUENCE, 1, constants.IS_MINIMAL_RBAC);
 
   // Config update and version history checks

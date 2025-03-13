@@ -463,49 +463,6 @@ export const removeKots = (namespace: string) => {
   runCommand(`kubectl delete clusterrolebinding kotsadm-rolebinding kotsadm-operator-rolebinding --ignore-not-found`);
 };
 
-export const prepareAndJoinWorkerNode = (
-  isAirgapped: boolean,
-  sshUser: string,
-  airgappedInstanceIp: string,
-  workerNodeIp: string,
-  joinCommand: string
-) => {
-  if (isAirgapped) {
-    // Find current installer name from the cluster
-    const listInstallersOutput = runCommandWithOutput(`kubectl get installers -ojson`);
-    const installers = JSON.parse(listInstallersOutput);
-    const installer = installers.items.reduce((a, b) => 
-      (a.metadata.creationTimestamp > b.metadata.creationTimestamp ? a : b)
-    );
-    const airgapBundleName = `${installer.metadata.name}.tar.gz`;
-
-    // Check if airgap bundle exists in root directory
-    const bundleExists = runCommandWithOutput(
-      `if [ -f '${airgapBundleName}' ]; then echo '1' | tr -d '\n'; else echo '0' | tr -d '\n'; fi`
-    );
-
-    const airgapBundlePath = bundleExists === "1" ? airgapBundleName : `upgrade/${airgapBundleName}`;
-
-    // Copy bundle to worker node
-    runCommand(
-      `scp -3 ${sshUser}@${airgappedInstanceIp}:${airgapBundlePath} ${sshUser}@${workerNodeIp}:${airgapBundleName}`
-    );
-
-    // Extract bundle on worker node
-    runCommand(
-      `tar xvzf ${airgapBundleName}`,
-      true // run on remote node via SSH
-    );
-  }
-
-  // Prepare and execute join command
-  let finalJoinCommand = joinCommand.replace(/\\/g, "");
-  finalJoinCommand = `${finalJoinCommand} yes`; // for the nightly release prompt
-  
-  // Run join command in background on worker node
-  runCommand(`${finalJoinCommand} &`, true);
-};
-
 export const downloadViaJumpbox = (remoteUrl: string, localPath: string) => {
   const command = `${SSH_TO_JUMPBOX} "curl -L '${remoteUrl}'" > ${localPath}`;
   console.log(command, "\n");

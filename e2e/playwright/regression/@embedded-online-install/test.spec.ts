@@ -66,7 +66,7 @@ test('type=embedded cluster, env=online, phase=new install, rbac=cluster admin',
   await joinWorkerNode(page, expect); // runs in the background
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardAutomaticUpdates(page, expect);
-  await validateDashboardGraphs(page, expect);
+  await validateDashboardGraphs(page, expect, constants.IS_EXISTING_CLUSTER);
   await validateCheckForUpdates(page, expect, constants.CHANNEL_ID, constants.VENDOR_UPDATE_CHANNEL_SEQUENCE, 1, constants.IS_MINIMAL_RBAC);
 
   // Config update and version history checks

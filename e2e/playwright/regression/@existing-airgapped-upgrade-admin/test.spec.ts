@@ -99,7 +99,7 @@ test('type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster
   await page.reload();
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
-  await validateDashboardGraphs(page, expect);
+  await validateDashboardGraphs(page, expect, constants.IS_EXISTING_CLUSTER);
   await validateCliAirgapUpdate(
     page,
     expect,
