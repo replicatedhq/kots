@@ -6,6 +6,7 @@ import {
   uploadLicense,
   getRegistryInfo,
   promoteRelease,
+  resetPassword,
   validateInitialConfig,
   validateClusterAdminInitialPreflights,
   joinWorkerNode,
@@ -47,6 +48,7 @@ test('type=embedded cluster, env=online, phase=new install, rbac=cluster admin',
   test.setTimeout(30 * 60 * 1000); // 30 minutes
 
   // Initial setup
+  resetPassword(constants.NAMESPACE);
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
   await promoteRelease(constants.VENDOR_INITIAL_CHANNEL_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
 

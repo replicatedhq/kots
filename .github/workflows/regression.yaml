@@ -311,7 +311,8 @@ jobs:
           ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
 
       - name: Copy playwright report from remote machine
-        if: failure()
+        # revert this!
+        if: always()
         working-directory: automation/cluster
         run: |
           jumpbox_public_ip=$(terraform output -raw jumpbox_public_ip)
@@ -335,7 +336,8 @@ jobs:
       - name: Upload playwright report
         id: upload-playwright-report
         uses: actions/upload-artifact@v4
-        if: ${{ failure() }}
+        # revert this!
+        if: always()
         with:
           name: ${{ github.job }}-${{ matrix.test.name }}-playwright-report
           path: ./automation/cluster/playwright-report/
@@ -357,7 +359,9 @@ jobs:
           echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
 
       - name: Troubleshoot Admin Console
-        if: ${{ failure() }}
+        # revert this!
+        if: always()
+        working-directory: automation/cluster
         run: |
           echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
           echo -e "\e[1;33m                                  You can access the admin console at:                                  \e[0m"
@@ -367,7 +371,9 @@ jobs:
           echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
 
       - name: Troubleshoot Test Instance
-        if: ${{ failure() }}
+        # revert this!
+        if: always()
+        working-directory: automation/cluster
         run: |
           echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
           echo -e "\e[1;33m                                  To connect to the test instance:                                      \e[0m"
