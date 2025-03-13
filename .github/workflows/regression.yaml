@@ -32,6 +32,8 @@ on:
         required: true
       IDENTITY_SERVICE_OKTA_CLIENT_SECRET:
         required: true
+      IDENTITY_SERVICE_OKTA_ACCESS_TOKEN:
+        required: true
       E2E_GH_PAT:
         required: true
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL:
@@ -65,6 +67,7 @@ env:
   TF_VAR_aws_secret_access_key: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
   TF_VAR_identity_service_okta_password: ${{ secrets.IDENTITY_SERVICE_OKTA_PASSWORD }}
   TF_VAR_identity_service_okta_client_secret: ${{ secrets.IDENTITY_SERVICE_OKTA_CLIENT_SECRET }}
+  TF_VAR_identity_service_okta_access_token: ${{ secrets.IDENTITY_SERVICE_OKTA_ACCESS_TOKEN }}
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
 
 jobs:

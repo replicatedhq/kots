@@ -706,6 +706,7 @@ class IdentityProviders extends Component {
               <div className="flex flex1 alignItems--center u-marginTop--15">
                 <label
                   htmlFor="oidcConfig"
+                  data-testid="openid-radio"
                   className={`identityProviderBtn flex alignItems--center u-cursor--pointer u-userSelect--none ${
                     this.state.selectedProvider === "oidcConfig"
                       ? "is-active"
@@ -715,7 +716,6 @@ class IdentityProviders extends Component {
                   <input
                     type="radio"
                     id="oidcConfig"
-                    data-testid="openid-radio"
                     style={{ display: "none" }}
                     checked={selectedProvider === "oidcConfig"}
                     disabled={syncAppWithGlobal}

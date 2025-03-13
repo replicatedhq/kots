@@ -27,9 +27,9 @@ export const validateIdentityService = async (page: Page, expect: Expect, namesp
   const advancedOptionsForm = identityProviderForm.getByTestId('advanced-options-form');
   await expect(advancedOptionsForm).toBeVisible();
   await advancedOptionsForm.getByTestId('user-name-key-input').fill('sub');
-  await advancedOptionsForm.getByTestId('save-provider-settings-button').click();
-  await expect(advancedOptionsForm.getByTestId('provider-settings-saved-confirmation')).toBeVisible();
 
+  await page.getByTestId('save-provider-settings-button').click();
+  await expect(page.getByTestId('provider-settings-saved-confirmation')).toBeVisible();
   await waitForDex(namespace);
 
   const navbarDropdownContainer = page.getByTestId("navbar-dropdown-container");

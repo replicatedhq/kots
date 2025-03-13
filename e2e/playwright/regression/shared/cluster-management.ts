@@ -83,12 +83,12 @@ const validateNodeRow = async (page: Page, expect: Expect, nodeRow: Locator) => 
   await expect(drainNodeModal).not.toBeVisible();
 }
 
-const extractNumber = (text: string) => {
-  const match = text.match(/\d+/);
-  if (!match || match.length !== 1) {
+const extractNumber = (text: string): number => {
+  const match = text.match(/\d+(\.\d+)?/);
+  if (!match || match.length < 1) {
     throw new Error(`Number not found in text "${text}"`);
   }
-  const number = parseInt(match[0]);
+  const number = parseFloat(match[0]);
   if (isNaN(number)) {
     throw new Error(`Not a number "${match[0]}"`);
   }
