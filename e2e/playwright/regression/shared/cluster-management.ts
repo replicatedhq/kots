@@ -16,9 +16,8 @@ export const joinWorkerNode = async (page: Page, expect: Expect) => {
   let addNodeCommand = await addNodeSnippet.locator(".react-prism.language-bash").textContent();
   expect(addNodeCommand).not.toBeNull();
 
-  addNodeCommand = addNodeCommand.replace(/\\/g, "");
   addNodeCommand = `${addNodeCommand} yes`; // for the nightly release prompt
-  addNodeCommand = `${SSH_TO_WORKER} "${addNodeCommand}" &`; // run this in the background
+  addNodeCommand = `${SSH_TO_WORKER} '${addNodeCommand}' &`; // run this in the background
 
   runCommand(addNodeCommand, true);
 };
