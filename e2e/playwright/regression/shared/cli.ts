@@ -138,7 +138,7 @@ export const installVeleroHostPath = async (
   // Configure hostpath backend
   let configureHostpathCommand = `yes | kubectl kots velero configure-hostpath --hostpath ${SNAPSHOTS_HOST_PATH} --namespace ${APP_SLUG}`;
   if (isAirgapped) {
-    configureHostpathCommand += ` --kotsadm-registry ${registryInfo.ip} --kotsadm-namespace ${APP_SLUG} --registry-username ${registryInfo.username} --registry-password ${registryInfo.password}`;
+    configureHostpathCommand += ` --kotsadm-registry ${registryInfo.ip}/${APP_SLUG} --registry-username ${registryInfo.username} --registry-password ${registryInfo.password}`;
   }
   runCommand(configureHostpathCommand);
 
@@ -279,48 +279,84 @@ const isNodeAgentReady = (): boolean => {
   return true;
 };
 
-export const cliAirgapInstall = (
-  registryInfo: RegistryInfo,
-  airgapBundlePath: string,
-  licenseFile: string,
-  configValuesFile: string,
+export const cliOnlineInstall = (
+  channelSlug: string,
   namespace: string,
-  isMinimalRBAC: boolean
+  isMinimalRBAC: boolean,
+  licenseFile?: string,
+  configValuesFile?: string
 ) => {
   try {
-    runCommand(`kubectl kots install ${APP_SLUG} \
+    let command = `kubectl kots install ${APP_SLUG}/${channelSlug} \
+      --namespace ${namespace} \
+      --shared-password password \
+      --wait-duration 5m \
+      --port-forward=false`;
+    if (licenseFile) {
+      command += ` --license-file ${licenseFile}`;
+    }
+    if (configValuesFile) {
+      command += ` --config-values ${configValuesFile}`;
+    }
+    runCommand(command);
+  } catch (error) {
+    if (isMinimalRBAC && !!licenseFile) {
+      console.log("Expected non-zero exit code in minimal RBAC due to preflight check errors. Continuing...");
+    } else {
+      throw error;
+    }
+  }
+
+  ensureNodePortService(namespace);
+};
+
+export const cliAirgapInstall = async (
+  channelSlug: string,
+  registryInfo: RegistryInfo,
+  kotsadmBundlePath: string,
+  namespace: string,
+  isMinimalRBAC: boolean,
+  appBundlePath?: string,
+  licenseFile?: string,
+  configValuesFile?: string
+) => {
+  // push kotsadm images from kotsadm airgap bundle to the registry with retry logic since the kurl registry occasionally returns 500 errors
+  await retry(
+    async () => {
+      runCommand(`kubectl kots admin-console push-images ${kotsadmBundlePath} ${registryInfo?.ip}/${APP_SLUG} --registry-username ${registryInfo?.username} --registry-password ${registryInfo?.password}`);
+    },
+    { delay: 5000, maxTry: 3 }
+  );
+
+  try {
+    let command = `kubectl kots install ${APP_SLUG}/${channelSlug} \
       --kotsadm-namespace ${APP_SLUG} \
       --kotsadm-registry ${registryInfo.ip} \
       --registry-username ${registryInfo.username} \
       --registry-password ${registryInfo.password} \
-      --airgap-bundle ${airgapBundlePath} \
-      --license-file ${licenseFile} \
-      --config-values ${configValuesFile} \
       --namespace ${namespace} \
       --shared-password password \
-      --port-forward=false`);
+      --wait-duration 5m \
+      --port-forward=false`;
+    if (appBundlePath) {
+      command += ` --airgap-bundle ${appBundlePath}`;
+    }
+    if (licenseFile) {
+      command += ` --license-file ${licenseFile}`;
+    }
+    if (configValuesFile) {
+      command += ` --config-values ${configValuesFile}`;
+    }
+    runCommand(command);
   } catch (error) {
-    if (!isMinimalRBAC) {
+    if (isMinimalRBAC && !!licenseFile) {
+      console.log("Expected non-zero exit code in minimal RBAC due to preflight check errors. Continuing...");
+    } else {
       throw error;
     }
-    console.log("Expected non-zero exit code in minimal RBAC due to preflight check errors. Continuing...");
   }
 
-  runCommand(`cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Service
-metadata:
-  name: kotsadm-external
-  namespace: ${namespace}
-spec:
-  type: NodePort
-  selector:
-    app: kotsadm
-  ports:
-  - port: 8800
-    targetPort: 3000
-    nodePort: 8800
-EOF`);
+  ensureNodePortService(namespace);
 };
 
 export const cliAirgapUpdate = (
@@ -331,7 +367,7 @@ export const cliAirgapUpdate = (
 ) => {
   let upgradeCommand = `kubectl kots upstream upgrade ${APP_SLUG} --airgap-bundle ${newBundlePath} -n ${namespace}`;
   if (isExistingCluster) {
-    upgradeCommand += ` --kotsadm-namespace ${APP_SLUG} --kotsadm-registry ${registryInfo?.ip} --registry-username ${registryInfo?.username} --registry-password ${registryInfo?.password}`;
+    upgradeCommand += ` --kotsadm-registry ${registryInfo?.ip}/${APP_SLUG} --registry-username ${registryInfo?.username} --registry-password ${registryInfo?.password}`;
   }
   runCommand(upgradeCommand);
 };
@@ -357,10 +393,29 @@ export const upgradeKots = async (namespace: string, isAirgapped: boolean, regis
   // upgrade kots
   runCommand(`kubectl kots admin-console upgrade \
     --namespace ${namespace} \
+    --kotsadm-namespace ${APP_SLUG} \
     --kotsadm-registry ${registryInfo?.ip} \
     --registry-username ${registryInfo?.username} \
     --registry-password ${registryInfo?.password} \
     --wait-duration 5m`);
+};
+
+export const ensureNodePortService = (namespace: string) => {
+  runCommand(`cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: kotsadm-external
+  namespace: ${namespace}
+spec:
+  type: NodePort
+  selector:
+    app: kotsadm
+  ports:
+  - port: 8800
+    targetPort: 3000
+    nodePort: 8800
+EOF`);
 };
 
 export const resetPassword = (namespace: string) => {

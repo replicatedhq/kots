@@ -75,13 +75,13 @@ async function dashboardAirgapUpdate(page: Page, expect: Expect) {
     constants.DOWNLOAD_PORTAL_BASE64_PASSWORD,
     '/tmp/app.airgap',
   );
+  const newVersionCard = page.getByTestId("dashboard-version-card").getByTestId("new-version-card");
+  await expect(newVersionCard).not.toBeVisible();
   await page.setInputFiles('[data-testid="airgap-bundle-drop-zone"] input', '/tmp/app.airgap');
-  let card = page.getByTestId("dashboard-version-card");
-  await expect(card).toContainText("New version available", { timeout: 2 * 60 * 1000 }); // 2 minutes
-  card = page.getByTestId("new-version-card");
-  await expect(card).toContainText(constants.UPDATE_RELEASE_SEMVER);
-  await expect(card.getByTestId("btn-version-action")).toContainText("Configure");
-  await card.getByTestId("btn-version-action").click();
+  await expect(newVersionCard).toBeVisible({ timeout: 2 * 60 * 1000 }); // 2 minutes
+  await expect(newVersionCard).toContainText(constants.UPDATE_RELEASE_SEMVER);
+  await expect(newVersionCard.getByTestId("btn-version-action")).toContainText("Configure");
+  await newVersionCard.getByTestId("btn-version-action").click();
   await expect(page.getByTestId("config-area")).toContainText("This config is 1 version newer than the currently deployed config.");
 }
 
