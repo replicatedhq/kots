@@ -382,7 +382,20 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	isRequiredStr := getResp.Header.Get("X-Replicated-IsRequired")
 	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
 	var replicatedRegistryDomain, replicatedProxyDomain string
+
+	// If this is the upgrade service, it may be the case that the environment variables do not
+	// exist in the container, as we are running in a previous release of the helm chart. If this
+	// is the case, we fall back to the previous behavior.
+	isEmbeddedClusterCustomDomainsSupported := false
 	if util.IsEmbeddedCluster() {
+		var err error
+		isEmbeddedClusterCustomDomainsSupported, err = util.IsEmbeddedClusterCustomDomainsSupported(util.EmbeddedClusterVersion())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check if embedded cluster custom domains are supported")
+		}
+	}
+
+	if isEmbeddedClusterCustomDomainsSupported {
 		replicatedRegistryDomain = os.Getenv("REPLICATED_REGISTRY_DOMAIN")
 		if replicatedRegistryDomain == "" {
 			return nil, errors.New("REPLICATED_REGISTRY_DOMAIN environment variable is required")
