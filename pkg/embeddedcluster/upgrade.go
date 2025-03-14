@@ -153,18 +153,6 @@ func runClusterUpgrade(
 	}
 	args = append(args, "--installation", "-")
 
-	if newcfg.V2Enabled {
-		err := createV2MigrationSecret(ctx, k8sClient, license)
-		if err != nil {
-			return fmt.Errorf("create v2 migration secret: %w", err)
-		}
-
-		args = append(args, "--migrate-v2")
-		args = append(args, "--migrate-v2-secret", V2MigrationSecretName)
-		args = append(args, "--app-slug", license.Spec.AppSlug)
-		args = append(args, "--app-version-label", versionLabel)
-	}
-
 	log.Printf("Running upgrade command with args %q ...", args)
 
 	cmd := exec.CommandContext(ctx, bin, args...)
