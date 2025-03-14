@@ -88,7 +88,7 @@ func TestIsPortAvailable(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for _, port := range tt.portsToOpen {
-				listener, err := net.Listen("tcp4", fmt.Sprintf(":%d", port))
+				listener, err := net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
 				require.NoError(t, err)
 				defer listener.Close()
 			}
