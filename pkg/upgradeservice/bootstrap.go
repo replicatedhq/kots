@@ -76,6 +76,13 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 		return errors.Wrap(err, "failed to load license from bytes")
 	}
 
+	// In the upgrade service, it may be the case that the environment variables do not exist in
+	// the container, as we are running in a previous release of the helm chart. If this is the
+	// case, we fall back to the previous behavior and get the endpoint from the license.
+	if val := os.Getenv("REPLICATED_APP_ENDPOINT"); val == "" {
+		os.Setenv("REPLICATED_APP_ENDPOINT", license.Spec.Endpoint)
+	}
+
 	identityConfigFile, err := getIdentityConfigFile(params)
 	if err != nil {
 		return errors.Wrap(err, "failed to get identity config file")
