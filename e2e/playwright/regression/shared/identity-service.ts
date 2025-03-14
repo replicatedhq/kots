@@ -36,7 +36,8 @@ export const validateIdentityService = async (page: Page, expect: Expect, namesp
   await expect(page.getByTestId('provider-settings-saved-confirmation')).toBeVisible();
   await expect(page.getByTestId('provider-settings-saved-confirmation')).not.toBeVisible({ timeout: 15000 });
   await waitForDex(namespace);
-  await page.waitForTimeout(5000); // some extra time for dex to be ready...
+  // TODO NOW: revert this!
+  await page.waitForTimeout(60000); // some extra time for dex to be ready...
 
   const navbarDropdownContainer = page.getByTestId("navbar-dropdown-container");
   await expect(navbarDropdownContainer).toBeVisible();
