@@ -1,16 +1,20 @@
 import { Page, Expect } from '@playwright/test';
 
 import { runCommand, waitForDex } from './cli';
+import { updateIdentityServiceOktaApp } from './api';
 import { validateDashboardInfo } from './dashboard';
 import {
   IDENTITY_SERVICE_OKTA_DOMAIN,
   IDENTITY_SERVICE_OKTA_CLIENT_ID,
-  IDENTITY_SERVICE_OKTA_USERNAME
+  IDENTITY_SERVICE_OKTA_USERNAME,
+  IDENTITY_SERVICE_OKTA_APP_ID
 } from './constants';
 
 export const validateIdentityService = async (page: Page, expect: Expect, namespace: string, isAirgapped: boolean) => {
-  await page.locator('.NavItem').getByText('Access', { exact: true }).click();
+  // update the okta app to use the correct redirect uri
+  await updateIdentityServiceOktaApp(IDENTITY_SERVICE_OKTA_DOMAIN, IDENTITY_SERVICE_OKTA_APP_ID);
 
+  await page.locator('.NavItem').getByText('Access', { exact: true }).click();
   const identityProviderForm = page.getByTestId('identity-provider-form');
   await expect(identityProviderForm).toBeVisible({ timeout: 15000 });
 

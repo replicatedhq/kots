@@ -7,8 +7,8 @@ import {
 } from './constants';
 
 export const joinWorkerNode = async (page: Page, expect: Expect) => {
+  await expect(page.getByTestId('get-started-sidebar')).not.toBeVisible({ timeout: 15000 });
   await page.locator('.NavItem').getByText('Cluster Management', { exact: true }).click();
-
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
 
   await page.getByRole('button', { name: 'Add a node', exact: true }).click();

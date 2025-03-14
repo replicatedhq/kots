@@ -21,6 +21,9 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.BASE_URL || `http://localhost:${process.env.PORT || 8800}`,
 
+    /* bypass the browser's SSL warning for self-signed certificates (e.g. kurl-proxy) */
+    ignoreHTTPSErrors: true,
+
     /*
       To include traces for failed tests, set this to 'retain-on-failure'.
       This is not enabled by default because it's performance heavy.

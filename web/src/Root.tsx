@@ -644,7 +644,7 @@ const Root = () => {
               state.adminConsoleMetadata?.isEmbeddedCluster) &&
               Utilities.isInitialAppInstall(state.appsList[0]) &&
               Utilities.isLoggedIn() && (
-                <div className="tw-w-[400px]  tw-bg-[#F9FBFC]">
+                <div className="tw-w-[400px]  tw-bg-[#F9FBFC]" data-testid="get-started-sidebar">
                   <div className="tw-py-8 tw-pl-8 tw-shadow-[0_1px_0_#c4c8ca]">
                     <span className="tw-text-lg tw-font-semibold  tw-text-gray-800">
                       Let's get you started!
