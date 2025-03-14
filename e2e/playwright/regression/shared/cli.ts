@@ -455,7 +455,7 @@ export const waitForDex = async (namespace: string, timeout: number = 90000): Pr
   throw new Error(`Timeout waiting for Dex to be ready after ${timeout/1000} seconds`);
 };
 
-export const isDexReady = async (namespace: string) => {
+export const isDexReady = (namespace: string) => {
   const dexDeployment = runCommandWithOutput(`kubectl get deployment kotsadm-dex -n ${namespace} -ojson`);;
   const parsedDeployment = JSON.parse(dexDeployment);
 
