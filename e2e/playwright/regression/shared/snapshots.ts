@@ -93,6 +93,15 @@ export const validateSnapshotsHostPathConfig = async (page: Page, expect: Expect
   await expect(storageSettingsCard.getByTestId('snapshot-hostpath-input')).toHaveValue(SNAPSHOTS_HOST_PATH);
 };
 
+export const validateSnapshotsInternalConfig = async (page: Page, expect: Expect) => {
+  await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
+  await page.getByRole('link', { name: 'Settings & Schedule' }).click();
+
+  const storageSettingsCard = page.getByTestId('snapshots-storage-settings-card');
+  await expect(storageSettingsCard).toBeVisible({ timeout: 15000 });
+  await expect(storageSettingsCard.getByTestId('storage-destination')).toContainText('Internal Storage (Default)');
+};
+
 export const validateAutomaticFullSnapshots = async (page: Page, expect: Expect) => {
   const snapshotsScheduleCard = page.getByTestId('snapshots-schedule-card');
   await expect(snapshotsScheduleCard).toBeVisible();

@@ -33,6 +33,18 @@ export const validateVersionMinimalRBACPreflights = async (page: Page, expect: E
   await validateMinimalRBACPreflightsPage(page, expect);
 };
 
+export const validateInitialPreflightsSkipped = async (page: Page, expect: Expect) => {
+  await page.getByRole('link', { name: 'Version history', exact: true }).click();
+
+  const allVersionsCard = page.getByTestId('all-versions-card');
+  await expect(allVersionsCard).toBeVisible({ timeout: 15000 });
+
+  const versionRow = allVersionsCard.getByTestId('version-history-row-0');
+  await expect(versionRow).toBeVisible();
+  await expect(versionRow).toContainText('Sequence 0');
+  await expect(versionRow.getByTestId("preflights-skipped-text")).toBeVisible();
+};
+
 export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
   const currentVersionCard = page.getByTestId("current-version-card");
   await currentVersionCard.getByTestId("current-deploy-logs-icon").click();

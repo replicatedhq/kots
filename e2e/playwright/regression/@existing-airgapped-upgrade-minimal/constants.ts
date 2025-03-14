@@ -15,5 +15,3 @@ export const IS_AIRGAPPED = true;
 export const IS_AIRGAP_SUPPORTED = true;
 export const IS_MINIMAL_RBAC = true;
 export const DOWNLOAD_PORTAL_BASE64_PASSWORD = "MjlWVkYy";
-export const SHOULD_RESET_PASSWORD = false;
-export const IS_VELERO_INSTALLED = false;

@@ -359,6 +359,32 @@ export const cliAirgapInstall = async (
   ensureNodePortService(namespace);
 };
 
+export const kurlCliAirgapInstall = async (
+  channelSlug: string,
+  namespace: string,
+  appBundlePath?: string,
+  licenseFile?: string,
+  configValuesFile?: string,
+  skipPreflights?: boolean
+) => {
+  let command = `kubectl kots install ${APP_SLUG}/${channelSlug} \
+    --namespace ${namespace} \
+    --shared-password password`;
+  if (appBundlePath) {
+    command += ` --airgap-bundle ${appBundlePath}`;
+  }
+  if (licenseFile) {
+    command += ` --license-file ${licenseFile}`;
+  }
+  if (configValuesFile) {
+    command += ` --config-values ${configValuesFile}`;
+  }
+  if (skipPreflights) {
+    command += ` --skip-preflights`;
+  }
+  runCommand(command);
+};
+
 export const cliAirgapUpdate = (
   newBundlePath: string,
   namespace: string,
