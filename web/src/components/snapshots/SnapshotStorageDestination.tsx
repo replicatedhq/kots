@@ -1777,10 +1777,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         .
                       </div>
                     )}
-                  <div
-                    className="flex1"
-                    data-testid="storage-destination"
-                  >
+                  <div className="flex1" data-testid="storage-destination">
                     {availableDestinations.length > 1 ? (
                       <Select
                         className="replicated-select-container"
@@ -1848,7 +1845,10 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         <Loader className="u-marginLeft--10" size="32" />
                       )}
                       {updateConfirm && (
-                        <div className="u-marginLeft--10 flex alignItems--center" data-testid="storage-settings-updated-confirmation">
+                        <div
+                          className="u-marginLeft--10 flex alignItems--center"
+                          data-testid="storage-settings-updated-confirmation"
+                        >
                           <span className="icon checkmark-icon" />
                           <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
                             Settings updated

@@ -58,10 +58,16 @@ export default function KurlNodeRow(props) {
   };
 
   return (
-    <div className="flex flex-auto KurlNodeRow--wrapper" data-testid={`kurl-node-row-${index}`}>
+    <div
+      className="flex flex-auto KurlNodeRow--wrapper"
+      data-testid={`kurl-node-row-${index}`}
+    >
       <div className="flex-column flex1">
         <div className="flex flex-auto alignItems--center u-fontWeight--bold u-textColor--primary">
-          <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary" data-testid="node-name">
+          <p
+            className="u-fontSize--normal u-fontWeight--bold u-textColor--primary"
+            data-testid="node-name"
+          >
             {node?.name}
           </p>
           {node?.isPrimaryNode && (
@@ -72,7 +78,10 @@ export default function KurlNodeRow(props) {
         </div>
         <div className="flex flex1 alignItems--center u-marginTop--10 KurlNodeRow--items">
           <div className="flex-column flex1 u-marginRight--10">
-            <p className="flex1 u-fontSize--small u-fontWeight--medium u-textColor--primary" data-testid="node-status">
+            <p
+              className="flex1 u-fontSize--small u-fontWeight--medium u-textColor--primary"
+              data-testid="node-status"
+            >
               <span
                 className={classNames("node-status", {
                   disconnected: !node?.isConnected,

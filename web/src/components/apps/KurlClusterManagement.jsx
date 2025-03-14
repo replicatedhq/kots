@@ -299,7 +299,10 @@ export class KurlClusterManagement extends Component {
               <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary u-paddingBottom--10">
                 Your nodes
               </p>
-              <div className="flex1 u-overflow--auto" data-testid="all-nodes-list">
+              <div
+                className="flex1 u-overflow--auto"
+                data-testid="all-nodes-list"
+              >
                 {kurl?.nodes &&
                   kurl?.nodes.map((node, i) => (
                     <KurlNodeRow
@@ -416,7 +419,10 @@ export class KurlClusterManagement extends Component {
                     </div>
                   </div>
                   {this.state.generating && (
-                    <div className="flex u-width--full justifyContent--center" data-testid="add-node-command-loader">
+                    <div
+                      className="flex u-width--full justifyContent--center"
+                      data-testid="add-node-command-loader"
+                    >
                       <Loader size={60} />
                     </div>
                   )}

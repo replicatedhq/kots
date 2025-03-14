@@ -580,7 +580,10 @@ class IdentityProviders extends Component {
           <Link to="/access/configure-ingress" className="link u-textDecoration--underlineOnHover"> Configure Ingress </Link>
           </p>
         </div> */}
-        <form className="flex-auto Identity--wrapper u-marginTop--30" data-testid="identity-provider-form">
+        <form
+          className="flex-auto Identity--wrapper u-marginTop--30"
+          data-testid="identity-provider-form"
+        >
           <div className="flex1 flex-column">
             <p className="u-fontSize--largest u-lineHeight--default u-fontWeight--bold u-textColor--primary">
               {" "}
@@ -956,7 +959,10 @@ class IdentityProviders extends Component {
                   />
                 </p>
                 {this.state.showAdvancedOptions && (
-                  <div className="flex flex-column u-marginTop--12" data-testid="advanced-options-form">
+                  <div
+                    className="flex flex-column u-marginTop--12"
+                    data-testid="advanced-options-form"
+                  >
                     <div className="flex flex1 justifyContent--spaceBetween">
                       <div
                         className="flex flex-column justifyContent--flexStart"
@@ -1309,7 +1315,10 @@ class IdentityProviders extends Component {
                     : "Save provider settings"}
                 </button>
                 {this.state.saveConfirm && (
-                  <div className="u-marginLeft--10 flex alignItems--center" data-testid="provider-settings-saved-confirmation">
+                  <div
+                    className="u-marginLeft--10 flex alignItems--center"
+                    data-testid="provider-settings-saved-confirmation"
+                  >
                     <Icon
                       icon="check-circle-filled"
                       size={16}
