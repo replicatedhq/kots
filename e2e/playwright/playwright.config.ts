@@ -29,8 +29,7 @@ export default defineConfig({
       This is not enabled by default because it's performance heavy.
       See https://playwright.dev/docs/trace-viewer.
     */
-    // revert this!
-    trace: 'on',
+    trace: 'retain-on-failure',
 
     /* Screenshot on failure. */
     screenshot: 'only-on-failure',

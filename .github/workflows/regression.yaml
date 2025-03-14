@@ -108,8 +108,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          # revert this!
-          ref: salah/sc-120663/migrate-regression-tests-from-testim-to-playwright-8
+          ref: main
 
       - name: Download kots binary
         uses: actions/download-artifact@v4
@@ -262,8 +261,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          # revert this!
-          ref: salah/sc-120663/migrate-regression-tests-from-testim-to-playwright-8
+          ref: main
 
       - name: Initialize terraform
         if: always()
@@ -314,8 +312,7 @@ jobs:
           ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
 
       - name: Copy playwright report from remote machine
-        # revert this!
-        if: always()
+        if: failure()
         working-directory: automation/cluster
         run: |
           jumpbox_public_ip=$(terraform output -raw jumpbox_public_ip)
@@ -339,8 +336,7 @@ jobs:
       - name: Upload playwright report
         id: upload-playwright-report
         uses: actions/upload-artifact@v4
-        # revert this!
-        if: always()
+        if: failure()
         with:
           name: ${{ github.job }}-${{ matrix.test.name }}-playwright-report
           path: ./automation/cluster/playwright-report/
@@ -362,8 +358,7 @@ jobs:
           echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
 
       - name: Troubleshoot Admin Console
-        # revert this!
-        if: always()
+        if: failure()
         working-directory: automation/cluster
         run: |
           echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
@@ -374,8 +369,7 @@ jobs:
           echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
 
       - name: Troubleshoot Test Instance
-        # revert this!
-        if: always()
+        if: failure()
         working-directory: automation/cluster
         run: |
           echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
