@@ -34,6 +34,9 @@ env:
   TF_VAR_replicated_api_token: NO_TOKEN
   TF_VAR_aws_access_key_id: NO_ID
   TF_VAR_aws_secret_access_key: NO_KEY
+  TF_VAR_identity_service_okta_password: NO_PASSWORD
+  TF_VAR_identity_service_okta_client_secret: NO_SECRET
+  TF_VAR_identity_service_okta_access_token: NO_TOKEN
   TF_VAR_testim_token: NO_TOKEN
 
 jobs:
