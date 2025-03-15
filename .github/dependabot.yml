@@ -14,7 +14,6 @@ updates:
     labels:
       - "dependabot"
       - "javascript"
-      - "type::security"
     groups:
       security:
         update-types:
@@ -33,7 +32,6 @@ updates:
     labels:
       - "dependabot"
       - "go"
-      - "type::security"
     groups:
       security:
         update-types:
@@ -49,7 +47,6 @@ updates:
     labels:
       - "dependabot"
       - "go"
-      - "type::security"
     groups:
       security:
         update-types:
@@ -68,4 +65,3 @@ updates:
     labels:
       - "dependabot"
       - "github-actions"
-      - "type::security"
