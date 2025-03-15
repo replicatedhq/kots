@@ -465,6 +465,7 @@ function AppVersionHistoryRow(props: Props) {
               <p
                 style={{ maxWidth: "200px" }}
                 className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5"
+                data-testid="preflights-skipped-text"
               >
                 This version was deployed before preflight checks had completed
               </p>
@@ -487,6 +488,7 @@ function AppVersionHistoryRow(props: Props) {
               <p
                 style={{ maxWidth: "200px" }}
                 className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5"
+                data-testid="preflights-skipped-text"
               >
                 This version was deployed before preflight checks had completed
               </p>

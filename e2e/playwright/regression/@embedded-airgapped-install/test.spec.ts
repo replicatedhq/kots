@@ -12,25 +12,25 @@ import {
 import {
   login,
   uploadLicense,
+  resetPassword,
   downloadAirgapBundle,
-  deleteKurlConfigMap,
   getRegistryInfo,
+  validateImageGarbageCollection,
   validateUiAirgapInstall,
   validateSmallAirgapInitialConfig,
   validateSmallAirgapInitialPreflights,
+  validateInitialPreflightsSkipped,
   validateUiAirgapUpdate,
   validateCliAirgapUpdate,
-  addSnapshotsRBAC,
   validateDashboardInfo,
   removeApp,
-  removeKots,
-  cliAirgapInstall,
-  installVeleroHostPath,
+  kurlCliAirgapInstall,
+  joinWorkerNode,
   validateDashboardGraphs,
-  validateGenerateSupportBundleUi,
   updateConfig,
-  validateVersionMinimalRBACPreflights,
+  validateIgnorePreflightsModal,
   validateCurrentVersionCard,
+  validateCurrentClusterAdminPreflights,
   validateCurrentDeployLogs,
   validateConfigView,
   validateVersionHistoryRows,
@@ -39,7 +39,7 @@ import {
   updateAirgappedLicense,
   validateUpdatedLicense,
   validateVersionDiff,
-  validateSnapshotsHostPathConfig,
+  validateSnapshotsInternalConfig,
   validateAutomaticFullSnapshots,
   validateAutomaticPartialSnapshots,
   createAppSnapshot,
@@ -50,24 +50,16 @@ import {
   restoreFullSnapshot,
   deleteFullSnapshot,
   validateViewFiles,
+  validateClusterManagement,
   logout
 } from '../shared';
 
-test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac', async ({ page }) => {
+test('type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin', async ({ page }) => {
   test.setTimeout(45 * 60 * 1000); // 45 minutes
 
   // Initial setup
-  deleteKurlConfigMap();
+  resetPassword(constants.NAMESPACE);
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
-
-  // install kots without the app
-  await cliAirgapInstall(
-    constants.CHANNEL_SLUG,
-    registryInfo,
-    NEW_KOTSADM_BUNDLE_PATH,
-    constants.NAMESPACE,
-    constants.IS_MINIMAL_RBAC
-  );
 
   // download initial small airgap bundle for ui install
   await downloadAirgapBundle(
@@ -113,30 +105,20 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
   await validateSmallAirgapInitialPreflights(page, expect);
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED, false);
   await validateUiAirgapUpdate(page, expect, NEW_VERSION_SMALL_BUNDLE_PATH);
+  await validateImageGarbageCollection(page, registryInfo, constants.NAMESPACE);
 
   // Clean up UI install so we can test CLI install
   await logout(page, expect);
   removeApp(constants.NAMESPACE);
-  removeKots(constants.NAMESPACE);
 
   // CLI airgap install
-  await cliAirgapInstall(
+  await kurlCliAirgapInstall(
     constants.CHANNEL_SLUG,
-    registryInfo,
-    NEW_KOTSADM_BUNDLE_PATH,
     constants.NAMESPACE,
-    constants.IS_MINIMAL_RBAC,
     INITIAL_VERSION_BUNDLE_PATH,
     `${process.env.TEST_PATH}/license.yaml`,
-    `${process.env.TEST_PATH}/config.yaml`
-  );
-
-  // Install and configure Velero for snapshots
-  await installVeleroHostPath(
-    constants.VELERO_VERSION,
-    constants.VELERO_AWS_PLUGIN_VERSION,
-    registryInfo,
-    constants.IS_AIRGAPPED
+    `${process.env.TEST_PATH}/config.yaml`,
+    true
   );
 
   // Validate CLI install and app updates
@@ -144,10 +126,10 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
   await page.reload();
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await login(page);
-  await deployNewVersion(page, expect, 0, 'Airgap Install', constants.IS_MINIMAL_RBAC);
-  await addSnapshotsRBAC(page, expect);
+  await joinWorkerNode(page, expect); // runs in the background
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardGraphs(page, expect, constants.IS_EXISTING_CLUSTER);
+  await validateInitialPreflightsSkipped(page, expect);
   await validateCliAirgapUpdate(
     page,
     expect,
@@ -159,13 +141,12 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
     registryInfo
   );
 
-  // Support bundle
-  await validateGenerateSupportBundleUi(page, expect, constants.IS_AIRGAPPED);
-
   // Config update and version history checks
   await updateConfig(page, expect);
-  await validateVersionMinimalRBACPreflights(page, expect, 0, 2);
+  await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
+  await validateIgnorePreflightsModal(page, expect);
   await validateCurrentVersionCard(page, expect, 1);
+  await validateCurrentClusterAdminPreflights(page, expect);
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
   await validateVersionHistoryRows(page, expect, constants.IS_AIRGAPPED);
@@ -179,7 +160,7 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
   await deployNewVersion(page, expect, 3, 'License Change', constants.IS_MINIMAL_RBAC);
 
   // Snapshot validation
-  await validateSnapshotsHostPathConfig(page, expect);
+  await validateSnapshotsInternalConfig(page, expect);
   await validateAutomaticFullSnapshots(page, expect);
   await validateAutomaticPartialSnapshots(page, expect);
 
@@ -197,5 +178,6 @@ test('type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
 
   // Other validation
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
+  await validateClusterManagement(page, expect);
   await logout(page, expect);
 });

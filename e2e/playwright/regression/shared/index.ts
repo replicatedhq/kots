@@ -11,3 +11,6 @@ export * from './version-history';
 export * from './view-files';
 export * from './registry-settings';
 export * from './support-bundle';
+export * from './cluster-management';
+export * from './identity-service';
+export * from './image-garbage-collection';

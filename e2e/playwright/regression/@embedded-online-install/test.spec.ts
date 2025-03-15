@@ -4,21 +4,20 @@ import * as constants from './constants';
 import {
   login,
   uploadLicense,
-  deleteKurlConfigMap,
   getRegistryInfo,
-  cliOnlineInstall,
-  installVeleroAWS,
   promoteRelease,
+  resetPassword,
   validateInitialConfig,
-  validateMinimalRBACInitialPreflights,
-  addSnapshotsRBAC,
+  validateClusterAdminInitialPreflights,
+  joinWorkerNode,
   validateDashboardInfo,
   validateDashboardAutomaticUpdates,
   validateDashboardGraphs,
   updateConfig,
+  validateIgnorePreflightsModal,
   validateVersionHistoryAutomaticUpdates,
   validateCurrentVersionCard,
-  validateVersionMinimalRBACPreflights,
+  validateCurrentClusterAdminPreflights,
   validateCurrentDeployLogs,
   validateConfigView,
   validateVersionHistoryRows,
@@ -27,7 +26,7 @@ import {
   updateOnlineLicense,
   validateUpdatedLicense,
   validateVersionDiff,
-  validateSnapshotsAWSConfig,
+  configureSnapshotsAWSInstanceRole,
   validateAutomaticFullSnapshots,
   validateAutomaticPartialSnapshots,
   createAppSnapshot,
@@ -40,18 +39,17 @@ import {
   validateViewFiles,
   updateRegistrySettings,
   validateCheckForUpdates,
-  validateDuplicateLicenseUpload,
+  validateClusterManagement,
+  validateIdentityService,
   logout
 } from '../shared';
 
-test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', async ({ page }) => {
+test('type=embedded cluster, env=online, phase=new install, rbac=cluster admin', async ({ page }) => {
   test.setTimeout(30 * 60 * 1000); // 30 minutes
 
   // Initial setup
-  deleteKurlConfigMap();
+  resetPassword(constants.NAMESPACE);
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
-  cliOnlineInstall(constants.CHANNEL_SLUG, constants.NAMESPACE, constants.IS_MINIMAL_RBAC); // install kots without the app
-  installVeleroAWS(constants.VELERO_VERSION, constants.VELERO_AWS_PLUGIN_VERSION);
   await promoteRelease(constants.VENDOR_INITIAL_CHANNEL_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
 
   // Login and install
@@ -59,11 +57,13 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await login(page);
   await uploadLicense(page, expect);
+  await expect(page.locator("#app")).toContainText("Install in airgapped environment", { timeout: 15000 });
+  await page.getByTestId("download-app-from-internet").click();
 
   // Validate install and app updates
   await validateInitialConfig(page, expect);
-  await validateMinimalRBACInitialPreflights(page, expect);
-  await addSnapshotsRBAC(page, expect);
+  await validateClusterAdminInitialPreflights(page, expect);
+  await joinWorkerNode(page, expect); // runs in the background
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED);
   await validateDashboardAutomaticUpdates(page, expect);
   await validateDashboardGraphs(page, expect, constants.IS_EXISTING_CLUSTER);
@@ -71,9 +71,11 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
 
   // Config update and version history checks
   await updateConfig(page, expect);
-  await validateVersionMinimalRBACPreflights(page, expect, 0, 2);
+  await page.getByRole('button', { name: 'Deploy', exact: true }).first().click();
+  await validateIgnorePreflightsModal(page, expect);
   await validateVersionHistoryAutomaticUpdates(page, expect);
   await validateCurrentVersionCard(page, expect, 1);
+  await validateCurrentClusterAdminPreflights(page, expect);
   await validateCurrentDeployLogs(page, expect);
   await validateConfigView(page, expect);
   await validateVersionHistoryRows(page, expect, constants.IS_AIRGAPPED);
@@ -87,7 +89,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   await deployNewVersion(page, expect, 3, 'License Change', constants.IS_MINIMAL_RBAC);
 
   // Snapshot validation
-  await validateSnapshotsAWSConfig(page, expect);
+  await configureSnapshotsAWSInstanceRole(page, expect);
   await validateAutomaticFullSnapshots(page, expect);
   await validateAutomaticPartialSnapshots(page, expect);
 
@@ -106,6 +108,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   // Other validation
   await validateViewFiles(page, expect, constants.CHANNEL_ID, constants.CHANNEL_NAME, constants.CUSTOMER_NAME, constants.LICENSE_ID, constants.IS_AIRGAPPED, registryInfo);
   await updateRegistrySettings(page, expect, registryInfo, 4, constants.IS_MINIMAL_RBAC);
-  await validateDuplicateLicenseUpload(page, expect);
+  await validateClusterManagement(page, expect);
+  await validateIdentityService(page, expect, constants.NAMESPACE, constants.IS_AIRGAPPED);
   await logout(page, expect);
 });

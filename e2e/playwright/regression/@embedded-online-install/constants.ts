@@ -1,0 +1,16 @@
+export const NAMESPACE = "default";
+export const VENDOR_INITIAL_CHANNEL_SEQUENCE = 76;
+export const VENDOR_UPDATE_CHANNEL_SEQUENCE = 77;
+export const LICENSE_ID = "1qugUMvdUjnJE7QO15oRkDvbyWj";
+export const CUSTOMER_ID = "1qugUKz4xTOYVizvi3Ek2KA6gpw";
+export const CUSTOMER_NAME = "type=embedded cluster, env=online, phase=new install, rbac=cluster admin";
+export const CHANNEL_NAME = "type=embedded cluster, env=online, phase=new install, rbac=cluster admin";
+export const CHANNEL_ID = "1qugCGIEo11cV22k2rkfq9WtGG0";
+export const CHANNEL_SLUG = "type-embedded-cluster-env-on-1";
+export const VELERO_VERSION = "v1.12.1";
+export const VELERO_AWS_PLUGIN_VERSION = "v1.8.1";
+export const IS_EC = false;
+export const IS_EXISTING_CLUSTER = false;
+export const IS_AIRGAPPED = false;
+export const IS_AIRGAP_SUPPORTED = true;
+export const IS_MINIMAL_RBAC = false;

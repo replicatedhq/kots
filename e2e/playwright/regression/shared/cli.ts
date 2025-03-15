@@ -147,7 +147,7 @@ export const installVeleroHostPath = async (
   }
 
   // wait for velero to be ready
-  await waitForVeleroAndNodeAgent(60000);
+  await waitForVeleroAndNodeAgent();
 }
 
 export const prepareVeleroImages = (
@@ -223,13 +223,13 @@ const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
   runCommand(`kubectl -n velero patch deployment velero --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'`);
 };
 
-export const waitForVeleroAndNodeAgent = async (timeout: number): Promise<void> => {
+export const waitForVeleroAndNodeAgent = async (timeout: number = 60000): Promise<void> => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     if (isVeleroReady() && isNodeAgentReady()) {
       return;
     }
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between checks
+    await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2 seconds between checks
   }
   throw new Error(`Timeout waiting for Velero and Node Agent to be ready after ${timeout/1000} seconds`);
 };
@@ -359,6 +359,32 @@ export const cliAirgapInstall = async (
   ensureNodePortService(namespace);
 };
 
+export const kurlCliAirgapInstall = async (
+  channelSlug: string,
+  namespace: string,
+  appBundlePath?: string,
+  licenseFile?: string,
+  configValuesFile?: string,
+  skipPreflights?: boolean
+) => {
+  let command = `kubectl kots install ${APP_SLUG}/${channelSlug} \
+    --namespace ${namespace} \
+    --shared-password password`;
+  if (appBundlePath) {
+    command += ` --airgap-bundle ${appBundlePath}`;
+  }
+  if (licenseFile) {
+    command += ` --license-file ${licenseFile}`;
+  }
+  if (configValuesFile) {
+    command += ` --config-values ${configValuesFile}`;
+  }
+  if (skipPreflights) {
+    command += ` --skip-preflights`;
+  }
+  runCommand(command);
+};
+
 export const cliAirgapUpdate = (
   newBundlePath: string,
   namespace: string,
@@ -417,6 +443,37 @@ spec:
     nodePort: 8800
 EOF`);
 };
+
+export const waitForDex = async (namespace: string, timeout: number = 90000): Promise<void> => {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeout) {
+    if (isDexReady(namespace)) {
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2 seconds between checks
+  }
+  throw new Error(`Timeout waiting for Dex to be ready after ${timeout/1000} seconds`);
+};
+
+export const isDexReady = (namespace: string) => {
+  const dexDeployment = runCommandWithOutput(`kubectl get deployment kotsadm-dex -n ${namespace} -ojson`);;
+  const parsedDeployment = JSON.parse(dexDeployment);
+
+  if (parsedDeployment.status.observedGeneration !== parsedDeployment.metadata.generation) {
+    console.log(`observedGeneration: ${parsedDeployment.status.observedGeneration}, generation: ${parsedDeployment.metadata.generation}`);
+    return false;
+  }
+  if (parsedDeployment.status.readyReplicas !== parsedDeployment.spec.replicas) {
+    console.log(`readyReplicas: ${parsedDeployment.status.readyReplicas}, replicas: ${parsedDeployment.spec.replicas}`);
+    return false;
+  }
+  if (!!parsedDeployment.status.unavailableReplicas) {
+    console.log(`unavailableReplicas: ${parsedDeployment.status.unavailableReplicas}`);
+    return false;
+  }
+
+  return true;
+}
 
 export const resetPassword = (namespace: string) => {
   runCommand(`echo 'password' | kubectl kots reset-password -n ${namespace}`);

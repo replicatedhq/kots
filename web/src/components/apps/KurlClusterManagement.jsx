@@ -299,12 +299,16 @@ export class KurlClusterManagement extends Component {
               <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary u-paddingBottom--10">
                 Your nodes
               </p>
-              <div className="flex1 u-overflow--auto">
+              <div
+                className="flex1 u-overflow--auto"
+                data-testid="all-nodes-list"
+              >
                 {kurl?.nodes &&
                   kurl?.nodes.map((node, i) => (
                     <KurlNodeRow
                       key={i}
                       node={node}
+                      index={i}
                       drainingNodeName={this.state.drainingNodeName}
                       drainNodeSuccessful={this.state.drainNodeSuccessful}
                       drainNode={
@@ -354,6 +358,7 @@ export class KurlClusterManagement extends Component {
                       <label
                         htmlFor="primaryNode"
                         className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                        data-testid="primary-node-radio"
                       >
                         <div className="flex-auto">
                           <Icon
@@ -393,6 +398,7 @@ export class KurlClusterManagement extends Component {
                       <label
                         htmlFor="secondaryNode"
                         className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                        data-testid="secondary-node-radio"
                       >
                         <div className="flex-auto">
                           <Icon
@@ -413,7 +419,10 @@ export class KurlClusterManagement extends Component {
                     </div>
                   </div>
                   {this.state.generating && (
-                    <div className="flex u-width--full justifyContent--center">
+                    <div
+                      className="flex u-width--full justifyContent--center"
+                      data-testid="add-node-command-loader"
+                    >
                       <Loader size={60} />
                     </div>
                   )}
@@ -431,6 +440,7 @@ export class KurlClusterManagement extends Component {
                             Command has been copied to your clipboard
                           </span>
                         }
+                        dataTestId="add-node-command"
                       >
                         {[this.state.command.join(" \\\n  ")]}
                       </CodeSnippet>
@@ -511,7 +521,7 @@ export class KurlClusterManagement extends Component {
             ariaHideApp={false}
             className="Modal MediumSize"
           >
-            <div className="Modal-body">
+            <div className="Modal-body" data-testid="drain-node-modal">
               <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
                 Are you sure you want to drain {this.state.nodeNameToDrain}?
               </p>

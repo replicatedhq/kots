@@ -54,7 +54,9 @@ const NavBarDropdown = ({ handleLogOut, isEmbeddedCluster }) => {
         className={`dropdown-nav-menu ${showDropdown ? "" : "hidden"}`}
       >
         <li>
-          <p onClick={() => setShowModal(true)}>Change password</p>
+          <p data-testid="change-password" onClick={() => setShowModal(true)}>
+            Change password
+          </p>
         </li>
         {!isEmbeddedCluster && (
           <li onMouseDown={handleNav} data-testid="add-new-application">

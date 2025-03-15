@@ -28,6 +28,12 @@ on:
         required: true
       REPLICATED_QA_API_TOKEN:
         required: true
+      IDENTITY_SERVICE_OKTA_PASSWORD:
+        required: true
+      IDENTITY_SERVICE_OKTA_CLIENT_SECRET:
+        required: true
+      IDENTITY_SERVICE_OKTA_ACCESS_TOKEN:
+        required: true
       E2E_GH_PAT:
         required: true
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL:
@@ -59,6 +65,9 @@ env:
   TF_VAR_replicated_api_token: ${{ secrets.REPLICATED_QA_API_TOKEN }}
   TF_VAR_aws_access_key_id: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   TF_VAR_aws_secret_access_key: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+  TF_VAR_identity_service_okta_password: ${{ secrets.IDENTITY_SERVICE_OKTA_PASSWORD }}
+  TF_VAR_identity_service_okta_client_secret: ${{ secrets.IDENTITY_SERVICE_OKTA_CLIENT_SECRET }}
+  TF_VAR_identity_service_okta_access_token: ${{ secrets.IDENTITY_SERVICE_OKTA_ACCESS_TOKEN }}
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
 
 jobs:
@@ -160,13 +169,14 @@ jobs:
       fail-fast: false
       matrix:
         test: [
-          {
-            id: "embedded-airgapped-upgrade",
-            name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-            backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
-            terraform_script: "embedded-airgapped-upgrade.sh",
-            is_upgrade: "1"
-          },
+          # NOTE (@salah): decided not to port this test to playwright
+          # {
+          #   id: "embedded-airgapped-upgrade",
+          #   name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
+          #   backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
+          #   terraform_script: "embedded-airgapped-upgrade.sh",
+          #   is_upgrade: "1"
+          # },
           {
             id: "embedded-airgapped-install",
             name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
@@ -179,13 +189,14 @@ jobs:
             backend_config: "embedded-online-install-backend-config.tfvars",
             terraform_script: "embedded-online-install.sh"
           },
-          {
-            id: "embedded-online-upgrade",
-            name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
-            backend_config: "embedded-online-upgrade-backend-config.tfvars",
-            terraform_script: "embedded-online-upgrade.sh",
-            is_upgrade: "1"
-          },
+          # NOTE (@salah): decided not to port this test to playwright
+          # {
+          #   id: "embedded-online-upgrade",
+          #   name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
+          #   backend_config: "embedded-online-upgrade-backend-config.tfvars",
+          #   terraform_script: "embedded-online-upgrade.sh",
+          #   is_upgrade: "1"
+          # },
           {
             id: "existing-airgapped-install-admin",
             name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
@@ -237,13 +248,14 @@ jobs:
             backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
             terraform_script: "existing-airgapped-upgrade-minimum.sh",
             is_upgrade: "1"
-          # },
+          }
+          # NOTE (@salah): decided not to port this test to playwright
           # {
           #   id: "helmvm-online-install",
           #   name: "type=helmvm cluster, env=online, phase=new install, rbac=cluster admin",
           #   backend_config: "helmvm-online-install-backend-config.tfvars",
           #   terraform_script: "helmvm-online-install.sh"
-          }
+          # }
         ]
     steps:
       - name: Checkout
@@ -327,12 +339,12 @@ jobs:
       - name: Upload playwright report
         id: upload-playwright-report
         uses: actions/upload-artifact@v4
-        if: ${{ failure() }}
+        if: failure()
         with:
           name: ${{ github.job }}-${{ matrix.test.name }}-playwright-report
           path: ./automation/cluster/playwright-report/
   
-      - name: Print instructions to view Playwright report
+      - name: Troubleshoot Playwright
         if: ${{ failure() && steps.upload-playwright-report.outputs.artifact-url != '' }}
         run: |
           echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
@@ -345,6 +357,50 @@ jobs:
           echo -e "\e[1;33m   2- From inside the extracted directory, run:                                                         \e[0m"
           echo -e "\e[1;33m                                                                                                        \e[0m"
           echo -e "\e[1;32m      npx playwright show-report .                                                                      \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
+
+      - name: Troubleshoot Admin Console
+        if: failure()
+        working-directory: automation/cluster
+        run: |
+          echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
+          echo -e "\e[1;33m                                  You can access the admin console at:                                  \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;34m      $(terraform output -raw test_endpoint)                                                            \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
+
+      - name: Troubleshoot Test Instance
+        if: failure()
+        working-directory: automation/cluster
+        run: |
+          echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
+          echo -e "\e[1;33m                                  To connect to the test instance:                                      \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   1- Install Terraform CLI:                                                                            \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;34m      https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli                   \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   2- Clone the kots-regression-automation repo:                                                        \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;32m      git clone git@github.com:replicatedhq/kots-regression-automation.git                              \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   3- Navigate to jumpbox directory:                                                                    \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;32m      cd kots-regression-automation/jumpbox                                                             \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   4- Set Terraform workspace:                                                                          \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;32m      export TF_WORKSPACE=$WORKSPACE                                                                    \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   5- Connect to jumpbox:                                                                               \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;32m      ./utils/jumpbox-connect.sh                                                                        \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;33m   6- Connect to test instance:                                                                         \e[0m"
+          echo -e "\e[1;33m                                                                                                        \e[0m"
+          echo -e "\e[1;32m      ssh $(terraform output -raw control_plane_private_ip)                                             \e[0m"
           echo -e "\e[1;33m                                                                                                        \e[0m"
           echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
 
