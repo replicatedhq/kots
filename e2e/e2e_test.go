@@ -45,6 +45,8 @@ var (
 	kotsHelmChartVersion  string
 	kotsDockerhubUsername string
 	kotsDockerhubPassword string
+	awsAccessKeyID        string
+	awsSecretAccessKey    string
 )
 
 func init() {
@@ -61,6 +63,8 @@ func init() {
 	flag.StringVar(&kotsHelmChartVersion, "kots-helm-chart-version", "", "kots helm chart version")
 	flag.StringVar(&kotsDockerhubUsername, "kots-dockerhub-username", "", "kots dockerhub username")
 	flag.StringVar(&kotsDockerhubPassword, "kots-dockerhub-password", "", "kots dockerhub password")
+	flag.StringVar(&awsAccessKeyID, "aws-access-key-id", "", "aws access key id")
+	flag.StringVar(&awsSecretAccessKey, "aws-secret-access-key", "", "aws secret access key")
 }
 
 func TestE2E(t *testing.T) {
@@ -77,7 +81,7 @@ var _ = BeforeSuite(func() {
 	w := workspace.New()
 	DeferCleanup(w.Teardown)
 
-	playwrightClient = playwright.NewClient(kotsadmImageRegistry, kotsadmImageNamespace, kotsadmImageTag, kotsDockerhubUsername, kotsDockerhubPassword)
+	playwrightClient = playwright.NewClient(awsAccessKeyID, awsSecretAccessKey)
 
 	helmCLI = helm.NewCLI(w.GetDir())
 

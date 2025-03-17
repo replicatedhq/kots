@@ -52,6 +52,12 @@ inputs:
   kots-dockerhub-password:
     description: 'KOTS Dockerhub password'
     required: false
+  aws-access-key-id:
+    description: 'AWS access key id'
+    required: false
+  aws-secret-access-key:
+    description: 'AWS secret access key'
+    required: false
   kots-airgap:
     description: 'Run KOTS with the --airgap flag'
     default: "false"
@@ -111,6 +117,8 @@ runs:
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
           KOTS_DOCKERHUB_USERNAME=${{ inputs.kots-dockerhub-username }} \
           KOTS_DOCKERHUB_PASSWORD=${{ inputs.kots-dockerhub-password }} \
+          AWS_ACCESS_KEY_ID=${{ inputs.aws-access-key-id }} \
+          AWS_SECRET_ACCESS_KEY=${{ inputs.aws-secret-access-key }} \
           AIRGAP=${{ inputs.kots-airgap }} \
           IS_OPENSHIFT=${{ inputs.k8s-distribution == 'openshift' && 'true' || 'false' }} \
           IS_EKS=${{ inputs.k8s-distribution == 'eks' && 'true' || 'false' }} \

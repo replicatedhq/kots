@@ -14,11 +14,8 @@ import (
 )
 
 type Client struct {
-	imageRegistry     string
-	imageNamespace    string
-	imageTag          string
-	dockerhubUsername string
-	dockerhubPassword string
+	awsAccessKeyID     string
+	awsSecretAccessKey string
 }
 
 type Run struct {
@@ -29,13 +26,10 @@ type RunOptions struct {
 	Port string
 }
 
-func NewClient(imageRegistry, imageNamespace, imageTag string, dockerhubUsername string, dockerhubPassword string) *Client {
+func NewClient(awsAccessKeyID string, awsSecretAccessKey string) *Client {
 	return &Client{
-		imageRegistry:     imageRegistry,
-		imageNamespace:    imageNamespace,
-		imageTag:          imageTag,
-		dockerhubUsername: dockerhubUsername,
-		dockerhubPassword: dockerhubPassword,
+		awsAccessKeyID:     awsAccessKeyID,
+		awsSecretAccessKey: awsSecretAccessKey,
 	}
 }
 
@@ -68,14 +62,10 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	cmd.Env = append(cmd.Env, fmt.Sprintf("APP_SLUG=%s", test.AppSlug))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_DIR=%s", test.Dir()))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_PATH=%s", test.Path()))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_IMAGE_REGISTRY=%s", t.imageRegistry))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_IMAGE_NAMESPACE=%s", t.imageNamespace))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_IMAGE_TAG=%s", t.imageTag))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_DOCKERHUB_USERNAME=%s", t.dockerhubUsername))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_DOCKERHUB_PASSWORD=%s", t.dockerhubPassword))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("AWS_ACCESS_KEY_ID=%s", t.awsAccessKeyID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("AWS_SECRET_ACCESS_KEY=%s", t.awsSecretAccessKey))
 	cmd.Env = append(cmd.Env, "NODE_OPTIONS=--max-old-space-size=4096")
-	cmd.Env = append(cmd.Env, "DISABLE_SNAPSHOTS_VOLUME_ASSERTIONS=true")
-	cmd.Env = append(cmd.Env, "SKIP_KOTS_INSTALL=true")
+	cmd.Env = append(cmd.Env, test.ExtraEnv...)
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run playwright test failed")
 	return &Run{session}

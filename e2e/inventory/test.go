@@ -20,6 +20,7 @@ type Test struct {
 	NeedsMonitoring        bool
 	NeedsRegistry          bool
 	Setup                  func(kubectlCLI *kubectl.CLI)
+	ExtraEnv               []string
 }
 
 func (t *Test) Dir() string {

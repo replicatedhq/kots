@@ -601,6 +601,8 @@ jobs:
           replicated-api-token: '${{ secrets.REPLICATED_QA_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+          aws-access-key-id: '${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}'
 
 
   validate-smoke-test-online:

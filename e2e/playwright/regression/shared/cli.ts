@@ -279,17 +279,6 @@ const isNodeAgentReady = (): boolean => {
   return true;
 };
 
-export const ensureDockerSecret = (namespace: string) => {
-  if (!process.env.KOTSADM_DOCKERHUB_USERNAME || !process.env.KOTSADM_DOCKERHUB_PASSWORD) {
-    return;
-  }
-  const command = `kubectl kots docker ensure-secret \
-    --namespace ${namespace} \
-    --dockerhub-username ${process.env.KOTSADM_DOCKERHUB_USERNAME} \
-    --dockerhub-password ${process.env.KOTSADM_DOCKERHUB_PASSWORD}`;
-  runCommand(command);
-};
-
 export const cliOnlineInstall = (
   channelSlug: string,
   namespace: string,
@@ -297,10 +286,6 @@ export const cliOnlineInstall = (
   licenseFile?: string,
   configValuesFile?: string
 ) => {
-  if (process.env.SKIP_KOTS_INSTALL) {
-    return;
-  }
-
   try {
     let command = `kubectl kots install ${APP_SLUG}/${channelSlug} \
       --namespace ${namespace} \
