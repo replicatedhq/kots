@@ -23,7 +23,6 @@ func NewRegressionTest() Test {
 	return Test{
 		ID:              "@existing-online-install-minimal",
 		dir:             "regression",
-		TestimLabel:     "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
 		Browser:         "firefox",
@@ -205,7 +204,7 @@ func NewChangeChannel() Test {
 	}
 }
 
-func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
+func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
 	cmd := kubectlCLI.Command(
 		context.Background(),
 		"create",
@@ -220,5 +219,4 @@ func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).WithOffset(1).Should(Succeed(), "Create registry-creds secret failed")
 	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Create registry-creds secret failed with non-zero exit code")
-	return nil
 }

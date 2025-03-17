@@ -22,7 +22,7 @@ type Test struct {
 	NeedsSnapshots         bool
 	NeedsMonitoring        bool
 	NeedsRegistry          bool
-	Setup                  func(kubectlCLI *kubectl.CLI) TestimParams
+	Setup                  func(kubectlCLI *kubectl.CLI)
 }
 
 func (t *Test) Dir() string {

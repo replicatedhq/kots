@@ -191,6 +191,10 @@ var _ = Describe("E2E", func() {
 
 				GinkgoWriter.Println("Running E2E tests")
 
+				if test.Setup != nil {
+					test.Setup(kubectlCLI)
+				}
+
 				if playwrightClient.HasTest(test) {
 					playwrightRun := playwrightClient.NewRun(c.GetKubeconfig(), test, playwright.RunOptions{
 						Port: adminConsolePort,
@@ -199,14 +203,9 @@ var _ = Describe("E2E", func() {
 					return
 				}
 
-				var testimParams inventory.TestimParams
-				if test.Setup != nil {
-					testimParams = test.Setup(kubectlCLI)
-				}
 				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, testim.RunOptions{
 					TunnelPort: adminConsolePort,
 					BaseUrl:    testimBaseUrl,
-					Params:     testimParams,
 				})
 				testimRun.ShouldSucceed()
 			},

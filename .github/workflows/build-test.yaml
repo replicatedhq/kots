@@ -4544,9 +4544,8 @@ jobs:
       - unit-test-web
       - vet-kots
       - ci-test-kots
-      # testim tests
-      - validate-existing-online-install-minimal
       # playwright tests
+      - validate-existing-online-install-minimal
       - validate-smoke-test-online
       - validate-smoke-test-airgap
       - validate-backup-and-restore
@@ -4565,7 +4564,7 @@ jobs:
       - validate-gitops
       - validate-version-history-pagination
       - validate-support-bundle
-      # non-testim tests
+      # non-playwright tests
       - validate-minimal-rbac
       - validate-minimal-rbac-override
       - validate-multi-namespace
