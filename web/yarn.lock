@@ -2554,10 +2554,10 @@
     util-deprecate "^1.0.2"
     uuid-browser "^3.1.0"
 
-"@storybook/addon-actions@^8.6.5":
-  version "8.6.5"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-8.6.5.tgz#4a98fd4009f26c0c0ff25816bf466093b7d9ff7c"
-  integrity sha512-wlgHPOgp0rZX94odYNAZFCuR6HiOplimH6ALlm7MuXfQUWQlpXRsgBchVofXNy7JnRT7L3hmzzk3SsbKnEIaTg==
+"@storybook/addon-actions@^8.6.7":
+  version "8.6.7"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-8.6.7.tgz#d5d5712cee0c593c3e5d51546ff88a801f748c0b"
+  integrity sha512-XgZCwIcZGThEyD7e2q7rN/jzg7ZHUxn/ln403eex04jWAGBBbtC2IVuowwCWV8HwDihnhpCZEP6HlgjakOYZbQ==
   dependencies:
     "@storybook/global" "^5.0.0"
     "@types/uuid" "^9.0.1"
@@ -2668,10 +2668,10 @@
     polished "^4.2.2"
     ts-dedent "^2.2.0"
 
-"@storybook/addon-links@^8.6.5":
-  version "8.6.5"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-8.6.5.tgz#9bbb66b420264107014d297ebcede229273766f3"
-  integrity sha512-txqHSDahBe4+UDWF5ygU3MOv5RciEGXQRHhBwTHNdDBElw0IO37vV/cjoYRWBMquT1pyfL+f3C9FCBNrZiGZzw==
+"@storybook/addon-links@^8.6.7":
+  version "8.6.7"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-8.6.7.tgz#a102e818137fbdd7b2fef67fac02a02e3557a17e"
+  integrity sha512-fIiXlaOa9Bv2tbBshQbh/BjzGOilXVx+6nrX9VkLOg7UvzAvivtSraRmPWjgdtsChAHC8Xac42KUCNGQ/rkf5w==
   dependencies:
     "@storybook/global" "^5.0.0"
     ts-dedent "^2.0.0"
@@ -2706,12 +2706,12 @@
     regenerator-runtime "^0.13.7"
     ts-dedent "^2.0.0"
 
-"@storybook/addon-storysource@^8.6.5":
-  version "8.6.5"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-storysource/-/addon-storysource-8.6.5.tgz#8937fd7810335d8dfcfb21705044460f945ef762"
-  integrity sha512-SCQcOs61uva2+0w7aN/klewkuu/dwfKqyZtA2I7QVxgDKl2+wgGnDJzljF6LMJ88/P0IghpZoAkhJSyLEyWNLA==
+"@storybook/addon-storysource@^8.6.7":
+  version "8.6.7"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-storysource/-/addon-storysource-8.6.7.tgz#50d2b6b4d7a9aaccbf7ce1b51135f5f9af7ca2ef"
+  integrity sha512-tIoTQp3MMyF3S4XarMOBVO40DofILO3Mz8upT4wGEfQULLjgCkS2K5c4BbT4de1hF49JsqvPByVlavntWQFTdg==
   dependencies:
-    "@storybook/source-loader" "8.6.5"
+    "@storybook/source-loader" "8.6.7"
     estraverse "^5.2.0"
     tiny-invariant "^1.3.1"
 
@@ -3489,10 +3489,10 @@
     prettier ">=2.2.1 <=2.3.0"
     regenerator-runtime "^0.13.7"
 
-"@storybook/source-loader@8.6.5":
-  version "8.6.5"
-  resolved "https://registry.yarnpkg.com/@storybook/source-loader/-/source-loader-8.6.5.tgz#0b8f557aef1c229c90ec07dd67d6cab06e3464bb"
-  integrity sha512-du110lqaUsc1k0cOAKOI03uNMug1CyYP0NvgCeq0niHbfInPM+eLIcqkwwdwi08Ejj5uMOdcvCfwC7CPTDvfxQ==
+"@storybook/source-loader@8.6.7":
+  version "8.6.7"
+  resolved "https://registry.yarnpkg.com/@storybook/source-loader/-/source-loader-8.6.7.tgz#894035cbe156085f0227a9011c1dc43e48d45f96"
+  integrity sha512-ycfrPHCs5OUrJTLCXDxvxLVB1zjL7IEepPs53o4RGRWO8xV1z0QfXXiX1drk48rep6dDu+a3mRWfNJ8m0RV/GA==
   dependencies:
     es-toolkit "^1.22.0"
     estraverse "^5.2.0"
