@@ -564,7 +564,8 @@ jobs:
         id: cmx-versions-to-test
         uses: ./.github/actions/cmx-versions
         with:
-          replicated-api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
     outputs:
       versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
 
@@ -596,7 +597,8 @@ jobs:
           k8s-distribution: k3s
           k8s-version: v1.26
           kotsadm-port: '30880'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_QA_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -632,7 +634,8 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           k8s-instance-type: ${{ matrix.cluster.instance_type }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -670,7 +673,8 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
           kots-airgap: true
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -927,7 +931,8 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           k8s-instance-type: ${{ matrix.cluster.instance_type }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -963,7 +968,8 @@ jobs:
           kots-namespace: 'no-required-config'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -1153,7 +1159,8 @@ jobs:
           kots-namespace: 'config-validation'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -1223,7 +1230,8 @@ jobs:
           kots-namespace: 'change-license'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -1258,7 +1266,8 @@ jobs:
           kots-namespace: 'change-channel'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -2426,7 +2435,8 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
       - name: Remove Cluster
@@ -2478,7 +2488,8 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
           kots-airgap: true
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -2540,7 +2551,8 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
       - name: Remove Cluster
@@ -2590,7 +2602,8 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
           kots-airgap: true
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -2652,7 +2665,8 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
       - name: Remove Cluster
@@ -2702,7 +2716,8 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
           kots-airgap: true
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -3074,7 +3089,8 @@ jobs:
           kots-namespace: 'multi-app-backup-and-restore'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -3110,7 +3126,8 @@ jobs:
           kots-namespace: 'multi-app-install'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -4121,7 +4138,8 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           kotsadm-image-registry: ttl.sh
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -4156,7 +4174,8 @@ jobs:
           kots-namespace: 'gitops'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
           gitops-github-token: '${{ secrets.E2E_GITOPS_GITHUB_TOKEN }}'

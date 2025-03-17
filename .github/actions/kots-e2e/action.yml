@@ -56,6 +56,9 @@ inputs:
     description: 'Run KOTS with the --airgap flag'
     default: "false"
     required: false
+  cmx-api-token:
+    description: 'CMX API token'
+    required: false
   replicated-api-token:
     description: 'Replicated API token'
     required: false
@@ -82,7 +85,7 @@ runs:
       uses: replicatedhq/replicated-actions/create-cluster@v1
       if: ${{ inputs.k8s-distribution != 'k3s-local' }}
       with: 
-        api-token: ${{ inputs.replicated-api-token }}
+        api-token: ${{ inputs.cmx-api-token }}
         kubernetes-distribution: ${{ inputs.k8s-distribution }}
         kubernetes-version: ${{ inputs.k8s-version }}
         cluster-name: automated-kots-${{ github.run_id }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
@@ -173,5 +176,5 @@ runs:
       if: ${{ always() && inputs.k8s-cluster-skip-teardown != 'true' && steps.create-cluster.outputs.cluster-id != '' }}
       continue-on-error: true
       with:
-        api-token: ${{ inputs.replicated-api-token }}
+        api-token: ${{ inputs.cmx-api-token }}
         cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
