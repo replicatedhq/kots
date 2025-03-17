@@ -279,6 +279,17 @@ const isNodeAgentReady = (): boolean => {
   return true;
 };
 
+export const ensureDockerSecret = (namespace: string) => {
+  if (!process.env.KOTSADM_DOCKERHUB_USERNAME || !process.env.KOTSADM_DOCKERHUB_PASSWORD) {
+    return;
+  }
+  const command = `kubectl kots docker ensure-secret \
+    --namespace ${namespace} \
+    --dockerhub-username ${process.env.KOTSADM_DOCKERHUB_USERNAME} \
+    --dockerhub-password ${process.env.KOTSADM_DOCKERHUB_PASSWORD}`;
+  runCommand(command);
+};
+
 export const cliOnlineInstall = (
   channelSlug: string,
   namespace: string,
@@ -292,6 +303,15 @@ export const cliOnlineInstall = (
       --shared-password password \
       --wait-duration 5m \
       --port-forward=false`;
+    if (process.env.KOTSADM_IMAGE_REGISTRY) {
+      command += ` --kotsadm-registry ${process.env.KOTSADM_IMAGE_REGISTRY}`;
+    }
+    if (process.env.KOTSADM_IMAGE_NAMESPACE) {
+      command += ` --kotsadm-namespace ${process.env.KOTSADM_IMAGE_NAMESPACE}`;
+    }
+    if (process.env.KOTSADM_IMAGE_TAG) {
+      command += ` --kotsadm-tag ${process.env.KOTSADM_IMAGE_TAG}`;
+    }
     if (licenseFile) {
       command += ` --license-file ${licenseFile}`;
     }

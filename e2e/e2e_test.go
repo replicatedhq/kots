@@ -77,7 +77,7 @@ var _ = BeforeSuite(func() {
 	w := workspace.New()
 	DeferCleanup(w.Teardown)
 
-	playwrightClient = playwright.NewClient()
+	playwrightClient = playwright.NewClient(kotsadmImageRegistry, kotsadmImageNamespace, kotsadmImageTag, kotsDockerhubUsername, kotsDockerhubPassword)
 
 	helmCLI = helm.NewCLI(w.GetDir())
 

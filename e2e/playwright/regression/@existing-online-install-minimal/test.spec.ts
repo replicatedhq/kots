@@ -7,6 +7,7 @@ import {
   deleteKurlConfigMap,
   getRegistryInfo,
   cliOnlineInstall,
+  ensureDockerSecret,
   installVeleroAWS,
   promoteRelease,
   validateInitialConfig,
@@ -51,6 +52,7 @@ test('type=existing cluster, env=online, phase=new install, rbac=minimal rbac', 
   deleteKurlConfigMap();
   const registryInfo = getRegistryInfo(constants.IS_EXISTING_CLUSTER);
   cliOnlineInstall(constants.CHANNEL_SLUG, constants.NAMESPACE, constants.IS_MINIMAL_RBAC); // install kots without the app
+  ensureDockerSecret(constants.NAMESPACE); // helps with dockerhub rate limiting
   installVeleroAWS(constants.VELERO_VERSION, constants.VELERO_AWS_PLUGIN_VERSION);
   await promoteRelease(constants.VENDOR_INITIAL_CHANNEL_SEQUENCE, constants.CHANNEL_ID, "1.0.0");
 

@@ -14,6 +14,11 @@ import (
 )
 
 type Client struct {
+	imageRegistry     string
+	imageNamespace    string
+	imageTag          string
+	dockerhubUsername string
+	dockerhubPassword string
 }
 
 type Run struct {
@@ -24,8 +29,14 @@ type RunOptions struct {
 	Port string
 }
 
-func NewClient() *Client {
-	return &Client{}
+func NewClient(imageRegistry, imageNamespace, imageTag string, dockerhubUsername string, dockerhubPassword string) *Client {
+	return &Client{
+		imageRegistry:     imageRegistry,
+		imageNamespace:    imageNamespace,
+		imageTag:          imageTag,
+		dockerhubUsername: dockerhubUsername,
+		dockerhubPassword: dockerhubPassword,
+	}
 }
 
 func (t *Client) HasTest(test inventory.Test) bool {
@@ -57,6 +68,11 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	cmd.Env = append(cmd.Env, fmt.Sprintf("APP_SLUG=%s", test.AppSlug))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_DIR=%s", test.Dir()))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_PATH=%s", test.Path()))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_IMAGE_REGISTRY=%s", t.imageRegistry))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_IMAGE_NAMESPACE=%s", t.imageNamespace))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_IMAGE_TAG=%s", t.imageTag))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_DOCKERHUB_USERNAME=%s", t.dockerhubUsername))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_DOCKERHUB_PASSWORD=%s", t.dockerhubPassword))
 	cmd.Env = append(cmd.Env, "NODE_OPTIONS=--max-old-space-size=4096")
 	cmd.Env = append(cmd.Env, "DISABLE_SNAPSHOTS_VOLUME_ASSERTIONS=true")
 	session, err := util.RunCommand(cmd)
