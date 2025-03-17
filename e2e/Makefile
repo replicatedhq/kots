@@ -49,7 +49,6 @@ test:
 			--kotsadm-image-registry=$(KOTSADM_IMAGE_REGISTRY) \
 			--kotsadm-image-namespace=$(KOTSADM_IMAGE_NAMESPACE) \
 			--kotsadm-image-tag=$(KOTSADM_IMAGE_TAG) \
-			--kotsadm-port=$(KOTSADM_PORT) \
 			--airgap=$(AIRGAP) \
 			--is-openshift=$(IS_OPENSHIFT) \
 			--is-eks=$(IS_EKS) \

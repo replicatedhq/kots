@@ -595,7 +595,6 @@ jobs:
           kots-namespace: 'qakotsregression'
           k8s-distribution: k3s
           k8s-version: v1.26
-          kotsadm-port: '30880'
           git-tag: ${{ needs.generate-tag.outputs.tag }}
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_QA_API_TOKEN }}'

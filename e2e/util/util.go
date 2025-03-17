@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 
@@ -30,14 +29,4 @@ func RunCommand(cmd *exec.Cmd) (*gexec.Session, error) {
 		fmt.Println(cmd)
 	}
 	return gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-}
-
-func GetFreePort() (string, error) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return "", err
-	}
-	ln.Close()
-	_, port, err := net.SplitHostPort(ln.Addr().String())
-	return port, err
 }

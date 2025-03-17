@@ -3,6 +3,7 @@ package kots
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os/exec"
 	"time"
@@ -41,7 +42,7 @@ func NewInstaller(imageRegistry, imageNamespace, imageTag string, airgap bool, d
 	}
 }
 
-func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsolePort string) {
+func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsolePort string) string {
 	session, err := i.install(kubeconfig, test)
 	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
 	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
@@ -52,12 +53,16 @@ func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsole
 		Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots docker ensure-secret failed with non-zero exit code")
 	}
 
-	i.AdminConsolePortForward(kubeconfig, test, adminConsolePort)
+	return i.AdminConsolePortForward(kubeconfig, test, adminConsolePort)
 }
 
-func (i *Installer) AdminConsolePortForward(kubeconfig string, test inventory.Test, adminConsolePort string) {
+func (i *Installer) AdminConsolePortForward(kubeconfig string, test inventory.Test, adminConsolePort string) string {
 	var err error
 	for x := 0; x < 3; x++ {
+		if adminConsolePort == "" {
+			adminConsolePort, err = getFreePort()
+			Expect(err).WithOffset(1).Should(Succeed(), "get free port")
+		}
 		err = i.portForward(kubeconfig, test.Namespace, adminConsolePort)
 		if err == nil {
 			break
@@ -65,6 +70,7 @@ func (i *Installer) AdminConsolePortForward(kubeconfig string, test inventory.Te
 		time.Sleep(5 * time.Second)
 	}
 	Expect(err).WithOffset(1).Should(Succeed(), "port forward")
+	return adminConsolePort
 }
 
 func (i *Installer) ensureSecret(kubeconfig string, test inventory.Test) (*gexec.Session, error) {
@@ -134,4 +140,14 @@ func (i *Installer) portForward(kubeconfig, namespace, adminConsolePort string) 
 			return errors.Wrap(err, "api ping timeout")
 		}
 	}
+}
+
+func getFreePort() (string, error) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return "", err
+	}
+	ln.Close()
+	_, port, err := net.SplitHostPort(ln.Addr().String())
+	return port, err
 }
