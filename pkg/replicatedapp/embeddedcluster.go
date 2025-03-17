@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
@@ -55,6 +56,7 @@ func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (stri
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
 	}
+	logger.Infof("downloading kots binary from %s", url)
 
 	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
 
