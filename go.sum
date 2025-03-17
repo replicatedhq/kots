@@ -1907,8 +1907,8 @@ github.com/sagikazarmark/locafero v0.6.0/go.mod h1:77OmuIc6VTraTXKXIs/uvUxKGUXjE
 github.com/sagikazarmark/slog-shim v0.1.0 h1:diDBnUNK9N/354PgrxMywXnAwEr1QZcOr6gto+ugjYE=
 github.com/sagikazarmark/slog-shim v0.1.0/go.mod h1:SrcSrq8aKtyuqEI1uvTDTK1arOWRIczQRv+GVI1AkeQ=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
-github.com/schemahero/schemahero v0.17.15 h1:J/xAn88d4aNv6C/6mP+xqyzgnineP4VI5dNg60hBVJ8=
-github.com/schemahero/schemahero v0.17.15/go.mod h1:VFwiwdgHZjaS7yoTedhJP3UmZ7FWPxcSkErNvjuJjr8=
+github.com/schemahero/schemahero v0.17.14 h1:84aQBmRMRav2hJzgUCSDzGzhVUH2sgcG0ckB3fa4AKE=
+github.com/schemahero/schemahero v0.17.14/go.mod h1:ct0ZGTDEr+cH+ejKsBhnQL7tByGOkatxrjKbp3H8yqg=
 github.com/sebdah/goldie/v2 v2.5.5 h1:rx1mwF95RxZ3/83sdS4Yp7t2C5TCokvWP4TBRbAyEWY=
 github.com/sebdah/goldie/v2 v2.5.5/go.mod h1:oZ9fp0+se1eapSRjfYbsV/0Hqhbuu3bJVvKI/NNtssI=
 github.com/secure-systems-lab/go-securesystemslib v0.9.0 h1:rf1HIbL64nUpEIZnjLZ3mcNEL9NBPB0iuVjyxvq3LZc=
