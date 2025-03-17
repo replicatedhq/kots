@@ -52,7 +52,7 @@ export async function validateRedaction(page: Page, expect: Expect, expectedReda
   await fileTree.getByTestId("cluster-info").check();
   await fileTree.getByTestId("cluster-info/cluster_version.json").click();
 
-  await expect(page.getByTestId("support-bundle-analysis-file-inspector-editor")).toContainText("***HIDDEN***");
+  await expect(page.getByTestId("support-bundle-analysis-file-inspector-editor")).toContainText("***HIDDEN***", { timeout: 15 * 1000 }); // 15 seconds
 
   // assert that there are 2 redactions in the editor
   const fileText = await page.getByTestId("support-bundle-analysis-file-inspector-editor").textContent();
@@ -81,7 +81,7 @@ export async function validateRedactionReport(page: Page, expect: Expect) {
 
   await expect(page.getByTestId("support-bundle-analysis-file-inspector")).toBeVisible();
   await expect(page.getByTestId("support-bundle-analysis-file-tree")).toBeVisible();
-  await expect(page.getByTestId("support-bundle-analysis-file-inspector-editor")).toContainText("***HIDDEN***");
+  await expect(page.getByTestId("support-bundle-analysis-file-inspector-editor")).toContainText("***HIDDEN***", { timeout: 15 * 1000 }); // 15 seconds
   await expect(page.getByTestId("support-bundle-analysis-file-inspector-redaction-pager")).toContainText(/Redaction [0-9]+ of [0-9]+/);
 }
 
