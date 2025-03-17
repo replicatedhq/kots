@@ -27,6 +27,7 @@ func NewRegressionTest() Test {
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
 		Browser:         "firefox",
 		UseMinimalRBAC:  true,
+		SkipKOTSInstall: true,
 		NeedsMonitoring: true,
 		NeedsRegistry:   true,
 		Setup:           SetupRegressionTest,
