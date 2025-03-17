@@ -460,7 +460,7 @@ spec:
   ports:
   - port: 8800
     targetPort: 3000
-    nodePort: 8800
+    nodePort: ${process.env.PORT || 8800}
 EOF`);
 };
 

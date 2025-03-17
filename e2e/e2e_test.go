@@ -40,7 +40,7 @@ var (
 	airgap                bool
 	isOpenShift           bool
 	isEKS                 bool
-	kotsadmForwardPort    string
+	kotsadmPort           string
 	kotsHelmChartURL      string
 	kotsHelmChartVersion  string
 	kotsDockerhubUsername string
@@ -56,7 +56,7 @@ func init() {
 	flag.BoolVar(&airgap, "airgap", false, "run install in airgapped mode")
 	flag.BoolVar(&isOpenShift, "is-openshift", false, "the cluster is an openshift cluster")
 	flag.BoolVar(&isEKS, "is-eks", false, "the cluster is an eks cluster")
-	flag.StringVar(&kotsadmForwardPort, "kotsadm-forward-port", "", "sets the port that the admin console will be exposed on instead of generating a random one")
+	flag.StringVar(&kotsadmPort, "kotsadm-port", "", "sets the port that the admin console will be exposed on instead of generating a random one")
 	flag.StringVar(&kotsHelmChartURL, "kots-helm-chart-url", "", "kots helm chart url")
 	flag.StringVar(&kotsHelmChartVersion, "kots-helm-chart-version", "", "kots helm chart version")
 	flag.StringVar(&kotsDockerhubUsername, "kots-dockerhub-username", "", "kots dockerhub username")
@@ -167,15 +167,15 @@ var _ = Describe("E2E", func() {
 					prometheus.Install(helmCLI, c.GetKubeconfig())
 				}
 
-				if kotsadmForwardPort == "" {
+				if kotsadmPort == "" {
 					var err error
-					kotsadmForwardPort, err = util.GetFreePort()
+					kotsadmPort, err = util.GetFreePort()
 					Expect(err).WithOffset(1).Should(Succeed(), "get free port")
 				}
 
 				if !test.SkipKOTSInstall {
 					GinkgoWriter.Println("Installing KOTS")
-					kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
+					kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmPort)
 				}
 
 				GinkgoWriter.Println("Running E2E tests")
@@ -185,7 +185,7 @@ var _ = Describe("E2E", func() {
 				}
 
 				playwrightRun := playwrightClient.NewRun(c.GetKubeconfig(), test, playwright.RunOptions{
-					Port: kotsadmForwardPort,
+					Port: kotsadmPort,
 				})
 				playwrightRun.ShouldSucceed()
 			},

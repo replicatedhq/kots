@@ -595,6 +595,7 @@ jobs:
           kots-namespace: 'qakotsregression'
           k8s-distribution: k3s
           k8s-version: v1.26
+          kotsadm-port: '30880'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'

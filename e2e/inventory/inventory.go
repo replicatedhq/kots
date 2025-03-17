@@ -25,7 +25,6 @@ func NewRegressionTest() Test {
 		dir:             "regression",
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
-		Browser:         "firefox",
 		UseMinimalRBAC:  true,
 		SkipKOTSInstall: true,
 		NeedsMonitoring: true,

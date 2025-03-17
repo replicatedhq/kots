@@ -37,6 +37,9 @@ inputs:
     description: 'Kotsadm image tag'
     default: '24h'
     required: false
+  kotsadm-port:
+    description: 'Kotsadm port'
+    required: false
   kots-helm-chart-url:
     description: 'KOTS Helm chart URL'
     required: false
@@ -100,6 +103,7 @@ runs:
           KOTSADM_IMAGE_REGISTRY=${{ inputs.kotsadm-image-registry }} \
           KOTSADM_IMAGE_NAMESPACE=${{ inputs.kotsadm-image-namespace || format('automated-{0}', github.run_id) }} \
           KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \
+          KOTSADM_PORT=${{ inputs.kotsadm-port }} \
           KOTS_HELM_CHART_URL=${{ inputs.kots-helm-chart-url }} \
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
           KOTS_DOCKERHUB_USERNAME=${{ inputs.kots-dockerhub-username }} \
