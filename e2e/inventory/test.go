@@ -1,11 +1,16 @@
 package inventory
 
-import "github.com/replicatedhq/kots/e2e/kubectl"
+import (
+	"path/filepath"
+
+	"github.com/replicatedhq/kots/e2e/kubectl"
+)
 
 type TestimParams map[string]interface{}
 
 type Test struct {
 	ID                     string // must match directory name in e2e/playwright/tests
+	dir                    string // defaults to "tests"
 	TestimSuite            string
 	TestimLabel            string
 	Namespace              string
@@ -18,4 +23,15 @@ type Test struct {
 	NeedsMonitoring        bool
 	NeedsRegistry          bool
 	Setup                  func(kubectlCLI *kubectl.CLI) TestimParams
+}
+
+func (t *Test) Dir() string {
+	if t.dir == "" {
+		return "tests"
+	}
+	return t.dir
+}
+
+func (t *Test) Path() string {
+	return filepath.Join(t.Dir(), t.ID)
 }

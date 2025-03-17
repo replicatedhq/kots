@@ -21,7 +21,8 @@ const (
 
 func NewRegressionTest() Test {
 	return Test{
-		ID:              "@regression",
+		ID:              "@existing-online-install-minimal",
+		dir:             "regression",
 		TestimLabel:     "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
@@ -33,7 +32,7 @@ func (t *Client) HasTest(test inventory.Test) bool {
 	if test.ID == "" {
 		return false
 	}
-	_, err := os.Stat(fmt.Sprintf("/playwright/tests/%s", test.ID))
+	_, err := os.Stat(fmt.Sprintf("/playwright/%s", test.Path()))
 	return err == nil
 }
 
@@ -56,8 +55,10 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", runOptions.Port))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("NAMESPACE=%s", namespace))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("APP_SLUG=%s", test.AppSlug))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_PATH=%s", filepath.Join("tests", test.ID)))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_DIR=%s", test.Dir()))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_PATH=%s", test.Path()))
 	cmd.Env = append(cmd.Env, "NODE_OPTIONS=--max-old-space-size=4096")
+	cmd.Env = append(cmd.Env, "DISABLE_SNAPSHOTS_VOLUME_ASSERTIONS=true")
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run playwright test failed")
 	return &Run{session}
