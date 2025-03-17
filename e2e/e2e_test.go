@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	"flag"
-	"os"
 	"testing"
 	"time"
 
@@ -22,21 +21,17 @@ import (
 	"github.com/replicatedhq/kots/e2e/playwright"
 	"github.com/replicatedhq/kots/e2e/prometheus"
 	"github.com/replicatedhq/kots/e2e/registry"
-	"github.com/replicatedhq/kots/e2e/testim"
 	"github.com/replicatedhq/kots/e2e/util"
 	"github.com/replicatedhq/kots/e2e/velero"
 	"github.com/replicatedhq/kots/e2e/workspace"
 )
 
-var testimClient *testim.Client
 var playwrightClient *playwright.Client
 var helmCLI *helm.CLI
 var veleroCLI *velero.CLI
 var kotsInstaller *kots.Installer
 
 var (
-	testimBranch          string
-	testimBaseUrl         string
 	skipTeardown          bool
 	existingKubeconfig    string
 	kotsadmImageRegistry  string
@@ -53,8 +48,6 @@ var (
 )
 
 func init() {
-	flag.StringVar(&testimBranch, "testim-branch", "master", "testim branch to use")
-	flag.StringVar(&testimBaseUrl, "testim-base-url", "", "override the base url that testim will use")
 	flag.StringVar(&existingKubeconfig, "existing-kubeconfig", "", "use kubeconfig from existing cluster, do not create clusters (only for use with targeted testing)")
 	flag.BoolVar(&skipTeardown, "skip-teardown", false, "do not tear down clusters")
 	flag.StringVar(&kotsadmImageRegistry, "kotsadm-image-registry", "", "override the kotsadm images registry")
@@ -79,18 +72,10 @@ var _ = BeforeSuite(func() {
 	Expect(util.CommandExists("kubectl")).To(BeTrue(), "kubectl required")
 	Expect(util.CommandExists("helm")).To(BeTrue(), "helm required")
 	Expect(util.CommandExists("velero")).To(BeTrue(), "velero required")
-	Expect(util.CommandExists("testim")).To(BeTrue(), "testim required")
 	Expect(util.CommandExists("kots")).To(BeTrue(), "kots required")
 
 	w := workspace.New()
 	DeferCleanup(w.Teardown)
-
-	testimClient = testim.NewClient(
-		os.Getenv("TESTIM_ACCESS_TOKEN"),
-		util.EnvOrDefault("TESTIM_PROJECT_ID", "wpYAooUimFDgQxY73r17"),
-		"Testim-grid",
-		testimBranch,
-	)
 
 	playwrightClient = playwright.NewClient()
 
@@ -127,7 +112,6 @@ var _ = Describe("E2E", func() {
 
 		var c cluster.Interface
 		var kubectlCLI *kubectl.CLI
-		var testimRun *testim.Run
 
 		BeforeEach(func() {
 			if existingKubeconfig != "" {
@@ -153,9 +137,6 @@ var _ = Describe("E2E", func() {
 			if kubectlCLI != nil {
 				kubectlCLI.GetAllPods(ctx)
 				kubectlCLI.DescribeNodes(ctx)
-			}
-			if testimRun != nil {
-				testimRun.PrintDebugInfo()
 			}
 		})
 
@@ -186,8 +167,16 @@ var _ = Describe("E2E", func() {
 					prometheus.Install(helmCLI, c.GetKubeconfig())
 				}
 
-				GinkgoWriter.Println("Installing KOTS")
-				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
+				if kotsadmForwardPort == "" {
+					var err error
+					kotsadmForwardPort, err = util.GetFreePort()
+					Expect(err).WithOffset(1).Should(Succeed(), "get free port")
+				}
+
+				if !test.SkipKOTSInstall {
+					GinkgoWriter.Println("Installing KOTS")
+					kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
+				}
 
 				GinkgoWriter.Println("Running E2E tests")
 
@@ -195,19 +184,10 @@ var _ = Describe("E2E", func() {
 					test.Setup(kubectlCLI)
 				}
 
-				if playwrightClient.HasTest(test) {
-					playwrightRun := playwrightClient.NewRun(c.GetKubeconfig(), test, playwright.RunOptions{
-						Port: adminConsolePort,
-					})
-					playwrightRun.ShouldSucceed()
-					return
-				}
-
-				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, testim.RunOptions{
-					TunnelPort: adminConsolePort,
-					BaseUrl:    testimBaseUrl,
+				playwrightRun := playwrightClient.NewRun(c.GetKubeconfig(), test, playwright.RunOptions{
+					Port: kotsadmForwardPort,
 				})
-				testimRun.ShouldSucceed()
+				playwrightRun.ShouldSucceed()
 			},
 			func(test inventory.Test) string {
 				return test.ID

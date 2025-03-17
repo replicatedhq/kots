@@ -26,13 +26,6 @@ inputs:
     description: 'Skip cluster teardown'
     default: 'false'
     required: false
-  testim-access-token:
-    description: 'Testim access token'
-    required: false
-  testim-branch:
-    description: 'Testim branch'
-    default: 'master'
-    required: false
   kotsadm-image-registry:
     description: 'Kotsadm image registry'
     default: 'ttl.sh'
@@ -97,7 +90,6 @@ runs:
 
     - name: execute suite "${{ inputs.test-id }}"
       env:
-        TESTIM_ACCESS_TOKEN: ${{ inputs.testim-access-token }}
         REPLICATED_API_TOKEN: ${{ inputs.replicated-api-token }}
         GITOPS_GITHUB_TOKEN: ${{ inputs.gitops-github-token }}
         KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
@@ -105,7 +97,6 @@ runs:
         make -C e2e test \
           FOCUS="${{ inputs.test-id }}" \
           EXISTING_KUBECONFIG=$KUBECONFIG \
-          TESTIM_BRANCH=${{ inputs.testim-branch }} \
           KOTSADM_IMAGE_REGISTRY=${{ inputs.kotsadm-image-registry }} \
           KOTSADM_IMAGE_NAMESPACE=${{ inputs.kotsadm-image-namespace || format('automated-{0}', github.run_id) }} \
           KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \

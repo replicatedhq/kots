@@ -74,7 +74,6 @@ main() {
     NODE_MAJOR=18
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | runAsRoot tee /etc/apt/sources.list.d/nodesource.list
     runAsRoot apt-get update && runAsRoot apt-get install nodejs -y
-    npm install --prefix $INSTALL_DIR @testim/testim-cli
 
     rm -rf $tmpdir
 

@@ -83,8 +83,8 @@ func NewNoRequiredConfig() Test {
 func NewVersionHistoryPagination() Test {
 	return Test{
 		ID:          "@version-history-pagination",
-		TestimSuite: "version-history-pagination",
 		Namespace:   "version-history-pagination",
+		AppSlug:     "version-history-pagination",
 		UpstreamURI: "version-history-pagination/automated",
 	}
 }
@@ -189,8 +189,8 @@ func NewSupportBundle() Test {
 func NewGitOps() Test {
 	return Test{
 		ID:          "@gitops",
-		TestimSuite: "gitops",
 		Namespace:   "gitops",
+		AppSlug:     "gitops-bobcat",
 		UpstreamURI: "gitops-bobcat/automated",
 	}
 }

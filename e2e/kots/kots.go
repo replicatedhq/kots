@@ -3,7 +3,6 @@ package kots
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"os/exec"
 	"time"
@@ -140,14 +139,4 @@ func (i *Installer) portForward(kubeconfig, namespace, adminConsolePort string) 
 			return errors.Wrap(err, "api ping timeout")
 		}
 	}
-}
-
-func getFreePort() (string, error) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return "", err
-	}
-	ln.Close()
-	_, port, err := net.SplitHostPort(ln.Addr().String())
-	return port, err
 }

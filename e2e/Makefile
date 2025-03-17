@@ -23,7 +23,6 @@ build:
 .PHONY: test
 test: export GINKGO_EDITOR_INTEGRATION=1 # disable error on programatic focus
 test: KOTSADM_IMAGE_TAG ?= alpha
-test: TESTIM_BRANCH ?= master
 test: AIRGAP ?= 0
 test: IS_OPENSHIFT ?= 0
 test: IS_EKS ?= 0
@@ -33,7 +32,6 @@ test: EXISTING_KUBECONFIG_VOLUME_MOUNT := "-v=$(EXISTING_KUBECONFIG):$(EXISTING_
 endif
 test:
 	docker run --rm -i --net host \
-		-e TESTIM_ACCESS_TOKEN \
 		-v $(BIN_DIR)/e2e.test:/usr/local/bin/e2e.test \
 		-e REPLICATED_API_TOKEN \
 		-e GITOPS_GITHUB_TOKEN \
@@ -47,7 +45,6 @@ test:
 			-test.v \
 			--ginkgo.v \
 			--ginkgo.focus="$(FOCUS)" \
-			--testim-branch=$(TESTIM_BRANCH) \
 			--existing-kubeconfig=$(EXISTING_KUBECONFIG) \
 			--kotsadm-image-registry=$(KOTSADM_IMAGE_REGISTRY) \
 			--kotsadm-image-namespace=$(KOTSADM_IMAGE_NAMESPACE) \
