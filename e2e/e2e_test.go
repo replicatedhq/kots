@@ -179,10 +179,9 @@ var _ = Describe("E2E", func() {
 					Expect(err).WithOffset(1).Should(Succeed(), "get free port")
 				}
 
-				if !test.SkipKOTSInstall {
-					GinkgoWriter.Println("Installing KOTS")
-					kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmPort)
-				}
+				GinkgoWriter.Println("Installing KOTS")
+
+				kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmPort)
 
 				GinkgoWriter.Println("Running E2E tests")
 

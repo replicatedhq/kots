@@ -14,7 +14,6 @@ type Test struct {
 	UpstreamURI            string
 	Browser                string
 	UseMinimalRBAC         bool
-	SkipKOTSInstall        bool
 	SkipCompatibilityCheck bool
 	NeedsSnapshots         bool
 	NeedsMonitoring        bool
