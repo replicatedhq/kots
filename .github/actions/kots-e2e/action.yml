@@ -71,6 +71,9 @@ inputs:
   gitops-github-token:
     description: 'GitHub token for GitOps tests'
     required: false
+  git-tag:
+    description: 'Git tag'
+    required: false
 
 outputs:
   cluster-id:
@@ -122,6 +125,7 @@ runs:
           AIRGAP=${{ inputs.kots-airgap }} \
           IS_OPENSHIFT=${{ inputs.k8s-distribution == 'openshift' && 'true' || 'false' }} \
           IS_EKS=${{ inputs.k8s-distribution == 'eks' && 'true' || 'false' }} \
+          GIT_TAG=${{ inputs.git-tag }} \
           SKIP_TEARDOWN=1
       shell: bash
 

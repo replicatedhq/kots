@@ -59,6 +59,7 @@ test:
 			--kots-dockerhub-password=$(KOTS_DOCKERHUB_PASSWORD) \
 			--aws-access-key-id=$(AWS_ACCESS_KEY_ID) \
 			--aws-secret-access-key=$(AWS_SECRET_ACCESS_KEY) \
+			--git-tag=$(GIT_TAG) \
 			--skip-teardown=$(SKIP_TEARDOWN)
 
 .PHONY: path

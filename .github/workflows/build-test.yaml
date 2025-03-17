@@ -564,15 +564,14 @@ jobs:
         id: cmx-versions-to-test
         uses: ./.github/actions/cmx-versions
         with:
-          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
     outputs:
       versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
 
 
   validate-existing-online-install-minimal:
     runs-on: ubuntu-24.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -597,6 +596,7 @@ jobs:
           k8s-distribution: k3s
           k8s-version: v1.26
           kotsadm-port: '30880'
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_QA_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'

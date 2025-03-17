@@ -47,6 +47,7 @@ var (
 	kotsDockerhubPassword string
 	awsAccessKeyID        string
 	awsSecretAccessKey    string
+	gitTag                string
 )
 
 func init() {
@@ -65,6 +66,7 @@ func init() {
 	flag.StringVar(&kotsDockerhubPassword, "kots-dockerhub-password", "", "kots dockerhub password")
 	flag.StringVar(&awsAccessKeyID, "aws-access-key-id", "", "aws access key id")
 	flag.StringVar(&awsSecretAccessKey, "aws-secret-access-key", "", "aws secret access key")
+	flag.StringVar(&gitTag, "git-tag", "", "git tag")
 }
 
 func TestE2E(t *testing.T) {
@@ -196,7 +198,7 @@ var _ = Describe("E2E", func() {
 			func(test inventory.Test) string {
 				return test.ID
 			},
-			Entry(nil, inventory.NewRegressionTest(kotsadmImageTag)),
+			Entry(nil, inventory.NewRegressionTest(gitTag)),
 			Entry(nil, inventory.NewSmokeTestOnline()),
 			Entry(nil, inventory.NewSmokeTestAirgap()),
 			Entry(nil, inventory.NewConfigValidation()),
