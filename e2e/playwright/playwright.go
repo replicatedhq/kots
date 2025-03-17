@@ -75,6 +75,7 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	cmd.Env = append(cmd.Env, fmt.Sprintf("KOTSADM_DOCKERHUB_PASSWORD=%s", t.dockerhubPassword))
 	cmd.Env = append(cmd.Env, "NODE_OPTIONS=--max-old-space-size=4096")
 	cmd.Env = append(cmd.Env, "DISABLE_SNAPSHOTS_VOLUME_ASSERTIONS=true")
+	cmd.Env = append(cmd.Env, "SKIP_KOTS_INSTALL=true")
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run playwright test failed")
 	return &Run{session}

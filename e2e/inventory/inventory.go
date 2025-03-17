@@ -21,12 +21,12 @@ const (
 
 func NewRegressionTest() Test {
 	return Test{
-		ID:              "@existing-online-install-minimal",
-		dir:             "regression",
-		Namespace:       "qakotsregression",
-		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
-		UseMinimalRBAC:  true,
-		SkipKOTSInstall: true,
+		ID:             "@existing-online-install-minimal",
+		dir:            "regression",
+		Namespace:      "qakotsregression",
+		UpstreamURI:    "qakotsregression/type-existing-cluster-env-on-2",
+		UseMinimalRBAC: true,
+		// SkipKOTSInstall: true,
 		NeedsMonitoring: true,
 		NeedsRegistry:   true,
 		Setup:           SetupRegressionTest,

@@ -297,6 +297,10 @@ export const cliOnlineInstall = (
   licenseFile?: string,
   configValuesFile?: string
 ) => {
+  if (process.env.SKIP_KOTS_INSTALL) {
+    return;
+  }
+
   try {
     let command = `kubectl kots install ${APP_SLUG}/${channelSlug} \
       --namespace ${namespace} \
