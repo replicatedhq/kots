@@ -292,15 +292,6 @@ export const cliOnlineInstall = (
       --shared-password password \
       --wait-duration 5m \
       --port-forward=false`;
-    if (process.env.KOTSADM_IMAGE_REGISTRY) {
-      command += ` --kotsadm-registry ${process.env.KOTSADM_IMAGE_REGISTRY}`;
-    }
-    if (process.env.KOTSADM_IMAGE_NAMESPACE) {
-      command += ` --kotsadm-namespace ${process.env.KOTSADM_IMAGE_NAMESPACE}`;
-    }
-    if (process.env.KOTSADM_IMAGE_TAG) {
-      command += ` --kotsadm-tag ${process.env.KOTSADM_IMAGE_TAG}`;
-    }
     if (licenseFile) {
       command += ` --license-file ${licenseFile}`;
     }
@@ -449,7 +440,7 @@ spec:
   ports:
   - port: 8800
     targetPort: 3000
-    nodePort: ${process.env.PORT || 8800}
+    nodePort: 8800
 EOF`);
 };
 
