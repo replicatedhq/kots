@@ -19,7 +19,7 @@ const (
 	HelmPassword = "password"
 )
 
-func NewRegressionTest() Test {
+func NewRegressionTest(newKOTSVersion string) Test {
 	return Test{
 		ID:              "@existing-online-install-minimal",
 		dir:             "regression",
@@ -32,6 +32,7 @@ func NewRegressionTest() Test {
 		ExtraEnv: []string{
 			"SKIP_INITIAL_KOTS_INSTALL=true",
 			"DISABLE_SNAPSHOTS_VOLUME_ASSERTIONS=true",
+			fmt.Sprintf("NEW_KOTS_VERSION=%s", newKOTSVersion),
 		},
 	}
 }

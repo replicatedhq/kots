@@ -196,7 +196,7 @@ var _ = Describe("E2E", func() {
 			func(test inventory.Test) string {
 				return test.ID
 			},
-			Entry(nil, inventory.NewRegressionTest()),
+			Entry(nil, inventory.NewRegressionTest(kotsadmImageTag)),
 			Entry(nil, inventory.NewSmokeTestOnline()),
 			Entry(nil, inventory.NewSmokeTestAirgap()),
 			Entry(nil, inventory.NewConfigValidation()),
