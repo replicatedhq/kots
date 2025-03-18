@@ -1,6 +1,7 @@
 package license
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -79,6 +80,8 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	synced := false
 	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence ||
 		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
+
+		fmt.Println("++++ WHAT is going on!", updatedLicense.Spec.LicenseSequence, currentLicense.Spec.LicenseSequence, kotsKinds.License.Spec.LicenseSequence)
 
 		channelChanged := false
 		if updatedLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
