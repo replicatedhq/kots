@@ -190,6 +190,8 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 		return nil, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
+	fmt.Println("++++ WHAT is going on?!?!??!!")
+
 	channelChanged := false
 	if newLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
 		channelChanged = true
