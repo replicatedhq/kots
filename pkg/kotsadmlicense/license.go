@@ -85,6 +85,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 
 		channelChanged := false
 		if updatedLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
+			fmt.Println("++++ WHAT channel changed?", updatedLicense.Spec.ChannelID, currentLicense.Spec.ChannelID)
 			channelChanged = true
 		}
 		reportingInfo := reporting.GetReportingInfo(a.ID)
