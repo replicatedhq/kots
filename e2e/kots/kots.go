@@ -97,10 +97,10 @@ func (i *Installer) install(kubeconfig string, test inventory.Test) (*gexec.Sess
 		fmt.Sprintf("--kotsadm-registry=%s", i.imageRegistry),
 		fmt.Sprintf("--kotsadm-namespace=%s", i.imageNamespace),
 		fmt.Sprintf("--kotsadm-tag=%s", i.imageTag),
-		fmt.Sprintf("--airgap=%t", i.airgap),
+		// fmt.Sprintf("--airgap=%t", i.airgap),
 		// fmt.Sprintf("--wait-duration=%s", InstallWaitDuration),
 		// fmt.Sprintf("--use-minimal-rbac=%t", test.UseMinimalRBAC),
-		fmt.Sprintf("--skip-compatibility-check=%t", test.SkipCompatibilityCheck),
+		// fmt.Sprintf("--skip-compatibility-check=%t", test.SkipCompatibilityCheck),
 	}
 	if i.isEKS {
 		args = append(args, "--storage-class=gp2")
