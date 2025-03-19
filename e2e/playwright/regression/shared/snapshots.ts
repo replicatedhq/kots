@@ -108,6 +108,7 @@ export const validateAutomaticFullSnapshots = async (page: Page, expect: Expect)
   await snapshotsScheduleCard.getByTestId('full-snapshots-schedule-tab').click();
 
   const enableScheduledSnapshotsCheckbox = snapshotsScheduleCard.getByTestId('enable-scheduled-snapshots-checkbox');
+  await expect(enableScheduledSnapshotsCheckbox).toBeVisible({ timeout: 15000 });
   if (!await enableScheduledSnapshotsCheckbox.isChecked()) {
     await enableScheduledSnapshotsCheckbox.click();
   }
@@ -151,9 +152,9 @@ export const validateAutomaticPartialSnapshots = async (page: Page, expect: Expe
 
   await snapshotsScheduleCard.getByTestId('partial-snapshots-schedule-tab').click();
   await expect(snapshotsScheduleCard.getByTestId('partial-snapshots-schedule-app-select')).toBeVisible();
-  await page.waitForLoadState('networkidle'); // background request can revert checkbox state...
 
   const enableScheduledSnapshotsCheckbox = snapshotsScheduleCard.getByTestId('enable-scheduled-snapshots-checkbox');
+  await expect(enableScheduledSnapshotsCheckbox).toBeVisible({ timeout: 15000 });
   if (!await enableScheduledSnapshotsCheckbox.isChecked()) {
     await enableScheduledSnapshotsCheckbox.click();
   }
