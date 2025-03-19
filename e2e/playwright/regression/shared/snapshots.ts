@@ -111,6 +111,7 @@ export const validateAutomaticFullSnapshots = async (page: Page, expect: Expect)
   const enableScheduledSnapshotsLabel = snapshotsScheduleCard.getByTestId('enable-scheduled-snapshots-label');
   if (!await enableScheduledSnapshotsCheckbox.isChecked()) {
     await enableScheduledSnapshotsLabel.click();
+    await expect(enableScheduledSnapshotsCheckbox).toBeChecked();
   }
 
   // Schedule interval
@@ -157,6 +158,7 @@ export const validateAutomaticPartialSnapshots = async (page: Page, expect: Expe
   const enableScheduledSnapshotsLabel = snapshotsScheduleCard.getByTestId('enable-scheduled-snapshots-label');
   if (!await enableScheduledSnapshotsCheckbox.isChecked()) {
     await enableScheduledSnapshotsLabel.click();
+    await expect(enableScheduledSnapshotsCheckbox).toBeChecked();
   }
 
   // Schedule interval
