@@ -151,6 +151,7 @@ export const validateAutomaticPartialSnapshots = async (page: Page, expect: Expe
 
   await snapshotsScheduleCard.getByTestId('partial-snapshots-schedule-tab').click();
   await expect(snapshotsScheduleCard.getByTestId('partial-snapshots-schedule-app-select')).toBeVisible();
+  await page.waitForLoadState('networkidle'); // background request can revert checkbox state...
 
   const enableScheduledSnapshotsCheckbox = snapshotsScheduleCard.getByTestId('enable-scheduled-snapshots-checkbox');
   if (!await enableScheduledSnapshotsCheckbox.isChecked()) {
