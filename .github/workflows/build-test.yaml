@@ -593,8 +593,8 @@ jobs:
         with:
           test-id: '@existing-online-install-minimal'
           kots-namespace: 'qakotsregression'
-          k8s-distribution: kind
-          k8s-version: v1.30.0
+          k8s-distribution: k3s
+          k8s-version: v1.30
           git-tag: ${{ needs.generate-tag.outputs.tag }}
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_QA_API_TOKEN }}'

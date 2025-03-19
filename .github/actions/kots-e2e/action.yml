@@ -125,6 +125,29 @@ runs:
           SKIP_TEARDOWN=1
       shell: bash
 
+    - name: Print logs on failure
+      if: ${{ failure() }}
+      env:
+        KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
+        VELERO_NAMESPACE: velero
+      run: |
+        set +e
+        echo "------pods:"
+        kubectl -n $KOTS_NAMESPACE get pods
+        echo "------kotsadm logs"
+        kubectl -n $KOTS_NAMESPACE logs deployment/kotsadm
+        echo "------previous kotsadm logs"
+        kubectl -n $KOTS_NAMESPACE logs -p deployment/kotsadm
+        echo "------velero logs"
+        kubectl -n $VELERO_NAMESPACE logs deployment/velero
+        echo "------previous velero logs"
+        kubectl -n $VELERO_NAMESPACE logs -p deployment/velero
+        echo "------node-agent logs"
+        kubectl -n $VELERO_NAMESPACE logs daemonset/node-agent
+        echo "------previous node-agent logs"
+        kubectl -n $VELERO_NAMESPACE logs -p daemonset/node-agent
+      shell: bash
+
     - id: upload-playwright-report
       uses: actions/upload-artifact@v4
       if: ${{ failure() }}
@@ -147,29 +170,6 @@ runs:
         echo -e "\e[1;32m      npx playwright show-report .                                                                      \e[0m"
         echo -e "\e[1;33m                                                                                                        \e[0m"
         echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
-      shell: bash
-
-    - name: Print logs on failure
-      if: ${{ failure() }}
-      env:
-        KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
-        VELERO_NAMESPACE: velero
-      run: |
-        set +e
-        echo "------pods:"
-        kubectl -n $KOTS_NAMESPACE get pods
-        echo "------kotsadm logs"
-        kubectl -n $KOTS_NAMESPACE logs deployment/kotsadm
-        echo "------previous kotsadm logs"
-        kubectl -n $KOTS_NAMESPACE logs -p deployment/kotsadm
-        echo "------velero logs"
-        kubectl -n $VELERO_NAMESPACE logs deployment/velero
-        echo "------previous velero logs"
-        kubectl -n $VELERO_NAMESPACE logs -p deployment/velero
-        echo "------node-agent logs"
-        kubectl -n $VELERO_NAMESPACE logs daemonset/node-agent
-        echo "------previous node-agent logs"
-        kubectl -n $VELERO_NAMESPACE logs -p daemonset/node-agent
       shell: bash
 
     - name: Generate support bundle on failure
