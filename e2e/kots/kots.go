@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"time"
 
@@ -106,7 +107,11 @@ func (i *Installer) install(kubeconfig string, test inventory.Test) (*gexec.Sess
 		args = append(args, "--storage-class=gp2")
 	}
 
-	return util.RunCommand(exec.Command("kots", args...))
+	cmd := exec.Command("kots", args...)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "DISABLE_OUTBOUND_CONNECTIONS=false")
+
+	return util.RunCommand(cmd)
 }
 
 func (i *Installer) portForward(kubeconfig, namespace, adminConsolePort string) error {

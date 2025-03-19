@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/ingress"
@@ -353,12 +354,19 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 	}
 
 	env = append(env, GetProxyEnv(deployOptions)...)
-	if deployOptions.RegistryConfig.OverrideRegistry != "" || deployOptions.Airgap {
+
+	if d := os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"); d != "" {
+		env = append(env, corev1.EnvVar{
+			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
+			Value: d,
+		})
+	} else if deployOptions.RegistryConfig.OverrideRegistry != "" || deployOptions.Airgap {
 		env = append(env, corev1.EnvVar{
 			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
 			Value: "true",
 		})
 	}
+
 	if deployOptions.InstallID != "" {
 		env = append(env, corev1.EnvVar{
 			Name:  "KOTS_INSTALL_ID",
@@ -910,7 +918,12 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 
 	env = append(env, GetProxyEnv(deployOptions)...)
 
-	if deployOptions.RegistryConfig.OverrideRegistry != "" || deployOptions.Airgap {
+	if d := os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"); d != "" {
+		env = append(env, corev1.EnvVar{
+			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
+			Value: d,
+		})
+	} else if deployOptions.RegistryConfig.OverrideRegistry != "" || deployOptions.Airgap {
 		env = append(env, corev1.EnvVar{
 			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
 			Value: "true",
