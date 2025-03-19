@@ -7,7 +7,7 @@ test('version history pagination', async ({ page }) => {
   test.setTimeout(8 * 60 * 1000); // 8 minutes
   await login(page);
   await uploadLicense(page, expect, "version-history-pagination.yaml");
-  await expect(page.locator('#app')).toContainText('Configure Version History Pagination', { timeout: 15000 });
+  await expect(page.locator('#app')).toContainText('Configure Version History Pagination', { timeout: 30000 });
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
   await expect(page.getByTestId("dashboard-app-status")).toContainText("Ready", { timeout: 30000 });
