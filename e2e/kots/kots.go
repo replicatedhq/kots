@@ -109,7 +109,7 @@ func (i *Installer) install(kubeconfig string, test inventory.Test) (*gexec.Sess
 
 	cmd := exec.Command("kots", args...)
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "DISABLE_OUTBOUND_CONNECTIONS=false")
+	cmd.Env = append(cmd.Env, "DISABLE_KOTSADM_OUTBOUND_CONNECTIONS=false")
 
 	return util.RunCommand(cmd)
 }
