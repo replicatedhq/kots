@@ -355,7 +355,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 
 	env = append(env, GetProxyEnv(deployOptions)...)
 
-	if d := os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"); d != "" {
+	if d := os.Getenv("DISABLE_KOTSADM_OUTBOUND_CONNECTIONS"); d != "" { // used for e2e testing
 		env = append(env, corev1.EnvVar{
 			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
 			Value: d,
@@ -918,7 +918,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 
 	env = append(env, GetProxyEnv(deployOptions)...)
 
-	if d := os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"); d != "" {
+	if d := os.Getenv("DISABLE_KOTSADM_OUTBOUND_CONNECTIONS"); d != "" { // used for e2e testing
 		env = append(env, corev1.EnvVar{
 			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
 			Value: d,
