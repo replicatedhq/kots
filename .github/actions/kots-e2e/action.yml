@@ -178,11 +178,11 @@ runs:
       with:
         artifact-name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}-support-bundle
 
-    - name: Remove Cluster
-      id: remove-cluster
-      uses: replicatedhq/replicated-actions/remove-cluster@v1
-      if: ${{ always() && inputs.k8s-cluster-skip-teardown != 'true' && steps.create-cluster.outputs.cluster-id != '' }}
-      continue-on-error: true
-      with:
-        api-token: ${{ inputs.cmx-api-token }}
-        cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+    # - name: Remove Cluster
+    #   id: remove-cluster
+    #   uses: replicatedhq/replicated-actions/remove-cluster@v1
+    #   if: ${{ always() && inputs.k8s-cluster-skip-teardown != 'true' && steps.create-cluster.outputs.cluster-id != '' }}
+    #   continue-on-error: true
+    #   with:
+    #     api-token: ${{ inputs.cmx-api-token }}
+    #     cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}

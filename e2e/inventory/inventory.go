@@ -209,13 +209,27 @@ func NewChangeChannel() Test {
 }
 
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
+	// get the service cluster ip
 	cmd := kubectlCLI.Command(
+		context.Background(),
+		"get",
+		"service",
+		"registry",
+		"-n",
+		registry.DefaultNamespace,
+		"-o",
+		"jsonpath={.spec.clusterIP}",
+	)
+	registryIP, err := cmd.Output()
+	Expect(err).WithOffset(1).Should(Succeed(), "Get registry service cluster IP failed")
+
+	cmd = kubectlCLI.Command(
 		context.Background(),
 		"create",
 		"secret",
 		"docker-registry",
 		"registry-creds",
-		fmt.Sprintf("--docker-server=registry.%s.svc.cluster.local:5000", registry.DefaultNamespace),
+		fmt.Sprintf("--docker-server=%s:5000", registryIP),
 		"--docker-username=fake",
 		"--docker-password=fake",
 		"--docker-email=fake@fake.com",
