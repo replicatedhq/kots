@@ -2,7 +2,7 @@
 
 E2E tests are run in build-test workflow on pull_request event.
 
-e2e_test.go uses Ginkgo to build a test suite from inventory.go and runs each test using testim/client.go or playwright/playwright.go
+e2e_test.go uses Ginkgo to build a test suite from inventory.go and runs each test using playwright/playwright.go
 
 Tests are parallelized using Gingko's test focus. Each workflow definition in .github/workflows/build-test.yaml must define a `test-id` parameter that matches the `Test ID` property defined in inventory.go. Each e2e test workflow skips all tests but what is defined in `test-id`. Please colocate new Playwright tests under the Playwright comment with the other pw tests.
 
@@ -61,11 +61,6 @@ e2e/playwright/tests/@change-channel
 
 ## Running tests
 
-For testIM tests, set the testim access token:
-```bash
-export TESTIM_ACCESS_TOKEN=<my-testim-access-token>
-```
-
 The entire suite can be run with the command:
 
 ```bash
@@ -87,12 +82,6 @@ make e2e \
     KOTSADM_IMAGE_REGISTRY=ttl.sh \
     KOTSADM_IMAGE_NAMESPACE=$USER \
     KOTSADM_IMAGE_TAG=24h
-```
-
-To run using a specific testIM branch:
-```bash
-make e2e \
-    TESTIM_BRANCH=$BRANCH_NAME
 ```
 
 To run against the okteto dev environment run:

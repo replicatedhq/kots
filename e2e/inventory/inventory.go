@@ -19,17 +19,21 @@ const (
 	HelmPassword = "password"
 )
 
-func NewRegressionTest() Test {
+func NewRegressionTest(newKOTSVersion string) Test {
 	return Test{
-		ID:              "@regression",
-		TestimLabel:     "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
+		ID:              "@existing-online-install-minimal",
+		dir:             "regression",
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
-		Browser:         "firefox",
 		UseMinimalRBAC:  true,
 		NeedsMonitoring: true,
 		NeedsRegistry:   true,
 		Setup:           SetupRegressionTest,
+		ExtraEnv: []string{
+			"SKIP_INITIAL_KOTS_INSTALL=true",
+			"DISABLE_SNAPSHOTS_VOLUME_ASSERTIONS=true",
+			fmt.Sprintf("NEW_KOTS_VERSION=%s", newKOTSVersion),
+		},
 	}
 }
 
@@ -83,8 +87,8 @@ func NewNoRequiredConfig() Test {
 func NewVersionHistoryPagination() Test {
 	return Test{
 		ID:          "@version-history-pagination",
-		TestimSuite: "version-history-pagination",
 		Namespace:   "version-history-pagination",
+		AppSlug:     "version-history-pagination",
 		UpstreamURI: "version-history-pagination/automated",
 	}
 }
@@ -189,8 +193,8 @@ func NewSupportBundle() Test {
 func NewGitOps() Test {
 	return Test{
 		ID:          "@gitops",
-		TestimSuite: "gitops",
 		Namespace:   "gitops",
+		AppSlug:     "gitops-bobcat",
 		UpstreamURI: "gitops-bobcat/automated",
 	}
 }
@@ -204,7 +208,7 @@ func NewChangeChannel() Test {
 	}
 }
 
-func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
+func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
 	cmd := kubectlCLI.Command(
 		context.Background(),
 		"create",
@@ -219,5 +223,4 @@ func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).WithOffset(1).Should(Succeed(), "Create registry-creds secret failed")
 	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Create registry-creds secret failed with non-zero exit code")
-	return nil
 }

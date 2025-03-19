@@ -26,13 +26,6 @@ inputs:
     description: 'Skip cluster teardown'
     default: 'false'
     required: false
-  testim-access-token:
-    description: 'Testim access token'
-    required: false
-  testim-branch:
-    description: 'Testim branch'
-    default: 'master'
-    required: false
   kotsadm-image-registry:
     description: 'Kotsadm image registry'
     default: 'ttl.sh'
@@ -56,15 +49,27 @@ inputs:
   kots-dockerhub-password:
     description: 'KOTS Dockerhub password'
     required: false
+  aws-access-key-id:
+    description: 'AWS access key id'
+    required: false
+  aws-secret-access-key:
+    description: 'AWS secret access key'
+    required: false
   kots-airgap:
     description: 'Run KOTS with the --airgap flag'
     default: "false"
+    required: false
+  cmx-api-token:
+    description: 'CMX API token'
     required: false
   replicated-api-token:
     description: 'Replicated API token'
     required: false
   gitops-github-token:
     description: 'GitHub token for GitOps tests'
+    required: false
+  git-tag:
+    description: 'Git tag'
     required: false
 
 outputs:
@@ -86,7 +91,7 @@ runs:
       uses: replicatedhq/replicated-actions/create-cluster@v1
       if: ${{ inputs.k8s-distribution != 'k3s-local' }}
       with: 
-        api-token: ${{ inputs.replicated-api-token }}
+        api-token: ${{ inputs.cmx-api-token }}
         kubernetes-distribution: ${{ inputs.k8s-distribution }}
         kubernetes-version: ${{ inputs.k8s-version }}
         cluster-name: automated-kots-${{ github.run_id }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
@@ -97,7 +102,6 @@ runs:
 
     - name: execute suite "${{ inputs.test-id }}"
       env:
-        TESTIM_ACCESS_TOKEN: ${{ inputs.testim-access-token }}
         REPLICATED_API_TOKEN: ${{ inputs.replicated-api-token }}
         GITOPS_GITHUB_TOKEN: ${{ inputs.gitops-github-token }}
         KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
@@ -105,7 +109,6 @@ runs:
         make -C e2e test \
           FOCUS="${{ inputs.test-id }}" \
           EXISTING_KUBECONFIG=$KUBECONFIG \
-          TESTIM_BRANCH=${{ inputs.testim-branch }} \
           KOTSADM_IMAGE_REGISTRY=${{ inputs.kotsadm-image-registry }} \
           KOTSADM_IMAGE_NAMESPACE=${{ inputs.kotsadm-image-namespace || format('automated-{0}', github.run_id) }} \
           KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \
@@ -113,10 +116,36 @@ runs:
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
           KOTS_DOCKERHUB_USERNAME=${{ inputs.kots-dockerhub-username }} \
           KOTS_DOCKERHUB_PASSWORD=${{ inputs.kots-dockerhub-password }} \
+          AWS_ACCESS_KEY_ID=${{ inputs.aws-access-key-id }} \
+          AWS_SECRET_ACCESS_KEY=${{ inputs.aws-secret-access-key }} \
           AIRGAP=${{ inputs.kots-airgap }} \
           IS_OPENSHIFT=${{ inputs.k8s-distribution == 'openshift' && 'true' || 'false' }} \
           IS_EKS=${{ inputs.k8s-distribution == 'eks' && 'true' || 'false' }} \
+          GIT_TAG=${{ inputs.git-tag }} \
           SKIP_TEARDOWN=1
+      shell: bash
+
+    - name: Print logs on failure
+      if: ${{ failure() }}
+      env:
+        KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
+        VELERO_NAMESPACE: velero
+      run: |
+        set +e
+        echo "------pods:"
+        kubectl -n $KOTS_NAMESPACE get pods
+        echo "------kotsadm logs"
+        kubectl -n $KOTS_NAMESPACE logs deployment/kotsadm
+        echo "------previous kotsadm logs"
+        kubectl -n $KOTS_NAMESPACE logs -p deployment/kotsadm
+        echo "------velero logs"
+        kubectl -n $VELERO_NAMESPACE logs deployment/velero
+        echo "------previous velero logs"
+        kubectl -n $VELERO_NAMESPACE logs -p deployment/velero
+        echo "------node-agent logs"
+        kubectl -n $VELERO_NAMESPACE logs daemonset/node-agent
+        echo "------previous node-agent logs"
+        kubectl -n $VELERO_NAMESPACE logs -p daemonset/node-agent
       shell: bash
 
     - id: upload-playwright-report
@@ -143,29 +172,6 @@ runs:
         echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
       shell: bash
 
-    - name: Print logs on failure
-      if: ${{ failure() }}
-      env:
-        KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
-        VELERO_NAMESPACE: velero
-      run: |
-        set +e
-        echo "------pods:"
-        kubectl -n $KOTS_NAMESPACE get pods
-        echo "------kotsadm logs"
-        kubectl -n $KOTS_NAMESPACE logs deployment/kotsadm
-        echo "------previous kotsadm logs"
-        kubectl -n $KOTS_NAMESPACE logs -p deployment/kotsadm
-        echo "------velero logs"
-        kubectl -n $VELERO_NAMESPACE logs deployment/velero
-        echo "------previous velero logs"
-        kubectl -n $VELERO_NAMESPACE logs -p deployment/velero
-        echo "------node-agent logs"
-        kubectl -n $VELERO_NAMESPACE logs daemonset/node-agent
-        echo "------previous node-agent logs"
-        kubectl -n $VELERO_NAMESPACE logs -p daemonset/node-agent
-      shell: bash
-
     - name: Generate support bundle on failure
       if: ${{ failure() }}
       uses: ./.github/actions/generate-support-bundle
@@ -178,5 +184,5 @@ runs:
       if: ${{ always() && inputs.k8s-cluster-skip-teardown != 'true' && steps.create-cluster.outputs.cluster-id != '' }}
       continue-on-error: true
       with:
-        api-token: ${{ inputs.replicated-api-token }}
+        api-token: ${{ inputs.cmx-api-token }}
         cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}

@@ -151,6 +151,9 @@ func InstallCmd() *cobra.Command {
 			}
 
 			disableOutboundConnections := registryConfig.OverrideRegistry != "" || isAirgap
+			if d := os.Getenv("DISABLE_KOTSADM_OUTBOUND_CONNECTIONS"); d != "" { // used for e2e testing
+				disableOutboundConnections = d == "true"
+			}
 
 			m, err := metrics.InitInstallMetrics(license, disableOutboundConnections)
 			if err != nil {

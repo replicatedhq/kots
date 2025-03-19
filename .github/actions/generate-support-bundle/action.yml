@@ -32,7 +32,25 @@ runs:
         name: ${{ inputs.artifact-name }}
         path: ${{ steps.generate-support-bundle.outputs.bundle-name }}
 
-    - name: Print support bundle URL
-      shell: bash
+    - name: Print instructions
+      if: ${{ steps.upload-support-bundle.outputs.artifact-url != '' }}
       run: |
-        echo "::notice ::support bundle can be downloaded from: ${{ steps.upload-support-bundle.outputs.artifact-url }}"
+        echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
+        echo -e "\e[1;33m                            To analyze the support bundle:                                              \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;33m   1- Download & extract the support bundle from:                                                       \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;34m      ${{ steps.upload-support-bundle.outputs.artifact-url }}                                           \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;33m   2- Install sbctl CLI from:                                                                           \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;34m      https://github.com/replicatedhq/sbctl                                                             \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;33m   3- From inside the extracted directory, run:                                                         \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;32m      sbctl serve -s .                                                                                  \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;33m   4- Export the printed kubeconfig to interact with the cluster.                                       \e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
+        echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
+      shell: bash

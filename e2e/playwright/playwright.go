@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
@@ -15,6 +14,8 @@ import (
 )
 
 type Client struct {
+	awsAccessKeyID     string
+	awsSecretAccessKey string
 }
 
 type Run struct {
@@ -25,15 +26,18 @@ type RunOptions struct {
 	Port string
 }
 
-func NewClient() *Client {
-	return &Client{}
+func NewClient(awsAccessKeyID string, awsSecretAccessKey string) *Client {
+	return &Client{
+		awsAccessKeyID:     awsAccessKeyID,
+		awsSecretAccessKey: awsSecretAccessKey,
+	}
 }
 
 func (t *Client) HasTest(test inventory.Test) bool {
 	if test.ID == "" {
 		return false
 	}
-	_, err := os.Stat(fmt.Sprintf("/playwright/tests/%s", test.ID))
+	_, err := os.Stat(fmt.Sprintf("/playwright/%s", test.Path()))
 	return err == nil
 }
 
@@ -56,8 +60,12 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", runOptions.Port))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("NAMESPACE=%s", namespace))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("APP_SLUG=%s", test.AppSlug))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_PATH=%s", filepath.Join("tests", test.ID)))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_DIR=%s", test.Dir()))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_PATH=%s", test.Path()))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("AWS_ACCESS_KEY_ID=%s", t.awsAccessKeyID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("AWS_SECRET_ACCESS_KEY=%s", t.awsSecretAccessKey))
 	cmd.Env = append(cmd.Env, "NODE_OPTIONS=--max-old-space-size=4096")
+	cmd.Env = append(cmd.Env, test.ExtraEnv...)
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run playwright test failed")
 	return &Run{session}
