@@ -614,6 +614,7 @@ class SnapshotSchedule extends Component {
                     <label
                       htmlFor="autoEnabled"
                       className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                      data-testid="enable-scheduled-snapshots-label"
                     >
                       <div className="flex1">
                         <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium u-marginLeft--5">
