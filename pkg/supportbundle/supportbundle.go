@@ -313,7 +313,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}
 
-	defaultAnalyzers, err := getDefaultAnalyzers(isKurl, foundApp.IsAirgap)
+	defaultAnalyzers, err := getDefaultAnalyzers(isKurl, foundApp)
 	if err != nil {
 		return errors.Wrap(err, "failed to get default analyzers")
 	}

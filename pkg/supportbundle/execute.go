@@ -181,21 +181,15 @@ func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressCha
 		// redactions are global in troubleshoot....
 		redact.ResetRedactionList()
 
-		var response *troubleshootv1beta2.SupportBundleResponse
-		if bundle.URI != "" {
-			response, err = troubleshootv1beta2.CollectSupportBundleFromURI(bundle.URI, bundle.RedactURIs, opts)
-			if err != nil {
-				logger.Error(errors.Wrap(err, fmt.Sprintf("error collecting support bundle ID from URI: %s", bundle.ID)))
-				return
-			}
-		} else if bundle.BundleSpec != nil {
-			response, err = troubleshootv1beta2.CollectSupportBundleFromSpec(&bundle.BundleSpec.Spec, bundle.AdditionalRedactors, opts)
-			if err != nil {
-				logger.Error(errors.Wrap(err, fmt.Sprintf("error collecting support bundle ID: %s from spec", bundle.ID)))
-				return
-			}
-		} else {
+		if bundle.BundleSpec == nil {
 			logger.Errorf("cannot collect support bundle; no bundle URI or spec provided")
+			return
+		}
+
+		var response *troubleshootv1beta2.SupportBundleResponse
+		response, err = troubleshootv1beta2.CollectSupportBundleFromSpec(&bundle.BundleSpec.Spec, bundle.AdditionalRedactors, opts)
+		if err != nil {
+			logger.Error(errors.Wrap(err, fmt.Sprintf("error collecting support bundle ID: %s from spec", bundle.ID)))
 			return
 		}
 		defer os.RemoveAll(response.ArchivePath)

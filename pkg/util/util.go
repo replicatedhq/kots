@@ -191,14 +191,19 @@ func IsEmbeddedClusterCustomDomainsSupported(ver string) (bool, error) {
 	return true, nil
 }
 
+// ReplicatedAPIEndpoint returns the endpoint for the replicated.app API.
 func ReplicatedAppEndpoint(license *kotsv1beta1.License) string {
 	if ep := os.Getenv("REPLICATED_APP_ENDPOINT"); ep != "" {
 		return ep
 	}
 
+	// If this is embedded cluster, REPLICATED_APP_ENDPOINT is required.
 	if IsEmbeddedCluster() {
 		panic("REPLICATED_APP_ENDPOINT environment variable is required for embedded cluster")
 	}
+
+	// If this is not an embedded cluster, use the legacy behavior and fall back to the license
+	// spec endpoint or the default value.
 
 	// DEPRECATED: use REPLICATED_APP_ENDPOINT instead
 	if ep := os.Getenv("REPLICATED_API_ENDPOINT"); ep != "" {
