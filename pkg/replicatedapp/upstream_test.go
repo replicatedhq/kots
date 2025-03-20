@@ -73,7 +73,7 @@ func Test_getReplicatedAppEndpoint(t *testing.T) {
 		isEmbedded  bool
 		envEndpoint string
 		want        string
-		wantError   bool
+		wantPanic   bool
 	}{
 		{
 			name: "kots install with full endpoint",
@@ -106,17 +106,17 @@ func Test_getReplicatedAppEndpoint(t *testing.T) {
 			name:       "embedded cluster without env endpoint",
 			license:    nil,
 			isEmbedded: true,
-			wantError:  true,
+			wantPanic:  true,
 		},
 		{
-			name: "embedded cluster without env endpoint but with license should error",
+			name: "embedded cluster without env endpoint but with license should panic",
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					Endpoint: "https://replicated.app:8443",
 				},
 			},
 			isEmbedded: true,
-			wantError:  true,
+			wantPanic:  true,
 		},
 	}
 
@@ -133,13 +133,14 @@ func Test_getReplicatedAppEndpoint(t *testing.T) {
 				}
 			}
 
-			result, err := getReplicatedAppEndpoint(tt.license)
-
-			if tt.wantError {
-				req.Error(err)
+			if tt.wantPanic {
+				req.Panics(func() {
+					_, _ = getReplicatedAppEndpoint(tt.license)
+				})
 				return
 			}
 
+			result, err := getReplicatedAppEndpoint(tt.license)
 			req.NoError(err)
 			assert.Equal(t, tt.want, result)
 		})
