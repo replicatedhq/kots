@@ -37,17 +37,19 @@ jobs:
           IMAGE_TAG=$(echo "${{ inputs.image }}" | cut -d':' -f2)
           [[ "$IMAGE_TAG" == "$IMAGE_NAME" ]] && IMAGE_TAG="latest"
           SAFE_NAME=$(echo "${IMAGE_NAME}-${IMAGE_TAG}" | sed 's/[\/:]/-/g')
-          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-          echo "safe_name=${SAFE_NAME}" >> $GITHUB_OUTPUT
+          {
+            echo "image_name=${IMAGE_NAME}"
+            echo "image_tag=${IMAGE_TAG}"
+            echo "safe_name=${SAFE_NAME}"
+          } >> "$GITHUB_OUTPUT"
       
       - name: Scan image with Anchore
         uses: anchore/scan-action@v3
         id: scan
         with:
           image: "${{ inputs.image }}"
-          fail-build: ${{ inputs.fail-build }}
-          severity-cutoff: ${{ inputs.severity-cutoff }}
+          fail-build: "${{ inputs.fail-build }}"
+          severity-cutoff: "${{ inputs.severity-cutoff }}"
           output-format: sarif
       
       - name: Enrich SARIF with image metadata
