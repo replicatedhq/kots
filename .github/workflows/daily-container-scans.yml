@@ -1,0 +1,137 @@
+name: Container Security Scans
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs nightly at midnight (UTC)
+  workflow_dispatch:      # Allows manual triggering through GitHub UI
+
+permissions: {}  # Remove all permissions by default
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  get-latest-tag:
+    name: Get Latest Release Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read    # Needed to read releases
+    outputs:
+      tag_name: ${{ steps.get_release.outputs.tag_name }}
+    steps:
+      - name: Get latest release
+        id: get_release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const release = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            core.setOutput('tag_name', release.data.tag_name);
+
+  get-tag-from-image-env:
+    name: Get Tag From Image Env
+    runs-on: ubuntu-latest
+    outputs:
+      dex_tag: ${{ steps.dotenv.outputs.DEX_TAG }}
+      minio_tag: ${{ steps.dotenv.outputs.MINIO_TAG }}
+      rqlite_tag: ${{ steps.dotenv.outputs.RQLITE_TAG }}
+      lvp_tag: ${{ steps.dotenv.outputs.LVP_TAG }}
+    steps:
+      - name: Get image tags
+        id: dotenv
+        run: |
+          source .image.env
+          echo "DEX_TAG=${DEX_TAG}" >> $GITHUB_OUTPUT
+          echo "MINIO_TAG=${MINIO_TAG}" >> $GITHUB_OUTPUT
+          echo "RQLITE_TAG=${RQLITE_TAG}" >> $GITHUB_OUTPUT
+          echo "LVP_TAG=${LVP_TAG}" >> $GITHUB_OUTPUT
+
+  scan-kotsadm:
+    name: Scan Kotsadm
+    needs: get-latest-tag
+    if: needs.get-latest-tag.result == 'success'
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}
+      severity-cutoff: low
+      fail-build: false
+
+  scan-kotsadm-migrations:
+    name: Scan Kotsadm Migrations
+    needs: get-latest-tag
+    if: needs.get-latest-tag.result == 'success'
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}
+      severity-cutoff: low
+      fail-build: false
+
+  scan-kurl-proxy:
+    name: Scan Kurl Proxy
+    needs: get-latest-tag
+    if: needs.get-latest-tag.result == 'success'
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}
+      severity-cutoff: low
+      fail-build: false
+
+  scan-dex:
+    name: Scan Dex
+    needs: get-tag-from-image-env
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: kotsadm/dex:${{ needs.get-tag-from-image-env.outputs.dex_tag }}
+      severity-cutoff: low
+      fail-build: false
+
+  scan-minio:
+    name: Scan Minio
+    needs: get-tag-from-image-env
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: kotsadm/minio:${{ needs.get-tag-from-image-env.outputs.minio_tag }}
+      severity-cutoff: low
+      fail-build: false
+
+  scan-rqlite:
+    name: Scan Rqlite
+    needs: get-tag-from-image-env
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: kotsadm/rqlite:${{ needs.get-tag-from-image-env.outputs.rqlite_tag }}
+      severity-cutoff: low
+      fail-build: false
+
+  scan-local-volume-provider:
+    name: Scan Local Volume Provider
+    needs: get-tag-from-image-env
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: replicated/local-volume-provider:${{ needs.get-tag-from-image-env.outputs.lvp_tag }}
+      severity-cutoff: low
+      fail-build: false 
