@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -996,7 +995,7 @@ func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
 }
 
 func makeAppVersionArchiveCollectors(apps []*apptypes.App) ([]*troubleshootv1beta2.Collect, error) {
-	dirPrefix, err := ioutil.TempDir("", "app-version-archive")
+	dirPrefix, err := os.MkdirTemp("", "app-version-archive")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -1030,7 +1029,7 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 		return nil, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
-	tempPath, err := ioutil.TempDir("", "kotsadm")
+	tempPath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
