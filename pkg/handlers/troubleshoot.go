@@ -368,7 +368,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", license.Spec.Endpoint, license.Spec.AppSlug)
+	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", util.ReplicatedAppEndpoint(license), license.Spec.AppSlug)
 
 	req, err := util.NewRequest("POST", endpoint, f)
 	if err != nil {

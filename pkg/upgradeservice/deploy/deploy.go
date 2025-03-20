@@ -175,7 +175,7 @@ func notifyClusterUpgradeFailed(ctx context.Context, kbClient kbclient.Client, o
 		return errors.New("previous installation not found")
 	}
 
-	err = embeddedcluster.NotifyUpgradeFailed(ctx, opts.KotsKinds.License.Spec.Endpoint, ins, prev, reason)
+	err = embeddedcluster.NotifyUpgradeFailed(ctx, util.ReplicatedAppEndpoint(opts.KotsKinds.License), ins, prev, reason)
 	if err != nil {
 		return errors.Wrap(err, "failed to send event")
 	}

@@ -103,10 +103,7 @@ func (m InstallMetrics) Post(url string) error {
 }
 
 func getEndpoint(license *kotsv1beta1.License) (string, error) {
-	endpoint, err := util.ReplicatedAPIEndpoint(license)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get replicated api endpoint")
-	}
+	endpoint := util.ReplicatedAppEndpoint(license)
 
 	if isDevEndpoint(endpoint) {
 		// cluster ip services are not resolvable from the cli ...

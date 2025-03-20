@@ -57,7 +57,7 @@ func GetLatestLicense(license *kotsv1beta1.License, selectedChannelID string) (*
 }
 
 func makeLicenseURL(license *kotsv1beta1.License, selectedChannelID string) (string, error) {
-	u, err := url.Parse(fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug))
+	u, err := url.Parse(fmt.Sprintf("%s/license/%s", util.ReplicatedAppEndpoint(license), license.Spec.AppSlug))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse url")
 	}
@@ -216,7 +216,7 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 }
 
 func SendCustomAppMetricsData(license *kotsv1beta1.License, app *apptypes.App, data map[string]interface{}) error {
-	url := fmt.Sprintf("%s/application/custom-metrics", license.Spec.Endpoint)
+	url := fmt.Sprintf("%s/application/custom-metrics", util.ReplicatedAppEndpoint(license))
 
 	payload := struct {
 		Data map[string]interface{} `json:"data"`

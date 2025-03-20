@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
@@ -70,7 +71,7 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 	case "customerName":
 		return ctx.License.Spec.CustomerName
 	case "endpoint":
-		return ctx.License.Spec.Endpoint
+		return util.ReplicatedAppEndpoint(ctx.License)
 	case "licenseID", "licenseId":
 		return ctx.License.Spec.LicenseID
 	default:

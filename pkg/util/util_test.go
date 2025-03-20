@@ -334,14 +334,14 @@ func TestConvertToSingleDocs(t *testing.T) {
 	}
 }
 
-func Test_ReplicatedAPIEndpoint(t *testing.T) {
+func Test_ReplicatedAppEndpoint(t *testing.T) {
 	tests := []struct {
 		name        string
 		license     *kotsv1beta1.License
 		isEmbedded  bool
 		envEndpoint string
 		want        string
-		wantError   bool
+		wantPanic   bool
 	}{
 		{
 			name: "license with endpoint",
@@ -380,17 +380,17 @@ func Test_ReplicatedAPIEndpoint(t *testing.T) {
 			name:       "embedded cluster without env endpoint",
 			license:    nil,
 			isEmbedded: true,
-			wantError:  true,
+			wantPanic:  true,
 		},
 		{
-			name: "embedded cluster without env endpoint but with license should error",
+			name: "embedded cluster without env endpoint but with license should panic",
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					Endpoint: "https://replicated.app:8443",
 				},
 			},
 			isEmbedded: true,
-			wantError:  true,
+			wantPanic:  true,
 		},
 	}
 
@@ -407,14 +407,14 @@ func Test_ReplicatedAPIEndpoint(t *testing.T) {
 				}
 			}
 
-			result, err := ReplicatedAPIEndpoint(tt.license)
-
-			if tt.wantError {
-				req.Error(err)
+			if tt.wantPanic {
+				req.Panics(func() {
+					_ = ReplicatedAppEndpoint(tt.license)
+				})
 				return
 			}
 
-			req.NoError(err)
+			result := ReplicatedAppEndpoint(tt.license)
 			assert.Equal(t, tt.want, result)
 		})
 	}
