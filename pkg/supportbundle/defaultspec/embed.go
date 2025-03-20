@@ -13,10 +13,10 @@ var raw []byte
 
 var spec *troubleshootv1beta2.SupportBundle
 
-func Get(isAirgap bool) (troubleshootv1beta2.SupportBundle, error) {
+func Get(followURI bool) (troubleshootv1beta2.SupportBundle, error) {
 	if spec == nil {
 		var err error
-		spec, err = supportbundle.ParseSupportBundle(raw, !isAirgap)
+		spec, err = supportbundle.ParseSupportBundle(raw, followURI)
 		if err != nil {
 			return troubleshootv1beta2.SupportBundle{}, errors.Wrap(err, "failed to parse support bundle")
 		}

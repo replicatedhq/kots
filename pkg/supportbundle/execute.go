@@ -182,6 +182,7 @@ func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressCha
 		redact.ResetRedactionList()
 
 		var response *troubleshootv1beta2.SupportBundleResponse
+		// URI can be an http endpoint, oci artifact, or a k8s secret
 		if bundle.URI != "" {
 			response, err = troubleshootv1beta2.CollectSupportBundleFromURI(bundle.URI, bundle.RedactURIs, opts)
 			if err != nil {

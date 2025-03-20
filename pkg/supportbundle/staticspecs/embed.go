@@ -7,7 +7,6 @@ package staticspecs
 import (
 	_ "embed"
 
-	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/supportbundle"
 )
@@ -24,18 +23,18 @@ var vendorspec []byte
 //go:embed defaultspec.yaml
 var defaultspec []byte
 
-func GetVendorSpec(isAirgap bool) (*troubleshootv1beta2.SupportBundle, error) {
-	return supportbundle.ParseSupportBundle(vendorspec, !isAirgap)
+func GetVendorSpec(followURI bool) (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundle(vendorspec, followURI)
 }
 
-func GetClusterSpecificSpec(app *apptypes.App) (*troubleshootv1beta2.SupportBundle, error) {
-	return supportbundle.ParseSupportBundle(clusterspec, !app.IsAirgap)
+func GetClusterSpecificSpec(followURI bool) (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundle(clusterspec, followURI)
 }
 
-func GetDefaultSpec(app *apptypes.App) (*troubleshootv1beta2.SupportBundle, error) {
-	return supportbundle.ParseSupportBundle(defaultspec, !app.IsAirgap)
+func GetDefaultSpec(followURI bool) (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundle(defaultspec, followURI)
 }
 
-func GetKurlSpec(app *apptypes.App) (*troubleshootv1beta2.SupportBundle, error) {
-	return supportbundle.ParseSupportBundle(kurlspec, !app.IsAirgap)
+func GetKurlSpec(followURI bool) (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundle(kurlspec, followURI)
 }
