@@ -407,7 +407,7 @@ func Test_ReplicatedAPIEndpoint(t *testing.T) {
 				}
 			}
 
-			result, err := ReplicatedAPIEndpoint(tt.license)
+			result, err := ReplicatedAppEndpoint(tt.license)
 
 			if tt.wantError {
 				req.Error(err)

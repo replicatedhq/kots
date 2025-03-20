@@ -476,7 +476,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 }
 
 func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]ChannelRelease, *time.Time, error) {
-	u, err := url.Parse(license.Spec.Endpoint)
+	u, err := url.Parse(util.ReplicatedAppEndpoint(license))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse endpoint from license")
 	}

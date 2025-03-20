@@ -370,7 +370,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 }
 
 func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, error) {
-	url := fmt.Sprintf("%s/admin-console/version/latest", license.Spec.Endpoint)
+	url := fmt.Sprintf("%s/admin-console/version/latest", util.ReplicatedAppEndpoint(license))
 
 	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {

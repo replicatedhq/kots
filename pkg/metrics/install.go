@@ -103,7 +103,7 @@ func (m InstallMetrics) Post(url string) error {
 }
 
 func getEndpoint(license *kotsv1beta1.License) (string, error) {
-	endpoint, err := util.ReplicatedAPIEndpoint(license)
+	endpoint, err := util.ReplicatedAppEndpoint(license)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get replicated api endpoint")
 	}

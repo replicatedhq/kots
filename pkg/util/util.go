@@ -191,25 +191,25 @@ func IsEmbeddedClusterCustomDomainsSupported(ver string) (bool, error) {
 	return true, nil
 }
 
-func ReplicatedAPIEndpoint(license *kotsv1beta1.License) (string, error) {
+func ReplicatedAppEndpoint(license *kotsv1beta1.License) string {
 	if ep := os.Getenv("REPLICATED_APP_ENDPOINT"); ep != "" {
-		return ep, nil
+		return ep
 	}
 
 	if IsEmbeddedCluster() {
-		return "", errors.New("REPLICATED_APP_ENDPOINT environment variable is required")
+		panic("REPLICATED_APP_ENDPOINT environment variable is required for embedded cluster")
 	}
 
 	// DEPRECATED: use REPLICATED_APP_ENDPOINT instead
 	if ep := os.Getenv("REPLICATED_API_ENDPOINT"); ep != "" {
-		return ep, nil
+		return ep
 	}
 
 	if license != nil {
-		return license.Spec.Endpoint, nil
+		return license.Spec.Endpoint
 	}
 
-	return "https://replicated.app", nil
+	return "https://replicated.app"
 }
 
 func DefaultProxyRegistryDomain() string {

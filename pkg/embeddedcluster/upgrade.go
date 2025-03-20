@@ -44,7 +44,7 @@ func startClusterUpgrade(
 	ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec,
 	artifacts *embeddedclusterv1beta1.ArtifactsLocation,
 	registrySettings registrytypes.RegistrySettings,
-	license kotsv1beta1.License, versionLabel string,
+	license *kotsv1beta1.License, versionLabel string,
 ) error {
 	// TODO(upgrade): put a lock here to prevent multiple upgrades at the same time
 
@@ -83,13 +83,13 @@ func startClusterUpgrade(
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 
 	// We cannot notify the upgrade started until the new install is available
-	if err := NotifyUpgradeStarted(ctx, license.Spec.Endpoint, newInstall, current, versionLabel); err != nil {
+	if err := NotifyUpgradeStarted(ctx, util.ReplicatedAppEndpoint(license), newInstall, current, versionLabel); err != nil {
 		logger.Errorf("Failed to notify upgrade started: %v", err)
 	}
 
-	err = runClusterUpgrade(ctx, k8sClient, newcfg, newInstall, registrySettings, license, versionLabel)
+	err = runClusterUpgrade(ctx, k8sClient, newInstall, registrySettings, license, versionLabel)
 	if err != nil {
-		if err := NotifyUpgradeFailed(ctx, license.Spec.Endpoint, newInstall, current, err.Error()); err != nil {
+		if err := NotifyUpgradeFailed(ctx, util.ReplicatedAppEndpoint(license), newInstall, current, err.Error()); err != nil {
 			logger.Errorf("Failed to notify upgrade failed: %v", err)
 		}
 		return fmt.Errorf("run cluster upgrade: %w", err)
@@ -106,9 +106,9 @@ func startClusterUpgrade(
 // operator, wait for the CRD to be up-to-date, and then apply the installation object.
 func runClusterUpgrade(
 	ctx context.Context, k8sClient kubernetes.Interface,
-	newcfg embeddedclusterv1beta1.ConfigSpec, in *embeddedclusterv1beta1.Installation,
+	in *embeddedclusterv1beta1.Installation,
 	registrySettings registrytypes.RegistrySettings,
-	license kotsv1beta1.License, versionLabel string,
+	license *kotsv1beta1.License, versionLabel string,
 ) error {
 	var bin string
 
@@ -190,7 +190,7 @@ const (
 	upgradeBinaryOCIAsset = "operator.tar.gz"
 )
 
-func downloadUpgradeBinary(ctx context.Context, license kotsv1beta1.License, versionLabel string) (string, error) {
+func downloadUpgradeBinary(ctx context.Context, license *kotsv1beta1.License, versionLabel string) (string, error) {
 	tmpdir, err := os.MkdirTemp("", "embedded-cluster-artifact-*")
 	if err != nil {
 		return "", fmt.Errorf("create temp dir: %w", err)
@@ -234,8 +234,8 @@ func downloadUpgradeBinary(ctx context.Context, license kotsv1beta1.License, ver
 	return filepath.Join(tmpdir, upgradeBinary), nil
 }
 
-func newDownloadUpgradeBinaryRequest(ctx context.Context, license kotsv1beta1.License, versionLabel string) (*http.Request, error) {
-	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", license.Spec.Endpoint, url.QueryEscape(versionLabel))
+func newDownloadUpgradeBinaryRequest(ctx context.Context, license *kotsv1beta1.License, versionLabel string) (*http.Request, error) {
+	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
 	req, err := util.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
