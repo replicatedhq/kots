@@ -143,6 +143,16 @@ build-ttl.sh: web kots build
 	docker build --platform $(OS)/$(ARCH) -f dev/dockerfiles/kotsadm/Dockerfile.ttlsh -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 
+.PHONY: kots-ttl.sh
+kots-ttl.sh: export GOOS ?= $(OS)
+kots-ttl.sh: export GOARCH ?= $(ARCH)
+kots-ttl.sh: kots
+	cd bin && \
+	tar czf kots.tar.gz kots && \
+	oras push ttl.sh/${CURRENT_USER}/kots.tar.gz:24h \
+		--artifact-type application/vnd.unknown.layer.v1+binary \
+		kots.tar.gz:application/gzip
+
 .PHONY: all-ttl.sh
 all-ttl.sh: export GOOS ?= $(OS)
 all-ttl.sh: export GOARCH ?= $(ARCH)
