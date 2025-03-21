@@ -1,0 +1,68 @@
+name: Container Security Scans
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs nightly at midnight (UTC)
+  workflow_dispatch:      # Allows manual triggering through GitHub UI
+
+permissions: {}  # Remove all permissions by default
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  get-latest-tag:
+    name: Get Latest Release Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read    # Needed to read releases
+    outputs:
+      tag_name: ${{ steps.get_release.outputs.tag_name }}
+    steps:
+      - name: Get latest release
+        id: get_release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const release = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            core.setOutput('tag_name', release.data.tag_name);
+
+  scan-kotsadm:
+    name: Scan Kotsadm
+    needs: get-latest-tag
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}
+      severity-cutoff: low
+      fail-build: false
+
+  scan-kotsadm-migrations:
+    name: Scan Kotsadm Migrations
+    needs: get-latest-tag
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}
+      severity-cutoff: low
+      fail-build: false
+
+  scan-kurl-proxy:
+    name: Scan Kurl Proxy
+    needs: get-latest-tag
+    uses: ./.github/workflows/scan-container-image.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      image: kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}
+      severity-cutoff: low
+      fail-build: false 
