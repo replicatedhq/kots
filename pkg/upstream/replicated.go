@@ -381,34 +381,18 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
 	isRequiredStr := getResp.Header.Get("X-Replicated-IsRequired")
 	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
-	var replicatedRegistryDomain, replicatedProxyDomain string
-
-	// If this is the upgrade service, it may be the case that the environment variables do not
-	// exist in the container, as we are running in a previous release of the helm chart. If this
-	// is the case, we fall back to the previous behavior.
-	isEmbeddedClusterCustomDomainsSupported := false
-	if util.IsEmbeddedCluster() {
-		var err error
-		isEmbeddedClusterCustomDomainsSupported, err = util.IsEmbeddedClusterCustomDomainsSupported(util.EmbeddedClusterVersion())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if embedded cluster custom domains are supported")
-		}
-	}
-
-	if isEmbeddedClusterCustomDomainsSupported {
-		replicatedRegistryDomain = os.Getenv("REPLICATED_REGISTRY_DOMAIN")
-		if replicatedRegistryDomain == "" {
-			return nil, errors.New("REPLICATED_REGISTRY_DOMAIN environment variable is required")
-		}
-		replicatedProxyDomain = os.Getenv("PROXY_REGISTRY_DOMAIN")
-		if replicatedProxyDomain == "" {
-			return nil, errors.New("PROXY_REGISTRY_DOMAIN environment variable is required")
-		}
-	} else {
-		replicatedRegistryDomain = getResp.Header.Get("X-Replicated-ReplicatedRegistryDomain")
-		replicatedProxyDomain = getResp.Header.Get("X-Replicated-ReplicatedProxyDomain")
-	}
 	replicatedChartNamesStr := getResp.Header.Get("X-Replicated-ReplicatedChartNames")
+	replicatedAppDomain := getResp.Header.Get("X-Replicated-ReplicatedAppDomain")
+	replicatedRegistryDomain := getResp.Header.Get("X-Replicated-ReplicatedRegistryDomain")
+	replicatedProxyDomain := getResp.Header.Get("X-Replicated-ReplicatedProxyDomain")
+
+	// If this is embedded cluster, update the environment variables with the new domains
+	// so that the upgrade service can pick them up and use them.
+	if util.IsEmbeddedCluster() {
+		os.Setenv("REPLICATED_APP_ENDPOINT", "https://"+replicatedAppDomain)
+		os.Setenv("REPLICATED_REGISTRY_DOMAIN", replicatedRegistryDomain)
+		os.Setenv("PROXY_REGISTRY_DOMAIN", replicatedProxyDomain)
+	}
 
 	var releasedAt *time.Time
 	r, err := time.Parse(time.RFC3339, releasedAtStr)
@@ -495,6 +479,7 @@ func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt 
 	urlValues.Set("channelSequence", sequence)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 	urlValues.Add("isSemverSupported", "true")
+	urlValues.Add("isEmbeddedCluster", fmt.Sprintf("%t", util.IsEmbeddedCluster()))
 	urlValues.Add("selectedChannelId", selectedChannelID)
 
 	if lastUpdateCheckAt != nil {

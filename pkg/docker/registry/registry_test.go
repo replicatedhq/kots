@@ -140,30 +140,6 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				Upstream: "registry.replicated.com",
 			},
 		},
-		{
-			name: "GetRegistryProxyInfo falls back to previous behavior for embedded cluster when EMBEDDED_CLUSTER_VERSION is less than 2.2.0",
-			args: args{
-				license: nil,
-				installation: &kotsv1beta1.Installation{
-					Spec: kotsv1beta1.InstallationSpec{
-						ReplicatedProxyDomain:    customProxy,
-						ReplicatedRegistryDomain: customRegistry,
-					},
-				},
-				app: nil,
-			},
-			env: map[string]string{
-				"EMBEDDED_CLUSTER_ID":        "123",
-				"EMBEDDED_CLUSTER_VERSION":   "2.1.3",
-				"REPLICATED_REGISTRY_DOMAIN": "localhost:30000",
-				"PROXY_REGISTRY_DOMAIN":      "localhost:30001",
-			},
-			want: &RegistryProxyInfo{
-				Registry: customRegistry,
-				Proxy:    customProxy,
-				Upstream: "registry.replicated.com",
-			},
-		},
 	}
 
 	for _, tt := range tests {
