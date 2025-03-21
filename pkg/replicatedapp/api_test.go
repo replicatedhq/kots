@@ -30,7 +30,7 @@ func Test_getRequest(t *testing.T) {
 			channel:         nil,
 			channelSequence: "",
 			versionLabel:    nil,
-			expectedURL:     "https://replicated-app/release/sluggy1?channelSequence=&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel",
+			expectedURL:     "https://replicated-app/release/sluggy1?channelSequence=&isEmbeddedCluster=false&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel",
 		},
 		{
 			endpoint:        "http://localhost:30016",
@@ -38,7 +38,7 @@ func Test_getRequest(t *testing.T) {
 			channel:         &beta,
 			channelSequence: "",
 			versionLabel:    nil,
-			expectedURL:     "http://localhost:30016/release/sluggy2/beta?channelSequence=&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel",
+			expectedURL:     "http://localhost:30016/release/sluggy2/beta?channelSequence=&isEmbeddedCluster=false&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel",
 		},
 		{
 			endpoint:        "https://replicated-app",
@@ -46,7 +46,7 @@ func Test_getRequest(t *testing.T) {
 			channel:         &unstable,
 			channelSequence: "10",
 			versionLabel:    nil,
-			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=10&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel",
+			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=10&isEmbeddedCluster=false&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel",
 		},
 		{
 			endpoint:        "https://replicated-app",
@@ -54,7 +54,7 @@ func Test_getRequest(t *testing.T) {
 			channel:         &unstable,
 			channelSequence: "",
 			versionLabel:    &version,
-			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel&versionLabel=1.1.0",
+			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=&isEmbeddedCluster=false&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel&versionLabel=1.1.0",
 		},
 	}
 
