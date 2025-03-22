@@ -39,8 +39,8 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/onsi/ginkgo/v2 v2.22.2
-	github.com/onsi/gomega v1.36.2
+	github.com/onsi/ginkgo/v2 v2.23.3
+	github.com/onsi/gomega v1.36.3
 	github.com/open-policy-agent/opa v0.68.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/ory/dockertest/v3 v3.10.0
@@ -57,7 +57,7 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rqlite/gorqlite v0.0.0-20221028154453-256f31831ff3
-	github.com/schemahero/schemahero v0.17.14
+	github.com/schemahero/schemahero v0.17.15
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/spf13/cobra v1.9.1
@@ -207,7 +207,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-containerregistry v0.20.2 // indirect
 	github.com/google/go-intervals v0.0.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
@@ -364,12 +364,12 @@ require (
 	golang.org/x/term v0.30.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
-	golang.org/x/tools v0.28.0 // indirect
+	golang.org/x/tools v0.30.0 // indirect
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250106144421-5f5ef82da422 // indirect
 	google.golang.org/grpc v1.69.4 // indirect
-	google.golang.org/protobuf v1.36.2 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	k8s.io/apiextensions-apiserver v0.32.2 // indirect
