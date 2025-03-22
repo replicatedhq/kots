@@ -44,7 +44,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
       
       - name: Scan image with Anchore
-        uses: anchore/scan-action@v3
+        uses: anchore/scan-action@v6
         id: scan
         with:
           image: "${{ inputs.image }}"
