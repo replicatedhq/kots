@@ -7682,7 +7682,8 @@ async function getClusterVersions() {
             numOfLatestVersions: 3
         },
         eks: {
-            latest_version: true,
+            // latest_version: true,
+            versions: new Set(["1.30"]),
             instance_type: "m7g.large" // arm64
         },
         openshift: {
