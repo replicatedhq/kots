@@ -2,7 +2,6 @@ package util
 
 import (
 	"reflect"
-	"strings"
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -416,71 +415,6 @@ func Test_ReplicatedAppEndpoint(t *testing.T) {
 
 			result := ReplicatedAppEndpoint(tt.license)
 			assert.Equal(t, tt.want, result)
-		})
-	}
-}
-
-func TestIsEmbeddedClusterCustomDomainsSupported(t *testing.T) {
-	tests := []struct {
-		name          string
-		version       string
-		expected      bool
-		expectError   bool
-		errorContains string
-	}{
-		{
-			name:     "version less than 2.2.0",
-			version:  "2.1.0",
-			expected: false,
-		},
-		{
-			name:     "version 2.1.3 with short k8s version",
-			version:  "2.1.3+k8s-1.30",
-			expected: false,
-		},
-		{
-			name:     "version 2.1.3 with long dev build",
-			version:  "2.1.3+k8s-1.30-51-g09f1a",
-			expected: true,
-		},
-		{
-			name:     "version equal to 2.2.0",
-			version:  "2.2.0",
-			expected: true,
-		},
-		{
-			name:     "version greater than 2.2.0",
-			version:  "2.3.0",
-			expected: true,
-		},
-		{
-			name:          "invalid version",
-			version:       "invalid",
-			expectError:   true,
-			errorContains: "failed to parse embedded cluster version",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			supported, err := IsEmbeddedClusterCustomDomainsSupported(test.version)
-
-			if test.expectError {
-				if err == nil {
-					t.Error("expected error but got nil")
-				} else if !strings.Contains(err.Error(), test.errorContains) {
-					t.Errorf("expected error to contain %q but got %q", test.errorContains, err.Error())
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
-
-			if supported != test.expected {
-				t.Errorf("expected %v but got %v", test.expected, supported)
-			}
 		})
 	}
 }
