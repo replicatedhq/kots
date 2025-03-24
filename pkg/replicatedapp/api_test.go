@@ -22,6 +22,7 @@ func Test_getRequest(t *testing.T) {
 		channel         *string
 		channelSequence string
 		versionLabel    *string
+		isEC            bool
 		expectedURL     string
 	}{
 		{
@@ -56,6 +57,15 @@ func Test_getRequest(t *testing.T) {
 			versionLabel:    &version,
 			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=&isEmbeddedCluster=false&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel&versionLabel=1.1.0",
 		},
+		{
+			endpoint:        "https://replicated-app",
+			appSlug:         "sluggy3",
+			channel:         &unstable,
+			channelSequence: "",
+			versionLabel:    &version,
+			isEC:            true,
+			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=&isEmbeddedCluster=true&isSemverSupported=true&licenseSequence=23&selectedChannelId=channel&versionLabel=1.1.0",
+		},
 	}
 
 	req := require.New(t)
@@ -77,6 +87,10 @@ func Test_getRequest(t *testing.T) {
 		}
 		if test.channel != nil {
 			cursor.ChannelName = *test.channel
+		}
+		if test.isEC {
+			t.Setenv("EMBEDDED_CLUSTER_ID", "123")
+			t.Setenv("REPLICATED_APP_ENDPOINT", "https://replicated-app")
 		}
 		request, err := r.GetRequest("GET", license, cursor.Cursor, channel)
 		req.NoError(err)
