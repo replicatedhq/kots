@@ -1,7 +1,7 @@
 import { Page, Expect, Locator } from '@playwright/test';
 import { retry } from 'ts-retry';
 
-import { runCommand, runCommandWithOutput } from './cli';
+import { runCommand } from './cli';
 import {
   SSH_TO_WORKER,
   SSH_TO_JUMPBOX
