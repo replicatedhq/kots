@@ -10,6 +10,7 @@ import {
   validateInitialConfig,
   validateClusterAdminInitialPreflights,
   joinWorkerNode,
+  waitForWorkerNode,
   validateDashboardInfo,
   validateDashboardAutomaticUpdates,
   validateDashboardGraphs,
@@ -89,6 +90,7 @@ test('type=embedded cluster, env=online, phase=new install, rbac=cluster admin',
   await deployNewVersion(page, expect, 3, 'License Change', constants.IS_MINIMAL_RBAC);
 
   // Snapshot validation
+  await waitForWorkerNode();
   await configureSnapshotsAWSInstanceRole(page, expect);
   await validateAutomaticFullSnapshots(page, expect);
   await validateAutomaticPartialSnapshots(page, expect);
