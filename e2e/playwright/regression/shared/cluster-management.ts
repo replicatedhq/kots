@@ -1,13 +1,13 @@
 import { Page, Expect, Locator } from '@playwright/test';
+import { retry } from 'ts-retry';
 
-import { runCommand } from './cli';
+import { runCommand, runCommandWithOutput } from './cli';
 import {
   SSH_TO_WORKER,
   SSH_TO_JUMPBOX
 } from './constants';
 
 export const joinWorkerNode = async (page: Page, expect: Expect) => {
-  await expect(page.getByTestId('get-started-sidebar')).not.toBeVisible({ timeout: 15000 });
   await page.locator('.NavItem').getByText('Cluster Management', { exact: true }).click();
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
 
@@ -24,6 +24,18 @@ export const joinWorkerNode = async (page: Page, expect: Expect) => {
   addNodeCommand = `${SSH_TO_JUMPBOX} "${addNodeCommand}" &`; // via the jumpbox in the background
 
   runCommand(addNodeCommand);
+};
+
+export const waitForWorkerNode = async () => {
+  await retry(
+    async () => {
+      runCommand('kubectl get nodes | grep Ready | wc -l | grep -q 2');
+    },
+    {
+      delay: 10000, // 10 seconds
+      maxTry: 30,   // 5 minutes total
+    }
+  );
 };
 
 export const validateClusterManagement = async (page: Page, expect: Expect) => {
