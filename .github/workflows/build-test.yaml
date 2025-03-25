@@ -569,39 +569,43 @@ jobs:
       versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
 
 
-  validate-existing-online-install-minimal:
-    runs-on: ubuntu-24.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: download e2e deps
-        uses: actions/download-artifact@v4
-        with:
-          name: e2e
-          path: e2e/bin/
-      - name: download kots binary
-        uses: actions/download-artifact@v4
-        with:
-          name: kots
-          path: bin/
-      - run: |
-          docker load -i e2e/bin/e2e-deps.tar
-          chmod +x e2e/bin/*
-          chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-id: '@existing-online-install-minimal'
-          kots-namespace: 'qakotsregression'
-          k8s-distribution: k3s
-          k8s-version: v1.30
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
-          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          replicated-api-token: '${{ secrets.REPLICATED_QA_API_TOKEN }}'
-          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
-          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-          aws-access-key-id: '${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}'
+  # TODO (@salah): this test is not designed to have multiple instances of it running at the same time, so it's very flaky on PRs.
+  # It is also a very slow test compared to other PR tests. We should split it into multiple tests as separate apps to make it faster, less flaky, and parallelizable.
+  # Disable for now as it still runs on merge to main so we're not losing coverage.
+  #
+  # validate-existing-online-install-minimal:
+  #   runs-on: ubuntu-24.04
+  #   needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #     - name: download e2e deps
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: e2e
+  #         path: e2e/bin/
+  #     - name: download kots binary
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: kots
+  #         path: bin/
+  #     - run: |
+  #         docker load -i e2e/bin/e2e-deps.tar
+  #         chmod +x e2e/bin/*
+  #         chmod +x bin/*
+  #     - uses: ./.github/actions/kots-e2e
+  #       with:
+  #         test-id: '@existing-online-install-minimal'
+  #         kots-namespace: 'qakotsregression'
+  #         k8s-distribution: k3s
+  #         k8s-version: v1.30
+  #         git-tag: ${{ needs.generate-tag.outputs.tag }}
+  #         cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+  #         replicated-api-token: '${{ secrets.REPLICATED_QA_API_TOKEN }}'
+  #         kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+  #         kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+  #         aws-access-key-id: '${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}'
+  #         aws-secret-access-key: '${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}'
 
 
   validate-smoke-test-online:
@@ -688,7 +692,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.30.0},
-          {distribution: openshift, version: 4.15.0-okd}
+          {distribution: openshift, version: 4.16.0-okd}
         ]
     env:
       APP_SLUG: minimal-rbac
@@ -1280,7 +1284,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.30.0},
-          {distribution: openshift, version: 4.15.0-okd}
+          {distribution: openshift, version: 4.17.0-okd}
         ]
     env:
       APP_SLUG: minimal-rbac
@@ -3805,7 +3809,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.30.0},
-          {distribution: openshift, version: 4.15.0-okd}
+          {distribution: openshift, version: 4.16.0-okd}
         ]
     env:
       KOTS_NAMESPACE: replicated-sdk
@@ -4114,7 +4118,7 @@ jobs:
       matrix:
         cluster: [
           {distribution: kind, version: v1.30.0},
-          {distribution: openshift, version: 4.15.0-okd}
+          {distribution: openshift, version: 4.17.0-okd}
         ]
     steps:
       - name: Checkout
@@ -4566,7 +4570,7 @@ jobs:
       - vet-kots
       - ci-test-kots
       # playwright tests
-      - validate-existing-online-install-minimal
+      # - validate-existing-online-install-minimal
       - validate-smoke-test-online
       - validate-smoke-test-airgap
       - validate-backup-and-restore
