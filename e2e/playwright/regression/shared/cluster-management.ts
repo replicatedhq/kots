@@ -1,4 +1,5 @@
 import { Page, Expect, Locator } from '@playwright/test';
+import { retry } from 'ts-retry';
 
 import { runCommand } from './cli';
 import {
@@ -24,6 +25,18 @@ export const joinWorkerNode = async (page: Page, expect: Expect) => {
   addNodeCommand = `${SSH_TO_JUMPBOX} "${addNodeCommand}" &`; // via the jumpbox in the background
 
   runCommand(addNodeCommand);
+};
+
+export const waitForWorkerNode = async () => {
+  await retry(
+    async () => {
+      runCommand('kubectl get nodes | grep Ready | wc -l | grep -q 2');
+    },
+    {
+      delay: 10000, // 10 seconds
+      maxTry: 30,   // 5 minutes total
+    }
+  );
 };
 
 export const validateClusterManagement = async (page: Page, expect: Expect) => {

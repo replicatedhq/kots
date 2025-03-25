@@ -60,6 +60,7 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 	}
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 	urlValues.Add("isSemverSupported", "true")
+	urlValues.Add("isEmbeddedCluster", fmt.Sprintf("%t", util.IsEmbeddedCluster()))
 	urlValues.Add("selectedChannelId", selectedChannelID)
 
 	url := fmt.Sprintf("%s/%s?%s", endpoint, urlPath, urlValues.Encode())
