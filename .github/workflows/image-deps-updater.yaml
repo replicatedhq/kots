@@ -98,7 +98,6 @@ jobs:
           labels: |
             automated-pr
             images
-            type::security
           draft: false
           base: "main"
           body: "Automated changes by the [image-deps-updater](https://github.com/replicatedhq/kots/blob/main/.github/workflows/image-deps-updater.yaml) GitHub action"
