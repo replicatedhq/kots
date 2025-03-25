@@ -10,9 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
-	semver "github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -167,38 +165,19 @@ func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
 }
 
-var (
-	ecCustomDomainsMinVer = semver.MustParse("2.2.0")
-)
-
-func IsEmbeddedClusterCustomDomainsSupported(ver string) (bool, error) {
-	sv, err := semver.NewVersion(ver)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to parse embedded cluster version")
-	}
-	build := strings.Split(sv.Metadata(), ".")
-
-	// Not yet supported in versions less than 2.2.0
-	if sv.LessThan(ecCustomDomainsMinVer) {
-		// TODO: remove this once we have released 2.2.0 and just return nil
-		// for production releases, the second part of the build is the k8s minor version, so "30" in "2.1.3+k8s-1.30"
-		// for dev builds, the second part is much longer, so "30-51-g09f1a" in "2.1.3+k8s-1.30-51-g09f1a"
-		if !sv.Equal(semver.MustParse("2.1.3")) || len(build) < 2 || len(build[1]) <= 5 {
-			return false, nil
-		}
-	}
-
-	return true, nil
-}
-
+// ReplicatedAPIEndpoint returns the endpoint for the replicated.app API.
 func ReplicatedAppEndpoint(license *kotsv1beta1.License) string {
 	if ep := os.Getenv("REPLICATED_APP_ENDPOINT"); ep != "" {
 		return ep
 	}
 
+	// If this is embedded cluster, REPLICATED_APP_ENDPOINT is required.
 	if IsEmbeddedCluster() {
 		panic("REPLICATED_APP_ENDPOINT environment variable is required for embedded cluster")
 	}
+
+	// If this is not an embedded cluster, use the legacy behavior and fall back to the license
+	// spec endpoint or the default value.
 
 	// DEPRECATED: use REPLICATED_APP_ENDPOINT instead
 	if ep := os.Getenv("REPLICATED_API_ENDPOINT"); ep != "" {

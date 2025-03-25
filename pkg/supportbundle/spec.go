@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -102,17 +101,17 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 	}
 
 	// split the default kotsadm support bundle into multiple support bundles
-	vendorSpec, err := createVendorSpec(builtBundle, app.IsAirgap)
+	vendorSpec, err := createVendorSpec(builtBundle, shouldFollowURI(app))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create vendor support bundle spec")
 	}
 
-	clusterSpec, err := createClusterSpecificSpec(app, builtBundle, clientset)
+	clusterSpec, err := createClusterSpecificSpec(app, clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create cluster specific support bundle spec")
 	}
 
-	defaultSpec, err := createDefaultSpec(app, builtBundle, opts, namespacesToCollect, namespacesToAnalyze, clientset)
+	defaultSpec, err := createDefaultSpec(app, opts, namespacesToCollect, namespacesToAnalyze, clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create defaults support bundle spec")
 	}
@@ -366,14 +365,14 @@ func addAfterCollectionSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBun
 }
 
 // createVendorSpec creates a support bundle spec that includes the vendor specific collectors and analyzers
-func createVendorSpec(b *troubleshootv1beta2.SupportBundle, isAirgap bool) (*troubleshootv1beta2.SupportBundle, error) {
-	supportBundle, err := staticspecs.GetVendorSpec(isAirgap)
+func createVendorSpec(b *troubleshootv1beta2.SupportBundle, followURI bool) (*troubleshootv1beta2.SupportBundle, error) {
+	supportBundle, err := staticspecs.GetVendorSpec(followURI)
 	if err != nil {
 		logger.Errorf("Failed to load vendor support bundle spec: %v", err)
 		return nil, err
 	}
 
-	if b.Spec.Uri != "" {
+	if followURI && b.Spec.Uri != "" {
 		supportBundle.Spec.Uri = b.Spec.Uri
 	}
 	if b.Spec.Collectors != nil {
@@ -386,8 +385,8 @@ func createVendorSpec(b *troubleshootv1beta2.SupportBundle, isAirgap bool) (*tro
 }
 
 // createClusterSpecificSupportBundle creates a support bundle spec with only cluster specific collectors, analyzers and upload result URI.
-func createClusterSpecificSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, clientset kubernetes.Interface) (*troubleshootv1beta2.SupportBundle, error) {
-	supportBundle, err := staticspecs.GetClusterSpecificSpec(app)
+func createClusterSpecificSpec(app *apptypes.App, clientset kubernetes.Interface) (*troubleshootv1beta2.SupportBundle, error) {
+	supportBundle, err := staticspecs.GetClusterSpecificSpec(shouldFollowURI(app))
 	if err != nil {
 		logger.Errorf("Failed to load cluster specific support bundle spec: %v", err)
 		return nil, err
@@ -398,8 +397,8 @@ func createClusterSpecificSpec(app *apptypes.App, b *troubleshootv1beta2.Support
 }
 
 // createDefaultSpec creates a default support bundle spec that includes the default collectors and analyzers and add kurl specific collectors and analyzers if the cluster is a kurl cluster
-func createDefaultSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, clientset *kubernetes.Clientset) (*troubleshootv1beta2.SupportBundle, error) {
-	supportBundle, err := staticspecs.GetDefaultSpec(app)
+func createDefaultSpec(app *apptypes.App, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, clientset *kubernetes.Clientset) (*troubleshootv1beta2.SupportBundle, error) {
+	supportBundle, err := staticspecs.GetDefaultSpec(shouldFollowURI(app))
 	if err != nil {
 		logger.Errorf("Failed to load default support bundle spec: %v", err)
 		return nil, err
@@ -426,7 +425,7 @@ func createDefaultSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, 
 	}
 
 	if isKurl {
-		kurlSupportBundle, err := staticspecs.GetKurlSpec(app)
+		kurlSupportBundle, err := staticspecs.GetKurlSpec(shouldFollowURI(app))
 		if err != nil {
 			logger.Errorf("Failed to load kurl support bundle spec: %v", err)
 			return nil, err
@@ -453,7 +452,7 @@ func addDiscoveredSpecs(
 	}
 
 	for _, specData := range specs {
-		sbObject, err := sb.ParseSupportBundle([]byte(specData), !app.IsAirgap)
+		sbObject, err := sb.ParseSupportBundle([]byte(specData), shouldFollowURI(app))
 		if err != nil {
 			logger.Errorf("Failed to unmarshal support bundle spec: %v", err)
 			continue
@@ -702,8 +701,8 @@ func deduplicatedAfterCollection(supportBundle *troubleshootv1beta2.SupportBundl
 	return b
 }
 
-func getDefaultAnalyzers(isKurl, isAirgap bool) ([]*troubleshootv1beta2.Analyze, error) {
-	defaultSpec, err := defaultspec.Get(isAirgap)
+func getDefaultAnalyzers(isKurl bool, app *apptypes.App) ([]*troubleshootv1beta2.Analyze, error) {
+	defaultSpec, err := defaultspec.Get(shouldFollowURI(app))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get default spec")
 	}
@@ -996,7 +995,7 @@ func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
 }
 
 func makeAppVersionArchiveCollectors(apps []*apptypes.App) ([]*troubleshootv1beta2.Collect, error) {
-	dirPrefix, err := ioutil.TempDir("", "app-version-archive")
+	dirPrefix, err := os.MkdirTemp("", "app-version-archive")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -1030,7 +1029,7 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 		return nil, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
-	tempPath, err := ioutil.TempDir("", "kotsadm")
+	tempPath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -1244,4 +1243,12 @@ func removeKurlAnalyzers(analyzers []*troubleshootv1beta2.Analyze) []*troublesho
 	}
 
 	return analyze
+}
+
+// shouldFollowURI returns true if the support bundle should follow the URI. This is true for
+// non-airgapped, non-embedded clusters.
+// NOTE: We can add back the ability to follow the URI for Embedded Clusters once we have the
+// ability to handle this with custom domains.
+func shouldFollowURI(app *apptypes.App) bool {
+	return !app.IsAirgap && !util.IsEmbeddedCluster()
 }

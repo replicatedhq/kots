@@ -26,6 +26,7 @@ import {
   removeApp,
   kurlCliAirgapInstall,
   joinWorkerNode,
+  waitForWorkerNode,
   validateDashboardGraphs,
   updateConfig,
   validateIgnorePreflightsModal,
@@ -161,6 +162,7 @@ test('type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admi
   await deployNewVersion(page, expect, 3, 'License Change', constants.IS_MINIMAL_RBAC);
 
   // Snapshot validation
+  await waitForWorkerNode();
   await waitForVeleroAndNodeAgent(); // due to worker node join
   await validateSnapshotsInternalConfig(page, expect);
   await validateAutomaticFullSnapshots(page, expect);
