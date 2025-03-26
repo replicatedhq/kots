@@ -517,6 +517,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 			break
 		}
 		if err != nil {
+			io.ReadAll(cachingBodyReader)
 			logger.Info("failed to get next file from reader",
 				zap.String("last 4096 bytes", string(cachingBodyReader.GetCachedBytes())))
 			return nil, errors.Wrap(err, "failed to get next file from reader")
@@ -530,6 +531,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		case tar.TypeReg:
 			content, err := io.ReadAll(tarReader)
 			if err != nil {
+				io.ReadAll(cachingBodyReader)
 				logger.Info("failed to read file from tar",
 					zap.String("last 4096 bytes", string(cachingBodyReader.GetCachedBytes())))
 				return nil, errors.Wrap(err, "failed to read file from tar")
