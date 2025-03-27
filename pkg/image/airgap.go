@@ -154,6 +154,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		tarGz := archiver.TarGz{
 			Tar: &archiver.Tar{
 				ImplicitTopLevelFolder: false,
+				OverwriteExisting:      true,
 			},
 		}
 		if err := tarGz.Unarchive(airgapBundle, extractedBundle); err != nil {

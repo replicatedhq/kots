@@ -245,6 +245,7 @@ func tarSupportBundleDir(inputDir string, outputFilename string) error {
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 

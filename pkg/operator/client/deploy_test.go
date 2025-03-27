@@ -2509,6 +2509,7 @@ func Test_getRemovedCharts(t *testing.T) {
 			tarGz := archiver.TarGz{
 				Tar: &archiver.Tar{
 					ImplicitTopLevelFolder: false,
+					OverwriteExisting:      true,
 				},
 			}
 			archiveFile := filepath.Join(destDir, "helm", chart.dirName, fmt.Sprintf("%s-%s.tgz", chart.name, chart.version))

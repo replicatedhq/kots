@@ -27,6 +27,7 @@ func archiveToFileTree(archivePath string) (*types.FileTree, error) {
 	tarGz := &archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 	if err := tarGz.Unarchive(archivePath, workDir); err != nil {
