@@ -419,7 +419,8 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		cachedContent := cachingBodyReader.GetCachedBytes()
 		readableText := util.ExtractReadableText(cachedContent)
 		if len(readableText) > 0 {
-			return nil, errors.Wrapf(err, "failed to create gzip reader, ended with %q", readableText)
+			logger.Info("failed to create gzip reader",
+				zap.String("readable_text", readableText))
 		}
 		return nil, errors.Wrap(err, "failed to create gzip reader")
 	}
@@ -452,7 +453,8 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 			cachedContent := cachingBodyReader.GetCachedBytes()
 			readableText := util.ExtractReadableText(cachedContent)
 			if len(readableText) > 0 {
-				return nil, errors.Wrapf(err, "failed to get next file from reader, ended with %q", readableText)
+				logger.Info("failed get next file from reader",
+					zap.String("readable_text", readableText))
 			}
 			return nil, errors.Wrap(err, "failed to get next file from reader")
 		}
@@ -469,7 +471,8 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 				cachedContent := cachingBodyReader.GetCachedBytes()
 				readableText := util.ExtractReadableText(cachedContent)
 				if len(readableText) > 0 {
-					return nil, errors.Wrapf(err, "failed to read file from tar, ended with %q", readableText)
+					logger.Info("failed to read file from tar",
+						zap.String("readable_text", readableText))
 				}
 				return nil, errors.Wrap(err, "failed to read file from tar")
 			}

@@ -766,7 +766,7 @@ spec:
 
 		_, err := downloadReplicatedApp(upstr, license, cursor, nil, "")
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to create gzip reader, ended with \"not a gzip file\"")
+		require.Contains(t, err.Error(), "failed to create gzip reader")
 	})
 
 	t.Run("Interrupted gzip", func(t *testing.T) {
@@ -826,7 +826,6 @@ spec:
 
 		_, err := downloadReplicatedApp(upstr, license, cursor, nil, "")
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to read file from tar, ended with")
-		require.Contains(t, err.Error(), "This is an interruption to your gzip file and will contain a message in plaintext\\nthis is an easily searchable test string DEADBEEF")
+		require.Contains(t, err.Error(), "failed to read file from tar")
 	})
 }
