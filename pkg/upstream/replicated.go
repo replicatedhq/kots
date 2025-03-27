@@ -488,8 +488,9 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		if len(cachedContent) > 0 {
 			cachedContentStr = string(cachedContent)
 		}
+		io.ReadAll(cachingBodyReader)
 		logger.Info("failed to create gzip reader",
-			zap.String("cached content", cachedContentStr))
+			zap.String("last 4096 bytes", cachedContentStr))
 		return nil, errors.Wrap(err, "failed to create gzip reader")
 	}
 
