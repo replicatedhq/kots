@@ -67,10 +67,10 @@ export async function validateRedactionReport(page: Page, expect: Expect) {
   await expect(report).toBeVisible();
 
   // validate the redactor row has redactions in files
-  const redactor = report.getByTestId("support-bundle-analysis-redactor-report-row-0");
+  const redactor = report.getByTestId("support-bundle-analysis-redactor-report-row-1");
   await expect(redactor.getByTestId("redactor-name")).toBeVisible();
-  await expect(redactor).toContainText(/[1-9][0-9]* redactions/);
-  await expect(redactor).toContainText(/[1-9][0-9]* files/);
+  await expect(redactor).toContainText(/[1-9][0-9]* redaction/);
+  await expect(redactor).toContainText(/[1-9][0-9]* file/);
 
   // validate the details contains files and follow the link to the file tree
   await redactor.getByTestId("link-redactor-report-row-details").click();
