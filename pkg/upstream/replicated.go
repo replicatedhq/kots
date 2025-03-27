@@ -70,74 +70,6 @@ type ChannelRelease struct {
 	ReleaseNotes    string `json:"releaseNotes"`
 }
 
-// cachingReader is a reader that caches the last N bytes read
-// to help with debugging when encountering errors in tar or gzip extraction
-type cachingReader struct {
-	r        io.Reader
-	buf      []byte
-	size     int
-	position int
-	full     bool
-}
-
-// newCachingReader creates a new caching reader that caches the last size bytes
-func newCachingReader(r io.Reader, size int) *cachingReader {
-	return &cachingReader{
-		r:    r,
-		buf:  make([]byte, size),
-		size: size,
-	}
-}
-
-// Read implements io.Reader
-func (c *cachingReader) Read(p []byte) (n int, err error) {
-	n, err = c.r.Read(p)
-	if n > 0 {
-		// Cache the bytes read
-		if n <= c.size {
-			// If we're reading fewer bytes than our buffer size
-			if c.position+n <= c.size {
-				// If we can append without wrapping
-				copy(c.buf[c.position:], p[:n])
-				c.position += n
-			} else {
-				// Need to wrap around
-				firstPart := c.size - c.position
-				copy(c.buf[c.position:], p[:firstPart])
-				copy(c.buf[:n-firstPart], p[firstPart:n])
-				c.position = n - firstPart
-				c.full = true
-			}
-		} else {
-			// If reading more bytes than our buffer size, just take the last c.size bytes
-			copy(c.buf, p[n-c.size:n])
-			c.position = 0
-			c.full = true
-		}
-	}
-	return n, err
-}
-
-// GetCachedBytes returns the last bytes read up to size
-func (c *cachingReader) GetCachedBytes() []byte {
-	if !c.full && c.position == 0 {
-		return []byte{}
-	}
-
-	if !c.full {
-		return c.buf[:c.position]
-	}
-
-	result := make([]byte, c.size)
-
-	// Copy from position to end
-	copy(result, c.buf[c.position:])
-	// Copy from start to position
-	copy(result[c.size-c.position:], c.buf[:c.position])
-
-	return result
-}
-
 func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
 	currentCursor := replicatedapp.ReplicatedCursor{
 		ChannelID:   fetchOptions.CurrentChannelID,
@@ -483,14 +415,12 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	cachingBodyReader := newCachingReader(getResp.Body, 4096)
 	gzf, err := gzip.NewReader(cachingBodyReader)
 	if err != nil {
-		cachedContent := cachingBodyReader.GetCachedBytes()
-		cachedContentStr := "<no cached content>"
-		if len(cachedContent) > 0 {
-			cachedContentStr = string(cachedContent)
-		}
 		io.ReadAll(cachingBodyReader)
-		logger.Info("failed to create gzip reader",
-			zap.String("last 4096 bytes", cachedContentStr))
+		cachedContent := cachingBodyReader.GetCachedBytes()
+		readableText := extractReadableText(cachedContent)
+		if len(readableText) > 0 {
+			return nil, errors.Wrapf(err, "failed to create gzip reader, ended with %q", readableText)
+		}
 		return nil, errors.Wrap(err, "failed to create gzip reader")
 	}
 
@@ -519,8 +449,11 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		}
 		if err != nil {
 			io.ReadAll(cachingBodyReader)
-			logger.Info("failed to get next file from reader",
-				zap.String("last 4096 bytes", string(cachingBodyReader.GetCachedBytes())))
+			cachedContent := cachingBodyReader.GetCachedBytes()
+			readableText := extractReadableText(cachedContent)
+			if len(readableText) > 0 {
+				return nil, errors.Wrapf(err, "failed to get next file from reader, ended with %q", readableText)
+			}
 			return nil, errors.Wrap(err, "failed to get next file from reader")
 		}
 
@@ -533,8 +466,11 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 			content, err := io.ReadAll(tarReader)
 			if err != nil {
 				io.ReadAll(cachingBodyReader)
-				logger.Info("failed to read file from tar",
-					zap.String("last 4096 bytes", string(cachingBodyReader.GetCachedBytes())))
+				cachedContent := cachingBodyReader.GetCachedBytes()
+				readableText := extractReadableText(cachedContent)
+				if len(readableText) > 0 {
+					return nil, errors.Wrapf(err, "failed to read file from tar, ended with %q", readableText)
+				}
 				return nil, errors.Wrap(err, "failed to read file from tar")
 			}
 
@@ -545,6 +481,46 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	}
 
 	return &release, nil
+}
+
+// extractReadableText takes a byte slice and returns a string containing only the readable ASCII text
+// from the original data. This is useful for logging binary data in a human-readable format.
+func extractReadableText(data []byte) string {
+	if len(data) == 0 {
+		return ""
+	}
+
+	var result strings.Builder
+
+	// Find runs of printable characters that are at least 5 characters long
+	var currentRun strings.Builder
+	for _, b := range data {
+		// Only include printable ASCII characters (32-126) and newlines/tabs
+		if (b >= 32 && b <= 126) || b == '\n' || b == '\t' || b == '\r' {
+			currentRun.WriteByte(b)
+		} else {
+			// Non-printable character encountered, check the current run
+			if currentRun.Len() >= 5 {
+				// If the run is long enough, add it to the result with spaces between runs
+				if result.Len() > 0 {
+					result.WriteString(" ... ")
+				}
+				result.WriteString(currentRun.String())
+			}
+			// Reset the current run
+			currentRun.Reset()
+		}
+	}
+
+	// Check the last run
+	if currentRun.Len() >= 5 {
+		if result.Len() > 0 {
+			result.WriteString(" ... ")
+		}
+		result.WriteString(currentRun.String())
+	}
+
+	return result.String()
 }
 
 func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]ChannelRelease, *time.Time, error) {
