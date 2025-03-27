@@ -187,6 +187,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 	if err := tarGz.Archive(paths, fileToSend); err != nil {

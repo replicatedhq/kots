@@ -317,6 +317,7 @@ func CreateAppVersionArchive(archivePath string, outputPath string) error {
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 	if err := tarGz.Archive(paths, fileToWrite); err != nil {

@@ -400,6 +400,7 @@ func extractHelmCharts(chartsArchive []byte, dirName string) (helmDir string, er
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 

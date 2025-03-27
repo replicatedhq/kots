@@ -26,6 +26,7 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: true,
+			OverwriteExisting:      true,
 		},
 	}
 

@@ -80,6 +80,7 @@ func Test_PullReplicated(t *testing.T) {
 			tarGz := archiver.TarGz{
 				Tar: &archiver.Tar{
 					ImplicitTopLevelFolder: false,
+					OverwriteExisting:      true,
 				},
 			}
 			err = tarGz.Archive(paths, path.Join(actualFilesystemDir, "archive.tar.gz"))
