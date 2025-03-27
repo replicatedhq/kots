@@ -188,7 +188,7 @@
     "trim": "^0.0.3",
     "moment-timezone": "^0.5.35",
     "trim-newlines": "^3.0.1",
-    "postcss": "^8.4.31"
+    "webpack-dev-middleware": "^6.1.2"
   },
   "browserslist": [
     "> 1%",
