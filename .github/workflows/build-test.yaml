@@ -1489,6 +1489,11 @@ jobs:
 
       - run: chmod +x bin/kots
 
+      - name: set default storage class for eks
+        if: ${{ matrix.cluster.distribution == 'eks' }}
+        run: |
+          kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
       - name: create namespace and dockerhub secret
         run: |
           kubectl create ns "$APP_SLUG"

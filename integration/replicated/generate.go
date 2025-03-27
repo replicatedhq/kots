@@ -58,6 +58,7 @@ spec:
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 	tempExpectedFile, err := ioutil.TempDir("", "kotsintegration")
@@ -80,6 +81,7 @@ func generateReplicatedAppArchive(rawArchivePath string) ([]byte, error) {
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: true,
+			OverwriteExisting:      true,
 		},
 	}
 
@@ -129,6 +131,7 @@ func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: true,
+			OverwriteExisting:      true,
 		},
 	}
 

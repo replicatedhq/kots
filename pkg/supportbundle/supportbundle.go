@@ -192,6 +192,7 @@ func getAnalysisFromBundle(archivePath string) ([]byte, error) {
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 	if err := tarGz.Unarchive(archivePath, bundleDir); err != nil {

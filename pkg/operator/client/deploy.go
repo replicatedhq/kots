@@ -552,6 +552,7 @@ func findChartNameAndVersionInArchive(archivePath string) (string, string, error
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
 			StripComponents:        1, // remove the top level folder
+			OverwriteExisting:      true,
 		},
 	}
 	if err := tarGz.Unarchive(archivePath, tmpDir); err != nil {

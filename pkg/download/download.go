@@ -133,6 +133,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 	if err := tarGz.Unarchive(tmpFile.Name(), path); err != nil {

@@ -475,6 +475,7 @@ kind: Kustomization
 			tarGz := archiver.TarGz{
 				Tar: &archiver.Tar{
 					ImplicitTopLevelFolder: false,
+					OverwriteExisting:      true,
 				},
 			}
 			err = tarGz.Unarchive(filepath.Join(renderedTmp, "archive.tar.gz"), extracted)
@@ -511,6 +512,7 @@ kind: Kustomization
 			tarGz = archiver.TarGz{
 				Tar: &archiver.Tar{
 					ImplicitTopLevelFolder: false,
+					OverwriteExisting:      true,
 				},
 			}
 			err = tarGz.Unarchive(filepath.Join(renderedTmp, "archive.tar.gz"), extracted)

@@ -23,6 +23,7 @@ func TGZArchive(dir string) ([]byte, error) {
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: true,
+			OverwriteExisting:      true,
 		},
 	}
 	if err := tarGz.Archive([]string{dir}, filepath.Join(tempDir, "tmp.tar.gz")); err != nil {
