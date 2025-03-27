@@ -2,6 +2,9 @@ package util
 
 import (
 	"io"
+
+	"github.com/replicatedhq/kots/pkg/logger"
+	"go.uber.org/zap"
 )
 
 // CachingReader is a reader that caches the last N bytes read
@@ -70,4 +73,13 @@ func (c *CachingReader) GetCachedBytes() []byte {
 	copy(result[c.size-c.position:], c.buf[:c.position])
 
 	return result
+}
+
+func (c *CachingReader) LogReadableText(message string) {
+	io.ReadAll(c) // read to the end of the stream - whatever error triggered this might not have done so
+	cachedContent := c.GetCachedBytes()
+	readableText := ExtractReadableText(cachedContent)
+	if len(readableText) > 0 {
+		logger.Info(message, zap.String("readable_text", readableText))
+	}
 }
