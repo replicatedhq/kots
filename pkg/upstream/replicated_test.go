@@ -865,8 +865,8 @@ func TestExtractReadableText(t *testing.T) {
 		},
 		{
 			name:     "text with binary data in middle",
-			input:    []byte{'S', 't', 'a', 'r', 't', 0x00, 0x01, 0x02, 0x03, 0x04, 'E', 'n', 'd'},
-			expected: "Start ... End",
+			input:    []byte{'S', 't', 'a', 'r', 't', 0x00, 0x01, 0x02, 0x03, 0x04, 'E', 'n', 'd', ' ', ' '},
+			expected: "Start ... End  ",
 		},
 		{
 			name:     "multiple text sections separated by binary",
