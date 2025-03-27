@@ -1,4 +1,4 @@
-package upstream
+package util
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 func TestCachingReader(t *testing.T) {
 	t.Run("empty read returns empty cached bytes", func(t *testing.T) {
 		r := strings.NewReader("")
-		cr := newCachingReader(r, 10)
+		cr := NewCachingReader(r, 10)
 
 		cachedBytes := cr.GetCachedBytes()
 		require.Empty(t, cachedBytes)
@@ -21,7 +21,7 @@ func TestCachingReader(t *testing.T) {
 	t.Run("read smaller than cache size", func(t *testing.T) {
 		data := "hello"
 		r := strings.NewReader(data)
-		cr := newCachingReader(r, 10)
+		cr := NewCachingReader(r, 10)
 
 		buf := make([]byte, 10)
 		n, err := cr.Read(buf)
@@ -34,7 +34,7 @@ func TestCachingReader(t *testing.T) {
 	t.Run("read exactly cache size", func(t *testing.T) {
 		data := "helloworld"
 		r := strings.NewReader(data)
-		cr := newCachingReader(r, 10)
+		cr := NewCachingReader(r, 10)
 
 		buf := make([]byte, 10)
 		n, err := cr.Read(buf)
@@ -47,7 +47,7 @@ func TestCachingReader(t *testing.T) {
 	t.Run("read larger than cache size", func(t *testing.T) {
 		data := "hello world this is a test"
 		r := strings.NewReader(data)
-		cr := newCachingReader(r, 10)
+		cr := NewCachingReader(r, 10)
 
 		buf := make([]byte, len(data))
 		n, err := cr.Read(buf)
@@ -60,7 +60,7 @@ func TestCachingReader(t *testing.T) {
 
 	t.Run("multiple reads accumulate in cache", func(t *testing.T) {
 		r := strings.NewReader("first second third")
-		cr := newCachingReader(r, 10)
+		cr := NewCachingReader(r, 10)
 
 		buf1 := make([]byte, 5) // "first"
 		n1, err := cr.Read(buf1)
@@ -86,7 +86,7 @@ func TestCachingReader(t *testing.T) {
 
 	t.Run("cache wraps around correctly", func(t *testing.T) {
 		r := strings.NewReader("abcdefghijklmnopqrstuvwxyz")
-		cr := newCachingReader(r, 10)
+		cr := NewCachingReader(r, 10)
 
 		buf := make([]byte, 8)
 
@@ -108,7 +108,7 @@ func TestCachingReader(t *testing.T) {
 	t.Run("read until EOF", func(t *testing.T) {
 		data := "test data for EOF testing"
 		r := strings.NewReader(data)
-		cr := newCachingReader(r, 10)
+		cr := NewCachingReader(r, 10)
 
 		buf := make([]byte, 100) // Larger than data
 		n, err := cr.Read(buf)
@@ -133,7 +133,7 @@ func TestCachingReader(t *testing.T) {
 		}
 
 		r := bytes.NewReader(data.Bytes())
-		cr := newCachingReader(r, 15)
+		cr := NewCachingReader(r, 15)
 
 		// Read in chunks of 30 bytes
 		buf := make([]byte, 30)

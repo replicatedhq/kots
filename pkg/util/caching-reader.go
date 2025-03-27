@@ -1,12 +1,12 @@
-package upstream
+package util
 
 import (
 	"io"
 )
 
-// cachingReader is a reader that caches the last N bytes read
+// CachingReader is a reader that caches the last N bytes read
 // to help with debugging when encountering errors in tar or gzip extraction
-type cachingReader struct {
+type CachingReader struct {
 	r        io.Reader
 	buf      []byte
 	size     int
@@ -14,9 +14,9 @@ type cachingReader struct {
 	full     bool
 }
 
-// newCachingReader creates a new caching reader that caches the last size bytes
-func newCachingReader(r io.Reader, size int) *cachingReader {
-	return &cachingReader{
+// NewCachingReader creates a new caching reader that caches the last size bytes
+func NewCachingReader(r io.Reader, size int) *CachingReader {
+	return &CachingReader{
 		r:    r,
 		buf:  make([]byte, size),
 		size: size,
@@ -24,7 +24,7 @@ func newCachingReader(r io.Reader, size int) *cachingReader {
 }
 
 // Read implements io.Reader
-func (c *cachingReader) Read(p []byte) (n int, err error) {
+func (c *CachingReader) Read(p []byte) (n int, err error) {
 	n, err = c.r.Read(p)
 	if n > 0 {
 		// Cache the bytes read
@@ -53,7 +53,7 @@ func (c *cachingReader) Read(p []byte) (n int, err error) {
 }
 
 // GetCachedBytes returns the last bytes read up to size
-func (c *cachingReader) GetCachedBytes() []byte {
+func (c *CachingReader) GetCachedBytes() []byte {
 	if !c.full && c.position == 0 {
 		return []byte{}
 	}
