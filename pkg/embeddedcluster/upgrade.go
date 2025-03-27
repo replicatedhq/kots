@@ -368,6 +368,7 @@ func unarchive(archiveFilepath string, dstDir string) error {
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 

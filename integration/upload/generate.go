@@ -30,6 +30,7 @@ func GenerateTest(name string, applicationPath string) error {
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: true,
+			OverwriteExisting:      true,
 		},
 	}
 
