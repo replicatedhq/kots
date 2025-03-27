@@ -15,7 +15,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
-	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/operator"
 	operatorclient "github.com/replicatedhq/kots/pkg/operator/client"
@@ -31,6 +30,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kots/pkg/watchers"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -121,8 +121,8 @@ func Start(params *APIServerParams) {
 
 	supportbundle.StartServer()
 
-	if err := informers.Start(); err != nil {
-		log.Println("Failed to start informers:", err)
+	if err := watchers.Start(op.GetClusterID()); err != nil {
+		log.Println("Failed to start watchers:", err)
 	}
 
 	if err := updatechecker.Start(); err != nil {

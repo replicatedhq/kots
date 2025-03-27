@@ -126,6 +126,10 @@ func startLoop(fn func(), intervalInSeconds time.Duration) {
 	}()
 }
 
+func (o *Operator) GetClusterID() string {
+	return o.clusterID
+}
+
 func (o *Operator) resumeDeployments() {
 	apps, err := o.store.ListAppsForDownstream(o.clusterID)
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/buildversion"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -157,6 +158,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		r.AppStatus = string(appStatus.State)
 	}
 
+	// kurl
 	r.IsKurl, err = kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Debugf(errors.Wrap(err, "failed to check if cluster is kurl").Error())
@@ -167,11 +169,28 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		if err != nil {
 			logger.Debugf(errors.Wrap(err, "failed to get kurl nodes").Error())
 		}
+		if kurlNodes != nil {
+			for _, kurlNode := range kurlNodes.Nodes {
+				r.KurlNodeCountTotal++
+				if kurlNode.IsConnected && kurlNode.IsReady {
+					r.KurlNodeCountReady++
+				}
+			}
+		}
+	}
 
-		for _, kurlNode := range kurlNodes.Nodes {
-			r.KurlNodeCountTotal++
-			if kurlNode.IsConnected && kurlNode.IsReady {
-				r.KurlNodeCountReady++
+	// embedded cluster
+	if util.IsEmbeddedCluster() && clientset != nil {
+		ecNodes, err := embeddedcluster.GetNodes(context.TODO(), clientset)
+		if err != nil {
+			logger.Debugf("failed to get embedded cluster nodes: %v", err.Error())
+		}
+		if ecNodes != nil {
+			marshalled, err := json.Marshal(ecNodes.Nodes)
+			if err != nil {
+				logger.Debugf("failed to marshal embedded cluster node: %v", err.Error())
+			} else {
+				r.EmbeddedClusterNodes = string(marshalled)
 			}
 		}
 	}
