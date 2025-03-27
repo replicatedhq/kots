@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	reporting "github.com/replicatedhq/kots/pkg/reporting"
@@ -27,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -361,6 +363,9 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 
 	reporting.InjectReportingInfoHeaders(getReq, reportingInfo)
 
+	logger.Info("pulling app from replicated",
+		zap.String("url", getReq.URL.String()))
+
 	getResp, err := http.DefaultClient.Do(getReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
@@ -407,9 +412,11 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		replicatedChartNames = strings.Split(replicatedChartNamesStr, ",")
 	}
 
-	gzf, err := gzip.NewReader(getResp.Body)
+	cachingBodyReader := util.NewCachingReader(getResp.Body, 4096)
+	gzf, err := gzip.NewReader(cachingBodyReader)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create new gzip reader")
+		cachingBodyReader.LogReadableText("failed to create gzip reader")
+		return nil, errors.Wrap(err, "failed to create gzip reader")
 	}
 
 	release := Release{
@@ -436,6 +443,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 			break
 		}
 		if err != nil {
+			cachingBodyReader.LogReadableText("failed to get next file from reader")
 			return nil, errors.Wrap(err, "failed to get next file from reader")
 		}
 
@@ -447,6 +455,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		case tar.TypeReg:
 			content, err := io.ReadAll(tarReader)
 			if err != nil {
+				cachingBodyReader.LogReadableText("failed to read file from tar")
 				return nil, errors.Wrap(err, "failed to read file from tar")
 			}
 

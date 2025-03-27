@@ -280,7 +280,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return "", errors.Wrap(err, "failed to fetch upstream")
+		return "", errors.Wrapf(err, "failed to fetch upstream %q", upstreamURI)
 	}
 
 	clientset, err := k8sutil.GetClientset()
