@@ -732,21 +732,22 @@ class AppSnapshots extends Component {
                 </p>
               </div>
             ) : null}
-            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" && (
-              <div className="flex flex-column">
-                {snapshots?.map((snapshot, index) => (
-                  <SnapshotRow
-                    index={index}
-                    key={`snapshot-${snapshot.name}-${snapshot.started}`}
-                    snapshot={snapshot}
-                    appSlug={selectedApp.slug}
-                    toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
-                    toggleRestoreModal={this.toggleRestoreModal}
-                    app={selectedApp}
-                  />
-                ))}
-              </div>
-            )}
+            {snapshots?.length > 0 &&
+              snapshotSettings?.veleroVersion !== "" && (
+                <div className="flex flex-column">
+                  {snapshots?.map((snapshot, index) => (
+                    <SnapshotRow
+                      index={index}
+                      key={`snapshot-${snapshot.name}-${snapshot.started}`}
+                      snapshot={snapshot}
+                      appSlug={selectedApp.slug}
+                      toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
+                      toggleRestoreModal={this.toggleRestoreModal}
+                      app={selectedApp}
+                    />
+                  ))}
+                </div>
+              )}
             {!isStartButtonClicked && snapshots?.length === 0 && (
               <div className="flex flex-column justifyContent--center alignItems--center">
                 <GettingStartedSnapshots

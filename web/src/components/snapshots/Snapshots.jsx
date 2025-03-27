@@ -564,30 +564,31 @@ class Snapshots extends Component {
                       />
                       Settings
                     </Link>
-                    {snapshots?.length > 0 && snapshotSettings?.veleroVersion && (
-                      <span
-                        data-for="startSnapshotBtn"
-                        data-tip="startSnapshotBtn"
-                        data-tip-disable={false}
-                      >
-                        <button
-                          className="btn primary blue"
-                          disabled={
-                            startingSnapshot ||
-                            (inProgressSnapshotExist && !startSnapshotErr)
-                          }
-                          onClick={this.startInstanceSnapshot}
+                    {snapshots?.length > 0 &&
+                      snapshotSettings?.veleroVersion && (
+                        <span
+                          data-for="startSnapshotBtn"
+                          data-tip="startSnapshotBtn"
+                          data-tip-disable={false}
                         >
-                          {startingSnapshot
-                            ? "Starting a snapshot..."
-                            : `Start a ${
-                                this.props.isEmbeddedCluster
-                                  ? "backup"
-                                  : "snapshot"
-                              }`}
-                        </button>
-                      </span>
-                    )}
+                          <button
+                            className="btn primary blue"
+                            disabled={
+                              startingSnapshot ||
+                              (inProgressSnapshotExist && !startSnapshotErr)
+                            }
+                            onClick={this.startInstanceSnapshot}
+                          >
+                            {startingSnapshot
+                              ? "Starting a snapshot..."
+                              : `Start a ${
+                                  this.props.isEmbeddedCluster
+                                    ? "backup"
+                                    : "snapshot"
+                                }`}
+                          </button>
+                        </span>
+                      )}
                     {inProgressSnapshotExist && !startSnapshotErr && (
                       <ReactTooltip
                         id="startSnapshotBtn"

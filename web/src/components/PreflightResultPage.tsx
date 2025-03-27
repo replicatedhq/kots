@@ -79,13 +79,14 @@ function PreflightResultPage(props: Props) {
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
-      {Utilities.isInitialAppInstall(selectedApp) && props.isEmbeddedCluster && (
-        <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
-          <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
-            Validate the environment & deploy {selectedApp?.name}
-          </p>
-        </div>
-      )}
+      {Utilities.isInitialAppInstall(selectedApp) &&
+        props.isEmbeddedCluster && (
+          <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
+            <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
+              Validate the environment & deploy {selectedApp?.name}
+            </p>
+          </div>
+        )}
       <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]">
         {location.pathname.includes("version-history") && (
           <div

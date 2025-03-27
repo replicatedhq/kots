@@ -505,20 +505,21 @@ const EmbeddedClusterManagement = ({
               {generateAddNodeCommandError?.message}
             </p>
           )}
-          {!generateAddNodeCommandLoading && generateAddNodeCommand?.command && (
-            <>
-              <CodeSnippet
-                key={selectedNodeTypes.toString()}
-                language="bash"
-                canCopy={true}
-                onCopyText={
-                  <span className="u-textColor--success">Copied!</span>
-                }
-              >
-                {generateAddNodeCommand?.command}
-              </CodeSnippet>
-            </>
-          )}
+          {!generateAddNodeCommandLoading &&
+            generateAddNodeCommand?.command && (
+              <>
+                <CodeSnippet
+                  key={selectedNodeTypes.toString()}
+                  language="bash"
+                  canCopy={true}
+                  onCopyText={
+                    <span className="u-textColor--success">Copied!</span>
+                  }
+                >
+                  {generateAddNodeCommand?.command}
+                </CodeSnippet>
+              </>
+            )}
         </div>
       </>
     );
