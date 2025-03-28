@@ -34,35 +34,51 @@ jobs:
   scan-kotsadm:
     name: Scan Kotsadm
     needs: get-latest-tag
-    uses: ./.github/workflows/scan-container-image.yml
+    uses: ./.github/workflows/scan-image-grype.yml
     permissions:
       contents: read
       security-events: write
+      actions: read
     with:
       image: kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}
-      severity-cutoff: low
+      severity-cutoff: negligible
       fail-build: false
+      output-file: results.sarif
+      timeout-minutes: 30
+      retention-days: 90
+      category-prefix: container-scan-
+
 
   scan-kotsadm-migrations:
     name: Scan Kotsadm Migrations
     needs: get-latest-tag
-    uses: ./.github/workflows/scan-container-image.yml
+    uses: ./.github/workflows/scan-image-grype.yml
     permissions:
       contents: read
       security-events: write
+      actions: read
     with:
       image: kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}
-      severity-cutoff: low
+      severity-cutoff: negligible
       fail-build: false
+      output-file: results.sarif
+      timeout-minutes: 30
+      retention-days: 90
+      category-prefix: container-scan-
 
   scan-kurl-proxy:
     name: Scan Kurl Proxy
     needs: get-latest-tag
-    uses: ./.github/workflows/scan-container-image.yml
+    uses: ./.github/workflows/scan-image-grype.yml
     permissions:
       contents: read
       security-events: write
+      actions: read
     with:
       image: kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}
-      severity-cutoff: low
-      fail-build: false 
+      severity-cutoff: negligible
+      fail-build: false
+      output-file: results.sarif
+      timeout-minutes: 30
+      retention-days: 90
+      category-prefix: container-scan-
