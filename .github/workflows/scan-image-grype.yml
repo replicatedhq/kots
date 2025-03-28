@@ -75,7 +75,7 @@ jobs:
       
       - name: Validate timeout-minutes
         run: |
-          if [[ ! "${{ inputs.timeout-minutes }}" =~ ^[0-9]+$ ]] || [[ "${{ inputs.timeout-minutes }}" \< 1 ]] || [[ "${{ inputs.timeout-minutes }}" \> 360 ]]; then
+          if [[ ! "${{ inputs.timeout-minutes }}" =~ ^[0-9]+$ ]] || (( "${{ inputs.timeout-minutes }}" < 1 )) || (( "${{ inputs.timeout-minutes }}" > 360 )); then
             echo "Error: Invalid timeout-minutes value '${{ inputs.timeout-minutes }}'"
             echo "Value must be a number between 1 and 360 minutes"
             exit 1
@@ -83,7 +83,7 @@ jobs:
       
       - name: Validate retention-days
         run: |
-          if [[ ! "${{ inputs.retention-days }}" =~ ^[0-9]+$ ]] || [[ "${{ inputs.retention-days }}" \< 1 ]] || [[ "${{ inputs.retention-days }}" \> 90 ]]; then
+          if [[ ! "${{ inputs.retention-days }}" =~ ^[0-9]+$ ]] || (( "${{ inputs.retention-days }}" < 1 )) || (( "${{ inputs.retention-days }}" > 90 )); then
             echo "Error: Invalid retention-days value '${{ inputs.retention-days }}'"
             echo "Value must be a number between 1 and 90 days"
             exit 1
