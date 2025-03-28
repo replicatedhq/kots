@@ -13,7 +13,6 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/utils/ptr"
 )
 
 func Start(clusterID string) error {
@@ -47,11 +46,11 @@ func watchECNodes(clientset kubernetes.Interface, clusterID string) error {
 	// by default, add func gets called for existing nodes, and
 	// we don't want to report N times every time kotsadm restarts,
 	// specially if there are a lot of nodes.
-	hasSynced := ptr.To(false)
+	hasSynced := false
 
 	handler, err := nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			if !*hasSynced {
+			if !hasSynced {
 				return
 			}
 			node := obj.(*corev1.Node)
@@ -94,7 +93,7 @@ func watchECNodes(clientset kubernetes.Interface, clusterID string) error {
 		return errors.New("sync node cache")
 	}
 
-	*hasSynced = true
+	hasSynced = true
 
 	return nil
 }

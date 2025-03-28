@@ -22,7 +22,7 @@ type Node struct {
 	CPU              CapacityUsed   `json:"cpu"`
 	Memory           CapacityUsed   `json:"memory"`
 	Pods             CapacityUsed   `json:"pods"`
-	Labels           []string       `json:"labels"`
+	Roles            []string       `json:"roles"`
 	Conditions       NodeConditions `json:"conditions"`
 	PodList          []PodInfo      `json:"podList"`
 }
