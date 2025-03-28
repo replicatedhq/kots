@@ -353,6 +353,7 @@ func createTestInstanceEvent(reportedAt int64) InstanceReportEvent {
 		KurlInstallID:             "test-kurl-install-id",
 		EmbeddedClusterID:         "test-embedded-cluster-id",
 		EmbeddedClusterVersion:    "test-embedded-cluster-version",
+		EmbeddedClusterNodes:      `[{"name":"node-1","isReady":true},{"name":"node-2","isReady":false},{"name":"node-3","isReady":true},{"name":"node-4","isReady":false}]`,
 		IsGitOpsEnabled:           true,
 		GitOpsProvider:            "test-gitops-provider",
 		SnapshotProvider:          "test-snapshot-provider",

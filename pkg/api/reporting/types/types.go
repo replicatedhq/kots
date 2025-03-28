@@ -15,6 +15,7 @@ type ReportingInfo struct {
 	KURLInstallID           string         `json:"kurl_install_id" yaml:"kurl_install_id"`
 	EmbeddedClusterID       string         `json:"embedded_cluster_id" yaml:"embedded_cluster_id"`
 	EmbeddedClusterVersion  string         `json:"embedded_cluster_version" yaml:"embedded_cluster_version"`
+	EmbeddedClusterNodes    string         `json:"embedded_cluster_nodes" yaml:"embedded_cluster_nodes"`
 	IsGitOpsEnabled         bool           `json:"is_gitops_enabled" yaml:"is_gitops_enabled"`
 	GitOpsProvider          string         `json:"gitops_provider" yaml:"gitops_provider"`
 	SnapshotProvider        string         `json:"snapshot_provider" yaml:"snapshot_provider"`

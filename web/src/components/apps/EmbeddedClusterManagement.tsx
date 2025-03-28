@@ -84,7 +84,7 @@ const EmbeddedClusterManagement = ({
         capacity: number;
         used: number;
       };
-      labels?: string[];
+      roles?: string[];
       conditions: {
         memoryPressure: boolean;
         diskPressure: boolean;
@@ -354,7 +354,7 @@ const EmbeddedClusterManagement = ({
     return (
       (nodesData?.nodes || testData?.nodes)?.map((n) => ({
         name: n.name,
-        roles: n.labels?.join(" ") || "",
+        roles: n.roles?.join(" ") || "",
         status: n.isReady ? "Ready" : "Not Ready",
         cpu: `${n.cpu.used.toFixed(2)} / ${n.cpu.capacity.toFixed(2)}`,
         memory: `${n.memory.used.toFixed(2)} / ${n.memory.capacity.toFixed(

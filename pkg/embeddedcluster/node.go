@@ -131,7 +131,7 @@ func nodeMetrics(ctx context.Context, client kubernetes.Interface, metricsClient
 		CPU:              cpuCapacity,
 		Memory:           memoryCapacity,
 		Pods:             podCapacity,
-		Labels:           nodeRolesFromLabels(node.Labels),
+		Roles:            nodeRolesFromLabels(node.Labels),
 		Conditions:       findNodeConditions(node.Status.Conditions),
 		PodList:          podInfo,
 	}, nil
