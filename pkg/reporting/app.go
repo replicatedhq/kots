@@ -121,18 +121,18 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		logger.Debugf("failed to get cluster config: %v", err.Error())
+		logger.Warnf("failed to get cluster config: %v", err.Error())
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		logger.Debugf("failed to get clientset: %v", err.Error())
+		logger.Warnf("failed to get clientset: %v", err.Error())
 	}
 	r.ClusterID = k8sutil.GetKotsadmID(clientset)
 
 	di, err := getDownstreamInfo(appID)
 	if err != nil {
-		logger.Debugf("failed to get downstream info: %v", err.Error())
+		logger.Warnf("failed to get downstream info: %v", err.Error())
 	}
 	if di != nil {
 		r.Downstream = *di
@@ -141,7 +141,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	// get kubernetes cluster version
 	k8sVersion, err := k8sutil.GetK8sVersion(clientset)
 	if err != nil {
-		logger.Debugf("failed to get k8s version: %v", err.Error())
+		logger.Warnf("failed to get k8s version: %v", err.Error())
 	} else {
 		r.K8sVersion = k8sVersion
 	}
@@ -153,7 +153,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	// get app status
 	appStatus, err := store.GetStore().GetAppStatus(appID)
 	if err != nil {
-		logger.Debugf("failed to get app status: %v", err.Error())
+		logger.Warnf("failed to get app status: %v", err.Error())
 	} else {
 		r.AppStatus = string(appStatus.State)
 	}
@@ -161,13 +161,13 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	// kurl
 	r.IsKurl, err = kurl.IsKurl(clientset)
 	if err != nil {
-		logger.Debugf(errors.Wrap(err, "failed to check if cluster is kurl").Error())
+		logger.Warnf(errors.Wrap(err, "failed to check if cluster is kurl").Error())
 	}
 
 	if r.IsKurl && clientset != nil {
 		kurlNodes, err := kurl.GetNodes(clientset)
 		if err != nil {
-			logger.Debugf(errors.Wrap(err, "failed to get kurl nodes").Error())
+			logger.Warnf(errors.Wrap(err, "failed to get kurl nodes").Error())
 		}
 		if kurlNodes != nil {
 			for _, kurlNode := range kurlNodes.Nodes {
@@ -183,12 +183,12 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	if util.IsEmbeddedCluster() && clientset != nil {
 		ecNodes, err := embeddedcluster.GetNodes(context.TODO(), clientset)
 		if err != nil {
-			logger.Debugf("failed to get embedded cluster nodes: %v", err.Error())
+			logger.Warnf("failed to get embedded cluster nodes: %v", err.Error())
 		}
 		if ecNodes != nil {
 			marshalled, err := json.Marshal(ecNodes.Nodes)
 			if err != nil {
-				logger.Debugf("failed to marshal embedded cluster node: %v", err.Error())
+				logger.Warnf("failed to marshal embedded cluster node: %v", err.Error())
 			} else {
 				r.EmbeddedClusterNodes = string(marshalled)
 			}
@@ -199,17 +199,17 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 
 	veleroClient, err := k8sutil.GetKubeClient(context.TODO())
 	if err != nil {
-		logger.Debugf("failed to get velero client: %v", err.Error())
+		logger.Warnf("failed to get velero client: %v", err.Error())
 	}
 
 	if clientset != nil && veleroClient != nil {
 		bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), clientset, veleroClient, util.PodNamespace)
 		if err != nil {
-			logger.Debugf("failed to find backup store location: %v", err.Error())
+			logger.Warnf("failed to find backup store location: %v", err.Error())
 		} else {
 			report, err := getSnapshotReport(store.GetStore(), bsl, appID, r.ClusterID)
 			if err != nil {
-				logger.Debugf("failed to get snapshot report: %v", err.Error())
+				logger.Warnf("failed to get snapshot report: %v", err.Error())
 			} else {
 				r.SnapshotProvider = report.Provider
 				r.SnapshotFullSchedule = report.FullSchedule
@@ -231,7 +231,9 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
 	}
 	if len(downstreams) == 0 {
-		return nil, errors.New("no downstreams found for app")
+		// this can happen during initial install workflow until the app is installed and has downstreams
+		logger.Debugf("no downstreams found for app")
+		return nil, nil
 	}
 
 	currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(appID, downstreams[0].ClusterID)
@@ -266,7 +268,7 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 
 		var preflightResults *troubleshootpreflight.UploadPreflightResults
 		if err := json.Unmarshal([]byte(currentVersion.PreflightResult), &preflightResults); err != nil {
-			logger.Debugf("failed to unmarshal preflight results: %v", err.Error())
+			logger.Warnf("failed to unmarshal preflight results: %v", err.Error())
 		}
 		di.PreflightState = getPreflightState(preflightResults)
 		di.SkipPreflights = currentVersion.PreflightSkipped
@@ -288,7 +290,7 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 func getGitOpsReport(clientset kubernetes.Interface, appID string, clusterID string) (bool, string) {
 	gitOpsConfig, err := gitops.GetDownstreamGitOpsConfig(clientset, appID, clusterID)
 	if err != nil {
-		logger.Debugf("failed to get gitops config: %v", err.Error())
+		logger.Warnf("failed to get gitops config: %v", err.Error())
 		return false, ""
 	}
 

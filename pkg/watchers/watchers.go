@@ -57,14 +57,14 @@ func watchECNodes(clientset kubernetes.Interface, clusterID string) error {
 			node := obj.(*corev1.Node)
 			logger.Infof("Node added: %s", node.Name)
 			if err := submitAppInfo(clusterID); err != nil {
-				logger.Debugf("failed to submit app info: %v", err)
+				logger.Warnf("failed to submit app info: %v", err)
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
 			node := obj.(*corev1.Node)
 			logger.Infof("Node deleted: %s", node.Name)
 			if err := submitAppInfo(clusterID); err != nil {
-				logger.Debugf("failed to submit app info: %v", err)
+				logger.Warnf("failed to submit app info: %v", err)
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
@@ -78,7 +78,7 @@ func watchECNodes(clientset kubernetes.Interface, clusterID string) error {
 			if oldReady != newReady {
 				logger.Infof("Node %s ready status changed from %v to %v", newNode.Name, oldReady, newReady)
 				if err := submitAppInfo(clusterID); err != nil {
-					logger.Debugf("failed to submit app info: %v", err)
+					logger.Warnf("failed to submit app info: %v", err)
 				}
 			}
 		},
