@@ -149,7 +149,7 @@ jobs:
           fi
       
       - name: Enrich or generate SARIF
-        if: always()
+        if: !cancelled()
         run: |
           sudo apt-get update && sudo apt-get install -y jq
 
