@@ -1,0 +1,188 @@
+name: Scan Container Image Grype SARIF
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        required: true
+        type: string
+        description: 'Container image to scan (format: image:tag)'
+      severity-cutoff:
+        required: false
+        type: string
+        default: 'negligible'
+        description: 'Minimum severity to report (critical, high, medium, low, negligible)'
+      fail-build:
+        required: false
+        type: boolean
+        default: false
+        description: 'Fail the workflow if vulnerabilities are found'
+      output-file:
+        required: false
+        type: string
+        default: 'results.sarif'
+        description: 'Output file name for SARIF results'
+      timeout-minutes:
+        required: false
+        type: number
+        default: 30
+        description: 'Maximum time in minutes to wait for the scan to complete'
+      retention-days:
+        required: false
+        type: number
+        default: 90
+        description: 'Number of days to retain the scan results artifact'
+      category-prefix:
+        required: false
+        type: string
+        default: 'container-scan-'
+        description: 'Prefix to use for the SARIF category name'
+
+permissions: {}  # Remove all permissions by default
+
+jobs:
+  validate:
+    name: Validate Inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate repository access
+        run: |
+          # Extract organization from the repository name
+          ORG_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f1)
+          EXPECTED_ORG="replicatedhq"
+          
+          if [ "$ORG_NAME" != "$EXPECTED_ORG" ]; then
+            echo "Error: This workflow can only be called from repositories within the $EXPECTED_ORG organization"
+            echo "Current repository: ${{ github.repository }}"
+            exit 1
+          fi
+      
+      - name: Validate severity-cutoff
+        run: |
+          valid_severities=("critical" "high" "medium" "low" "negligible")
+          found=false
+          for severity in "${valid_severities[@]}"; do
+            if [[ "$severity" == "${{ inputs.severity-cutoff }}" ]]; then
+              found=true
+              break
+            fi
+          done
+          if [[ "$found" == "false" ]]; then
+            echo "Error: Invalid severity-cutoff value '${{ inputs.severity-cutoff }}'"
+            echo "Valid values are: ${valid_severities[*]}"
+            exit 1
+          fi
+      
+      - name: Validate timeout-minutes
+        run: |
+          if [[ ! "${{ inputs.timeout-minutes }}" =~ ^[0-9]+$ ]] || (( "${{ inputs.timeout-minutes }}" < 1 )) || (( "${{ inputs.timeout-minutes }}" > 360 )); then
+            echo "Error: Invalid timeout-minutes value '${{ inputs.timeout-minutes }}'"
+            echo "Value must be a number between 1 and 360 minutes"
+            exit 1
+          fi
+      
+      - name: Validate retention-days
+        run: |
+          if [[ ! "${{ inputs.retention-days }}" =~ ^[0-9]+$ ]] || (( "${{ inputs.retention-days }}" < 1 )) || (( "${{ inputs.retention-days }}" > 90 )); then
+            echo "Error: Invalid retention-days value '${{ inputs.retention-days }}'"
+            echo "Value must be a number between 1 and 90 days"
+            exit 1
+          fi
+      
+      - name: Validate category-prefix
+        run: |
+          if [[ -z "${{ inputs.category-prefix }}" ]]; then
+            echo "Error: category-prefix cannot be empty"
+            exit 1
+          fi
+          if [[ "${{ inputs.category-prefix }}" =~ [^a-zA-Z0-9\-_] ]]; then
+            echo "Error: category-prefix can only contain alphanumeric characters, hyphens, and underscores"
+            exit 1
+          fi
+
+  scan:
+    name: Scan Image Grype SARIF
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    concurrency:
+      group: ${{ inputs.image }}
+      cancel-in-progress: false
+    permissions:
+      security-events: write  # Needed to upload SARIF results
+      contents: read         # Needed to read workflow files
+    
+    steps:
+      - name: Extract image details
+        id: image_details
+        run: |
+          IMAGE_NAME=$(echo "${{ inputs.image }}" | cut -d':' -f1)
+          IMAGE_TAG=$(echo "${{ inputs.image }}" | cut -d':' -f2)
+          [[ "$IMAGE_TAG" == "$IMAGE_NAME" ]] && IMAGE_TAG="latest"
+          SAFE_NAME=$(echo "${IMAGE_NAME}-${IMAGE_TAG}" | sed 's/[\/:]/-/g')
+          {
+            echo "image_name=${IMAGE_NAME}"
+            echo "image_tag=${IMAGE_TAG}"
+            echo "safe_name=${SAFE_NAME}"
+          } >> "$GITHUB_OUTPUT"
+      
+      - name: Scan image with Grype
+        uses: anchore/scan-action@v6
+        id: scan
+        continue-on-error: true  # Allow workflow to continue even if scan fails
+        with:
+          image: "${{ inputs.image }}"
+          fail-build: "${{ inputs.fail-build }}"
+          severity-cutoff: "${{ inputs.severity-cutoff }}"
+          output-format: sarif
+          output-file: "${{ inputs.output-file }}"
+          by-cve: true
+      
+      - name: Check scan status
+        if: steps.scan.outcome == 'failure'
+        run: |
+          echo "::warning::Scan failed for image ${{ inputs.image }}"
+          echo "Please check the scan logs above for details"
+          if [ "${{ inputs.fail-build }}" = "true" ]; then
+            echo "::error::Build will fail due to scan failure and fail-build=true"
+            exit 1
+          fi
+      
+      - name: Enrich or generate SARIF
+        if: "!cancelled()"
+        run: |
+          if [ ! -f results.sarif ]; then
+            echo "No SARIF file found — creating minimal empty SARIF"
+
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"Anchore Grype","informationUri":"https://github.com/anchore/grype","rules":[]}},"results":[],"properties":{"isFallbackSarif":true}}]}' > results.sarif
+          fi
+
+          jq --arg imageRef "${{ inputs.image }}" \
+             --arg repo "${{ steps.image_details.outputs.image_name }}" \
+             --arg name "${{ steps.image_details.outputs.image_name }}" \
+             --arg tag "${{ steps.image_details.outputs.image_tag }}" \
+             --arg scanTime "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+             '.runs[0].properties = {
+                "imageRef": $imageRef,
+                "repository": $repo,
+                "scanTime": $scanTime,
+                "imageMetadata": {
+                  "name": $name,
+                  "tag": $tag
+                }
+              }' results.sarif > enriched-results.sarif
+
+          mv enriched-results.sarif results.sarif
+      
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: "${{ inputs.category-prefix }}${{ steps.image_details.outputs.safe_name }}"
+      
+      - name: Archive scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: "sarif-${{ steps.image_details.outputs.safe_name }}"
+          path: results.sarif
+          retention-days: ${{ inputs.retention-days }} 
