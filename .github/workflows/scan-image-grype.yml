@@ -149,7 +149,7 @@ jobs:
           fi
       
       - name: Enrich or generate SARIF
-        if: !cancelled()
+        if: "!cancelled()"
         run: |
           if [ ! -f results.sarif ]; then
             echo "No SARIF file found — creating minimal empty SARIF"
