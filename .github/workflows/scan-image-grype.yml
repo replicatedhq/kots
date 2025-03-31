@@ -151,8 +151,6 @@ jobs:
       - name: Enrich or generate SARIF
         if: !cancelled()
         run: |
-          sudo apt-get update && sudo apt-get install -y jq
-
           if [ ! -f results.sarif ]; then
             echo "No SARIF file found — creating minimal empty SARIF"
 
