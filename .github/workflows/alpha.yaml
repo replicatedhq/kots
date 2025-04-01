@@ -133,15 +133,13 @@ jobs:
           path: .image.env
       - name: Scan rqlite for vulnerabilities
         id: scan
-        uses: aquasecurity/trivy-action@master
+        uses: ./.github/workflows/scan-image-grype.yml
         with:
-          image-ref: "docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'rqlite-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          image: "docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
+          severity-cutoff: 'medium'
+          fail-build: false
+          output-file: 'rqlite-scan-output.sarif'
+          only-fixed: true
       - name: Print scan report
         run: cat rqlite-scan-output.sarif
       - name: Upload scan report
@@ -162,15 +160,13 @@ jobs:
           path: .image.env
       - name: Scan minio for vulnerabilities
         id: scan
-        uses: aquasecurity/trivy-action@master
+        uses: ./.github/workflows/scan-image-grype.yml
         with:
-          image-ref: "docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'minio-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          image: "docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
+          severity-cutoff: 'medium'
+          fail-build: false
+          output-file: 'minio-scan-output.sarif'
+          only-fixed: true
       - name: Print scan report
         run: cat minio-scan-output.sarif
       - name: Upload scan report
@@ -191,15 +187,13 @@ jobs:
           path: .image.env
       - name: Scan dex for vulnerabilities
         id: scan
-        uses: aquasecurity/trivy-action@master
+        uses: ./.github/workflows/scan-image-grype.yml
         with:
-          image-ref: "docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'dex-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          image: "docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}"
+          severity-cutoff: 'medium'
+          fail-build: false
+          output-file: 'dex-scan-output.sarif'
+          only-fixed: true
       - name: Print scan report
         run: cat dex-scan-output.sarif
       - name: Upload scan report
@@ -216,15 +210,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Scan kurl-proxy for vulnerabilities
         id: scan
-        uses: aquasecurity/trivy-action@master
+        uses: ./.github/workflows/scan-image-grype.yml
         with:
-          image-ref: 'docker.io/kotsadm/kurl-proxy:alpha'
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'kurl-proxy-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          image: 'docker.io/kotsadm/kurl-proxy:alpha'
+          severity-cutoff: 'medium'
+          fail-build: false
+          output-file: 'kurl-proxy-scan-output.sarif'
+          only-fixed: true
       - name: Print scan report
         run: cat kurl-proxy-scan-output.sarif
       - name: Upload scan report
@@ -245,15 +237,13 @@ jobs:
           path: .image.env
       - name: Scan replicated/local-volume-provider for vulnerabilities
         id: scan
-        uses: aquasecurity/trivy-action@master
+        uses: ./.github/workflows/scan-image-grype.yml
         with:
-          image-ref: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          image: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}"
+          severity-cutoff: 'medium'
+          fail-build: false
+          output-file: 'scan-output.sarif'
+          only-fixed: true
       - name: Print scan report
         run: cat scan-output.sarif
       - name: Upload scan report
@@ -270,15 +260,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Scan kotsadm for vulnerabilities
         id: scan
-        uses: aquasecurity/trivy-action@master
+        uses: ./.github/workflows/scan-image-grype.yml
         with:
-          image-ref: 'docker.io/kotsadm/kotsadm:alpha'
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'kotsadm-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          image: 'docker.io/kotsadm/kotsadm:alpha'
+          severity-cutoff: 'medium'
+          fail-build: false
+          output-file: 'kotsadm-scan-output.sarif'
+          only-fixed: true
       - name: Print scan report
         run: cat kotsadm-scan-output.sarif
       - name: Upload scan report
@@ -295,15 +283,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Scan migrations for vulnerabilities
         id: scan
-        uses: aquasecurity/trivy-action@master
+        uses: ./.github/workflows/scan-image-grype.yml
         with:
-          image-ref: 'docker.io/kotsadm/kotsadm-migrations:alpha'
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'kotsadm-migration-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          image: 'docker.io/kotsadm/kotsadm-migrations:alpha'
+          severity-cutoff: 'medium'
+          fail-build: false
+          output-file: 'kotsadm-migration-scan-output.sarif'
+          only-fixed: true
       - name: Print scan report
         run: cat kotsadm-migration-scan-output.sarif
       - name: Upload scan report

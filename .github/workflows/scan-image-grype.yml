@@ -37,6 +37,11 @@ on:
         type: string
         default: 'container-scan-'
         description: 'Prefix to use for the SARIF category name'
+      only-fixed:
+        required: false
+        type: boolean
+        default: true
+        description: 'Specify whether to only report vulnerabilities that have a fix available'
 
 permissions: {}  # Remove all permissions by default
 
@@ -99,6 +104,14 @@ jobs:
             echo "Error: category-prefix can only contain alphanumeric characters, hyphens, and underscores"
             exit 1
           fi
+      
+      - name: Validate only-fixed
+        run: |
+          if [[ ! "${{ inputs.only-fixed }}" =~ ^(true|false)$ ]]; then
+            echo "Error: Invalid only-fixed value '${{ inputs.only-fixed }}'"
+            echo "Value must be either 'true' or 'false'"
+            exit 1
+          fi
 
   scan:
     name: Scan Image Grype SARIF
@@ -137,6 +150,7 @@ jobs:
           output-format: sarif
           output-file: "${{ inputs.output-file }}"
           by-cve: true
+          only-fixed: "${{ inputs.only-fixed }}"
       
       - name: Check scan status
         if: steps.scan.outcome == 'failure'
