@@ -31,10 +31,10 @@ type State = {
 
 const EmbeddedClusterManagement = ({
   fromLicenseFlow = false,
-  setCurrentStep,
+  onMount,
 }: {
   fromLicenseFlow?: boolean;
-  setCurrentStep: (step: number) => void;
+  onMount: () => void;
 }) => {
   const [state, setState] = useReducer(
     (prevState: State, newState: Partial<State>) => ({
@@ -250,7 +250,7 @@ const EmbeddedClusterManagement = ({
   }, [rolesData]);
 
   useEffect(() => {
-    setCurrentStep(1);
+    onMount();
   }, []);
 
   const determineDisabledState = () => {
@@ -524,10 +524,12 @@ const EmbeddedClusterManagement = ({
     );
   };
 
+  const isMultiNodeDisabled = app?.isEmbeddedClusterMultinodeDisabled;
+
   return (
     <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto tw-font-sans tw-max-w-[1024px] tw-mx-auto tw-mt-6">
       <KotsPageTitle pageName="Cluster Management" />
-      {Utilities.isInitialAppInstall(app) && (
+      {!isMultiNodeDisabled && Utilities.isInitialAppInstall(app) && (
         <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
           <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
             Configure the cluster
@@ -536,11 +538,11 @@ const EmbeddedClusterManagement = ({
       )}
       <div className="flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-2 card-bg">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
-          Nodes
+          Node{isMultiNodeDisabled ? "" : "s"}
         </p>
         <div className="tw-flex tw-items-center">
           {" "}
-          {!Utilities.isInitialAppInstall(app) && (
+          {!isMultiNodeDisabled && Utilities.isInitialAppInstall(app) && (
             <div className="tw-flex tw-gap-6">
               <p>
                 View the nodes in your cluster, generate commands to add nodes
@@ -548,7 +550,7 @@ const EmbeddedClusterManagement = ({
               </p>
             </div>
           )}
-          {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
+          {!isMultiNodeDisabled && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
             !Utilities.isInitialAppInstall(app) && (
               <button
                 className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
@@ -558,7 +560,7 @@ const EmbeddedClusterManagement = ({
               </button>
             )}
         </div>
-        {Utilities.isInitialAppInstall(app) && (
+        {!isMultiNodeDisabled && Utilities.isInitialAppInstall(app) && (
           <div className="tw-flex tw-flex-col">
             <AddNodeInstructions />
             <AddNodeCommands />

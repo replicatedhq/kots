@@ -580,6 +580,112 @@ const Root = () => {
     }
   );
 
+  const getSidebarSteps = () => {
+    if (!state.appsList?.length) {
+      return [];
+    }
+
+    const app = state.appsList[0];
+    const steps = [];
+
+    steps.push({
+      id: "secure",
+      title: "Secure the Admin Console",
+    });
+
+    if (!app?.isEmbeddedClusterMultinodeDisabled) {
+      steps.push({
+        id: "cluster",
+        title: "Configure the cluster",
+      });
+    }
+
+    steps.push({
+      id: "config",
+      title: `Configure ${state.selectedAppName || ""}`,
+      children: navbarConfigGroups.length > 0 && (
+        <div
+          id="configSidebarWrapper"
+          className="config-sidebar-wrapper clickable !tw-bg-[#F9FBFC] tw-pt-4 tw-px-5"
+        >
+          {navbarConfigGroups?.map((group, i) => {
+            if (
+              group.title === "" ||
+              group.title.length === 0 ||
+              group.hidden ||
+              group.when === "false"
+            ) {
+              return null;
+            }
+            const isActive = activeGroups.includes(group.name) || group.hasError;
+
+            return (
+              <NavGroup 
+                key={i}
+                group={group} 
+                isActive={isActive} 
+                i={i} 
+              />
+            );
+          })}
+        </div>
+      )
+    });
+
+    steps.push({
+      id: "preflight",
+      title: `Validate the environment & deploy ${state.selectedAppName || ""}`,
+    });
+
+    return steps;
+  };
+
+  const getStepNumber = (stepId: string) => {
+    return getSidebarSteps().findIndex(s => s.id === stepId);
+  };
+
+  const GetStartedSidebar = () => {
+    const { adminConsoleMetadata, appsList } = state;
+
+    if (!Utilities.isLoggedIn()) {
+      return null;
+    }
+    if (!adminConsoleMetadata?.isKurl && !adminConsoleMetadata?.isEmbeddedCluster) {
+      return null;
+    }
+    if (!appsList?.length) {
+      return null;
+    }
+    if (!Utilities.isInitialAppInstall(appsList[0])) {
+      return null;
+    }
+
+    return (
+      <div
+        className="tw-w-[400px] tw-bg-[#F9FBFC]"
+        data-testid="get-started-sidebar"
+      >
+        <div className="tw-py-8 tw-pl-8 tw-shadow-[0_1px_0_#c4c8ca]">
+          <span className="tw-text-lg tw-font-semibold tw-text-gray-800">
+            Let's get you started!
+          </span>
+        </div>
+
+        {getSidebarSteps().map((step, index) => (
+          <div key={step.id} className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
+            <div className="tw-flex">
+              <Icon icon={getStepProps(index).icon} size={16} className="tw-mr-2" />
+              <span className={`${getStepProps(index).fontClass} ${getStepProps(index).textColor} tw-flex-1`}>
+                {step.title}
+              </span>
+            </div>
+            {step.children}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <Helmet>
@@ -640,104 +746,7 @@ const Root = () => {
             errLoggingOut={state.errLoggingOut}
           />
           <div className="tw-flex flex1" data-testid="root-container">
-            {(state.adminConsoleMetadata?.isKurl ||
-              state.adminConsoleMetadata?.isEmbeddedCluster) &&
-              Utilities.isInitialAppInstall(state.appsList[0]) &&
-              Utilities.isLoggedIn() && (
-                <div
-                  className="tw-w-[400px]  tw-bg-[#F9FBFC]"
-                  data-testid="get-started-sidebar"
-                >
-                  <div className="tw-py-8 tw-pl-8 tw-shadow-[0_1px_0_#c4c8ca]">
-                    <span className="tw-text-lg tw-font-semibold  tw-text-gray-800">
-                      Let's get you started!
-                    </span>
-                  </div>
-                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium tw-flex">
-                    <Icon
-                      icon={getStepProps(0).icon}
-                      size={16}
-                      className="tw-mr-2"
-                    />
-                    <span
-                      className={`${getStepProps(0).fontClass} ${
-                        getStepProps(0).textColor
-                      }`}
-                    >
-                      Secure the Admin Console
-                    </span>
-                  </div>
-                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium tw-flex">
-                    <Icon
-                      icon={getStepProps(1).icon}
-                      size={16}
-                      className="tw-mr-2"
-                    />
-                    <span
-                      className={`${getStepProps(1).fontClass} ${
-                        getStepProps(1).textColor
-                      }`}
-                    >
-                      Configure the cluster
-                    </span>
-                  </div>
-                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
-                    <div className="tw-flex">
-                      <Icon
-                        icon={getStepProps(2).icon}
-                        size={16}
-                        className="tw-mr-2"
-                      />
-                      <span
-                        className={`${getStepProps(2).fontClass} ${
-                          getStepProps(2).textColor
-                        }`}
-                      >
-                        Configure {state.selectedAppName || ""}
-                      </span>
-                    </div>
-                    {navbarConfigGroups.length > 0 && (
-                      <div
-                        id="configSidebarWrapper"
-                        className="config-sidebar-wrapper clickable !tw-bg-[#F9FBFC] tw-pt-4 tw-px-5"
-                      >
-                        {navbarConfigGroups?.map((group, i) => {
-                          if (
-                            group.title === "" ||
-                            group.title.length === 0 ||
-                            group.hidden ||
-                            group.when === "false"
-                          ) {
-                            return;
-                          }
-                          const isActive =
-                            activeGroups.includes(group.name) || group.hasError;
-
-                          return (
-                            <NavGroup group={group} isActive={isActive} i={i} />
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                  <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium tw-leading-6 tw-flex">
-                    <Icon
-                      icon={getStepProps(3).icon}
-                      size={16}
-                      className="tw-mr-2"
-                    />
-                    <span
-                      className={`${getStepProps(3).fontClass} ${
-                        getStepProps(3).textColor
-                      }`}
-                    >
-                      Validate the environment & deploy{" "}
-                      {state.selectedAppName || ""}
-                    </span>
-                  </div>
-                </div>
-              )}
-
+            <GetStartedSidebar />
             <div className="flex1 flex-column u-overflow--auto tw-relative">
               <Routes>
                 <Route
@@ -773,7 +782,7 @@ const Root = () => {
                       logo={state.appLogo || ""}
                       fromLicenseFlow={true}
                       refetchAppsList={getAppsList}
-                      setCurrentStep={setCurrentStep}
+                      onMount={() => setCurrentStep(getStepNumber("preflight"))}
                       isEmbeddedCluster={
                         state.adminConsoleMetadata?.isEmbeddedCluster
                       }
@@ -789,7 +798,7 @@ const Root = () => {
                       isEmbeddedCluster={
                         state.adminConsoleMetadata?.isEmbeddedCluster
                       }
-                      setCurrentStep={setCurrentStep}
+                      onMount={() => setCurrentStep(getStepNumber("config"))}
                       setNavbarConfigGroups={setNavbarConfigGroups}
                       setActiveGroups={setActiveGroups}
                     />
@@ -861,7 +870,7 @@ const Root = () => {
                       element={
                         <EmbeddedClusterManagement
                           fromLicenseFlow={true}
-                          setCurrentStep={setCurrentStep}
+                          onMount={() => setCurrentStep(getStepNumber("cluster"))}
                         />
                       }
                     />
@@ -880,7 +889,7 @@ const Root = () => {
                         <KurlClusterManagement />
                       ) : (
                         <EmbeddedClusterManagement
-                          setCurrentStep={setCurrentStep}
+                        onMount={() => setCurrentStep(getStepNumber("cluster"))}
                         />
                       )
                     }
@@ -1065,7 +1074,7 @@ const Root = () => {
                         logo={state.appLogo || ""}
                         fromLicenseFlow={true}
                         refetchAppsList={getAppsList}
-                        setCurrentStep={setCurrentStep}
+                        onMount={() => setCurrentStep(getStepNumber("preflight"))}
                         isEmbeddedCluster={
                           state.adminConsoleMetadata?.isEmbeddedCluster
                         }
@@ -1081,7 +1090,7 @@ const Root = () => {
                         isEmbeddedCluster={
                           state.adminConsoleMetadata?.isEmbeddedCluster
                         }
-                        setCurrentStep={setCurrentStep}
+                        onMount={() => setCurrentStep(getStepNumber("config"))}
                         setNavbarConfigGroups={setNavbarConfigGroups}
                         setActiveGroups={setActiveGroups}
                       />
