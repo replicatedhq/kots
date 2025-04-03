@@ -35,16 +35,17 @@ type ResponseApp struct {
 	Namespace         string              `json:"namespace"`
 	AppState          string              `json:"appState"`
 
-	IsGitOpsSupported              bool   `json:"isGitOpsSupported"`
-	IsIdentityServiceSupported     bool   `json:"isIdentityServiceSupported"`
-	IsAppIdentityServiceSupported  bool   `json:"isAppIdentityServiceSupported"`
-	IsGeoaxisSupported             bool   `json:"isGeoaxisSupported"`
-	IsSemverRequired               bool   `json:"isSemverRequired"`
-	IsSupportBundleUploadSupported bool   `json:"isSupportBundleUploadSupported"`
-	AllowRollback                  bool   `json:"allowRollback"`
-	AllowSnapshots                 bool   `json:"allowSnapshots"`
-	TargetKotsVersion              string `json:"targetKotsVersion"`
-	LicenseType                    string `json:"licenseType"`
+	IsGitOpsSupported                  bool   `json:"isGitOpsSupported"`
+	IsIdentityServiceSupported         bool   `json:"isIdentityServiceSupported"`
+	IsAppIdentityServiceSupported      bool   `json:"isAppIdentityServiceSupported"`
+	IsGeoaxisSupported                 bool   `json:"isGeoaxisSupported"`
+	IsSemverRequired                   bool   `json:"isSemverRequired"`
+	IsSupportBundleUploadSupported     bool   `json:"isSupportBundleUploadSupported"`
+	IsEmbeddedClusterMultinodeDisabled bool   `json:"isEmbeddedClusterMultinodeDisabled"`
+	AllowRollback                      bool   `json:"allowRollback"`
+	AllowSnapshots                     bool   `json:"allowSnapshots"`
+	TargetKotsVersion                  string `json:"targetKotsVersion"`
+	LicenseType                        string `json:"licenseType"`
 
 	Downstream ResponseDownstream `json:"downstream"`
 }

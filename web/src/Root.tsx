@@ -678,7 +678,7 @@ const Root = () => {
                         getStepProps(1).textColor
                       }`}
                     >
-                      Configure the cluster (optional)
+                      Configure the cluster
                     </span>
                   </div>
                   <div className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">

@@ -16,7 +16,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/online/types"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -191,7 +190,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", true, opts.IsAutomated, configFile, opts.SkipPreflights, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", true, opts.IsAutomated, configFile, opts.SkipPreflights)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
