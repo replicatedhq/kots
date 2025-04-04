@@ -138,77 +138,14 @@ const UploadLicenseFile = (props: Props) => {
     }
   }, [props.appsListLength, props.isEmbeddedCluster]);
 
-  const exchangeRliFileForLicense = async (content: string) => {
-    return new Promise((resolve, reject) => {
-      const payload = {
-        licenseData: content,
-      };
-
-      fetch(`${process.env.API_ENDPOINT}/license/platform`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            reject(
-              res.status === 401
-                ? "Invalid license. Please try again"
-                : "There was an error uploading your license. Please try again"
-            );
-            return;
-          }
-          resolve((await res.json()).licenseData);
-        })
-        .catch((err) => {
-          console.log(err);
-          reject("There was an error uploading your license. Please try again");
-        });
-    });
-  };
-
   const uploadLicenseFile = async () => {
     const { onUploadSuccess } = props;
-    const { licenseFile, licenseFileContent, hasMultiApp } = state;
-    const isRliFile =
-      licenseFile?.name.substr(licenseFile.name.lastIndexOf(".")) === ".rli";
-    let licenseText;
-
-    let serializedLicense;
-    if (isRliFile) {
-      try {
-        const base64String = btoa(
-          // TODO: this is probably a bug
-          // https://stackoverflow.com/questions/67057689/typscript-type-uint8array-is-missing-the-following-properties-from-type-numb
-          // @ts-ignore
-          String.fromCharCode.apply(null, new Uint8Array(licenseFileContent))
-        );
-        licenseText = await exchangeRliFileForLicense(base64String);
-      } catch (err) {
-        if (err instanceof Error) {
-          setState({
-            fileUploading: false,
-            errorMessage: err.message,
-          });
-          return;
-        }
-        setState({
-          fileUploading: false,
-          errorMessage:
-            "Something went wrong while uploading your license. Please try again",
-        });
-      }
-    } else {
-      licenseText =
-        hasMultiApp && licenseFileContent && state.selectedAppToInstall?.value
-          ? licenseFileContent[state.selectedAppToInstall.value]
-          : licenseFileContent;
-      serializedLicense = yaml.dump(licenseText);
-    }
+    const { licenseFileContent, hasMultiApp } = state;
+    const licenseText =
+      hasMultiApp && licenseFileContent && state.selectedAppToInstall?.value
+        ? licenseFileContent[state.selectedAppToInstall.value]
+        : licenseFileContent;
+    const serializedLicense = yaml.dump(licenseText);
 
     setState({
       fileUploading: true,
@@ -223,7 +160,7 @@ const UploadLicenseFile = (props: Props) => {
       },
       credentials: "include",
       body: JSON.stringify({
-        licenseData: isRliFile ? licenseText : serializedLicense,
+        licenseData: serializedLicense,
       }),
     })
       .then(async (result) => {
@@ -543,7 +480,7 @@ const UploadLicenseFile = (props: Props) => {
                   ) : (
                     <Dropzone
                       className="Dropzone-wrapper"
-                      accept={["application/x-yaml", ".yaml", ".yml", ".rli"]}
+                      accept={["application/x-yaml", ".yaml", ".yml"]}
                       onDropAccepted={onDrop}
                       multiple={false}
                     >
