@@ -29,7 +29,7 @@ interface Props {
   fromLicenseFlow?: boolean;
   logo: string;
   refetchAppsList?: () => void;
-  setCurrentStep: (step: number) => void;
+  onMount: () => void;
   isEmbeddedCluster: boolean;
 }
 
@@ -58,7 +58,7 @@ function PreflightResultPage(props: Props) {
   // TODO: remove this once everything is using react-query
   // componentWilUnmount
   useEffect(() => {
-    props.setCurrentStep(3);
+    props.onMount();
     return () => {
       if (props.fromLicenseFlow && props.refetchAppsList) {
         props.refetchAppsList();

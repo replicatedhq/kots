@@ -48,6 +48,8 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 		return strconv.FormatBool(ctx.License.Spec.IsGitOpsSupported)
 	case "isSupportBundleUploadSupported":
 		return strconv.FormatBool(ctx.License.Spec.IsSupportBundleUploadSupported)
+	case "isEmbeddedClusterMultinodeDisabled":
+		return strconv.FormatBool(ctx.License.Spec.IsEmbeddedClusterMultinodeDisabled)
 	case "isIdentityServiceSupported":
 		return strconv.FormatBool(ctx.License.Spec.IsIdentityServiceSupported)
 	case "isGeoaxisSupported":

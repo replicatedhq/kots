@@ -20,6 +20,7 @@ export type App = {
   isIdentityServiceSupported: boolean;
   isSemverRequired: boolean;
   isSupportBundleUploadSupported: boolean;
+  isEmbeddedClusterMultinodeDisabled: boolean;
   licenseType: string;
   name: string;
   namespace: string;
@@ -43,6 +44,7 @@ export type AppLicense = {
   isSnapshotSupported: boolean;
   isDisasterRecoverySupported: boolean;
   isSupportBundleUploadSupported: boolean;
+  isEmbeddedClusterMultinodeDisabled: boolean;
   lastSyncedAt: string;
   licenseSequence: number;
   licenseType: string;

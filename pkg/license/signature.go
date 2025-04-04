@@ -164,6 +164,9 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 	if outerLicense.Spec.IsSupportBundleUploadSupported != innerLicense.Spec.IsSupportBundleUploadSupported {
 		return fmt.Errorf("\"IsSupportBundleUploadSupported\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsSupportBundleUploadSupported, innerLicense.Spec.IsSupportBundleUploadSupported)
 	}
+	if outerLicense.Spec.IsEmbeddedClusterMultinodeDisabled != innerLicense.Spec.IsEmbeddedClusterMultinodeDisabled {
+		return fmt.Errorf("\"IsEmbeddedClusterMultinodeDisabled\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsEmbeddedClusterMultinodeDisabled, innerLicense.Spec.IsEmbeddedClusterMultinodeDisabled)
+	}
 	if outerLicense.Spec.IsSemverRequired != innerLicense.Spec.IsSemverRequired {
 		return fmt.Errorf("\"IsSemverRequired\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsSemverRequired, innerLicense.Spec.IsSemverRequired)
 	}

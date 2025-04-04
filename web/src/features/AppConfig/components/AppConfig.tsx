@@ -29,7 +29,7 @@ type Props = {
   refreshAppData: () => void;
   refetchApps: () => void;
   navigate: ReturnType<typeof useNavigate>;
-  setCurrentStep: (step: number) => void;
+  onMount: () => void;
   setNavbarConfigGroups: (ConfigGroup) => void;
   setActiveGroups: (ConfigGroup) => void;
 };
@@ -129,7 +129,7 @@ class AppConfig extends Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.setCurrentStep(2);
+    this.props.onMount();
     const { app, navigate } = this.props;
     if (app && !app.isConfigurable) {
       // app not configurable - redirect

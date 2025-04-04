@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	kotsadmlicense "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
@@ -255,6 +256,16 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	}
 	appSlug = a.Slug
 
+	// in embedded cluster, the installation is considered automated if a config values file has been provided by the user.
+	isAutomated := true
+	if util.IsEmbeddedCluster() {
+		configValues, err := kotsadmconfig.ReadConfigValuesFromInClusterSecret()
+		if err != nil {
+			return errors.Wrap(err, "failed to read config values from in cluster")
+		}
+		isAutomated = configValues != ""
+	}
+
 	// airgap data is the airgap manifest + app specs + image list loaded from configmaps
 	airgapData, err := getAirgapData(clientset, verifiedLicense)
 	if err != nil {
@@ -305,7 +316,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 			RegistryUsername:       registryConfig.Username,
 			RegistryPassword:       registryConfig.Password,
 			RegistryIsReadOnly:     instParams.RegistryIsReadOnly,
-			IsAutomated:            true,
+			IsAutomated:            isAutomated,
 			SkipPreflights:         instParams.SkipPreflights,
 			SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
 		}
@@ -324,7 +335,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 				SelectedChannelID: a.SelectedChannelID,
 			},
 			UpstreamURI:            upstreamURI,
-			IsAutomated:            true,
+			IsAutomated:            isAutomated,
 			SkipPreflights:         instParams.SkipPreflights,
 			SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
 		}
