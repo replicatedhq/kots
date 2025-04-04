@@ -617,19 +617,13 @@ const Root = () => {
             ) {
               return null;
             }
-            const isActive = activeGroups.includes(group.name) || group.hasError;
+            const isActive =
+              activeGroups.includes(group.name) || group.hasError;
 
-            return (
-              <NavGroup 
-                key={i}
-                group={group} 
-                isActive={isActive} 
-                i={i} 
-              />
-            );
+            return <NavGroup key={i} group={group} isActive={isActive} i={i} />;
           })}
         </div>
-      )
+      ),
     });
 
     steps.push({
@@ -641,7 +635,7 @@ const Root = () => {
   };
 
   const getStepNumber = (stepId: string) => {
-    return getSidebarSteps().findIndex(s => s.id === stepId);
+    return getSidebarSteps().findIndex((s) => s.id === stepId);
   };
 
   const GetStartedSidebar = () => {
@@ -650,7 +644,10 @@ const Root = () => {
     if (!Utilities.isLoggedIn()) {
       return null;
     }
-    if (!adminConsoleMetadata?.isKurl && !adminConsoleMetadata?.isEmbeddedCluster) {
+    if (
+      !adminConsoleMetadata?.isKurl &&
+      !adminConsoleMetadata?.isEmbeddedCluster
+    ) {
       return null;
     }
     if (!appsList?.length) {
@@ -672,10 +669,21 @@ const Root = () => {
         </div>
 
         {getSidebarSteps().map((step, index) => (
-          <div key={step.id} className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium">
+          <div
+            key={step.id}
+            className="tw-p-8 tw-shadow-[0_1px_0_#c4c8ca] tw-font-medium"
+          >
             <div className="tw-flex">
-              <Icon icon={getStepProps(index).icon} size={16} className="tw-mr-2" />
-              <span className={`${getStepProps(index).fontClass} ${getStepProps(index).textColor} tw-flex-1`}>
+              <Icon
+                icon={getStepProps(index).icon}
+                size={16}
+                className="tw-mr-2"
+              />
+              <span
+                className={`${getStepProps(index).fontClass} ${
+                  getStepProps(index).textColor
+                } tw-flex-1`}
+              >
                 {step.title}
               </span>
             </div>
@@ -870,7 +878,9 @@ const Root = () => {
                       element={
                         <EmbeddedClusterManagement
                           fromLicenseFlow={true}
-                          onMount={() => setCurrentStep(getStepNumber("cluster"))}
+                          onMount={() =>
+                            setCurrentStep(getStepNumber("cluster"))
+                          }
                         />
                       }
                     />
@@ -889,7 +899,9 @@ const Root = () => {
                         <KurlClusterManagement />
                       ) : (
                         <EmbeddedClusterManagement
-                        onMount={() => setCurrentStep(getStepNumber("cluster"))}
+                          onMount={() =>
+                            setCurrentStep(getStepNumber("cluster"))
+                          }
                         />
                       )
                     }
@@ -1074,7 +1086,9 @@ const Root = () => {
                         logo={state.appLogo || ""}
                         fromLicenseFlow={true}
                         refetchAppsList={getAppsList}
-                        onMount={() => setCurrentStep(getStepNumber("preflight"))}
+                        onMount={() =>
+                          setCurrentStep(getStepNumber("preflight"))
+                        }
                         isEmbeddedCluster={
                           state.adminConsoleMetadata?.isEmbeddedCluster
                         }

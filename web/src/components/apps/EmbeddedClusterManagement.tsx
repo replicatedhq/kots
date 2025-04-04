@@ -550,7 +550,8 @@ const EmbeddedClusterManagement = ({
               </p>
             </div>
           )}
-          {!isMultiNodeDisabled && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
+          {!isMultiNodeDisabled &&
+            Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
             !Utilities.isInitialAppInstall(app) && (
               <button
                 className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
