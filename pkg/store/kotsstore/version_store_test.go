@@ -24,28 +24,98 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 		kotsKinds      *kotsutil.KotsKinds
 		isInstall      bool
 		isAutomated    bool
-		configFile     string
 		skipPreflights bool
 		setup          func(t *testing.T, mockStore *mock_store.MockStore)
 		expected       types.DownstreamVersionStatus
 	}{
 		{
-			name: "embedded cluster installation without config file and multinode enabled",
+			name: "non-automated embedded cluster installation with multinode enabled",
 			app: &apptypes.App{
 				ID: "test-app",
 			},
-			isInstall: true,
+			isInstall:   true,
+			isAutomated: false,
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
 			},
 			expected: types.VersionPendingClusterManagement,
 		},
 		{
-			name: "embedded cluster installation without config file and multinode disabled",
+			name: "non-automated embedded cluster installation with multinode disabled",
 			app: &apptypes.App{
 				ID: "test-app",
 			},
-			isInstall: true,
+			isInstall:   true,
+			isAutomated: false,
+			kotsKinds: &kotsutil.KotsKinds{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsEmbeddedClusterMultinodeDisabled: true,
+					},
+				},
+				Config: &kotsv1beta1.Config{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "Config",
+					},
+					Spec: kotsv1beta1.ConfigSpec{
+						Groups: []kotsv1beta1.ConfigGroup{
+							{
+								Items: []kotsv1beta1.ConfigItem{
+									{
+										Name: "optional_item",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
+				mockStore.EXPECT().GetRegistryDetailsForApp("test-app").Return(registrytypes.RegistrySettings{}, nil)
+			},
+			expected: types.VersionPendingConfig,
+		},
+		{
+			name: "automated embedded cluster installation with multinode enabled",
+			app: &apptypes.App{
+				ID: "test-app",
+			},
+			isInstall:   true,
+			isAutomated: true,
+			kotsKinds: &kotsutil.KotsKinds{
+				Config: &kotsv1beta1.Config{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "Config",
+					},
+					Spec: kotsv1beta1.ConfigSpec{
+						Groups: []kotsv1beta1.ConfigGroup{
+							{
+								Items: []kotsv1beta1.ConfigItem{
+									{
+										Name: "optional_item",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
+				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
+				mockStore.EXPECT().GetRegistryDetailsForApp("test-app").Return(registrytypes.RegistrySettings{}, nil)
+			},
+			expected: types.VersionPending,
+		},
+		{
+			name: "automated embedded cluster installation with multinode disabled",
+			app: &apptypes.App{
+				ID: "test-app",
+			},
+			isInstall:   true,
+			isAutomated: true,
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -59,54 +129,11 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			expected: types.VersionPending,
 		},
 		{
-			name: "embedded cluster installation with config file and multinode enabled",
-			app: &apptypes.App{
-				ID: "test-app",
-			},
-			isInstall:  true,
-			configFile: "config.yaml",
-			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
-				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
-			},
-			expected: types.VersionPending,
-		},
-		{
-			name: "embedded cluster installation with config file and multinode disabled",
-			app: &apptypes.App{
-				ID: "test-app",
-			},
-			isInstall:  true,
-			configFile: "config.yaml",
-			kotsKinds: &kotsutil.KotsKinds{
-				License: &kotsv1beta1.License{
-					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeDisabled: true,
-					},
-				},
-			},
-			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
-				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
-			},
-			expected: types.VersionPending,
-		},
-		{
-			name: "embedded cluster update without config file",
+			name: "embedded cluster update",
 			app: &apptypes.App{
 				ID: "test-app",
 			},
 			isInstall: false,
-			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
-				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
-			},
-			expected: types.VersionPending,
-		},
-		{
-			name: "embedded cluster update with config file",
-			app: &apptypes.App{
-				ID: "test-app",
-			},
-			isInstall:  false,
-			configFile: "config.yaml",
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
 			},
@@ -542,7 +569,6 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 				test.kotsKinds,
 				test.isInstall,
 				test.isAutomated,
-				test.configFile,
 				test.skipPreflights,
 			)
 			req.NoError(err)

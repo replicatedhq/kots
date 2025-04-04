@@ -190,7 +190,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", true, opts.IsAutomated, configFile, opts.SkipPreflights)
+	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", true, opts.IsAutomated, opts.SkipPreflights)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new version")
 	}

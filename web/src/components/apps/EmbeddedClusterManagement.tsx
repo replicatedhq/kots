@@ -542,7 +542,7 @@ const EmbeddedClusterManagement = ({
         </p>
         <div className="tw-flex tw-items-center">
           {" "}
-          {!isMultiNodeDisabled && Utilities.isInitialAppInstall(app) && (
+          {!isMultiNodeDisabled && !Utilities.isInitialAppInstall(app) && (
             <div className="tw-flex tw-gap-6">
               <p>
                 View the nodes in your cluster, generate commands to add nodes

@@ -1008,7 +1008,7 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) 
 		return errors.Wrap(err, "failed to extract app archive")
 	}
 
-	sequence, err := o.store.CreateAppVersion(appID, &baseSequence, archiveDir, source, false, false, "", skipPreflights)
+	sequence, err := o.store.CreateAppVersion(appID, &baseSequence, archiveDir, source, false, false, skipPreflights)
 	if err != nil {
 		return errors.Wrap(err, "failed to create app version")
 	}

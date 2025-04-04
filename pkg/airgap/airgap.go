@@ -256,7 +256,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to set app is airgap the second time")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Install", true, opts.IsAutomated, configFile, opts.SkipPreflights)
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Install", true, opts.IsAutomated, opts.SkipPreflights)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
