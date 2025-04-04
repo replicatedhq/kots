@@ -371,7 +371,7 @@ func createDialer(cfg *rest.Config, namespace string, podName string) (httpstrea
 
 	if u.Scheme == "http" || u.Scheme == "https" {
 		scheme = u.Scheme
-		hostIP = u.Host
+		hostIP = fmt.Sprintf("%s%s", u.Host, u.Path)
 	}
 
 	serverURL := url.URL{Scheme: scheme, Path: path, Host: hostIP}
