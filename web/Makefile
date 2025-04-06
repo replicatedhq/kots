@@ -52,4 +52,4 @@ test-unit:
 
 .PHONY: lint
 lint:
-	yarn prettier && yarn lint && yarn test:typecheck
+	yarn lint && yarn test:typecheck
