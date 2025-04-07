@@ -475,9 +475,8 @@ const AppLicenseComponent = () => {
                   {isEmbeddedCluster &&
                   !appLicense?.isEmbeddedClusterMultinodeDisabled ? (
                     <span className="flex alignItems--center">
-                      {/* TODO NOW: Fix icon */}
-                      <span className="icon licenseVeleroIcon" /> Multi-node
-                      cluster enabled{" "}
+                      <span className="icon licenseMultinodeIcon" /> 
+                      Multi-node cluster enabled{" "}
                     </span>
                   ) : null}
                   {appLicense?.isGitOpsSupported ? (
