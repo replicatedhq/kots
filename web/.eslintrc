@@ -25,6 +25,7 @@
     "@typescript-eslint/quotes": "off",
     "@typescript-eslint/semi": "off",
     "@typescript-eslint/naming-convention": "off",
+    "@typescript-eslint/indent": "off",
 
     // React rules
     "react/jsx-filename-extension": "off",
