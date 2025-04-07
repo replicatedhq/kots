@@ -78,7 +78,10 @@ func startClusterUpgrade(
 	}
 	newInstall.Spec.Artifacts = artifacts
 	newInstall.Spec.Config = &newcfg
-	newInstall.Spec.LicenseInfo = &embeddedclusterv1beta1.LicenseInfo{IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported}
+	newInstall.Spec.LicenseInfo = &embeddedclusterv1beta1.LicenseInfo{
+		IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported,
+		IsMultinodeDisabled:         license.Spec.IsEmbeddedClusterMultinodeDisabled,
+	}
 
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 

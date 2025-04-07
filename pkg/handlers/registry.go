@@ -20,7 +20,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	corev1 "k8s.io/api/core/v1"
@@ -257,7 +256,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		}
 		defer os.RemoveAll(appDir)
 
-		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestSequence, appDir, "Registry Change", false, false, "", false, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestSequence, appDir, "Registry Change", false, false, false)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app version"))
 			return

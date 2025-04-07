@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -266,14 +265,14 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeInstallation.UpdateCursor && afterKotsKinds.Installation.Spec.ChannelID == beforeInstallation.ChannelID {
 			return
 		}
-		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", false, false, "", skipPreflights, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", false, false, skipPreflights)
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return
 		}
 		finalSequence = &newSequence
 	} else {
-		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, render.Renderer{})
+		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights)
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return
