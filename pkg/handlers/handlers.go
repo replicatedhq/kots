@@ -28,7 +28,7 @@ type Handler struct {
 // NewHandler returns a new default Handler
 func NewHandler() *Handler {
 	return &Handler{
-		KubeClientBuilder:   &kubeclient.Builder{},
+		KubeClientBuilder: &kubeclient.Builder{},
 	}
 }
 

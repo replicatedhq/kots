@@ -36,22 +36,23 @@ type SyncLicenseRequest struct {
 }
 
 type LicenseResponse struct {
-	ID                             string                `json:"id"`
-	Assignee                       string                `json:"assignee"`
-	ExpiresAt                      time.Time             `json:"expiresAt"`
-	ChannelName                    string                `json:"channelName"`
-	LicenseSequence                int64                 `json:"licenseSequence"`
-	LicenseType                    string                `json:"licenseType"`
-	Entitlements                   []EntitlementResponse `json:"entitlements"`
-	IsAirgapSupported              bool                  `json:"isAirgapSupported"`
-	IsGitOpsSupported              bool                  `json:"isGitOpsSupported"`
-	IsIdentityServiceSupported     bool                  `json:"isIdentityServiceSupported"`
-	IsGeoaxisSupported             bool                  `json:"isGeoaxisSupported"`
-	IsSemverRequired               bool                  `json:"isSemverRequired"`
-	IsSnapshotSupported            bool                  `json:"isSnapshotSupported"`
-	IsDisasterRecoverySupported    bool                  `json:"isDisasterRecoverySupported"`
-	LastSyncedAt                   string                `json:"lastSyncedAt"`
-	IsSupportBundleUploadSupported bool                  `json:"isSupportBundleUploadSupported"`
+	ID                                string                `json:"id"`
+	Assignee                          string                `json:"assignee"`
+	ExpiresAt                         time.Time             `json:"expiresAt"`
+	ChannelName                       string                `json:"channelName"`
+	LicenseSequence                   int64                 `json:"licenseSequence"`
+	LicenseType                       string                `json:"licenseType"`
+	Entitlements                      []EntitlementResponse `json:"entitlements"`
+	IsAirgapSupported                 bool                  `json:"isAirgapSupported"`
+	IsGitOpsSupported                 bool                  `json:"isGitOpsSupported"`
+	IsIdentityServiceSupported        bool                  `json:"isIdentityServiceSupported"`
+	IsGeoaxisSupported                bool                  `json:"isGeoaxisSupported"`
+	IsSemverRequired                  bool                  `json:"isSemverRequired"`
+	IsSnapshotSupported               bool                  `json:"isSnapshotSupported"`
+	IsDisasterRecoverySupported       bool                  `json:"isDisasterRecoverySupported"`
+	LastSyncedAt                      string                `json:"lastSyncedAt"`
+	IsSupportBundleUploadSupported    bool                  `json:"isSupportBundleUploadSupported"`
+	IsEmbeddedClusterMultinodeEnabled bool                  `json:"isEmbeddedClusterMultinodeEnabled"`
 }
 
 type SyncLicenseResponse struct {
@@ -681,22 +682,23 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 	})
 
 	response := LicenseResponse{
-		ID:                             license.Spec.LicenseID,
-		Assignee:                       license.Spec.CustomerName,
-		ChannelName:                    license.Spec.ChannelName,
-		LicenseSequence:                license.Spec.LicenseSequence,
-		LicenseType:                    license.Spec.LicenseType,
-		Entitlements:                   entitlements,
-		ExpiresAt:                      expiresAt,
-		IsAirgapSupported:              license.Spec.IsAirgapSupported,
-		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
-		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
-		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
-		IsSemverRequired:               license.Spec.IsSemverRequired,
-		IsSnapshotSupported:            license.Spec.IsSnapshotSupported,
-		IsDisasterRecoverySupported:    license.Spec.IsDisasterRecoverySupported,
-		LastSyncedAt:                   app.LastLicenseSync,
-		IsSupportBundleUploadSupported: license.Spec.IsSupportBundleUploadSupported,
+		ID:                                license.Spec.LicenseID,
+		Assignee:                          license.Spec.CustomerName,
+		ChannelName:                       license.Spec.ChannelName,
+		LicenseSequence:                   license.Spec.LicenseSequence,
+		LicenseType:                       license.Spec.LicenseType,
+		Entitlements:                      entitlements,
+		ExpiresAt:                         expiresAt,
+		IsAirgapSupported:                 license.Spec.IsAirgapSupported,
+		IsGitOpsSupported:                 license.Spec.IsGitOpsSupported,
+		IsIdentityServiceSupported:        license.Spec.IsIdentityServiceSupported,
+		IsGeoaxisSupported:                license.Spec.IsGeoaxisSupported,
+		IsSemverRequired:                  license.Spec.IsSemverRequired,
+		IsSnapshotSupported:               license.Spec.IsSnapshotSupported,
+		IsDisasterRecoverySupported:       license.Spec.IsDisasterRecoverySupported,
+		LastSyncedAt:                      app.LastLicenseSync,
+		IsSupportBundleUploadSupported:    license.Spec.IsSupportBundleUploadSupported,
+		IsEmbeddedClusterMultinodeEnabled: license.Spec.IsEmbeddedClusterMultinodeEnabled,
 	}
 
 	return &response, nil

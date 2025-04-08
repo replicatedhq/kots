@@ -230,6 +230,13 @@ func (k *KotsKinds) DecryptConfigValues() error {
 	return nil
 }
 
+func (k *KotsKinds) IsMultinodeEnabled() bool {
+	if k == nil || k.License == nil {
+		return false
+	}
+	return k.License.Spec.IsEmbeddedClusterMultinodeEnabled
+}
+
 func (k *KotsKinds) IsConfigurable() bool {
 	if k == nil || k.Config == nil {
 		return false

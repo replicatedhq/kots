@@ -48,6 +48,7 @@
             />
             <span class="ml-2"> Secure the Admin Console </span>
           </div>
+          {{if .IsMultinodeEnabled }}
           <div
             class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c] items-center"
           >
@@ -56,8 +57,9 @@
               alt="check"
               style="width: 16px; height: 16px"
             />
-            <span class="ml-2"> Configure the cluster (optional) </span>
+            <span class="ml-2"> Configure the cluster </span>
           </div>
+          {{end}}
           <div
             class="p-8 shadow-[0_1px_0_#c4c8ca] font-medium flex text-[#9c9c9c9c] items-center"
           >

@@ -12,7 +12,7 @@ concurrency: kurl-addon-publish-${{ inputs.addon_version }}
 
 jobs:
   publish-kots-addon:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/kurl-addon-kots-publish

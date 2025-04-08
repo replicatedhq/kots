@@ -216,7 +216,7 @@ func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, bas
 		return nil, int64(0), errors.Wrap(err, "failed to render new version")
 	}
 
-	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, &baseSequence, archiveDir, "License Change", false, false, "", false, renderer)
+	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, &baseSequence, archiveDir, "License Change", false, false, false)
 	if err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to construct app version statements")
 	}

@@ -1,12 +1,10 @@
 {
   "plugins": [
-    "prettier",
     "@typescript-eslint",
     "jest"
   ],
   "extends": [
-    "airbnb-typescript",
-    "prettier",
+    "airbnb-typescript"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -20,60 +18,48 @@
     }
   },
   "rules": {
-    "object-curly-spacing": [
-      "warn",
-      "always"
-    ],
-    "no-unused-vars": "off",
-    "@typescript-eslint/semi": [
-      "off"
-    ],
+    // TypeScript specific rules
+    "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unused-vars": "error",
-    "@typescript-eslint/no-explicit-any": [
-      "error",
-      {
-        "ignoreRestArgs": true
-      }
-    ],
-    "max-len": [
-      "warn",
-      {
-        "code": 80,
-        "ignoreStrings": true,
-        "ignoreTemplateLiterals": true,
-        "ignoreComments": true
-      }
-    ],
-    "no-plusplus": [
-      "error",
-      {
-        "allowForLoopAfterthoughts": true
-      }
-    ],
-    // "react/jsx-key": "error",
+    "@typescript-eslint/comma-dangle": "off",
+    "@typescript-eslint/quotes": "off",
+    "@typescript-eslint/semi": "off",
+    "@typescript-eslint/naming-convention": "off",
+    "@typescript-eslint/indent": "off",
+
+    // React rules
     "react/jsx-filename-extension": "off",
     "react/jsx-props-no-spreading": "off",
-    "import/extensions": "off",
-    "import/no-extraneous-dependencies": "off",
-    "import/prefer-default-export": "off",
     "react/jsx-boolean-value": "off",
     "react/prop-types": "off",
-    "@typescript-eslint/naming-convention": "off",
     "react/no-unescaped-entities": "off",
     "react/jsx-one-expression-per-line": "off",
     "react/jsx-wrap-multilines": "off",
     "react/destructuring-assignment": "off",
+
+    // Import rules
+    "import/extensions": "off",
+    "import/no-extraneous-dependencies": "off",
+    "import/prefer-default-export": "off",
+
+    // General rules
+    "no-unused-vars": "off", // Using TypeScript's version instead
+    "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
+
+    // Jest rules
     "jest/no-disabled-tests": "warn",
     "jest/no-focused-tests": "error",
     "jest/no-identical-title": "error",
     "jest/prefer-to-have-length": "warn",
-    "jest/valid-expect": "error",
+    "jest/valid-expect": "error"
   },
   "overrides": [
     {
       "files": [
         "**/*.test.js",
-        "**/*.test.jsx"
+        "**/*.test.jsx",
+        "**/*.test.ts",
+        "**/*.test.tsx"
       ],
       "env": {
         "jest": true

@@ -36,7 +36,7 @@ on:
 
 jobs:
   test-kots-addon:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
     steps:

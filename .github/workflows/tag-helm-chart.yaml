@@ -6,7 +6,7 @@ on:
 
 jobs:
   tag-helm-chart:
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-latest
       if: github.event.action == 'released'
       steps:
         - name: Checkout Chart
