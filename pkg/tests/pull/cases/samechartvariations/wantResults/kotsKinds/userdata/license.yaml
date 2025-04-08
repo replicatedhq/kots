@@ -20,6 +20,7 @@ spec:
       value: ""
       valueType: String
   isAirgapSupported: true
+  isEmbeddedClusterMultinodeEnabled: true
   isGitOpsSupported: true
   isIdentityServiceSupported: true
   isSnapshotSupported: true
