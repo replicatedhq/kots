@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   generate-tag:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       tag: ${{ github.ref_type == 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
     steps:
@@ -35,7 +35,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-20.04, arch: amd64},
+          {name: ubuntu-latest, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -49,7 +49,7 @@ jobs:
           arch: ${{ matrix.runner.arch }}
 
   build-migrations:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [generate-tag, build-migrations-melange-packages]
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +63,7 @@ jobs:
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   build-web:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [generate-tag]
     steps:
     - name: Checkout
@@ -88,7 +88,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-20.04, arch: amd64},
+          {name: ubuntu-latest, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -102,7 +102,7 @@ jobs:
           arch: ${{ matrix.runner.arch }}
 
   build-kurl-proxy:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [generate-tag, build-kurl-proxy-melange-packages]
     steps:
       - uses: actions/checkout@v4
@@ -116,7 +116,7 @@ jobs:
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   build-kots:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [build-web, generate-tag]
     steps:
     - uses: actions/setup-go@v5
@@ -155,7 +155,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-20.04, arch: amd64},
+          {name: ubuntu-latest, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -169,7 +169,7 @@ jobs:
           arch: ${{ matrix.runner.arch }}
 
   build-kotsadm:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [generate-tag, build-kotsadm-melange-packages]
     steps:
       - uses: actions/checkout@v4
@@ -183,7 +183,7 @@ jobs:
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   build-kotsadm-bundle:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [generate-tag, build-migrations, build-kotsadm]
     steps:
     - name: Checkout
@@ -227,7 +227,7 @@ jobs:
         path: kotsadm-bundle-nominio
 
   goreleaser:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.ref_type != 'branch'
     needs: [generate-tag, build-web]
     steps:
@@ -283,7 +283,7 @@ jobs:
         GORELEASER_CURRENT_TAG: ${{ needs.generate-tag.outputs.tag }}
 
   publish-pact-contracts:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [ generate-tag, goreleaser ]
     steps:
     - uses: actions/checkout@v4
@@ -303,7 +303,7 @@ jobs:
         make pact-consumer
 
   generate-kurl-addon:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [ generate-tag, build-kurl-proxy, build-kots, build-kotsadm-bundle ]
     outputs:
       addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
@@ -337,7 +337,7 @@ jobs:
 
   # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
   kurl-addon-changes-filter:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
     steps:
@@ -351,7 +351,7 @@ jobs:
               - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
 
   validate-kurl-addon:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: ${{ github.ref_type != 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
     needs: [ generate-tag, generate-kurl-addon, kurl-addon-changes-filter ]
     steps:
@@ -370,7 +370,7 @@ jobs:
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
 
   publish-kurl-addon:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: ${{ github.ref_type != 'branch' }}
     needs: [ generate-tag, generate-kurl-addon ]
     env:
@@ -393,7 +393,7 @@ jobs:
       - run: aws s3 cp ./deploy/kurl/versions.json s3://kots-kurl-addons-production-1658439274
 
   generate-kots-release-notes-pr:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [generate-tag]
     if: github.ref_type != 'branch'
     steps:
@@ -411,7 +411,7 @@ jobs:
           "https://api.github.com/repos/replicatedhq/replicated-docs/dispatches"
 
   build-airgap:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.ref_type != 'branch'
     needs: [goreleaser, generate-tag, build-kotsadm-bundle]
     steps:
