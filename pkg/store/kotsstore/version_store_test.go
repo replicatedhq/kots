@@ -35,6 +35,13 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			},
 			isInstall:   true,
 			isAutomated: false,
+			kotsKinds: &kotsutil.KotsKinds{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsEmbeddedClusterMultinodeEnabled: true,
+					},
+				},
+			},
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
 			},
@@ -50,7 +57,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeDisabled: true,
+						IsEmbeddedClusterMultinodeEnabled: false,
 					},
 				},
 				Config: &kotsv1beta1.Config{
@@ -85,6 +92,11 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			isInstall:   true,
 			isAutomated: true,
 			kotsKinds: &kotsutil.KotsKinds{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsEmbeddedClusterMultinodeEnabled: true,
+					},
+				},
 				Config: &kotsv1beta1.Config{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -119,7 +131,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeDisabled: true,
+						IsEmbeddedClusterMultinodeEnabled: false,
 					},
 				},
 			},
@@ -129,11 +141,18 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			expected: types.VersionPending,
 		},
 		{
-			name: "embedded cluster update",
+			name: "embedded cluster update with multinode enabled",
 			app: &apptypes.App{
 				ID: "test-app",
 			},
 			isInstall: false,
+			kotsKinds: &kotsutil.KotsKinds{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsEmbeddedClusterMultinodeEnabled: true,
+					},
+				},
+			},
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
 			},
@@ -480,6 +499,11 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			},
 			isInstall: true,
 			kotsKinds: &kotsutil.KotsKinds{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsEmbeddedClusterMultinodeEnabled: true,
+					},
+				},
 				Config: &kotsv1beta1.Config{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",

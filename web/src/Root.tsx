@@ -593,7 +593,7 @@ const Root = () => {
       title: "Secure the Admin Console",
     });
 
-    if (!app?.isEmbeddedClusterMultinodeDisabled) {
+    if (app?.isEmbeddedClusterMultinodeEnabled) {
       steps.push({
         id: "cluster",
         title: "Configure the cluster",
