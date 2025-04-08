@@ -96,7 +96,7 @@ jobs:
 
   jumpbox:
     needs: [get-workspace-name, get-workspace-expiration]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container:
       image: hashicorp/terraform:1.0.11
     env:
@@ -423,7 +423,7 @@ jobs:
 
   cleanup:
     needs: [get-workspace-name, tests]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
     steps:
