@@ -235,13 +235,13 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			want:      "true",
 		},
 		{
-			name: "built-in isEmbeddedClusterMultinodeDisabled",
+			name: "built-in isEmbeddedClusterMultinodeEnabled",
 			License: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
-					IsEmbeddedClusterMultinodeDisabled: true,
+					IsEmbeddedClusterMultinodeEnabled: true,
 				},
 			},
-			fieldName: "isEmbeddedClusterMultinodeDisabled",
+			fieldName: "isEmbeddedClusterMultinodeEnabled",
 			want:      "true",
 		},
 		{

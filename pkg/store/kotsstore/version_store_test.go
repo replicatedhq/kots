@@ -41,7 +41,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			expected: types.VersionPendingClusterManagement,
 		},
 		{
-			name: "non-automated embedded cluster installation with multinode disabled",
+			name: "non-automated embedded cluster installation with multinode not enabled",
 			app: &apptypes.App{
 				ID: "test-app",
 			},
@@ -50,7 +50,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeDisabled: true,
+						IsEmbeddedClusterMultinodeEnabled: false,
 					},
 				},
 				Config: &kotsv1beta1.Config{
@@ -110,7 +110,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			expected: types.VersionPending,
 		},
 		{
-			name: "automated embedded cluster installation with multinode disabled",
+			name: "automated embedded cluster installation with multinode not enabled",
 			app: &apptypes.App{
 				ID: "test-app",
 			},
@@ -119,7 +119,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeDisabled: true,
+						IsEmbeddedClusterMultinodeEnabled: false,
 					},
 				},
 			},

@@ -722,7 +722,7 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 
 func determineDownstreamVersionStatus(s store.Store, a *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, isInstall bool, isAutomated bool, skipPreflights bool) (types.DownstreamVersionStatus, error) {
 	// Check if we need to show cluster management
-	if util.IsEmbeddedCluster() && isInstall && !isAutomated && !kotsKinds.IsMultinodeDisabled() {
+	if util.IsEmbeddedCluster() && isInstall && !isAutomated && kotsKinds.IsMultinodeEnabled() {
 		return types.VersionPendingClusterManagement, nil
 	}
 

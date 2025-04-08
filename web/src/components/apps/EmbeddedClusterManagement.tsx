@@ -524,12 +524,12 @@ const EmbeddedClusterManagement = ({
     );
   };
 
-  const isMultiNodeDisabled = app?.isEmbeddedClusterMultinodeDisabled;
+  const isMultiNodeEnabled = app?.isEmbeddedClusterMultinodeEnabled;
 
   return (
     <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto tw-font-sans tw-max-w-[1024px] tw-mx-auto tw-mt-6">
       <KotsPageTitle pageName="Cluster Management" />
-      {!isMultiNodeDisabled && Utilities.isInitialAppInstall(app) && (
+      {isMultiNodeEnabled && Utilities.isInitialAppInstall(app) && (
         <div className="tw-mt-8 tw-shadow-[0_1px_0_#c4c8ca]">
           <p className="tls-header tw-pb-8 tw-font-bold u-textColor--primary">
             Configure the cluster
@@ -538,11 +538,11 @@ const EmbeddedClusterManagement = ({
       )}
       <div className="flex1 tw-mb-10 tw-mt-8 tw-flex tw-flex-col tw-gap-2 card-bg">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
-          Node{isMultiNodeDisabled ? "" : "s"}
+          Node{isMultiNodeEnabled ? "s" : ""}
         </p>
         <div className="tw-flex tw-items-center">
           {" "}
-          {!isMultiNodeDisabled && !Utilities.isInitialAppInstall(app) && (
+          {isMultiNodeEnabled && !Utilities.isInitialAppInstall(app) && (
             <div className="tw-flex tw-gap-6">
               <p>
                 View the nodes in your cluster, generate commands to add nodes
@@ -550,7 +550,7 @@ const EmbeddedClusterManagement = ({
               </p>
             </div>
           )}
-          {!isMultiNodeDisabled &&
+          {isMultiNodeEnabled &&
             Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
             !Utilities.isInitialAppInstall(app) && (
               <button
@@ -561,7 +561,7 @@ const EmbeddedClusterManagement = ({
               </button>
             )}
         </div>
-        {!isMultiNodeDisabled && Utilities.isInitialAppInstall(app) && (
+        {isMultiNodeEnabled && Utilities.isInitialAppInstall(app) && (
           <div className="tw-flex tw-flex-col">
             <AddNodeInstructions />
             <AddNodeCommands />

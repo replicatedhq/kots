@@ -276,11 +276,11 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "welcome.html", gin.H{
-			"fingerprintSHA1":     fingerprint,
-			"AppIcon":             appIcon,
-			"AppTitle":            app.Spec.Title,
-			"IsEmbeddedCluster":   isEmbeddedCluster(),
-			"IsMultinodeDisabled": isMultinodeDisabled(),
+			"fingerprintSHA1":    fingerprint,
+			"AppIcon":            appIcon,
+			"AppTitle":           app.Spec.Title,
+			"IsEmbeddedCluster":  isEmbeddedCluster(),
+			"IsMultinodeEnabled": isMultinodeEnabled(),
 		})
 	})
 	r.GET("/tls-warning", func(c *gin.Context) {
@@ -304,11 +304,11 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 		}
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "tls-warning.html", gin.H{
-			"fingerprintSHA1":     fingerprint,
-			"AppIcon":             appIcon,
-			"AppTitle":            app.Spec.Title,
-			"IsEmbeddedCluster":   isEmbeddedCluster(),
-			"IsMultinodeDisabled": isMultinodeDisabled(),
+			"fingerprintSHA1":    fingerprint,
+			"AppIcon":            appIcon,
+			"AppTitle":           app.Spec.Title,
+			"IsEmbeddedCluster":  isEmbeddedCluster(),
+			"IsMultinodeEnabled": isMultinodeEnabled(),
 		})
 	})
 	r.NoRoute(func(c *gin.Context) {
@@ -347,12 +347,12 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 		}
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "tls.html", gin.H{
-			"Secret":              tlsSecretName,
-			"AppIcon":             appIcon,
-			"AppTitle":            app.Spec.Title,
-			"App":                 app.Spec,
-			"IsEmbeddedCluster":   isEmbeddedCluster(),
-			"IsMultinodeDisabled": isMultinodeDisabled(),
+			"Secret":             tlsSecretName,
+			"AppIcon":            appIcon,
+			"AppTitle":           app.Spec.Title,
+			"App":                app.Spec,
+			"IsEmbeddedCluster":  isEmbeddedCluster(),
+			"IsMultinodeEnabled": isMultinodeEnabled(),
 		})
 	})
 
@@ -716,6 +716,6 @@ func isEmbeddedCluster() bool {
 	return os.Getenv("EMBEDDED_CLUSTER_ID") != ""
 }
 
-func isMultinodeDisabled() bool {
-	return os.Getenv("IS_MULTI_NODE_DISABLED") == "true"
+func isMultinodeEnabled() bool {
+	return os.Getenv("IS_MULTI_NODE_ENABLED") == "true"
 }
