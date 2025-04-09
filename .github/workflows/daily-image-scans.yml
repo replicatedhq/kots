@@ -41,6 +41,12 @@ jobs:
       actions: read
     steps:
       - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
       - uses: ./.github/actions/scan-image
         with:
           category-prefix: image-scan-
@@ -62,6 +68,12 @@ jobs:
       actions: read
     steps:
       - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
       - uses: ./.github/actions/scan-image
         with:
           category-prefix: image-scan-
@@ -83,6 +95,12 @@ jobs:
       actions: read
     steps:
       - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
       - uses: ./.github/actions/scan-image
         with:
           category-prefix: image-scan-
