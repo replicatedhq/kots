@@ -89,12 +89,23 @@ runs:
            --arg name "${{ steps.image_details.outputs.image_name }}" \
            --arg tag "${{ steps.image_details.outputs.image_tag }}" \
            --arg scanTime "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-           '.runs[0].properties = {
-              "imageRef": $imageRef,
+           '
+           def strip_registry:
+             if startswith("docker.io/") then
+               sub("^docker\\.io/"; "")
+             else
+               .
+             end;
+           def make_asset_id:
+             "image:" + (. | strip_registry);
+           .runs[0].properties = {
+              "imageRef": ($imageRef | strip_registry),
               "repository": $repo,
               "scanTime": $scanTime,
+              "DisplayName": ($name + ":" + $tag | make_asset_id),
+              "UniqueID": ($name + ":" + $tag | make_asset_id),
               "imageMetadata": {
-                "name": $name,
+                "name": ($name | strip_registry),
                 "tag": $tag,
                 "annotations": {
                   "scanTime": $scanTime,
