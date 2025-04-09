@@ -1,4 +1,4 @@
-name: Container Security Scans
+name: Daily Image Security Scans
 
 on:
   schedule:
