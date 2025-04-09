@@ -84,7 +84,17 @@ runs:
           echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"Anchore Grype","informationUri":"https://github.com/anchore/grype","rules":[]}},"results":[],"properties":{"isFallbackSarif":true}}]}' > ${{ inputs.output-file }}
         fi
 
-        jq --arg imageRef "${{ inputs.image-ref }}" \
+        # Validate SARIF file before enrichment
+        if ! jq empty ${{ inputs.output-file }}; then
+          echo "::error::Invalid SARIF file detected"
+          exit 1
+        fi
+
+        # Create a backup of the original file
+        cp ${{ inputs.output-file }} ${{ inputs.output-file }}.bak
+
+        # Attempt to enrich the SARIF file
+        if ! jq --arg imageRef "${{ inputs.image-ref }}" \
            --arg repo "replicatedhq/kots" \
            --arg name "${{ steps.image_details.outputs.image_name }}" \
            --arg tag "${{ steps.image_details.outputs.image_tag }}" \
@@ -113,9 +123,23 @@ runs:
                   "toolVersion": "latest"
                 }
               }
-            }' ${{ inputs.output-file }} > enriched-results.sarif
+            }' ${{ inputs.output-file }} > enriched-results.sarif; then
+          echo "::error::Failed to enrich SARIF file"
+          # Restore the backup
+          mv ${{ inputs.output-file }}.bak ${{ inputs.output-file }}
+          exit 1
+        fi
+
+        # Validate the enriched file
+        if ! jq empty enriched-results.sarif; then
+          echo "::error::Invalid enriched SARIF file"
+          # Restore the backup
+          mv ${{ inputs.output-file }}.bak ${{ inputs.output-file }}
+          exit 1
+        fi
 
         mv enriched-results.sarif ${{ inputs.output-file }}
+        rm -f ${{ inputs.output-file }}.bak
 
     - name: Upload SARIF file
       if: ${{ !cancelled() && inputs.upload-sarif == 'true' }}
