@@ -1,0 +1,110 @@
+name: Scan Container Image Grype SARIF
+description: 'Scan a container image for vulnerabilities and optionally upload the results for GitHub code scanning'
+inputs:
+  image-ref:
+    description: 'The image to scan'
+    required: true
+  upload-sarif:
+    description: 'Whether to upload the scan results as a SARIF file'
+    required: false
+    default: 'true'
+  severity-cutoff:
+    description: 'Minimum severity to report (critical, high, medium, low, negligible)'
+    required: false
+    default: 'medium'
+  fail-build:
+    description: 'Fail the workflow if vulnerabilities are found'
+    required: false
+    default: 'true'
+  output-file:
+    description: 'Output file name for SARIF results'
+    required: false
+    default: 'results.sarif'
+  timeout-minutes:
+    description: 'Maximum time in minutes to wait for the scan to complete'
+    required: false
+    default: '30'
+  retention-days:
+    description: 'Number of days to retain the scan results artifact'
+    required: false
+    default: '90'
+  category-prefix:
+    description: 'Prefix to use for the SARIF category name'
+    required: false
+    default: 'image-scan-'
+  only-fixed:
+    description: 'Only report vulnerabilities that have a fix available'
+    required: false
+    default: 'true'
+
+
+    - name: Scan image with Grype
+      uses: anchore/scan-action@v6
+      id: scan
+      continue-on-error: ${{ inputs.fail-build != 'true' }}
+      with:
+        image: "${{ inputs.image-ref }}"
+        fail-build: "${{ inputs.fail-build }}"
+        severity-cutoff: "${{ inputs.severity-cutoff }}"
+        output-format: sarif
+        output-file: "${{ inputs.output-file }}"
+        by-cve: true
+        only-fixed: "${{ inputs.only-fixed }}"
+
+    - name: Check scan status
+      if: steps.scan.outcome == 'failure' && inputs.fail-build == 'true'
+      shell: bash
+      run: |
+        echo "::error::Scan failed for image ${{ inputs.image-ref }}"
+        echo "Please check the scan logs above for details"
+        exit 1
+
+    - name: Enrich or generate SARIF
+      if: ${{ !cancelled() && inputs.upload-sarif == 'true' }}
+      shell: bash
+      run: |
+        if [ ! -f ${{ inputs.output-file }} ]; then
+          echo "No SARIF file found — creating minimal empty SARIF"
+          echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"Anchore Grype","informationUri":"https://github.com/anchore/grype","rules":[]}},"results":[],"properties":{"isFallbackSarif":true}}]}' > ${{ inputs.output-file }}
+        fi
+
+        jq --arg imageRef "${{ inputs.image-ref }}" \
+           --arg repo "replicatedhq/embedded-cluster" \
+           --arg name "${{ steps.image_details.outputs.image_name }}" \
+           --arg tag "${{ steps.image_details.outputs.image_tag }}" \
+           --arg scanTime "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+           --arg digest "$(echo "${{ inputs.image-ref }}" | grep -o 'sha256:[a-f0-9]*' || true)" \
+           '.runs[0].properties = {
+              "imageRef": (if ($name | startswith("replicatedhq/embedded-cluster/")) then $name else ($name | sub("proxy\\.replicated\\.com/anonymous/(?:ttl\\.sh/runner/|registry\\.k8s\\.io/|kotsadm/|ttl\\.sh/replicated/|replicated/)"; "replicatedhq/embedded-cluster/")) end + ":" + $tag + (if $digest != "" then "@" + $digest else "" end)),
+              "repository": $repo,
+              "scanTime": $scanTime,
+              "imageMetadata": {
+                "name": (if ($name | startswith("replicatedhq/embedded-cluster/")) then $name else ($name | sub("proxy\\.replicated\\.com/anonymous/(?:ttl\\.sh/runner/|registry\\.k8s\\.io/|kotsadm/|ttl\\.sh/replicated/|replicated/)"; "replicatedhq/embedded-cluster/")) end),
+                "tag": $tag,
+                "digest": ($digest | if . == "" then null else . end),
+                "repoDigest": (if ($name | startswith("replicatedhq/embedded-cluster/")) then $name else ($name | sub("proxy\\.replicated\\.com/anonymous/(?:ttl\\.sh/runner/|registry\\.k8s\\.io/|kotsadm/|ttl\\.sh/replicated/|replicated/)"; "replicatedhq/embedded-cluster/")) end + "@" + ($digest | if . == "" then null else . end)),
+                "labels": {},
+                "annotations": {
+                  "scanTime": $scanTime,
+                  "tool": "grype",
+                  "toolVersion": "latest"
+                }
+              }
+            }' ${{ inputs.output-file }} > enriched-results.sarif
+
+        mv enriched-results.sarif ${{ inputs.output-file }}
+
+    - name: Upload SARIF file
+      if: ${{ !cancelled() && inputs.upload-sarif == 'true' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.output-file }}
+        category: '${{ inputs.category-prefix }}${{ steps.image-id.outputs.image_id }}'
+
+    - name: Archive scan results
+      if: ${{ !cancelled() && inputs.upload-sarif == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: "sarif-${{ steps.image_details.outputs.safe_name }}"
+        path: ${{ inputs.output-file }}
+        retention-days: ${{ inputs.retention-days }}
