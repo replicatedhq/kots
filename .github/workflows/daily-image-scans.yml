@@ -114,7 +114,6 @@ jobs:
 
   scan-rqlite:
     name: Scan Rqlite
-    needs: get-latest-tag
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -122,17 +121,22 @@ jobs:
       actions: read
     steps:
       - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
       - name: Verify image access
         run: |
-          if ! docker pull kotsadm/rqlite:${{ needs.get-latest-tag.outputs.tag_name }}; then
-            echo "::error::Failed to pull image kotsadm/rqlite:${{ needs.get-latest-tag.outputs.tag_name }}"
+          if ! docker pull kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}; then
+            echo "::error::Failed to pull image kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
             exit 1
           fi
       - uses: ./.github/actions/scan-image
         with:
           category-prefix: image-scan-
           fail-build: 'false'
-          image-ref: kotsadm/rqlite:${{ needs.get-latest-tag.outputs.tag_name }}
+          image-ref: docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
           only-fixed: 'true'
           output-file: 'rqlite-scan-output.sarif'
           retention-days: '90'
@@ -141,7 +145,6 @@ jobs:
 
   scan-minio:
     name: Scan Minio
-    needs: get-latest-tag
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -149,17 +152,22 @@ jobs:
       actions: read
     steps:
       - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
       - name: Verify image access
         run: |
-          if ! docker pull kotsadm/minio:${{ needs.get-latest-tag.outputs.tag_name }}; then
-            echo "::error::Failed to pull image kotsadm/minio:${{ needs.get-latest-tag.outputs.tag_name }}"
+          if ! docker pull kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}; then
+            echo "::error::Failed to pull image kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
             exit 1
           fi
       - uses: ./.github/actions/scan-image
         with:
           category-prefix: image-scan-
           fail-build: 'false'
-          image-ref: kotsadm/minio:${{ needs.get-latest-tag.outputs.tag_name }}
+          image-ref: docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
           only-fixed: 'true'
           output-file: 'minio-scan-output.sarif'
           retention-days: '90'
@@ -168,7 +176,6 @@ jobs:
 
   scan-dex:
     name: Scan Dex
-    needs: get-latest-tag
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -176,17 +183,22 @@ jobs:
       actions: read
     steps:
       - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
       - name: Verify image access
         run: |
-          if ! docker pull kotsadm/dex:${{ needs.get-latest-tag.outputs.tag_name }}; then
-            echo "::error::Failed to pull image kotsadm/dex:${{ needs.get-latest-tag.outputs.tag_name }}"
+          if ! docker pull kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}; then
+            echo "::error::Failed to pull image kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}"
             exit 1
           fi
       - uses: ./.github/actions/scan-image
         with:
           category-prefix: image-scan-
           fail-build: 'false'
-          image-ref: kotsadm/dex:${{ needs.get-latest-tag.outputs.tag_name }}
+          image-ref: docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
           only-fixed: 'true'
           output-file: 'dex-scan-output.sarif'
           retention-days: '90'
@@ -195,7 +207,6 @@ jobs:
 
   scan-local-volume-provider:
     name: Scan Local Volume Provider
-    needs: get-latest-tag
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -203,17 +214,22 @@ jobs:
       actions: read
     steps:
       - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
       - name: Verify image access
         run: |
-          if ! docker pull replicated/local-volume-provider:${{ needs.get-latest-tag.outputs.tag_name }}; then
-            echo "::error::Failed to pull image replicated/local-volume-provider:${{ needs.get-latest-tag.outputs.tag_name }}"
+          if ! docker pull replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}; then
+            echo "::error::Failed to pull image replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}"
             exit 1
           fi
       - uses: ./.github/actions/scan-image
         with:
           category-prefix: image-scan-
           fail-build: 'false'
-          image-ref: replicated/local-volume-provider:${{ needs.get-latest-tag.outputs.tag_name }}
+          image-ref: docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}
           only-fixed: 'true'
           output-file: 'local-volume-provider-scan-output.sarif'
           retention-days: '90'
