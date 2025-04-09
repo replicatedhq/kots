@@ -1,0 +1,41 @@
+# Grype configuration file
+# See: https://github.com/anchore/grype#configuration
+
+# Ignore rules for vulnerabilities
+# Each rule can specify criteria for vulnerabilities to ignore
+# ignore:
+#   - vulnerability: CVE-xxxx-xxxx
+
+# Match Trivy's configuration
+fail-on-severity: medium  # Equivalent to CRITICAL,HIGH,MEDIUM setting
+output: table  # Default output format (will be overridden by action for SARIF)
+
+# Database configuration
+db:
+  auto-update: true  # Ensure vulnerability database is up to date
+
+search:
+  scope: "squashed"  
+  indexed-archives: true
+  unindexed-archives: true  # Ensure we don't miss vulnerabilities in archives
+
+# Registry configuration 
+registry:
+  insecure-skip-tls-verify: false
+  insecure-use-http: false
+
+# Logging configuration
+log:
+  level: "warn"  
+
+# Default configuration options below
+# Uncomment and modify as needed
+
+# output: table
+# fail-on-severity: medium
+# file: ""
+# exclude: []
+# db:
+#   cache-dir: ""
+#   update-url: "https://grype.anchore.io/databases"
+#   auto-update: true 

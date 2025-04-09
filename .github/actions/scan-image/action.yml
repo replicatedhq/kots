@@ -37,6 +37,22 @@ inputs:
     required: false
     default: 'true'
 
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract image details
+      id: image_details
+      shell: bash
+      run: |
+        IMAGE_NAME=$(echo "${{ inputs.image-ref }}" | cut -d':' -f1)
+        IMAGE_TAG=$(echo "${{ inputs.image-ref }}" | cut -d':' -f2)
+        [[ "$IMAGE_TAG" == "$IMAGE_NAME" ]] && IMAGE_TAG="latest"
+        SAFE_NAME=$(echo "${IMAGE_NAME}-${IMAGE_TAG}" | sed 's/[\/:]/-/g')
+        {
+          echo "image_name=${IMAGE_NAME}"
+          echo "image_tag=${IMAGE_TAG}"
+          echo "safe_name=${SAFE_NAME}"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Scan image with Grype
       uses: anchore/scan-action@v6
@@ -69,21 +85,17 @@ inputs:
         fi
 
         jq --arg imageRef "${{ inputs.image-ref }}" \
-           --arg repo "replicatedhq/embedded-cluster" \
+           --arg repo "replicatedhq/kots" \
            --arg name "${{ steps.image_details.outputs.image_name }}" \
            --arg tag "${{ steps.image_details.outputs.image_tag }}" \
            --arg scanTime "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-           --arg digest "$(echo "${{ inputs.image-ref }}" | grep -o 'sha256:[a-f0-9]*' || true)" \
            '.runs[0].properties = {
-              "imageRef": (if ($name | startswith("replicatedhq/embedded-cluster/")) then $name else ($name | sub("proxy\\.replicated\\.com/anonymous/(?:ttl\\.sh/runner/|registry\\.k8s\\.io/|kotsadm/|ttl\\.sh/replicated/|replicated/)"; "replicatedhq/embedded-cluster/")) end + ":" + $tag + (if $digest != "" then "@" + $digest else "" end)),
+              "imageRef": $imageRef,
               "repository": $repo,
               "scanTime": $scanTime,
               "imageMetadata": {
-                "name": (if ($name | startswith("replicatedhq/embedded-cluster/")) then $name else ($name | sub("proxy\\.replicated\\.com/anonymous/(?:ttl\\.sh/runner/|registry\\.k8s\\.io/|kotsadm/|ttl\\.sh/replicated/|replicated/)"; "replicatedhq/embedded-cluster/")) end),
+                "name": $name,
                 "tag": $tag,
-                "digest": ($digest | if . == "" then null else . end),
-                "repoDigest": (if ($name | startswith("replicatedhq/embedded-cluster/")) then $name else ($name | sub("proxy\\.replicated\\.com/anonymous/(?:ttl\\.sh/runner/|registry\\.k8s\\.io/|kotsadm/|ttl\\.sh/replicated/|replicated/)"; "replicatedhq/embedded-cluster/")) end + "@" + ($digest | if . == "" then null else . end)),
-                "labels": {},
                 "annotations": {
                   "scanTime": $scanTime,
                   "tool": "grype",
@@ -99,7 +111,7 @@ inputs:
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ${{ inputs.output-file }}
-        category: '${{ inputs.category-prefix }}${{ steps.image-id.outputs.image_id }}'
+        category: '${{ inputs.category-prefix }}${{ steps.image_details.outputs.safe_name }}'
 
     - name: Archive scan results
       if: ${{ !cancelled() && inputs.upload-sarif == 'true' }}
