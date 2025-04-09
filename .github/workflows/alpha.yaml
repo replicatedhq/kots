@@ -136,11 +136,13 @@ jobs:
         id: scan
         uses: ./.github/actions/scan-image
         with:
+          category-prefix: 'image-scan-'
           image-ref: "docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
-          severity-cutoff: 'medium'
-          fail-build: false
+          only-fixed: 'true'
           output-file: 'rqlite-scan-output.sarif'
-          only-fixed: true
+          retention-days: '90'
+          severity-cutoff: 'medium'
+          upload-sarif: 'true'
       - name: Print scan report
         run: cat rqlite-scan-output.sarif
       - name: Upload scan report
@@ -163,11 +165,14 @@ jobs:
         id: scan
         uses: ./.github/actions/scan-image
         with:
+          category-prefix: 'image-scan-'
+          fail-build: 'false'
           image-ref: "docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
-          severity-cutoff: 'medium'
-          fail-build: false
+          only-fixed: 'true'
           output-file: 'minio-scan-output.sarif'
-          only-fixed: true
+          retention-days: '90'
+          severity-cutoff: 'medium'
+          upload-sarif: 'true'
       - name: Print scan report
         run: cat minio-scan-output.sarif
       - name: Upload scan report
@@ -188,13 +193,16 @@ jobs:
           path: .image.env
       - name: Scan dex for vulnerabilities
         id: scan
-        uses: ./.github/workflows/scan-image-grype.yml
+        uses: ./.github/actions/scan-image
         with:
-          image: "docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}"
-          severity-cutoff: 'medium'
-          fail-build: false
+          category-prefix: 'image-scan-'
+          fail-build: 'false'
+          image-ref: "docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}"
+          only-fixed: 'true'
           output-file: 'dex-scan-output.sarif'
-          only-fixed: true
+          retention-days: '90'
+          severity-cutoff: 'medium'
+          upload-sarif: 'true'
       - name: Print scan report
         run: cat dex-scan-output.sarif
       - name: Upload scan report
@@ -211,13 +219,16 @@ jobs:
         uses: actions/checkout@v4
       - name: Scan kurl-proxy for vulnerabilities
         id: scan
-        uses: ./.github/workflows/scan-image-grype.yml
+        uses: ./.github/actions/scan-image
         with:
-          image: 'docker.io/kotsadm/kurl-proxy:alpha'
-          severity-cutoff: 'medium'
-          fail-build: false
+          category-prefix: 'image-scan-'
+          fail-build: 'false'
+          image-ref: 'docker.io/kotsadm/kurl-proxy:alpha'
+          only-fixed: 'true'
           output-file: 'kurl-proxy-scan-output.sarif'
-          only-fixed: true
+          retention-days: '90'
+          severity-cutoff: 'medium'
+          upload-sarif: 'true'
       - name: Print scan report
         run: cat kurl-proxy-scan-output.sarif
       - name: Upload scan report
@@ -238,13 +249,16 @@ jobs:
           path: .image.env
       - name: Scan replicated/local-volume-provider for vulnerabilities
         id: scan
-        uses: ./.github/workflows/scan-image-grype.yml
+        uses: ./.github/actions/scan-image
         with:
-          image: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}"
-          severity-cutoff: 'medium'
-          fail-build: false
+          category-prefix: 'image-scan-'
+          fail-build: 'false'
+          image-ref: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}"
+          only-fixed: 'true'
           output-file: 'scan-output.sarif'
-          only-fixed: true
+          retention-days: '90'
+          severity-cutoff: 'medium'
+          upload-sarif: 'true'
       - name: Print scan report
         run: cat scan-output.sarif
       - name: Upload scan report
@@ -263,11 +277,14 @@ jobs:
         id: scan
         uses: ./.github/actions/scan-image
         with:
-          image-ref: 'docker.io/kotsadm/kotsadm:alpha'
+          category-prefix: 'image-scan-'
           fail-build: 'true'
-          severity-cutoff: 'medium'
+          image-ref: 'docker.io/kotsadm/kotsadm:alpha'
+          only-fixed: 'true'
           output-file: 'kotsadm-scan-output.sarif'
-          only-fixed: true
+          retention-days: '90'
+          severity-cutoff: 'medium'
+          upload-sarif: 'true'
       - name: Print scan report
         run: cat kotsadm-scan-output.sarif
       - name: Upload scan report
@@ -285,13 +302,14 @@ jobs:
         id: scan
         uses: ./.github/actions/scan-image
         with:
-          image-ref: 'docker.io/kotsadm/kotsadm-migrations:alpha'
+          category-prefix: 'image-scan-'
           fail-build: 'true'
-          severity-cutoff: 'medium'
+          image-ref: 'docker.io/kotsadm/kotsadm-migrations:alpha'
+          only-fixed: 'true'
           output-file: 'kotsadm-migration-scan-output.sarif'
           retention-days: '90'
-          category-prefix: 'image-scan-'
-          only-fixed: 'true'
+          severity-cutoff: 'medium'
+          upload-sarif: 'true'
       - name: Print scan report
         run: cat kotsadm-migration-scan-output.sarif
       - name: Upload scan report
