@@ -34,51 +34,62 @@ jobs:
   scan-kotsadm:
     name: Scan Kotsadm
     needs: get-latest-tag
-    uses: ./.github/workflows/scan-image-grype.yml
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
       actions: read
-    with:
-      image: kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}
-      severity-cutoff: negligible
-      fail-build: false
-      output-file: results.sarif
-      timeout-minutes: 30
-      retention-days: 90
-      category-prefix: container-scan-
-
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'kotsadm-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
 
   scan-kotsadm-migrations:
     name: Scan Kotsadm Migrations
     needs: get-latest-tag
-    uses: ./.github/workflows/scan-image-grype.yml
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
       actions: read
-    with:
-      image: kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}
-      severity-cutoff: negligible
-      fail-build: false
-      output-file: results.sarif
-      timeout-minutes: 30
-      retention-days: 90
-      category-prefix: container-scan-
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'kotsadm-migration-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
 
   scan-kurl-proxy:
     name: Scan Kurl Proxy
     needs: get-latest-tag
-    uses: ./.github/workflows/scan-image-grype.yml
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
       actions: read
-    with:
-      image: kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}
-      severity-cutoff: negligible
-      fail-build: false
-      output-file: results.sarif
-      timeout-minutes: 30
-      retention-days: 90
-      category-prefix: container-scan-
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'kurl-proxy-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
