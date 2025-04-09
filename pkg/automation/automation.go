@@ -256,13 +256,14 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	}
 	appSlug = a.Slug
 
-	// in embedded cluster, the installation is considered automated if a config values file has been provided by the user.
+	configValues, err := kotsadmconfig.ReadConfigValuesFromInClusterSecret()
+	if err != nil {
+		return errors.Wrap(err, "failed to read config values from in cluster")
+	}
+
 	isAutomated := true
 	if util.IsEmbeddedCluster() {
-		configValues, err := kotsadmconfig.ReadConfigValuesFromInClusterSecret()
-		if err != nil {
-			return errors.Wrap(err, "failed to read config values from in cluster")
-		}
+		// in embedded cluster, the installation is considered automated if a config values file has been provided by the user.
 		isAutomated = configValues != ""
 	}
 
@@ -317,6 +318,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 			RegistryPassword:       registryConfig.Password,
 			RegistryIsReadOnly:     instParams.RegistryIsReadOnly,
 			IsAutomated:            isAutomated,
+			ConfigValues:           configValues,
 			SkipPreflights:         instParams.SkipPreflights,
 			SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
 		}
@@ -336,6 +338,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 			},
 			UpstreamURI:            upstreamURI,
 			IsAutomated:            isAutomated,
+			ConfigValues:           configValues,
 			SkipPreflights:         instParams.SkipPreflights,
 			SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
 		}
