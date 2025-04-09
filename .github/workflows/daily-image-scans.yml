@@ -111,3 +111,111 @@ jobs:
           retention-days: '90'
           severity-cutoff: negligible
           upload-sarif: 'true'
+
+  scan-rqlite:
+    name: Scan Rqlite
+    needs: get-latest-tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/rqlite:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image kotsadm/rqlite:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: kotsadm/rqlite:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'rqlite-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
+
+  scan-minio:
+    name: Scan Minio
+    needs: get-latest-tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/minio:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image kotsadm/minio:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: kotsadm/minio:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'minio-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
+
+  scan-dex:
+    name: Scan Dex
+    needs: get-latest-tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/dex:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image kotsadm/dex:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: kotsadm/dex:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'dex-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
+
+  scan-local-volume-provider:
+    name: Scan Local Volume Provider
+    needs: get-latest-tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull replicated/local-volume-provider:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image replicated/local-volume-provider:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: replicated/local-volume-provider:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'local-volume-provider-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
