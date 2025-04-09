@@ -136,7 +136,7 @@ jobs:
         id: scan
         uses: ./.github/actions/scan-image
         with:
-          image: "docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
+          image-ref: "docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
           severity-cutoff: 'medium'
           fail-build: false
           output-file: 'rqlite-scan-output.sarif'
@@ -164,7 +164,7 @@ jobs:
         id: scan
         uses: ./.github/actions/scan-image
         with:
-          image: "docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
+          image-ref: "docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
           severity-cutoff: 'medium'
           fail-build: false
           output-file: 'minio-scan-output.sarif'
@@ -268,7 +268,7 @@ jobs:
         id: scan
         uses: ./.github/actions/scan-image
         with:
-          image: 'docker.io/kotsadm/kotsadm:alpha'
+          image-ref: 'docker.io/kotsadm/kotsadm:alpha'
           fail-build: 'true'
           severity-cutoff: 'medium'
           output-file: 'kotsadm-scan-output.sarif'
@@ -290,7 +290,7 @@ jobs:
         id: scan
         uses: ./.github/actions/scan-image
         with:
-          image: 'docker.io/kotsadm/kotsadm-migrations:alpha'
+          image-ref: 'docker.io/kotsadm/kotsadm-migrations:alpha'
           fail-build: 'true'
           severity-cutoff: 'medium'
           output-file: 'kotsadm-migration-scan-output.sarif'
