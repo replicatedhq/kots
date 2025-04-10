@@ -1,4 +1,4 @@
-name: Container Security Scans
+name: Daily Image Security Scans
 
 on:
   schedule:
@@ -34,51 +34,204 @@ jobs:
   scan-kotsadm:
     name: Scan Kotsadm
     needs: get-latest-tag
-    uses: ./.github/workflows/scan-image-grype.yml
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
       actions: read
-    with:
-      image: kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}
-      severity-cutoff: negligible
-      fail-build: false
-      output-file: results.sarif
-      timeout-minutes: 30
-      retention-days: 90
-      category-prefix: container-scan-
-
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'kotsadm-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
 
   scan-kotsadm-migrations:
     name: Scan Kotsadm Migrations
     needs: get-latest-tag
-    uses: ./.github/workflows/scan-image-grype.yml
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
       actions: read
-    with:
-      image: kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}
-      severity-cutoff: negligible
-      fail-build: false
-      output-file: results.sarif
-      timeout-minutes: 30
-      retention-days: 90
-      category-prefix: container-scan-
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'kotsadm-migration-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
 
   scan-kurl-proxy:
     name: Scan Kurl Proxy
     needs: get-latest-tag
-    uses: ./.github/workflows/scan-image-grype.yml
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
       actions: read
-    with:
-      image: kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}
-      severity-cutoff: negligible
-      fail-build: false
-      output-file: results.sarif
-      timeout-minutes: 30
-      retention-days: 90
-      category-prefix: container-scan-
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}; then
+            echo "::error::Failed to pull image kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}
+          only-fixed: 'true'
+          output-file: 'kurl-proxy-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
+
+  scan-rqlite:
+    name: Scan Rqlite
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}; then
+            echo "::error::Failed to pull image kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          only-fixed: 'true'
+          output-file: 'rqlite-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
+
+  scan-minio:
+    name: Scan Minio
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}; then
+            echo "::error::Failed to pull image kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+          only-fixed: 'true'
+          output-file: 'minio-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
+
+  scan-dex:
+    name: Scan Dex
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
+      - name: Verify image access
+        run: |
+          if ! docker pull kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}; then
+            echo "::error::Failed to pull image kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+          only-fixed: 'true'
+          output-file: 'dex-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
+
+  scan-local-volume-provider:
+    name: Scan Local Volume Provider
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
+      - name: Verify image access
+        run: |
+          if ! docker pull replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}; then
+            echo "::error::Failed to pull image replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}"
+            exit 1
+          fi
+      - uses: ./.github/actions/scan-image
+        with:
+          category-prefix: image-scan-
+          fail-build: 'false'
+          image-ref: docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}
+          only-fixed: 'true'
+          output-file: 'local-volume-provider-scan-output.sarif'
+          retention-days: '90'
+          severity-cutoff: negligible
+          upload-sarif: 'true'
