@@ -280,7 +280,7 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 			"AppIcon":            appIcon,
 			"AppTitle":           app.Spec.Title,
 			"IsEmbeddedCluster":  isEmbeddedCluster(),
-			"IsMultinodeEnabled": isMultinodeEnabled(),
+			"IsMultiNodeEnabled": isMultiNodeEnabled(),
 		})
 	})
 	r.GET("/tls-warning", func(c *gin.Context) {
@@ -308,7 +308,7 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir st
 			"AppIcon":            appIcon,
 			"AppTitle":           app.Spec.Title,
 			"IsEmbeddedCluster":  isEmbeddedCluster(),
-			"IsMultinodeEnabled": isMultinodeEnabled(),
+			"IsMultiNodeEnabled": isMultiNodeEnabled(),
 		})
 	})
 	r.NoRoute(func(c *gin.Context) {
@@ -352,7 +352,7 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 			"AppTitle":           app.Spec.Title,
 			"App":                app.Spec,
 			"IsEmbeddedCluster":  isEmbeddedCluster(),
-			"IsMultinodeEnabled": isMultinodeEnabled(),
+			"IsMultiNodeEnabled": isMultiNodeEnabled(),
 		})
 	})
 
@@ -716,6 +716,6 @@ func isEmbeddedCluster() bool {
 	return os.Getenv("EMBEDDED_CLUSTER_ID") != ""
 }
 
-func isMultinodeEnabled() bool {
+func isMultiNodeEnabled() bool {
 	return os.Getenv("IS_MULTI_NODE_ENABLED") == "true"
 }
