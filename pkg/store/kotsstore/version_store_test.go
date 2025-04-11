@@ -38,7 +38,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeEnabled: true,
+						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
 				},
 			},
@@ -57,7 +57,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeEnabled: false,
+						IsEmbeddedClusterMultiNodeEnabled: false,
 					},
 				},
 				Config: &kotsv1beta1.Config{
@@ -94,7 +94,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeEnabled: true,
+						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
 				},
 				Config: &kotsv1beta1.Config{
@@ -131,7 +131,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeEnabled: false,
+						IsEmbeddedClusterMultiNodeEnabled: false,
 					},
 				},
 			},
@@ -149,7 +149,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeEnabled: true,
+						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
 				},
 			},
@@ -501,7 +501,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			kotsKinds: &kotsutil.KotsKinds{
 				License: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
-						IsEmbeddedClusterMultinodeEnabled: true,
+						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
 				},
 				Config: &kotsv1beta1.Config{

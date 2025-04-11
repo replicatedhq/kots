@@ -524,7 +524,7 @@ const EmbeddedClusterManagement = ({
     );
   };
 
-  const isMultiNodeEnabled = app?.isEmbeddedClusterMultinodeEnabled;
+  const isMultiNodeEnabled = app?.isEmbeddedClusterMultiNodeEnabled;
 
   return (
     <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto tw-font-sans tw-max-w-[1024px] tw-mx-auto tw-mt-6">

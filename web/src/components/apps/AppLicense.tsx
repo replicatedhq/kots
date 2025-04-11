@@ -473,9 +473,9 @@ const AppLicenseComponent = () => {
                     </span>
                   ) : null}
                   {isEmbeddedCluster &&
-                  appLicense?.isEmbeddedClusterMultinodeEnabled ? (
+                  appLicense?.isEmbeddedClusterMultiNodeEnabled ? (
                     <span className="flex alignItems--center">
-                      <span className="icon licenseMultinodeIcon" />
+                      <span className="icon licenseMultiNodeIcon" />
                       Multi-node cluster enabled{" "}
                     </span>
                   ) : null}

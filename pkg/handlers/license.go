@@ -52,7 +52,7 @@ type LicenseResponse struct {
 	IsDisasterRecoverySupported       bool                  `json:"isDisasterRecoverySupported"`
 	LastSyncedAt                      string                `json:"lastSyncedAt"`
 	IsSupportBundleUploadSupported    bool                  `json:"isSupportBundleUploadSupported"`
-	IsEmbeddedClusterMultinodeEnabled bool                  `json:"isEmbeddedClusterMultinodeEnabled"`
+	IsEmbeddedClusterMultiNodeEnabled bool                  `json:"isEmbeddedClusterMultiNodeEnabled"`
 }
 
 type SyncLicenseResponse struct {
@@ -698,7 +698,7 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 		IsDisasterRecoverySupported:       license.Spec.IsDisasterRecoverySupported,
 		LastSyncedAt:                      app.LastLicenseSync,
 		IsSupportBundleUploadSupported:    license.Spec.IsSupportBundleUploadSupported,
-		IsEmbeddedClusterMultinodeEnabled: license.Spec.IsEmbeddedClusterMultinodeEnabled,
+		IsEmbeddedClusterMultiNodeEnabled: license.Spec.IsEmbeddedClusterMultiNodeEnabled,
 	}
 
 	return &response, nil

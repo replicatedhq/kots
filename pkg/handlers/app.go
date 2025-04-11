@@ -325,7 +325,7 @@ func responseAppFromApp(ctx context.Context, a *apptypes.App, kcb kubeclient.Kub
 		IsGeoaxisSupported:                license.Spec.IsGeoaxisSupported,
 		IsSemverRequired:                  license.Spec.IsSemverRequired,
 		IsSupportBundleUploadSupported:    license.Spec.IsSupportBundleUploadSupported,
-		IsEmbeddedClusterMultinodeEnabled: license.Spec.IsEmbeddedClusterMultinodeEnabled,
+		IsEmbeddedClusterMultiNodeEnabled: license.Spec.IsEmbeddedClusterMultiNodeEnabled,
 		AllowRollback:                     allowRollback,
 		AllowSnapshots:                    allowSnapshots,
 		TargetKotsVersion:                 targetKotsVersion,
