@@ -41,7 +41,7 @@ type ResponseApp struct {
 	IsGeoaxisSupported                bool   `json:"isGeoaxisSupported"`
 	IsSemverRequired                  bool   `json:"isSemverRequired"`
 	IsSupportBundleUploadSupported    bool   `json:"isSupportBundleUploadSupported"`
-	IsEmbeddedClusterMultinodeEnabled bool   `json:"isEmbeddedClusterMultinodeEnabled"`
+	IsEmbeddedClusterMultiNodeEnabled bool   `json:"isEmbeddedClusterMultiNodeEnabled"`
 	AllowRollback                     bool   `json:"allowRollback"`
 	AllowSnapshots                    bool   `json:"allowSnapshots"`
 	TargetKotsVersion                 string `json:"targetKotsVersion"`
