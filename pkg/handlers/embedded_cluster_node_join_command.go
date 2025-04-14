@@ -176,6 +176,22 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		return
 	}
 
+	var currentAppVersionLabel string
+	// attempt to get the current app version label from the installed app
+	installedApps, err := store.GetStore().ListInstalledApps()
+	if err == nil && len(installedApps) > 0 {
+		appVersion, err := store.GetStore().GetAppVersion(installedApps[0].ID, installedApps[0].CurrentSequence)
+		if err != nil {
+			logger.Error(fmt.Errorf("failed to get app version: %w", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		currentAppVersionLabel = appVersion.VersionLabel
+	} else {
+		// if there are no installed apps, we can't get the current app version label
+		logger.Info("no installed apps found")
+	}
+
 	JSON(w, http.StatusOK, ecJoin.JoinCommandResponse{
 		ClusterID:              clusterUUID,
 		K0sJoinCommand:         k0sJoinCommand,
@@ -184,5 +200,6 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		AirgapRegistryAddress:  airgapRegistryAddress,
 		TCPConnectionsRequired: endpoints,
 		InstallationSpec:       install.Spec,
+		AppVersionLabel:        currentAppVersionLabel,
 	})
 }

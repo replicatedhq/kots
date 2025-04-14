@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	versionTypes "github.com/replicatedhq/kots/pkg/api/version/types"
+	appTypes "github.com/replicatedhq/kots/pkg/app/types"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -35,6 +37,7 @@ type testNodeJoinCommandHarness struct {
 	token             string
 	getRoles          func(t *testing.T, token string) ([]string, error)
 	embeddedClusterID string
+	appVersionLabel   string
 	validateBody      func(t *testing.T, h *testNodeJoinCommandHarness, r *join.JoinCommandResponse)
 }
 
@@ -72,6 +75,7 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 			name:              "bootstrap token secret creation succeeds and it matches returned K0SToken",
 			httpStatus:        http.StatusOK,
 			embeddedClusterID: ecUUID,
+			appVersionLabel:   "test-app-version",
 			validateBody: func(t *testing.T, h *testNodeJoinCommandHarness, r *join.JoinCommandResponse) {
 				req := require.New(t)
 				// Check that a secret was created with the cluster bootstrap token
@@ -94,7 +98,11 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 				decompressed, err := util.GunzipData(decodedK0SToken)
 				req.NoError(err)
 
-				require.Containsf(t, string(decompressed), fmt.Sprintf("token: %s", expectedToken), "expected K0sToken:\n%s\nto contain the generated bootstrap token: %s", string(decompressed), expectedToken)
+				req.Containsf(string(decompressed), fmt.Sprintf("token: %s", expectedToken), "expected K0sToken:\n%s\nto contain the generated bootstrap token: %s", string(decompressed), expectedToken)
+
+				// returned embedded cluster and app version should match the expected values
+				req.Equal(r.AppVersionLabel, "test-app-version")
+				req.Equal(r.ClusterID.String(), ecUUID)
 			},
 			kbClient: fake.NewClientBuilder().WithScheme(scheme).WithObjects(
 				&embeddedclusterv1beta1.Installation{
@@ -149,6 +157,7 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 			name:              "tcp connections required are returned based on the controller role provided",
 			httpStatus:        http.StatusOK,
 			embeddedClusterID: ecUUID,
+			appVersionLabel:   "test-app-version",
 			validateBody: func(t *testing.T, h *testNodeJoinCommandHarness, r *join.JoinCommandResponse) {
 				req := require.New(t)
 
@@ -232,6 +241,65 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 				},
 			).Build(),
 		},
+		{
+			name:              "If there is no installed app, the app version label should be empty",
+			httpStatus:        http.StatusOK,
+			embeddedClusterID: ecUUID,
+			validateBody: func(t *testing.T, h *testNodeJoinCommandHarness, r *join.JoinCommandResponse) {
+				req := require.New(t)
+				// returned embedded cluster and app version should match the expected values
+				req.Equal(r.AppVersionLabel, "")
+				req.Equal(r.ClusterID.String(), ecUUID)
+			},
+			kbClient: fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+				&embeddedclusterv1beta1.Installation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: time.Now().Format("20060102150405"),
+					},
+					Spec: embeddedclusterv1beta1.InstallationSpec{
+						BinaryName: "my-app",
+						ClusterID:  ecUUID,
+						Config: &embeddedclusterv1beta1.ConfigSpec{
+							Version: "v1.100.0",
+							Roles: embeddedclusterv1beta1.Roles{
+								Controller: embeddedclusterv1beta1.NodeRole{
+									Name: "controller-role",
+								},
+							},
+						},
+					},
+				},
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kube-root-ca.crt",
+						Namespace: "kube-system",
+					},
+					Data: map[string]string{"ca.crt": "some-ca-cert"},
+				},
+				&corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "controller 1",
+						Labels: map[string]string{
+							"node-role.kubernetes.io/control-plane": "true",
+						},
+					},
+					Status: corev1.NodeStatus{
+						Conditions: []corev1.NodeCondition{
+							{
+								Type:   corev1.NodeReady,
+								Status: corev1.ConditionTrue,
+							},
+						},
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: "192.168.0.100",
+							},
+						},
+					},
+				},
+			).Build(),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -255,6 +323,24 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 				}
 				return []string{"controller-role", "worker-role"}, nil
 			})
+
+			if test.appVersionLabel != "" {
+				mockStore.EXPECT().ListInstalledApps().AnyTimes().DoAndReturn(func() ([]*appTypes.App, error) {
+					return []*appTypes.App{
+						{
+							ID:              "test-app-id",
+							CurrentSequence: 1,
+						},
+					}, nil
+				})
+				mockStore.EXPECT().GetAppVersion("test-app-id", int64(1)).AnyTimes().DoAndReturn(func(appID string, sequence int64) (*versionTypes.AppVersion, error) {
+					return &versionTypes.AppVersion{
+						VersionLabel: test.appVersionLabel,
+					}, nil
+				})
+			} else if test.httpStatus == http.StatusOK {
+				mockStore.EXPECT().ListInstalledApps().AnyTimes().Return([]*appTypes.App{}, nil)
+			}
 
 			// There's an early check in the handler for the presence of `EMBEDDED_CLUSTER_ID` env var
 			// so we need to set it here whenever the test requires it
