@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,6 +13,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
+	"github.com/replicatedhq/embedded-cluster/kinds/types/join"
 	"github.com/replicatedhq/kots/pkg/handlers/kubeclient"
 	"github.com/replicatedhq/kots/pkg/store"
 	mockstore "github.com/replicatedhq/kots/pkg/store/mock"
@@ -33,13 +35,14 @@ type testNodeJoinCommandHarness struct {
 	token             string
 	getRoles          func(t *testing.T, token string) ([]string, error)
 	embeddedClusterID string
-	validateBody      func(t *testing.T, h *testNodeJoinCommandHarness, r *GetEmbeddedClusterNodeJoinCommandResponse)
+	validateBody      func(t *testing.T, h *testNodeJoinCommandHarness, r *join.JoinCommandResponse)
 }
 
 func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 	scheme := runtime.NewScheme()
 	corev1.AddToScheme(scheme)
 	embeddedclusterv1beta1.AddToScheme(scheme)
+	ecUUID := uuid.New().String()
 
 	tests := []testNodeJoinCommandHarness{
 		{
@@ -50,7 +53,7 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 		{
 			name:              "store returns error",
 			httpStatus:        http.StatusInternalServerError,
-			embeddedClusterID: "cluster-id",
+			embeddedClusterID: ecUUID,
 			getRoles: func(*testing.T, string) ([]string, error) {
 				return nil, fmt.Errorf("some error")
 			},
@@ -58,7 +61,7 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 		{
 			name:              "store gets passed the provided token",
 			httpStatus:        http.StatusInternalServerError,
-			embeddedClusterID: "cluster-id",
+			embeddedClusterID: ecUUID,
 			token:             "some-token",
 			getRoles: func(t *testing.T, token string) ([]string, error) {
 				require.Equal(t, "some-token", token)
@@ -68,8 +71,8 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 		{
 			name:              "bootstrap token secret creation succeeds and it matches returned K0SToken",
 			httpStatus:        http.StatusOK,
-			embeddedClusterID: "cluster-id",
-			validateBody: func(t *testing.T, h *testNodeJoinCommandHarness, r *GetEmbeddedClusterNodeJoinCommandResponse) {
+			embeddedClusterID: ecUUID,
+			validateBody: func(t *testing.T, h *testNodeJoinCommandHarness, r *join.JoinCommandResponse) {
 				req := require.New(t)
 				// Check that a secret was created with the cluster bootstrap token
 				var secrets corev1.SecretList
@@ -100,6 +103,7 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 					},
 					Spec: embeddedclusterv1beta1.InstallationSpec{
 						BinaryName: "my-app",
+						ClusterID:  ecUUID,
 						Config: &embeddedclusterv1beta1.ConfigSpec{
 							Version: "v1.100.0",
 							Roles: embeddedclusterv1beta1.Roles{
@@ -144,8 +148,8 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 		{
 			name:              "tcp connections required are returned based on the controller role provided",
 			httpStatus:        http.StatusOK,
-			embeddedClusterID: "cluster-id",
-			validateBody: func(t *testing.T, h *testNodeJoinCommandHarness, r *GetEmbeddedClusterNodeJoinCommandResponse) {
+			embeddedClusterID: ecUUID,
+			validateBody: func(t *testing.T, h *testNodeJoinCommandHarness, r *join.JoinCommandResponse) {
 				req := require.New(t)
 
 				req.Equal([]string{
@@ -166,6 +170,7 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 					},
 					Spec: embeddedclusterv1beta1.InstallationSpec{
 						BinaryName: "my-app",
+						ClusterID:  ecUUID,
 						Config: &embeddedclusterv1beta1.ConfigSpec{
 							Version: "v1.100.0",
 							Roles: embeddedclusterv1beta1.Roles{
@@ -274,7 +279,7 @@ func TestGetEmbeddedClusterNodeJoinCommand(t *testing.T) {
 			}
 
 			// Run the body validation function if provided
-			var body GetEmbeddedClusterNodeJoinCommandResponse
+			var body join.JoinCommandResponse
 			req.NoError(json.NewDecoder(response.Body).Decode(&body))
 			if test.validateBody != nil {
 				test.validateBody(t, &test, &body)

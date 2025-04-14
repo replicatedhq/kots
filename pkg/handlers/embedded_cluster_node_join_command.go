@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	ecv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
+	"github.com/google/uuid"
+	ecJoin "github.com/replicatedhq/embedded-cluster/kinds/types/join"
 
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -17,16 +18,6 @@ import (
 
 type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
 	Command []string `json:"command"`
-}
-
-type GetEmbeddedClusterNodeJoinCommandResponse struct {
-	ClusterID              string                     `json:"clusterID"`
-	K0sJoinCommand         string                     `json:"k0sJoinCommand"`
-	K0sToken               string                     `json:"k0sToken"`
-	EmbeddedClusterVersion string                     `json:"embeddedClusterVersion"`
-	AirgapRegistryAddress  string                     `json:"airgapRegistryAddress"`
-	TCPConnectionsRequired []string                   `json:"tcpConnectionsRequired"`
-	InstallationSpec       ecv1beta1.InstallationSpec `json:"installationSpec,omitempty"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -178,8 +169,15 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		return
 	}
 
-	JSON(w, http.StatusOK, GetEmbeddedClusterNodeJoinCommandResponse{
-		ClusterID:              install.Spec.ClusterID,
+	clusterUUID, err := uuid.Parse(install.Spec.ClusterID)
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to parse cluster id: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	JSON(w, http.StatusOK, ecJoin.JoinCommandResponse{
+		ClusterID:              clusterUUID,
 		K0sJoinCommand:         k0sJoinCommand,
 		K0sToken:               k0sToken,
 		EmbeddedClusterVersion: ecVersion,
