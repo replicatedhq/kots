@@ -129,7 +129,7 @@ jobs:
         with:
           repository: replicatedhq/kots-helm
           token: ${{ secrets.GH_PAT }}
-          ref: main
+          ref: support-ec-tags
           
       - name: Tag Chart
         run: |
