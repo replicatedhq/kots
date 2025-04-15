@@ -17,5 +17,7 @@ jobs:
             ref: main
         - name: Tag Chart
           run: |
+            git tag "${GITHUB_REF_NAME}-alpha"
+            git push origin "${GITHUB_REF}-alpha"
             git tag "${GITHUB_REF_NAME}"
             git push origin "${GITHUB_REF_NAME}"
