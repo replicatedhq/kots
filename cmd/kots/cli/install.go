@@ -108,7 +108,7 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			license, err := getLicense(v)
+			license, licenseData, err := getLicense(v)
 			if err != nil {
 				return errors.Wrap(err, "failed to get license")
 			}
@@ -306,6 +306,7 @@ func InstallCmd() *cobra.Command {
 				ApplicationMetadata:    applicationMetadata.Manifest,
 				UpstreamURI:            upstream,
 				License:                license,
+				LicenseData:            licenseData,
 				ConfigValues:           configValues,
 				Airgap:                 isAirgap,
 				ProgressWriter:         os.Stdout,
@@ -843,17 +844,22 @@ func getRegistryConfig(v *viper.Viper, clientset kubernetes.Interface, appSlug s
 	}, nil
 }
 
-func getLicense(v *viper.Viper) (*kotsv1beta1.License, error) {
+func getLicense(v *viper.Viper) (*kotsv1beta1.License, string, error) {
 	if v.GetString("license-file") == "" {
-		return nil, nil
+		return nil, "", nil
 	}
 
-	license, err := kotsutil.LoadLicenseFromPath(ExpandDir(v.GetString("license-file")))
+	licenseData, err := os.ReadFile(ExpandDir(v.GetString("license-file")))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse license file")
+		return nil, "", errors.Wrap(err, "failed to read license file")
 	}
 
-	return license, nil
+	license, err := kotsutil.LoadLicenseFromBytes(licenseData)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "failed to parse license file")
+	}
+
+	return license, string(licenseData), nil
 }
 
 func getHttpProxyEnv(v *viper.Viper) map[string]string {
