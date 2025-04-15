@@ -25,6 +25,7 @@ type DeployOptions struct {
 	LimitRange             *corev1.LimitRange
 	IsOpenShift            bool
 	License                *kotsv1beta1.License
+	LicenseData            string
 	ConfigValues           *kotsv1beta1.ConfigValues
 	AppVersionLabel        string
 	Airgap                 bool

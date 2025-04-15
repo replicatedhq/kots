@@ -44,7 +44,7 @@ func PullCmd() *cobra.Command {
 				}
 			}
 
-			license, err := getLicense(v)
+			license, _, err := getLicense(v)
 			if err != nil {
 				return errors.Wrap(err, "failed to get license")
 			}
