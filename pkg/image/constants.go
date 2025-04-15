@@ -7,7 +7,7 @@ package image
 const (
 	Minio      = "kotsadm/minio:0.20250408.154124-r0"
 	Rqlite     = "kotsadm/rqlite:8.36.16-r0"
-	Dex        = "kotsadm/dex:2.42.0-r5"
+	Dex        = "kotsadm/dex:2.42.1-r0"
 	Schemahero = "schemahero/schemahero:0.17.15"
 	Lvp        = "replicated/local-volume-provider:0.6.9"
 )
