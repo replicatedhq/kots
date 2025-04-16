@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots
 
-go 1.24.0
+go 1.24.1
 
 require (
 	cloud.google.com/go/storage v1.45.0
@@ -49,7 +49,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250411154749-d20d2f980f0c
+	github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250415224730-0f6eb6643335
 	github.com/replicatedhq/kotskinds v0.0.0-20250411153224-089dbeb7ba2a
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.117.0
@@ -414,6 +414,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.1.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
+	github.com/k0sproject/dig v0.2.0 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0 // indirect
 	github.com/miekg/dns v1.1.63 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect

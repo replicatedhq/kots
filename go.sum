@@ -1545,6 +1545,8 @@ github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/X
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/jung-kurt/gofpdf v1.0.0/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
 github.com/jung-kurt/gofpdf v1.0.3-0.20190309125859-24315acbbda5/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
+github.com/k0sproject/dig v0.2.0 h1:cNxEIl96g9kqSMfPSZLhpnZ0P8bWXKv08nxvsMHop5w=
+github.com/k0sproject/dig v0.2.0/go.mod h1:rBcqaQlJpcKdt2x/OE/lPvhGU50u/e95CSm5g/r4s78=
 github.com/k0sproject/k0s v1.30.10-0.20250117153350-dcf3c22bb568 h1:JSfvTBrsNMWDISDUMVRZV6hP5eRusBS6d0Gv2lA4lSA=
 github.com/k0sproject/k0s v1.30.10-0.20250117153350-dcf3c22bb568/go.mod h1:Nmj+slwFht6ile7OHHGiSrcRRGmrA9U9PzjnG9/6gc0=
 github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51/go.mod h1:CzGEWj7cYgsdH8dAjBGEr58BoE7ScuLd+fwFZ44+/x8=
@@ -1861,8 +1863,8 @@ github.com/redis/go-redis/v9 v9.7.3 h1:YpPyAayJV+XErNsatSElgRZZVCwXX9QzkKYNvO7x0
 github.com/redis/go-redis/v9 v9.7.3/go.mod h1:bGUrSggJ9X9GUmZpZNEOQKaANxSGgOEBRltRTZHSvrA=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
-github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250411154749-d20d2f980f0c h1:QoAn+gFKypZPuybDUIzYQt/hzSLOMwTab/csazCAZQ8=
-github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250411154749-d20d2f980f0c/go.mod h1:DZVH5BSrkKaZPYO6psQYRZgzPdwaxrh8CpJYW95D76E=
+github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250415224730-0f6eb6643335 h1:PHC8qBJWV7+gfj1icO6dcM3eU5ofURdpcRdr2aj6sDw=
+github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250415224730-0f6eb6643335/go.mod h1:+f76CfnrG1XqQyRvRaJ0+xMkRP9uvlWjx4hFySfnfnw=
 github.com/replicatedhq/kotskinds v0.0.0-20250411153224-089dbeb7ba2a h1:aNZ7qcuEmPGIUIIfxF7c0sdKR2+zL2vc5r2V8j8a49I=
 github.com/replicatedhq/kotskinds v0.0.0-20250411153224-089dbeb7ba2a/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=
