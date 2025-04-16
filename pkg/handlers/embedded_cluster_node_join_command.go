@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	ecv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
+	"github.com/google/uuid"
+	"github.com/replicatedhq/embedded-cluster/kinds/types/join"
 
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -17,16 +18,6 @@ import (
 
 type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
 	Command []string `json:"command"`
-}
-
-type GetEmbeddedClusterNodeJoinCommandResponse struct {
-	ClusterID              string                     `json:"clusterID"`
-	K0sJoinCommand         string                     `json:"k0sJoinCommand"`
-	K0sToken               string                     `json:"k0sToken"`
-	EmbeddedClusterVersion string                     `json:"embeddedClusterVersion"`
-	AirgapRegistryAddress  string                     `json:"airgapRegistryAddress"`
-	TCPConnectionsRequired []string                   `json:"tcpConnectionsRequired"`
-	InstallationSpec       ecv1beta1.InstallationSpec `json:"installationSpec,omitempty"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -178,13 +169,45 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		return
 	}
 
-	JSON(w, http.StatusOK, GetEmbeddedClusterNodeJoinCommandResponse{
-		ClusterID:              install.Spec.ClusterID,
+	clusterUUID, err := uuid.Parse(install.Spec.ClusterID)
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to parse cluster id: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var currentAppVersionLabel string
+	// attempt to get the current app version label from the installed app
+	installedApps, err := store.GetStore().ListInstalledApps()
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to list installed apps: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	} else if len(installedApps) > 0 {
+		// "CurrentSequence" is the latest available version of the app in a non-embedded cluster.
+		// However, in an embedded cluster, the "CurrentSequence" is also the currently deployed version of the app.
+		// This is because EC uses the new upgrade flow, which only creates a new app version when
+		// the app version gets deployed. And because rollbacks are not supported in embedded cluster yet.
+		appVersion, err := store.GetStore().GetAppVersion(installedApps[0].ID, installedApps[0].CurrentSequence)
+		if err != nil {
+			logger.Error(fmt.Errorf("failed to get app version: %w", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		currentAppVersionLabel = appVersion.VersionLabel
+	} else {
+		// if there are no installed apps, we can't get the current app version label
+		logger.Info("no installed apps found")
+	}
+
+	JSON(w, http.StatusOK, join.JoinCommandResponse{
+		ClusterID:              clusterUUID,
 		K0sJoinCommand:         k0sJoinCommand,
 		K0sToken:               k0sToken,
 		EmbeddedClusterVersion: ecVersion,
 		AirgapRegistryAddress:  airgapRegistryAddress,
 		TCPConnectionsRequired: endpoints,
 		InstallationSpec:       install.Spec,
+		AppVersionLabel:        currentAppVersionLabel,
 	})
 }
