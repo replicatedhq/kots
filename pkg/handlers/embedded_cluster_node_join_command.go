@@ -179,7 +179,11 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 	var currentAppVersionLabel string
 	// attempt to get the current app version label from the installed app
 	installedApps, err := store.GetStore().ListInstalledApps()
-	if err == nil && len(installedApps) > 0 {
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to list installed apps: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	} else if len(installedApps) > 0 {
 		// "CurrentSequence" is the latest available version of the app in a non-embedded cluster.
 		// However, in an embedded cluster, the "CurrentSequence" is also the currently deployed version of the app.
 		// This is because EC uses the new upgrade flow, which only creates a new app version when
