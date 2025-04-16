@@ -43,13 +43,7 @@ func ensureLicenseSecret(deployOptions *types.DeployOptions, clientset *kubernet
 		return false, nil
 	}
 
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	var b bytes.Buffer
-	if err := s.Encode(deployOptions.License, &b); err != nil {
-		return false, errors.Wrap(err, "failed to encode license")
-	}
-
-	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.Spec.AppSlug, deployOptions.Airgap, b.String()), metav1.CreateOptions{})
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.Spec.AppSlug, deployOptions.Airgap, deployOptions.LicenseData), metav1.CreateOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create license secret")
 	}

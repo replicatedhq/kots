@@ -80,7 +80,7 @@ func startClusterUpgrade(
 	newInstall.Spec.Config = &newcfg
 	newInstall.Spec.LicenseInfo = &embeddedclusterv1beta1.LicenseInfo{
 		IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported,
-		IsMultinodeEnabled:          license.Spec.IsEmbeddedClusterMultinodeEnabled,
+		IsMultiNodeEnabled:          license.Spec.IsEmbeddedClusterMultiNodeEnabled,
 	}
 
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)

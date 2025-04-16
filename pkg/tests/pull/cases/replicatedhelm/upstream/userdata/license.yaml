@@ -39,7 +39,6 @@ spec:
         text
       valueType: Text
   isAirgapSupported: true
-  isEmbeddedClusterMultinodeEnabled: true
   isGitOpsSupported: true
   isSnapshotSupported: true
   licenseID: 1vusOokxAVp1tkRGuyxnF23PJcq

@@ -13,7 +13,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/airgap/types"
 	"github.com/replicatedhq/kots/pkg/archives"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -42,6 +41,7 @@ type CreateAirgapAppOpts struct {
 	RegistryPassword       string
 	RegistryIsReadOnly     bool
 	IsAutomated            bool
+	ConfigValues           string
 	SkipPreflights         bool
 	SkipCompatibilityCheck bool
 }
@@ -161,18 +161,14 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 
 	appNamespace := util.AppNamespace()
 
-	configValues, err := kotsadmconfig.ReadConfigValuesFromInClusterSecret()
-	if err != nil {
-		return errors.Wrap(err, "failed to read config values from in cluster")
-	}
 	configFile := ""
-	if configValues != "" {
+	if opts.ConfigValues != "" {
 		tmpFile, err := ioutil.TempFile("", "kots")
 		if err != nil {
 			return errors.Wrap(err, "failed to create temp file for config values")
 		}
 		defer os.RemoveAll(tmpFile.Name())
-		if err := ioutil.WriteFile(tmpFile.Name(), []byte(configValues), 0644); err != nil {
+		if err := ioutil.WriteFile(tmpFile.Name(), []byte(opts.ConfigValues), 0644); err != nil {
 			return errors.Wrap(err, "failed to write config values to temp file")
 		}
 
