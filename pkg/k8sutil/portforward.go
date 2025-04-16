@@ -360,7 +360,6 @@ func createDialer(cfg *rest.Config, namespace string, podName string) (httpstrea
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create roundtriper")
 	}
-	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
 	scheme := ""
 	hostIP := cfg.Host
 
@@ -373,6 +372,7 @@ func createDialer(cfg *rest.Config, namespace string, podName string) (httpstrea
 		scheme = u.Scheme
 		hostIP = u.Host
 	}
+	path := fmt.Sprintf("%s/api/v1/namespaces/%s/pods/%s/portforward", u.Path, namespace, podName)
 
 	serverURL := url.URL{Scheme: scheme, Path: path, Host: hostIP}
 	return spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL), nil
