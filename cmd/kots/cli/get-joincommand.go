@@ -5,16 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"net/http"
-	"strings"
 )
 
 func GetJoinCmd() *cobra.Command {
@@ -82,6 +83,12 @@ func getJoinCommandCmd(ctx context.Context, clientset kubernetes.Interface, name
 	}
 
 	controllerRole := roles.ControllerRoleName
+	if controllerRole == "" && len(roles.Roles) > 0 {
+		controllerRole = roles.Roles[0]
+	}
+	if controllerRole == "" {
+		return "", fmt.Errorf("unable to determine controller role name")
+	}
 
 	// get a join command with the controller role with a post to /api/v1/embedded-cluster/generate-node-join-command
 	url = fmt.Sprintf("http://%s:%d/api/v1/embedded-cluster/generate-node-join-command", kotsadmIP, kotsadmPort)
@@ -97,25 +104,29 @@ func getJoinCommandCmd(ctx context.Context, clientset kubernetes.Interface, name
 func getRoles(url string, authSlug string) (*types.GetEmbeddedClusterRolesResponse, error) {
 	newReq, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	newReq.Header.Add("Content-Type", "application/json")
 	newReq.Header.Add("Authorization", authSlug)
 
 	resp, err := http.DefaultClient.Do(newReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request", err)
+		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	roles := &types.GetEmbeddedClusterRolesResponse{}
 	if err := json.Unmarshal(b, roles); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal roles", err)
+		return nil, fmt.Errorf("failed to unmarshal roles: %w", err)
 	}
 
 	return roles, nil
@@ -127,19 +138,19 @@ func getJoinCommand(url string, authSlug string, roles []string) (*types.Generat
 	}
 	b, err := json.Marshal(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal roles", err)
+		return nil, fmt.Errorf("failed to marshal roles: %w", err)
 	}
 
 	newReq, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	newReq.Header.Add("Content-Type", "application/json")
 	newReq.Header.Add("Authorization", authSlug)
 
 	resp, err := http.DefaultClient.Do(newReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request", err)
+		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -154,7 +165,7 @@ func getJoinCommand(url string, authSlug string, roles []string) (*types.Generat
 
 	joinCommand := &types.GenerateEmbeddedClusterNodeJoinCommandResponse{}
 	if err := json.Unmarshal(fullResponse, joinCommand); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal roles", err)
+		return nil, fmt.Errorf("failed to unmarshal roles: %w", err)
 	}
 
 	return joinCommand, nil

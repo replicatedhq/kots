@@ -49,22 +49,35 @@ func TestGetJoinCommand(t *testing.T) {
 				},
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, "POST", r.Method)
-				require.Equal(t, "/api/v1/embedded-cluster/generate-node-join-command", r.URL.Path)
-				require.Equal(t, "test-auth-token", r.Header.Get("Authorization"))
+				switch r.Method {
+				case "GET":
+					require.Equal(t, "/api/v1/embedded-cluster/roles", r.URL.Path)
+					require.Equal(t, "test-auth-token", r.Header.Get("Authorization"))
 
-				var requestBody struct {
-					Roles []string `json:"roles"`
-				}
-				err := json.NewDecoder(r.Body).Decode(&requestBody)
-				require.NoError(t, err)
-				require.Equal(t, []string{"worker"}, requestBody.Roles)
+					response := map[string]interface{}{
+						"roles":              []string{"controller-role-name-normally-not-different", "worker"},
+						"controllerRoleName": "test-controller-role-name",
+					}
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(response)
+				case "POST":
+					require.Equal(t, "/api/v1/embedded-cluster/generate-node-join-command", r.URL.Path)
+					require.Equal(t, "test-auth-token", r.Header.Get("Authorization"))
+					require.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
-				response := map[string][]string{
-					"command": {"embedded-cluster", "join", "--token", "test-token"},
+					var requestBody struct {
+						Roles []string `json:"roles"`
+					}
+					err := json.NewDecoder(r.Body).Decode(&requestBody)
+					require.NoError(t, err)
+					require.Equal(t, []string{"test-controller-role-name"}, requestBody.Roles)
+
+					response := map[string][]string{
+						"command": {"embedded-cluster", "join", "--token", "test-token"},
+					}
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(response)
 				}
-				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(response)
 			},
 			expectedCmd: "embedded-cluster join --token test-token",
 		},
@@ -74,24 +87,7 @@ func TestGetJoinCommand(t *testing.T) {
 			expectedError: "unable to get kotsadm service",
 		},
 		{
-			name: "missing secret",
-			service: &corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kotsadm",
-					Namespace: "kotsadm",
-				},
-				Spec: corev1.ServiceSpec{
-					ClusterIP: "127.0.0.1",
-					Ports: []corev1.ServicePort{
-						{},
-					},
-				},
-			},
-			secret:        nil,
-			expectedError: "failed to get kotsadm auth slug",
-		},
-		{
-			name: "server returns error status",
+			name: "server returns error status when fetching roles",
 			service: &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kotsadm",
@@ -121,7 +117,54 @@ func TestGetJoinCommand(t *testing.T) {
 				w.Header().Set("Content-Type", "application/json")
 				json.NewEncoder(w).Encode(response)
 			},
-			expectedError: "unexpected status code: 500",
+			expectedError: "failed to get roles: unexpected status code: 500",
+		},
+		{
+			name: "server returns error status when creating token",
+			service: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kotsadm",
+					Namespace: "kotsadm",
+				},
+				Spec: corev1.ServiceSpec{
+					ClusterIP: "127.0.0.1",
+					Ports: []corev1.ServicePort{
+						{},
+					},
+				},
+			},
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kotsadm-authstring",
+					Namespace: "kotsadm",
+				},
+				Data: map[string][]byte{
+					"kotsadm-authstring": []byte("test-auth-token"),
+				},
+			},
+
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				switch r.Method {
+				case "GET":
+					require.Equal(t, "/api/v1/embedded-cluster/roles", r.URL.Path)
+					require.Equal(t, "test-auth-token", r.Header.Get("Authorization"))
+
+					response := map[string]interface{}{
+						"roles":              []string{"controller-role-name-normally-not-different", "worker"},
+						"controllerRoleName": "test-controller-role-name",
+					}
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(response)
+				case "POST":
+					w.WriteHeader(http.StatusInternalServerError)
+					response := map[string]string{
+						"error": "internal server error",
+					}
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(response)
+				}
+			},
+			expectedError: "failed to get join command: unexpected status code: 500",
 		},
 	}
 
