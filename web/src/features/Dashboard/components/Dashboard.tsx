@@ -757,7 +757,7 @@ const Dashboard = (props: Props) => {
             >
               <div className="Modal-body">
                 <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
-                  Error uploading airgap buundle
+                  Error uploading airgap bundle
                 </p>
                 <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
                   <p className="u-fontSize--normal u-textColor--error">
