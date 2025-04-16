@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	ecJoin "github.com/replicatedhq/embedded-cluster/kinds/types/join"
+	"github.com/replicatedhq/embedded-cluster/kinds/types/join"
 
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -192,7 +192,7 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		logger.Info("no installed apps found")
 	}
 
-	JSON(w, http.StatusOK, ecJoin.JoinCommandResponse{
+	JSON(w, http.StatusOK, join.JoinCommandResponse{
 		ClusterID:              clusterUUID,
 		K0sJoinCommand:         k0sJoinCommand,
 		K0sToken:               k0sToken,
