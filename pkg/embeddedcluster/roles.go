@@ -16,10 +16,10 @@ const DEFAULT_CONTROLLER_ROLE_NAME = "controller"
 var labelValueRegex = regexp.MustCompile(`[^a-zA-Z0-9-_.]+`)
 
 // GetRoles will get a list of role names
-func GetRoles(ctx context.Context, kbClient kbclient.Client) ([]string, error) {
+func GetRoles(ctx context.Context, kbClient kbclient.Client) ([]string, string, error) {
 	config, err := ClusterConfig(ctx, kbClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster config: %w", err)
+		return nil, "", fmt.Errorf("failed to get cluster config: %w", err)
 	}
 
 	if config == nil {
@@ -29,7 +29,9 @@ func GetRoles(ctx context.Context, kbClient kbclient.Client) ([]string, error) {
 
 	// determine role names
 	roles := []string{}
+	controllerRoleName := DEFAULT_CONTROLLER_ROLE_NAME
 	if config.Roles.Controller.Name != "" {
+		controllerRoleName = config.Roles.Controller.Name
 		roles = append(roles, config.Roles.Controller.Name)
 	} else {
 		roles = append(roles, DEFAULT_CONTROLLER_ROLE_NAME)
@@ -41,7 +43,7 @@ func GetRoles(ctx context.Context, kbClient kbclient.Client) ([]string, error) {
 		}
 	}
 
-	return roles, nil
+	return roles, controllerRoleName, nil
 }
 
 // ControllerRoleName determines the name for the 'controller' role
