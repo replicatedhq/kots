@@ -483,11 +483,9 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					Affinity: &corev1.Affinity{
-						NodeAffinity: defaultKOTSNodeAffinity(),
-					},
-					Tolerations:        deployOptions.Tolerations,
 					SecurityContext:    securityContext,
+					Tolerations:        deployOptions.Tolerations,
+					NodeSelector:       deployOptions.NodeSelector,
 					Volumes:            volumes,
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
@@ -1069,6 +1067,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
 					Tolerations:        deployOptions.Tolerations,
+					NodeSelector:       deployOptions.NodeSelector,
 					SecurityContext:    securityContext,
 					Volumes:            volumes,
 					ServiceAccountName: "kotsadm",

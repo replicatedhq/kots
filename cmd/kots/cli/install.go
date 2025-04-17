@@ -289,14 +289,48 @@ func InstallCmd() *cobra.Command {
 				additionalAnnotations[parts[0]] = parts[1]
 			}
 
+			// Parse tolerations if provided
 			var tolerations []v1.Toleration
-			for _, foo := range v.GetStringSlice("tolerations") {
-				toleration, err := parseToleration(foo)
-				if err != nil {
-					return fmt.Errorf("failed to parse toleration %q: %w", foo, err)
+			for _, toleration := range v.GetStringSlice("tolerations") {
+				parts := strings.Split(toleration, ":")
+				if len(parts) < 3 {
+					return errors.Errorf("Invalid toleration format. Must be in the format key:operator:value(optional):effect:tolerationSeconds(optional)")
 				}
+				key := parts[0]
+				operator := parts[1]
+				var value string
+				if len(parts) > 2 {
+					value = parts[2]
+				}
+				var effect string
+				if len(parts) > 3 {
+					effect = parts[3]
+				}
+				var tolerationSeconds *int64
+				if len(parts) > 4 && parts[4] != "" {
+					seconds, err := strconv.ParseInt(parts[4], 10, 64)
+					if err != nil {
+						return errors.Wrapf(err, "Failed to parse toleration seconds %q", parts[4])
+					}
+					tolerationSeconds = &seconds
+				}
+				tolerations = append(tolerations, v1.Toleration{
+					Key:               key,
+					Operator:          v1.TolerationOperator(operator),
+					Value:             value,
+					Effect:            v1.TaintEffect(effect),
+					TolerationSeconds: tolerationSeconds,
+				})
+			}
 
-				tolerations = append(tolerations, *toleration)
+			// Parse node selectors if provided
+			nodeSelectors := map[string]string{}
+			for _, nodeSelector := range v.GetStringSlice("node-selector") {
+				parts := strings.Split(nodeSelector, "=")
+				if len(parts) != 2 {
+					return errors.Errorf("node-selector flag is not in the correct format. Must be key=value")
+				}
+				nodeSelectors[parts[0]] = parts[1]
 			}
 
 			deployOptions := kotsadmtypes.DeployOptions{
@@ -332,6 +366,7 @@ func InstallCmd() *cobra.Command {
 				AdditionalLabels:       additionalLabels,
 				AdditionalAnnotations:  additionalAnnotations,
 				Tolerations:            tolerations,
+				NodeSelector:           nodeSelectors,
 				PrivateCAsConfigmap:    v.GetString("private-ca-configmap"),
 
 				RegistryConfig: *registryConfig,
@@ -577,6 +612,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().StringArray("additional-annotations", []string{}, "additional annotations to add to kotsadm pods, formatted as key=value like 'kubernetes.io/arch=amd64'")
 	cmd.Flags().StringArray("additional-labels", []string{}, "additional labels to add to kotsadm pods, formatted as key=value like 'kubernetes.io/arch=amd64'")
 	cmd.Flags().StringArray("tolerations", []string{}, "tolerations to add to kotsadm pods, formatted as key:operator:value(optional):effect:tolerationSeconds(optional) like 'key1:Equal:value1:NoSchedule:60' or 'key2:Exists::NoExecute'")
+	cmd.Flags().StringArray("node-selector", []string{}, "node selectors for KOTS pods, formatted as key=value. Can be specified multiple times to add multiple selectors (e.g., --node-selector kubernetes.io/os=linux --node-selector node-role.kubernetes.io/worker=true)")
 	cmd.Flags().String("private-ca-configmap", "", "the name of a configmap containing private CAs to add to the kotsadm deployment")
 
 	registryFlags(cmd.Flags())
