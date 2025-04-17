@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -182,6 +183,50 @@ func Test_MinioStatefulset_ResourceRequirements(t *testing.T) {
 					if container.Resources.Limits.Memory().String() != tt.want.Limits.Memory().String() {
 						t.Errorf("MinioStatefulset() got = %v, want %v", container.Resources.Limits.Memory().String(), tt.want.Limits.Memory().String())
 					}
+				}
+			}
+		})
+	}
+}
+
+func TestNodeSelectorsInMinioStatefulset(t *testing.T) {
+	tests := []struct {
+		name            string
+		nodeSelectors   map[string]string
+		expectSelectors bool
+	}{
+		{
+			name: "with node selectors",
+			nodeSelectors: map[string]string{
+				"node-role.kubernetes.io/worker": "true",
+				"kubernetes.io/os":               "linux",
+			},
+			expectSelectors: true,
+		},
+		{
+			name:            "without node selectors",
+			nodeSelectors:   map[string]string{},
+			expectSelectors: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			deployOptions := types.DeployOptions{
+				Namespace:    "default",
+				NodeSelector: tt.nodeSelectors,
+			}
+
+			size := resource.MustParse("4Gi")
+			statefulset, err := MinioStatefulset(deployOptions, size)
+			assert.NoError(t, err)
+
+			if tt.expectSelectors {
+				assert.Equal(t, tt.nodeSelectors, statefulset.Spec.Template.Spec.NodeSelector)
+			} else {
+				// If no node selectors are provided, the map should be nil or empty
+				if statefulset.Spec.Template.Spec.NodeSelector != nil {
+					assert.Empty(t, statefulset.Spec.Template.Spec.NodeSelector)
 				}
 			}
 		})

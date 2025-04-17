@@ -12,6 +12,7 @@ type UpgradeOptions struct {
 	StrictSecurityContext *bool
 	SimultaneousUploads   int
 	IncludeMinio          bool
+	NodeSelector          map[string]string
 
 	RegistryConfig RegistryConfig
 }
