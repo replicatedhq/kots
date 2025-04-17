@@ -23,7 +23,7 @@ func TestGetJoinCommand(t *testing.T) {
 		secret        *corev1.Secret
 		handler       http.HandlerFunc
 		expectedError string
-		expectedCmd   string
+		expectedCmd   []string
 	}{
 		{
 			name: "successful join command generation",
@@ -79,7 +79,7 @@ func TestGetJoinCommand(t *testing.T) {
 					json.NewEncoder(w).Encode(response)
 				}
 			},
-			expectedCmd: "embedded-cluster join --token test-token",
+			expectedCmd: []string{"embedded-cluster", "join", "--token", "test-token"},
 		},
 		{
 			name:          "missing service",

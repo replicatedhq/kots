@@ -19,6 +19,7 @@ import (
 )
 
 func GetJoinCmd() *cobra.Command {
+	var format string
 	cmd := &cobra.Command{
 		Use:           "join-command",
 		Short:         "Get embedded cluster join command",
@@ -46,40 +47,60 @@ func GetJoinCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Println(joinCmd)
-			return nil
+
+			if format == "string" {
+				fmt.Println(strings.Join(joinCmd, " "))
+				return nil
+			} else if format == "json" {
+				type joinCommandResponse struct {
+					Command []string `json:"command"`
+				}
+				joinCmdResponse := joinCommandResponse{
+					Command: joinCmd,
+				}
+				b, err := json.Marshal(joinCmdResponse)
+				if err != nil {
+					return fmt.Errorf("failed to marshal join command: %w", err)
+				}
+				fmt.Println(string(b))
+				return nil
+			}
+
+			return fmt.Errorf("invalid output format: %s", format)
 		},
 	}
+
+	cmd.Flags().StringVarP(&format, "output", "o", "string", "Output format. One of: string, json")
 
 	return cmd
 }
 
-func getJoinCommandCmd(ctx context.Context, clientset kubernetes.Interface, namespace string) (string, error) {
+func getJoinCommandCmd(ctx context.Context, clientset kubernetes.Interface, namespace string) ([]string, error) {
 	// determine the IP address and port of the kotsadm service
 	// this only runs inside an embedded cluster and so we don't need to setup port forwarding
 	svc, err := clientset.CoreV1().Services(namespace).Get(ctx, "kotsadm", metav1.GetOptions{})
 	if err != nil {
-		return "", fmt.Errorf("unable to get kotsadm service: %w", err)
+		return nil, fmt.Errorf("unable to get kotsadm service: %w", err)
 	}
 	kotsadmIP := svc.Spec.ClusterIP
 	if kotsadmIP == "" {
-		return "", fmt.Errorf("kotsadm service ip was empty")
+		return nil, fmt.Errorf("kotsadm service ip was empty")
 	}
 
 	if len(svc.Spec.Ports) == 0 {
-		return "", fmt.Errorf("kotsadm service ports were empty")
+		return nil, fmt.Errorf("kotsadm service ports were empty")
 	}
 	kotsadmPort := svc.Spec.Ports[0].Port
 
 	authSlug, err := auth.GetOrCreateAuthSlug(clientset, namespace)
 	if err != nil {
-		return "", fmt.Errorf("failed to get kotsadm auth slug: %w", err)
+		return nil, fmt.Errorf("failed to get kotsadm auth slug: %w", err)
 	}
 
 	url := fmt.Sprintf("http://%s:%d/api/v1/embedded-cluster/roles", kotsadmIP, kotsadmPort)
 	roles, err := getRoles(url, authSlug)
 	if err != nil {
-		return "", fmt.Errorf("failed to get roles: %w", err)
+		return nil, fmt.Errorf("failed to get roles: %w", err)
 	}
 
 	controllerRole := roles.ControllerRoleName
@@ -87,17 +108,17 @@ func getJoinCommandCmd(ctx context.Context, clientset kubernetes.Interface, name
 		controllerRole = roles.Roles[0]
 	}
 	if controllerRole == "" {
-		return "", fmt.Errorf("unable to determine controller role name")
+		return nil, fmt.Errorf("unable to determine controller role name")
 	}
 
 	// get a join command with the controller role with a post to /api/v1/embedded-cluster/generate-node-join-command
 	url = fmt.Sprintf("http://%s:%d/api/v1/embedded-cluster/generate-node-join-command", kotsadmIP, kotsadmPort)
 	joinCommand, err := getJoinCommand(url, authSlug, []string{controllerRole})
 	if err != nil {
-		return "", fmt.Errorf("failed to get join command: %w", err)
+		return nil, fmt.Errorf("failed to get join command: %w", err)
 	}
 
-	return strings.Join(joinCommand.Command, " "), nil
+	return joinCommand.Command, nil
 }
 
 // determine the embedded cluster roles list from /api/v1/embedded-cluster/roles
