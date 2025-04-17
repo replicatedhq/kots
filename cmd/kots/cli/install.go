@@ -292,35 +292,11 @@ func InstallCmd() *cobra.Command {
 			// Parse tolerations if provided
 			var tolerations []v1.Toleration
 			for _, toleration := range v.GetStringSlice("tolerations") {
-				parts := strings.Split(toleration, ":")
-				if len(parts) < 3 {
-					return errors.Errorf("Invalid toleration format. Must be in the format key:operator:value(optional):effect:tolerationSeconds(optional)")
+				parsedToleration, err := parseToleration(toleration)
+				if err != nil {
+					return errors.Wrapf(err, "failed to parse toleration %q", toleration)
 				}
-				key := parts[0]
-				operator := parts[1]
-				var value string
-				if len(parts) > 2 {
-					value = parts[2]
-				}
-				var effect string
-				if len(parts) > 3 {
-					effect = parts[3]
-				}
-				var tolerationSeconds *int64
-				if len(parts) > 4 && parts[4] != "" {
-					seconds, err := strconv.ParseInt(parts[4], 10, 64)
-					if err != nil {
-						return errors.Wrapf(err, "Failed to parse toleration seconds %q", parts[4])
-					}
-					tolerationSeconds = &seconds
-				}
-				tolerations = append(tolerations, v1.Toleration{
-					Key:               key,
-					Operator:          v1.TolerationOperator(operator),
-					Value:             value,
-					Effect:            v1.TaintEffect(effect),
-					TolerationSeconds: tolerationSeconds,
-				})
+				tolerations = append(tolerations, *parsedToleration)
 			}
 
 			// Parse node selectors if provided
