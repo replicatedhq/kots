@@ -4,15 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 )
-
-type GetEmbeddedClusterRolesResponse struct {
-	Roles []string `json:"roles"`
-}
 
 func (h *Handler) GetEmbeddedClusterNodes(w http.ResponseWriter, r *http.Request) {
 	if !util.IsEmbeddedCluster() {
@@ -75,11 +72,11 @@ func (h *Handler) GetEmbeddedClusterRoles(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	roles, err := embeddedcluster.GetRoles(r.Context(), kbClient)
+	roles, controllerRoleName, err := embeddedcluster.GetRoles(r.Context(), kbClient)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	JSON(w, http.StatusOK, GetEmbeddedClusterRolesResponse{Roles: roles})
+	JSON(w, http.StatusOK, types.GetEmbeddedClusterRolesResponse{Roles: roles, ControllerRoleName: controllerRoleName})
 }

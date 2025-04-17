@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/replicatedhq/embedded-cluster/kinds/types/join"
 
+  "github.com/replicatedhq/kots/pkg/api/handlers/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -16,14 +17,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
-	Command []string `json:"command"`
-}
-
-type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
-	Roles []string `json:"roles"`
-}
-
 func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
 	if !util.IsEmbeddedCluster() {
 		logger.Errorf("not an embedded cluster")
@@ -31,7 +24,7 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 		return
 	}
 
-	generateEmbeddedClusterNodeJoinCommandRequest := GenerateEmbeddedClusterNodeJoinCommandRequest{}
+	generateEmbeddedClusterNodeJoinCommandRequest := types.GenerateEmbeddedClusterNodeJoinCommandRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&generateEmbeddedClusterNodeJoinCommandRequest); err != nil {
 		logger.Error(fmt.Errorf("failed to decode request body: %w", err))
 		w.WriteHeader(http.StatusBadRequest)
@@ -72,7 +65,7 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 		return
 	}
 
-	JSON(w, http.StatusOK, GenerateEmbeddedClusterNodeJoinCommandResponse{
+	JSON(w, http.StatusOK, types.GenerateEmbeddedClusterNodeJoinCommandResponse{
 		Command: []string{nodeJoinCommand},
 	})
 }

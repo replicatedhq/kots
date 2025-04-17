@@ -98,3 +98,16 @@ type ResponsePendingApp struct {
 	LicenseData   string `json:"licenseData"`
 	NeedsRegistry bool   `json:"needsRegistry"`
 }
+
+type GetEmbeddedClusterRolesResponse struct {
+	Roles              []string `json:"roles"`
+	ControllerRoleName string   `json:"controllerRoleName"`
+}
+
+type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
+	Roles []string `json:"roles"`
+}
+
+type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
+	Command []string `json:"command"`
+}
