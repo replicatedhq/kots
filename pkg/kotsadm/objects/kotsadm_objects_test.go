@@ -261,9 +261,9 @@ func TestNodeSelectorParsing(t *testing.T) {
 		{
 			name:           "multiple equal signs",
 			input:          []string{"key=value=extra"},
-			expected:       nil,
-			expectedError:  true,
-			expectedErrMsg: "node-selector flag is not in the correct format. Must be key=value",
+			expected:       map[string]string{"key": "value=extra"},
+			expectedError:  false,
+			expectedErrMsg: "",
 		},
 	}
 
