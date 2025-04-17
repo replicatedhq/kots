@@ -19,7 +19,6 @@ import (
 )
 
 func GetJoinCmd() *cobra.Command {
-	var format string
 	cmd := &cobra.Command{
 		Use:           "join-command",
 		Short:         "Get embedded cluster join command",
@@ -48,7 +47,8 @@ func GetJoinCmd() *cobra.Command {
 				return err
 			}
 
-			if format == "string" {
+			format := v.GetString("output")
+			if format == "string" || format == "" {
 				fmt.Println(strings.Join(joinCmd, " "))
 				return nil
 			} else if format == "json" {
@@ -69,8 +69,7 @@ func GetJoinCmd() *cobra.Command {
 			return fmt.Errorf("invalid output format: %s", format)
 		},
 	}
-
-	cmd.Flags().StringVarP(&format, "output", "o", "string", "Output format. One of: string, json")
+	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
 
 	return cmd
 }
