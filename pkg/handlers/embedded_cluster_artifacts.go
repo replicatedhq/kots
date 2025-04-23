@@ -17,7 +17,6 @@ import (
 )
 
 // GetEmbeddedClusterBinary returns the embedded cluster binary as a .tgz file
-// This endpoint is unauthenticated to allow node joining without credentials
 func (h *Handler) GetEmbeddedClusterBinary(w http.ResponseWriter, r *http.Request) {
 	if !util.IsEmbeddedCluster() {
 		logger.Error(errors.New("not an embedded cluster"))
