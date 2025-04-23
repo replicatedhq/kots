@@ -1,8 +1,8 @@
-FROM golang:1.24-alpine AS dlv-builder
+FROM golang:1.24.2-alpine AS dlv-builder
 
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.24.0
 
-FROM golang:1.24-alpine
+FROM golang:1.24.2-alpine
 
 RUN apk add --no-cache ca-certificates s3cmd curl git make bash
 

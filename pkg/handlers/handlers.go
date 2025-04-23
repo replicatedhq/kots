@@ -387,6 +387,9 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 
 	// This handler requires a valid token in the query
 	loggingRouter.Path("/api/v1/embedded-cluster/join").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterNodeJoinCommand)
+
+	// This endpoint returns the embedded cluster binary as a .tgz file
+	loggingRouter.Path("/api/v1/embedded-cluster/binary").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterBinary)
 }
 
 func StreamJSON(c *gwebsocket.Conn, payload interface{}) {
