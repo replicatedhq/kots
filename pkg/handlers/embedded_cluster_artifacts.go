@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"archive/tar"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/klauspost/pgzip"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -72,10 +75,10 @@ func (h *Handler) GetEmbeddedClusterBinary(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Set response headers for binary file
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", binaryName))
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", binaryStat.Size()))
+	// Set response headers for the .tgz file
+	filename := fmt.Sprintf("%s.tgz", binaryName)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Header().Set("Content-Type", "application/gzip")
 
 	// Open binary file
 	binaryFile, err := os.Open(binaryPath)
@@ -86,9 +89,31 @@ func (h *Handler) GetEmbeddedClusterBinary(w http.ResponseWriter, r *http.Reques
 	}
 	defer binaryFile.Close()
 
-	// Stream the binary directly to the response
-	if _, err := io.Copy(w, binaryFile); err != nil {
-		logger.Error(errors.Wrap(err, "failed to write binary to response"))
+	// Create pgzip writer
+	gzipWriter := pgzip.NewWriter(w)
+	defer gzipWriter.Close()
+
+	// Create tar writer
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	// Add binary file to tar archive
+	header := &tar.Header{
+		Name:    binaryName,
+		Mode:    0755, // Executable permission
+		Size:    binaryStat.Size(),
+		ModTime: time.Now(),
+		Format:  tar.FormatGNU,
+	}
+
+	if err := tarWriter.WriteHeader(header); err != nil {
+		logger.Error(errors.Wrap(err, "failed to write tar header"))
+		return
+	}
+
+	// Copy binary content to tar archive
+	if _, err := io.Copy(tarWriter, binaryFile); err != nil {
+		logger.Error(errors.Wrap(err, "failed to write binary to tar archive"))
 		return
 	}
 }

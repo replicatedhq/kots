@@ -250,7 +250,7 @@ require (
 	github.com/k0sproject/k0s v1.30.10-0.20250117153350-dcf3c22bb568 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
-	github.com/klauspost/pgzip v1.2.6 // indirect
+	github.com/klauspost/pgzip v1.2.6
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20240620165639-de9c06129bec // indirect
