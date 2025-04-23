@@ -2,30 +2,25 @@ name: build-test
 
 on:
   pull_request:
-  # pull_request_target:
-  #   # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
-  #   # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-  #   types: [ opened, synchronize, reopened, labeled ]
 
 concurrency:
   group: ${{ github.head_ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   can-run-ci:
     runs-on: ubuntu-24.04
-    # if the event is pull_request and:
-    #   - it is not a fork OR
-    #   - it has the label '@actions/safe-to-test'
-    #
-    # The 'pull_request_target' workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
-    # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+    # Only run CI for PRs from the main repository
+    # For external contributions, maintainers should either:
+    # 1. Push to a branch in the main repository after code review
+    # 2. Use a dedicated workflow with limited permissions
     if: >
-      ( github.event_name == 'pull_request' &&
-        ( github.event.pull_request.head.repo.full_name == github.repository ||
-          contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test' )
-        )
-      )
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: ok
         run: echo "yes"
