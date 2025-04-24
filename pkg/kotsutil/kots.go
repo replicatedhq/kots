@@ -1722,7 +1722,7 @@ func FindChannelInLicense(channelID string, license *kotsv1beta1.License) (*kots
 		}
 	}
 
-	logger.Warnf("channel id '%s' not found in multi channel license with sequence", channelID, license.Spec.LicenseSequence)
+	logger.Warnf("channel id '%s' not found in multi channel license with sequence %d", channelID, license.Spec.LicenseSequence)
 	return nil, errors.New("channel not found in multi channel format license")
 }
 
