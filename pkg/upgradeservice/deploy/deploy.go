@@ -131,7 +131,12 @@ func Deploy(opts DeployOptions) error {
 		defer close(finishedCh)
 		tasks.StartTicker(task.GetID(opts.Params.AppSlug), finishedCh)
 
-		if err := embeddedcluster.StartClusterUpgrade(context.Background(), opts.KotsKinds, opts.RegistrySettings); err != nil {
+		channelSlug, err := getChannelSlug(opts.Params, opts.KotsKinds)
+		if err != nil {
+			return errors.Wrap(err, "failed to get channel slug")
+		}
+
+		if err := embeddedcluster.StartClusterUpgrade(context.Background(), opts.KotsKinds, channelSlug, opts.RegistrySettings); err != nil {
 			return errors.Wrap(err, "failed to start cluster upgrade")
 		}
 
@@ -155,6 +160,22 @@ func Deploy(opts DeployOptions) error {
 	}()
 
 	return nil
+}
+
+// getChannelSlug returns the channel slug for the upgrade.
+// If the channel slug is provided in the params (if we are upgrading from newer kots versions), it will be used.
+// Otherwise, the channel slug will be found in the license.
+func getChannelSlug(params types.UpgradeServiceParams, kotsKinds *kotsutil.KotsKinds) (string, error) {
+	if params.UpdateChannelSlug != "" {
+		return params.UpdateChannelSlug, nil
+	}
+
+	channel, err := kotsutil.FindChannelInLicense(params.UpdateChannelID, kotsKinds.License)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to find channel in license")
+	}
+
+	return channel.ChannelSlug, nil
 }
 
 // notifyClusterUpgradeFailed sends a metrics event to the api that the upgrade failed.

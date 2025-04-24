@@ -22,6 +22,7 @@ type UpgradeServiceParams struct {
 	UpdateVersionLabel string `yaml:"updateVersionLabel" json:"updateVersionLabel"`
 	UpdateCursor       string `yaml:"updateCursor" json:"updateCursor"`
 	UpdateChannelID    string `yaml:"updateChannelID" json:"updateChannelID"`
+	UpdateChannelSlug  string `yaml:"updateChannelSlug" json:"updateChannelSlug"` // NOTE: this is not always available from previous versions of kots
 	UpdateECVersion    string `yaml:"updateECVersion" json:"updateECVersion"`
 	UpdateKOTSBin      string `yaml:"updateKotsBin" json:"updateKotsBin"`
 	UpdateAirgapBundle string `yaml:"updateAirgapBundle" json:"updateAirgapBundle"`

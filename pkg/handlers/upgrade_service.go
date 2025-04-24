@@ -252,6 +252,11 @@ func GetUpgradeServiceParams(s store.Store, a *apptypes.App, r StartUpgradeServi
 		return nil, errors.Wrap(err, "failed to get free port")
 	}
 
+	channel, err := kotsutil.FindChannelInLicense(r.ChannelID, license)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find channel in license")
+	}
+
 	return &upgradeservicetypes.UpgradeServiceParams{
 		Port: fmt.Sprintf("%d", port),
 
@@ -270,6 +275,7 @@ func GetUpgradeServiceParams(s store.Store, a *apptypes.App, r StartUpgradeServi
 		UpdateVersionLabel: r.VersionLabel,
 		UpdateCursor:       r.UpdateCursor,
 		UpdateChannelID:    r.ChannelID,
+		UpdateChannelSlug:  channel.ChannelSlug,
 		UpdateECVersion:    updateECVersion,
 		UpdateKOTSBin:      updateKOTSBin,
 		UpdateAirgapBundle: updateAirgapBundle,
