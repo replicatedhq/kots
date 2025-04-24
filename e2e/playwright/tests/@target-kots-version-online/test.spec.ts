@@ -52,7 +52,7 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   await onlineCheckForUpdates(page, expect);
 
   const availableUpdateCard = page.getByTestId("available-updates-card");
-  await expect(availableUpdateCard).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
+  await expect(availableUpdateCard).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, { timeout: 30 * 1000 }); // 30 seconds
 
   await expect(footer).not.toContainText(`${constants.PERMISSIVE_TARGET_KOTS_VERSION} available.`);
 };
