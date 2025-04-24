@@ -48,11 +48,11 @@ func RequiresClusterUpgrade(ctx context.Context, kbClient kbclient.Client, kotsK
 	return !bytes.Equal(serializedCur, serializedNew), nil
 }
 
-func StartClusterUpgrade(ctx context.Context, kotsKinds *kotsutil.KotsKinds, channelSlug string, registrySettings registrytypes.RegistrySettings) error {
+func StartClusterUpgrade(ctx context.Context, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) error {
 	spec := kotsKinds.EmbeddedClusterConfig.Spec
 	artifacts := GetArtifactsFromInstallation(kotsKinds.Installation)
 
-	if err := startClusterUpgrade(ctx, spec, artifacts, registrySettings, kotsKinds.License, channelSlug, kotsKinds.Installation.Spec.VersionLabel); err != nil {
+	if err := startClusterUpgrade(ctx, spec, artifacts, registrySettings, kotsKinds.License, kotsKinds.Installation.Spec.VersionLabel); err != nil {
 		return fmt.Errorf("failed to start cluster upgrade: %w", err)
 	}
 	logger.Info("started cluster upgrade")

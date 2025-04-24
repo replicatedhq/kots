@@ -97,7 +97,7 @@ spec:
   customerName: Test Customer
   endpoint: %s
   channels:
-  - channelId: 1vusIYZLAVxMG6q760OJmRKj5i5
+  - channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
     channelName: My Channel
     channelSlug: my-channel
     isDefault: true
@@ -187,7 +187,6 @@ spec:
 				UpdateVersionLabel: "1.0.0",
 				UpdateCursor:       "1",
 				UpdateChannelID:    "channel-id",
-				UpdateChannelSlug:  "channel-slug",
 				UpdateECVersion:    "online-update-ec-version",
 				UpdateKOTSBin:      "", // tmp file name is random, we just check it's not empty
 				UpdateAirgapBundle: "",
@@ -242,7 +241,6 @@ spec:
 				UpdateVersionLabel: "1.0.0",
 				UpdateCursor:       "1",
 				UpdateChannelID:    "channel-id",
-				UpdateChannelSlug:  "channel-slug",
 				UpdateECVersion:    "airgap-update-ec-version",
 				UpdateKOTSBin:      "", // tmp file name is random, we just check it's not empty
 				UpdateAirgapBundle: updateAirgapBundle,
@@ -297,7 +295,6 @@ spec:
 				UpdateVersionLabel: "1.0.0",
 				UpdateCursor:       "1",
 				UpdateChannelID:    "channel-id",
-				UpdateChannelSlug:  "channel-slug",
 				UpdateECVersion:    "airgap-update-ec-version",
 				UpdateKOTSBin:      "", // tmp file name is random, we just check it's not empty
 				UpdateAirgapBundle: updateAirgapBundle,

@@ -42,7 +42,7 @@ func startClusterUpgrade(
 	ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec,
 	artifacts *embeddedclusterv1beta1.ArtifactsLocation,
 	registrySettings registrytypes.RegistrySettings,
-	license *kotsv1beta1.License, channelSlug string, versionLabel string,
+	license *kotsv1beta1.License, versionLabel string,
 ) error {
 	// TODO(upgrade): put a lock here to prevent multiple upgrades at the same time
 
@@ -83,7 +83,7 @@ func startClusterUpgrade(
 		logger.Errorf("Failed to notify upgrade started: %v", err)
 	}
 
-	err = runClusterUpgrade(ctx, newInstall, registrySettings, license, channelSlug, versionLabel)
+	err = runClusterUpgrade(ctx, newInstall, registrySettings, license, versionLabel)
 	if err != nil {
 		if err := NotifyUpgradeFailed(ctx, util.ReplicatedAppEndpoint(license), newInstall, current, err.Error()); err != nil {
 			logger.Errorf("Failed to notify upgrade failed: %v", err)
@@ -104,7 +104,7 @@ func runClusterUpgrade(
 	ctx context.Context,
 	in *embeddedclusterv1beta1.Installation,
 	registrySettings registrytypes.RegistrySettings,
-	license *kotsv1beta1.License, channelSlug string, versionLabel string,
+	license *kotsv1beta1.License, versionLabel string,
 ) error {
 	var bin string
 
@@ -149,7 +149,7 @@ func runClusterUpgrade(
 		"--local-artifact-mirror-image", localArtifactMirrorImage,
 		"--license-id", license.Spec.LicenseID,
 		"--app-slug", license.Spec.AppSlug,
-		"--channel-slug", channelSlug,
+		"--channel-id", license.Spec.ChannelID,
 		"--app-version", versionLabel,
 		"--installation", "-",
 	}
