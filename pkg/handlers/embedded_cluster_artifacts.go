@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/klauspost/pgzip"
 	"github.com/pkg/errors"
@@ -74,11 +73,6 @@ func (h *Handler) GetEmbeddedClusterBinary(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Set response headers for the .tgz file
-	filename := fmt.Sprintf("%s.tgz", binaryName)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-	w.Header().Set("Content-Type", "application/gzip")
-
 	// Open binary file
 	binaryFile, err := os.Open(binaryPath)
 	if err != nil {
@@ -87,6 +81,11 @@ func (h *Handler) GetEmbeddedClusterBinary(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	defer binaryFile.Close()
+
+	// Set response headers for the .tgz file
+	filename := fmt.Sprintf("%s.tgz", binaryName)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Header().Set("Content-Type", "application/gzip")
 
 	// Create pgzip writer
 	gzipWriter := pgzip.NewWriter(w)
@@ -101,8 +100,7 @@ func (h *Handler) GetEmbeddedClusterBinary(w http.ResponseWriter, r *http.Reques
 		Name:    binaryName,
 		Mode:    0755, // Executable permission
 		Size:    binaryStat.Size(),
-		ModTime: time.Now(),
-		Format:  tar.FormatGNU,
+		ModTime: binaryStat.ModTime(),
 	}
 
 	if err := tarWriter.WriteHeader(header); err != nil {
