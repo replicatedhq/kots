@@ -12,6 +12,7 @@ import (
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/imageutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -297,7 +298,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) (string, error) {
 		}
 		destImage, err := imageutil.DestImage(destRegistry, imageRef)
 		if err != nil {
-			// TODO: log
+			logger.Warnf("Failed to get dest image for %s: %v", imageRef, err)
 			return "", nil
 		}
 		return destImage, nil
@@ -308,7 +309,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) (string, error) {
 	if ctx.app == nil || !ctx.app.Spec.ProxyPublicImages {
 		isPrivate, err := image.IsPrivateImage(imageRef, ctx.DockerHubRegistry)
 		if err != nil {
-			// TODO: log
+			logger.Warnf("Failed to check if image is private for %s: %v", imageRef, err)
 			return "", nil
 		}
 
@@ -337,7 +338,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) (string, error) {
 
 	newImage, err := image.RewritePrivateImage(registryOptions, imageRef, licenseAppSlug)
 	if err != nil {
-		// TODO: log
+		logger.Warnf("Failed to rewrite private image for %s: %v", imageRef, err)
 		return "", nil
 	}
 
