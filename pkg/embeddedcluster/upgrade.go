@@ -139,7 +139,7 @@ func runClusterUpgrade(
 	}
 
 	// TODO(upgrade): local-artifact-mirror-image should be included in the installation object
-	localArtifactMirrorImage, err := getLocalArtifactMirrorImage(ctx, in, registrySettings)
+	localArtifactMirrorImage, err := getLocalArtifactMirrorImage(ctx, in, license, registrySettings)
 	if err != nil {
 		return fmt.Errorf("get local artifact mirror image: %w", err)
 	}
@@ -289,8 +289,8 @@ const (
 )
 
 func getLocalArtifactMirrorImage(
-	ctx context.Context,
-	in *embeddedclusterv1beta1.Installation, registrySettings registrytypes.RegistrySettings,
+	ctx context.Context, in *embeddedclusterv1beta1.Installation, license *kotsv1beta1.License,
+	registrySettings registrytypes.RegistrySettings,
 ) (string, error) {
 	var data []byte
 	if in.Spec.AirGap {
@@ -305,7 +305,7 @@ func getLocalArtifactMirrorImage(
 		}
 	} else {
 		var err error
-		data, err = getEmbeddedClusterMetadataFromReplicatedApp(ctx, in)
+		data, err = getEmbeddedClusterMetadataFromReplicatedApp(ctx, in, license)
 		if err != nil {
 			return "", fmt.Errorf("get embedded cluster metadata from replicated app: %w", err)
 		}
@@ -335,14 +335,16 @@ func getLocalArtifactMirrorImage(
 	return imageName, nil
 }
 
-func getEmbeddedClusterMetadataFromReplicatedApp(ctx context.Context, in *embeddedclusterv1beta1.Installation) ([]byte, error) {
+func getEmbeddedClusterMetadataFromReplicatedApp(
+	ctx context.Context, in *embeddedclusterv1beta1.Installation, license *kotsv1beta1.License,
+) ([]byte, error) {
 	var metadataURL string
 	if in.Spec.Config.MetadataOverrideURL != "" {
 		metadataURL = in.Spec.Config.MetadataOverrideURL
 	} else {
 		metadataURL = fmt.Sprintf(
 			"%s/embedded-cluster-public-files/metadata/v%s.json",
-			in.Spec.MetricsBaseURL,
+			util.ReplicatedAppEndpoint(license),
 			// trim the leading 'v' from the version as this allows both v1.0.0 and 1.0.0 to work
 			strings.TrimPrefix(in.Spec.Config.Version, "v"),
 		)
