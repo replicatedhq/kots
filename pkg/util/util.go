@@ -165,6 +165,14 @@ func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
 }
 
+func EmbeddedClusterDataDir() string {
+	return os.Getenv("EMBEDDED_CLUSTER_DATA_DIR")
+}
+
+func EmbeddedClusterK0sDir() string {
+	return os.Getenv("EMBEDDED_CLUSTER_K0S_DIR")
+}
+
 // ReplicatedAPIEndpoint returns the endpoint for the replicated.app API.
 func ReplicatedAppEndpoint(license *kotsv1beta1.License) string {
 	if ep := os.Getenv("REPLICATED_APP_ENDPOINT"); ep != "" {
