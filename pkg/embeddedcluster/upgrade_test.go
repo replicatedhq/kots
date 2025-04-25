@@ -18,8 +18,8 @@ func Test_maskLicenseIDInArgs(t *testing.T) {
 		},
 		{
 			name: "no license id args",
-			args: []string{"upgrade", "--app-slug", "example", "--channel-slug", "stable"},
-			want: []string{"upgrade", "--app-slug", "example", "--channel-slug", "stable"},
+			args: []string{"upgrade", "--app-slug", "example", "--channel-id", "stable"},
+			want: []string{"upgrade", "--app-slug", "example", "--channel-id", "stable"},
 		},
 		{
 			name: "license id with equals format",

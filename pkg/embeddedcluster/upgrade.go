@@ -187,14 +187,20 @@ func runClusterUpgrade(
 
 // maskLicenseIDInArgs masks the license ID in the args for logging purposes.
 func maskLicenseIDInArgs(args []string) []string {
-	for i, arg := range args {
+	next := make([]string, len(args))
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
 		if strings.HasPrefix(arg, "--license-id=") {
-			args[i] = "--license-id=REDACTED"
-		} else if arg == "--license-id" && i+1 < len(args) {
-			args[i+1] = "REDACTED"
+			next[i] = "--license-id=REDACTED"
+		} else {
+			next[i] = arg
+			if arg == "--license-id" && i+1 < len(args) {
+				next[i+1] = "REDACTED"
+				i++
+			}
 		}
 	}
-	return args
+	return next
 }
 
 const (
