@@ -112,8 +112,8 @@ func (h *Handler) GetEmbeddedClusterBinary(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// GetEmbeddedClusterInfraImages returns the infrastructure images as a .tgz file
-func (h *Handler) GetEmbeddedClusterInfraImages(w http.ResponseWriter, r *http.Request) {
+// GetEmbeddedClusterK0sImages returns the k0s images file
+func (h *Handler) GetEmbeddedClusterK0sImages(w http.ResponseWriter, r *http.Request) {
 	if !util.IsEmbeddedCluster() {
 		logger.Error(errors.New("not an embedded cluster"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -149,7 +149,7 @@ func (h *Handler) GetEmbeddedClusterInfraImages(w http.ResponseWriter, r *http.R
 	}
 
 	if imagesPath == "" {
-		logger.Error(errors.New("no infrastructure image files found"))
+		logger.Error(errors.New("no k0s images file found"))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
