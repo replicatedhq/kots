@@ -27,9 +27,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
 	k8syaml "sigs.k8s.io/yaml"
@@ -51,11 +49,6 @@ func startClusterUpgrade(
 	kbClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get kubeclient: %w", err)
-	}
-
-	k8sClient, err := k8sutil.GetClientset()
-	if err != nil {
-		return fmt.Errorf("failed to get clientset: %w", err)
 	}
 
 	current, err := GetCurrentInstallation(ctx, kbClient)
@@ -90,7 +83,7 @@ func startClusterUpgrade(
 		logger.Errorf("Failed to notify upgrade started: %v", err)
 	}
 
-	err = runClusterUpgrade(ctx, k8sClient, newInstall, registrySettings, license, versionLabel)
+	err = runClusterUpgrade(ctx, newInstall, registrySettings, license, versionLabel)
 	if err != nil {
 		if err := NotifyUpgradeFailed(ctx, util.ReplicatedAppEndpoint(license), newInstall, current, err.Error()); err != nil {
 			logger.Errorf("Failed to notify upgrade failed: %v", err)
@@ -108,7 +101,7 @@ func startClusterUpgrade(
 // embeddedclusterv1beta1 API version. The upgrade command will first upgrade the embedded cluster
 // operator, wait for the CRD to be up-to-date, and then apply the installation object.
 func runClusterUpgrade(
-	ctx context.Context, k8sClient kubernetes.Interface,
+	ctx context.Context,
 	in *embeddedclusterv1beta1.Installation,
 	registrySettings registrytypes.RegistrySettings,
 	license *kotsv1beta1.License, versionLabel string,
@@ -121,7 +114,7 @@ func runClusterUpgrade(
 			return fmt.Errorf("missing operator binary in airgap artifacts")
 		}
 
-		b, err := pullUpgradeBinaryFromRegistry(ctx, k8sClient, registrySettings, artifact)
+		b, err := pullUpgradeBinaryFromRegistry(ctx, registrySettings, artifact)
 		if err != nil {
 			return fmt.Errorf("pull upgrade binary from registry: %w", err)
 		}
@@ -145,18 +138,23 @@ func runClusterUpgrade(
 		return fmt.Errorf("marshal installation: %w", err)
 	}
 
-	args := []string{"upgrade"}
-	if in.Spec.AirGap {
-		// TODO(upgrade): local-artifact-mirror-image should be included in the installation object
-		localArtifactMirrorImage, err := getLocalArtifactMirrorImage(ctx, k8sClient, in, registrySettings)
-		if err != nil {
-			return fmt.Errorf("get local artifact mirror image: %w", err)
-		}
-		args = append(args, "--local-artifact-mirror-image", localArtifactMirrorImage)
+	// TODO(upgrade): local-artifact-mirror-image should be included in the installation object
+	localArtifactMirrorImage, err := getLocalArtifactMirrorImage(ctx, in, license, registrySettings)
+	if err != nil {
+		return fmt.Errorf("get local artifact mirror image: %w", err)
 	}
-	args = append(args, "--installation", "-")
 
-	log.Printf("Running upgrade command with args %q ...", args)
+	args := []string{
+		"upgrade",
+		"--local-artifact-mirror-image", localArtifactMirrorImage,
+		"--license-id", license.Spec.LicenseID,
+		"--app-slug", license.Spec.AppSlug,
+		"--channel-id", license.Spec.ChannelID,
+		"--app-version", versionLabel,
+		"--installation", "-",
+	}
+
+	log.Printf("Running upgrade command with args %q ...", maskLicenseIDInArgs(args))
 
 	cmd := exec.CommandContext(ctx, bin, args...)
 	cmd.Stdin = strings.NewReader(string(installationData))
@@ -185,6 +183,24 @@ func runClusterUpgrade(
 	}
 
 	return nil
+}
+
+// maskLicenseIDInArgs masks the license ID in the args for logging purposes.
+func maskLicenseIDInArgs(args []string) []string {
+	next := make([]string, len(args))
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if strings.HasPrefix(arg, "--license-id=") {
+			next[i] = "--license-id=REDACTED"
+		} else {
+			next[i] = arg
+			if arg == "--license-id" && i+1 < len(args) {
+				next[i+1] = "REDACTED"
+				i++
+			}
+		}
+	}
+	return next
 }
 
 const (
@@ -250,7 +266,7 @@ func newDownloadUpgradeBinaryRequest(ctx context.Context, license *kotsv1beta1.L
 }
 
 func pullUpgradeBinaryFromRegistry(
-	ctx context.Context, k8sClient kubernetes.Interface,
+	ctx context.Context,
 	registrySettings registrytypes.RegistrySettings,
 	repo string,
 ) (string, error) {
@@ -261,7 +277,7 @@ func pullUpgradeBinaryFromRegistry(
 
 	log.Printf("Pulling upgrade binary from %s...", repo)
 
-	err = pullFromRegistry(ctx, k8sClient, registrySettings, repo, tmpdir)
+	err = pullFromRegistry(ctx, registrySettings, repo, tmpdir)
 	if err != nil {
 		return "", fmt.Errorf("pull from registry: %w", err)
 	}
@@ -279,22 +295,31 @@ const (
 )
 
 func getLocalArtifactMirrorImage(
-	ctx context.Context, k8sClient kubernetes.Interface,
-	in *embeddedclusterv1beta1.Installation, registrySettings registrytypes.RegistrySettings,
+	ctx context.Context, in *embeddedclusterv1beta1.Installation, license *kotsv1beta1.License,
+	registrySettings registrytypes.RegistrySettings,
 ) (string, error) {
-	path, err := pullEmbeddedClusterMetadataFromRegistry(ctx, k8sClient, registrySettings, in.Spec.Artifacts.EmbeddedClusterMetadata)
-	if err != nil {
-		return "", fmt.Errorf("pull embedded cluster metadata from registry: %w", err)
-	}
+	var data []byte
+	if in.Spec.AirGap {
+		path, err := pullEmbeddedClusterMetadataFromRegistry(ctx, registrySettings, in.Spec.Artifacts.EmbeddedClusterMetadata)
+		if err != nil {
+			return "", fmt.Errorf("pull embedded cluster metadata from registry: %w", err)
+		}
 
-	f, err := os.Open(path)
-	if err != nil {
-		return "", fmt.Errorf("open metadata file: %w", err)
+		data, err = os.ReadFile(path)
+		if err != nil {
+			return "", fmt.Errorf("read metadata file: %w", err)
+		}
+	} else {
+		var err error
+		data, err = getEmbeddedClusterMetadataFromReplicatedApp(ctx, in, license)
+		if err != nil {
+			return "", fmt.Errorf("get embedded cluster metadata from replicated app: %w", err)
+		}
+
 	}
-	defer f.Close()
 
 	var metadata embeddedclustertypes.ReleaseMetadata
-	err = json.NewDecoder(f).Decode(&metadata)
+	err := json.Unmarshal(data, &metadata)
 	if err != nil {
 		return "", fmt.Errorf("decode metadata: %w", err)
 	}
@@ -302,6 +327,10 @@ func getLocalArtifactMirrorImage(
 	srcImage, ok := metadata.Artifacts[localArtifactMirrorMetadataKey]
 	if !ok {
 		return "", fmt.Errorf("missing local artifact mirror image in embedded cluster metadata")
+	}
+
+	if !in.Spec.AirGap {
+		return srcImage, nil
 	}
 
 	imageName, err := embeddedRegistryImageName(registrySettings, srcImage)
@@ -312,8 +341,46 @@ func getLocalArtifactMirrorImage(
 	return imageName, nil
 }
 
+func getEmbeddedClusterMetadataFromReplicatedApp(
+	ctx context.Context, in *embeddedclusterv1beta1.Installation, license *kotsv1beta1.License,
+) ([]byte, error) {
+	var metadataURL string
+	if in.Spec.Config.MetadataOverrideURL != "" {
+		metadataURL = in.Spec.Config.MetadataOverrideURL
+	} else {
+		metadataURL = fmt.Sprintf(
+			"%s/embedded-cluster-public-files/metadata/v%s.json",
+			util.ReplicatedAppEndpoint(license),
+			// trim the leading 'v' from the version as this allows both v1.0.0 and 1.0.0 to work
+			strings.TrimPrefix(in.Spec.Config.Version, "v"),
+		)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, metadataURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("new request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("http get %s: %w", metadataURL, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("http get %s unexpected status code: %d", metadataURL, resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
+
+	return data, nil
+}
+
 func pullEmbeddedClusterMetadataFromRegistry(
-	ctx context.Context, k8sClient kubernetes.Interface,
+	ctx context.Context,
 	registrySettings registrytypes.RegistrySettings,
 	repo string,
 ) (string, error) {
@@ -324,7 +391,7 @@ func pullEmbeddedClusterMetadataFromRegistry(
 
 	log.Printf("Pulling version metadata from %s...", repo)
 
-	err = pullFromRegistry(ctx, k8sClient, registrySettings, repo, tmpdir)
+	err = pullFromRegistry(ctx, registrySettings, repo, tmpdir)
 	if err != nil {
 		return "", fmt.Errorf("pull from registry: %w", err)
 	}
@@ -333,7 +400,7 @@ func pullEmbeddedClusterMetadataFromRegistry(
 }
 
 func pullFromRegistry(
-	ctx context.Context, k8sClient kubernetes.Interface,
+	ctx context.Context,
 	registrySettings registrytypes.RegistrySettings,
 	srcRepo string, dstDir string,
 ) error {
@@ -392,31 +459,4 @@ func embeddedRegistryImageName(registrySettings registrytypes.RegistrySettings, 
 	}
 
 	return imageutil.DestECImage(destRegistry, srcImage)
-}
-
-func createV2MigrationSecret(ctx context.Context, k8sClient kubernetes.Interface, license kotsv1beta1.License) error {
-	encoded, err := k8syaml.Marshal(license)
-	if err != nil {
-		return fmt.Errorf("encode license: %w", err)
-	}
-
-	secret := &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      V2MigrationSecretName,
-			Namespace: "embedded-cluster",
-		},
-		Data: map[string][]byte{
-			"license": encoded,
-		},
-	}
-	_, err = k8sClient.CoreV1().Secrets("embedded-cluster").Create(ctx, secret, metav1.CreateOptions{})
-	if err != nil {
-		return fmt.Errorf("create secret: %w", err)
-	}
-
-	return nil
 }
