@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/klauspost/pgzip"
 	"github.com/pkg/errors"
@@ -133,87 +131,54 @@ func (h *Handler) GetEmbeddedClusterInfraImages(w http.ResponseWriter, r *http.R
 	// Path to images directory
 	imagesDir := filepath.Join(k0sDir, "images")
 
-	// Check if images directory exists
-	_, err := os.Stat(imagesDir)
-	if os.IsNotExist(err) {
-		logger.Error(errors.Wrap(err, "images directory not found"))
-		w.WriteHeader(http.StatusNotFound)
-		return
-	} else if err != nil {
-		logger.Error(errors.Wrap(err, "failed to stat images directory"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	// Note: The directory can contain different names:
+	// - images-amd64.tar: written on initial installation
+	// - ec-images-amd64.tar: written on upgrades (takes precedence)
+	// TODO: consolidate the two names to avoid confusion
+	imagesPaths := []string{
+		filepath.Join(imagesDir, "ec-images-amd64.tar"),
+		filepath.Join(imagesDir, "images-amd64.tar"),
 	}
 
-	// Find all infra image files
-	entries, err := os.ReadDir(imagesDir)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to read images directory"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	var imagesPath string
+	for _, path := range imagesPaths {
+		if _, err := os.Stat(path); err == nil {
+			imagesPath = path
+			break
+		}
 	}
 
-	// Filter and sort image files
-	var infraImages []os.FileInfo
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		// Check if it's an infra images file
-		// Note: The directory can contain two types of image files:
-		// - images-amd64.tar: written on initial installation
-		// - ec-images-amd64.tar: written on upgrades
-		// TODO: consolidate the two names to avoid confusion
-		if !strings.HasSuffix(entry.Name(), "images-amd64.tar") {
-			continue
-		}
-
-		// Get file info for sorting by modification time
-		fileInfo, err := entry.Info()
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to get file info for %s", entry.Name()))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		infraImages = append(infraImages, fileInfo)
-	}
-
-	if len(infraImages) == 0 {
+	if imagesPath == "" {
 		logger.Error(errors.New("no infrastructure image files found"))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	// Sort by modification time, newest first
-	sort.Slice(infraImages, func(i, j int) bool {
-		return infraImages[i].ModTime().After(infraImages[j].ModTime())
-	})
-
-	// Get the newest image (first after sorting)
-	newestImage := infraImages[0]
-
-	// Path to newest infra image file
-	imagePath := filepath.Join(imagesDir, newestImage.Name())
-
-	// Open image file
-	imageFile, err := os.Open(imagePath)
+	// Open images file
+	imagesFile, err := os.Open(imagesPath)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to open image file"))
+		logger.Error(errors.Wrap(err, "failed to open images file"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	defer imageFile.Close()
+	defer imagesFile.Close()
+
+	// Get file information
+	fileInfo, err := imagesFile.Stat()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get file info"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	// Set response headers
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", newestImage.Name()))
+	w.Header().Set("Content-Disposition", "attachment; filename=images-amd64.tar")
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", newestImage.Size()))
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
 
 	// Copy file content to response
-	if _, err := io.Copy(w, imageFile); err != nil {
-		logger.Error(errors.Wrap(err, "failed to write image file to response"))
+	if _, err := io.Copy(w, imagesFile); err != nil {
+		logger.Error(errors.Wrap(err, "failed to write images file to response"))
 		return
 	}
 }
