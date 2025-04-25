@@ -161,6 +161,10 @@ func (h *Handler) GetEmbeddedClusterInfraImages(w http.ResponseWriter, r *http.R
 		}
 
 		// Check if it's an infra images file
+		// Note: The directory can contain two types of image files:
+		// - images-amd64.tar: written on initial installation
+		// - ec-images-amd64.tar: written on upgrades
+		// TODO: consolidate the two names to avoid confusion
 		if !strings.HasSuffix(entry.Name(), "images-amd64.tar") {
 			continue
 		}
@@ -169,10 +173,9 @@ func (h *Handler) GetEmbeddedClusterInfraImages(w http.ResponseWriter, r *http.R
 		fileInfo, err := entry.Info()
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to get file info for %s", entry.Name()))
-			continue
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
-
-		fmt.Println("fileInfo", fileInfo.Name(), fileInfo.ModTime())
 
 		infraImages = append(infraImages, fileInfo)
 	}
