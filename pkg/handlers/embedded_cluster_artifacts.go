@@ -172,7 +172,7 @@ func (h *Handler) GetEmbeddedClusterInfraImages(w http.ResponseWriter, r *http.R
 	}
 
 	// Set response headers
-	w.Header().Set("Content-Disposition", "attachment; filename=images-amd64.tar")
+	w.Header().Set("Content-Disposition", "attachment; filename=ec-images-amd64.tar")
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
 
