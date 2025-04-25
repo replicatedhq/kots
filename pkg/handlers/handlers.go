@@ -391,8 +391,8 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 	// This endpoint returns the embedded cluster binary as a .tgz file
 	loggingRouter.Path("/api/v1/embedded-cluster/binary").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterBinary)
 
-	// This endpoint returns the embedded cluster infra images file
-	loggingRouter.Path("/api/v1/embedded-cluster/infra-images").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterInfraImages)
+	// This endpoint returns the embedded cluster k0s images file
+	loggingRouter.Path("/api/v1/embedded-cluster/k0s-images").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterK0sImages)
 }
 
 func StreamJSON(c *gwebsocket.Conn, payload interface{}) {

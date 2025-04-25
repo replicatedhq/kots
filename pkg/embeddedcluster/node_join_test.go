@@ -97,7 +97,7 @@ func TestGenerateAddNodeCommand(t *testing.T) {
 	}
 
 	// Verify the generated command
-	wantCommand = "sudo ./my-app join --airgap-bundle my-app.airgap 192.168.0.100:30000 token"
+	wantCommand = "sudo ./my-app join 192.168.0.100:30000 token"
 	req.Equal(wantCommand, gotCommand)
 }
 
