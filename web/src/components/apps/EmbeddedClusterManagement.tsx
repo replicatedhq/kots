@@ -178,7 +178,7 @@ const EmbeddedClusterManagement = ({
   });
 
   type AddNodeCommandResponse = {
-    command: string;
+    commands: string[];
     expiry: string;
   };
 
@@ -431,12 +431,18 @@ const EmbeddedClusterManagement = ({
           {rolesData?.roles &&
             rolesData.roles.length > 1 &&
             "Select one or more roles to assign to the new node."}{" "}
-          Copy the join command and run it on the machine you'd like to join to
+          Copy the commands and run them on the machine you'd like to join to
           the cluster.
         </p>
       </div>
     );
   };
+
+  const addNodesCommandInstructions = [
+    "Download the binary on the new node",
+    "Extract the binary",
+    "Join the node to the cluster",
+  ];
 
   const AddNodeCommands = () => {
     return (
@@ -505,19 +511,28 @@ const EmbeddedClusterManagement = ({
               {generateAddNodeCommandError?.message}
             </p>
           )}
-          {!generateAddNodeCommandLoading && generateAddNodeCommand?.command && (
-            <>
-              <CodeSnippet
-                key={selectedNodeTypes.toString()}
-                language="bash"
-                canCopy={true}
-                onCopyText={
-                  <span className="u-textColor--success">Copied!</span>
-                }
-              >
-                {generateAddNodeCommand?.command}
-              </CodeSnippet>
-            </>
+          {!generateAddNodeCommandLoading && generateAddNodeCommand?.commands && (
+            <div className="tw-flex tw-flex-col tw-gap-4 tw-mt-4">
+              {generateAddNodeCommand.commands.map((command, index) => (
+                <div key={command}>
+                  {addNodesCommandInstructions[index] && (
+                    <p className="tw-text-gray-600 tw-font-semibold tw-flex tw-items-center tw-gap-2">
+                      <span className="tw-inline-block tw-rounded-full tw-text-white tw-bg-[#326DE6] tw-text-sm tw-w-5 tw-h-5 tw-flex tw-items-center tw-justify-center">{index + 1}</span>
+                      {addNodesCommandInstructions[index]}
+                    </p>
+                  )}
+                  <CodeSnippet
+                    language="bash"
+                    canCopy={true}
+                    onCopyText={
+                      <span className="u-textColor--success">Copied!</span>
+                    }
+                  >
+                    {command}
+                  </CodeSnippet>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </>

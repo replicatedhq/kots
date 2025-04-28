@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestGetJoinCommand(t *testing.T) {
+func Test_getJoinCommandCmd(t *testing.T) {
 	tests := []struct {
 		name          string
 		service       *corev1.Service
@@ -59,7 +59,7 @@ func TestGetJoinCommand(t *testing.T) {
 						"controllerRoleName": "test-controller-role-name",
 					}
 					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(response)
+					_ = json.NewEncoder(w).Encode(response)
 				case "POST":
 					require.Equal(t, "/api/v1/embedded-cluster/generate-node-join-command", r.URL.Path)
 					require.Equal(t, "test-auth-token", r.Header.Get("Authorization"))
@@ -73,13 +73,21 @@ func TestGetJoinCommand(t *testing.T) {
 					require.Equal(t, []string{"test-controller-role-name"}, requestBody.Roles)
 
 					response := map[string][]string{
-						"command": {"embedded-cluster", "join", "--token", "test-token"},
+						"commands": {
+							"curl -k https://172.17.0.2:30000/api/v1/embedded-cluster/binary -o embedded-cluster.tar.gz",
+							"tar -xzf embedded-cluster.tar.gz",
+							"sudo ./embedded-cluster join 172.17.0.2:30000 7nPgRfWVZ3QIRWOnzsITEpLt",
+						},
 					}
 					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(response)
+					_ = json.NewEncoder(w).Encode(response)
 				}
 			},
-			expectedCmd: []string{"embedded-cluster", "join", "--token", "test-token"},
+			expectedCmd: []string{
+				"curl -k https://172.17.0.2:30000/api/v1/embedded-cluster/binary -o embedded-cluster.tar.gz",
+				"tar -xzf embedded-cluster.tar.gz",
+				"sudo ./embedded-cluster join 172.17.0.2:30000 7nPgRfWVZ3QIRWOnzsITEpLt",
+			},
 		},
 		{
 			name:          "missing service",
@@ -115,7 +123,7 @@ func TestGetJoinCommand(t *testing.T) {
 					"error": "internal server error",
 				}
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(response)
+				_ = json.NewEncoder(w).Encode(response)
 			},
 			expectedError: "failed to get roles: unexpected status code: 500",
 		},
@@ -154,14 +162,14 @@ func TestGetJoinCommand(t *testing.T) {
 						"controllerRoleName": "test-controller-role-name",
 					}
 					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(response)
+					_ = json.NewEncoder(w).Encode(response)
 				case "POST":
 					w.WriteHeader(http.StatusInternalServerError)
 					response := map[string]string{
 						"error": "internal server error",
 					}
 					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(response)
+					_ = json.NewEncoder(w).Encode(response)
 				}
 			},
 			expectedError: "failed to get join command: unexpected status code: 500",

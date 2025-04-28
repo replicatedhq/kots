@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net"
 	"strings"
 	"sync"
 	"time"
@@ -208,12 +209,12 @@ func findInternalIPAddress(addresses []corev1.NodeAddress) *corev1.NodeAddress {
 	return nil
 }
 
-// GenerateAddNodeCommand returns the command a user should run to add a node with the provided token
-// the command will be of the form 'embeddedcluster node join ip:port UUID'
-func GenerateAddNodeCommand(ctx context.Context, kbClient kbclient.Client, token string, isAirgap bool) (string, error) {
+// GenerateAddNodeCommand returns a list of commands a user should run to add a node with the
+// provided token.
+func GenerateAddNodeCommand(ctx context.Context, kbClient kbclient.Client, token string) ([]string, error) {
 	installation, err := GetCurrentInstallation(ctx, kbClient)
 	if err != nil {
-		return "", fmt.Errorf("failed to get current installation: %w", err)
+		return nil, fmt.Errorf("failed to get current installation: %w", err)
 	}
 
 	binaryName := installation.Spec.BinaryName
@@ -221,16 +222,24 @@ func GenerateAddNodeCommand(ctx context.Context, kbClient kbclient.Client, token
 	// get the IP of a controller node
 	nodeIP, err := getControllerNodeIP(ctx, kbClient)
 	if err != nil {
-		return "", fmt.Errorf("failed to get controller node IP: %w", err)
+		return nil, fmt.Errorf("failed to get controller node IP: %w", err)
 	}
 
 	// get the port of the 'admin-console' service
 	port, err := getAdminConsolePort(ctx, kbClient)
 	if err != nil {
-		return "", fmt.Errorf("failed to get admin console port: %w", err)
+		return nil, fmt.Errorf("failed to get admin console port: %w", err)
 	}
 
-	return fmt.Sprintf("sudo ./%s join %s:%d %s", binaryName, nodeIP, port, token), nil
+	address := net.JoinHostPort(nodeIP, fmt.Sprintf("%d", port))
+
+	commands := []string{
+		fmt.Sprintf("curl -k https://%s/api/v1/embedded-cluster/binary -o %s.tar.gz", address, binaryName),
+		fmt.Sprintf("tar -xvf %s.tar.gz", binaryName),
+		fmt.Sprintf("sudo ./%s join %s %s", binaryName, address, token),
+	}
+
+	return commands, nil
 }
 
 // GenerateK0sJoinCommand returns the k0s node join command, without the token but with all other required flags

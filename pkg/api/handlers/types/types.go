@@ -109,5 +109,5 @@ type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
-	Command []string `json:"command"`
+	Commands []string `json:"commands"`
 }
