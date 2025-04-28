@@ -516,7 +516,8 @@ const EmbeddedClusterManagement = ({
               {generateAddNodeCommand.commands.map((command, index) => (
                 <div key={command}>
                   {addNodesCommandInstructions[index] && (
-                    <p className="tw-text-gray-600 tw-font-semibold">
+                    <p className="tw-text-gray-600 tw-font-semibold tw-flex tw-items-center tw-gap-2">
+                      <span className="tw-inline-block tw-rounded-full tw-text-white tw-bg-[#326DE6] tw-text-sm tw-w-5 tw-h-5 tw-flex tw-items-center tw-justify-center">{index + 1}</span>
                       {addNodesCommandInstructions[index]}
                     </p>
                   )}
