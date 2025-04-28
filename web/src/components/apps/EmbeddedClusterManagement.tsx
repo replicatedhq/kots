@@ -178,7 +178,7 @@ const EmbeddedClusterManagement = ({
   });
 
   type AddNodeCommandResponse = {
-    command: string[];
+    commands: string[];
     expiry: string;
   };
 
@@ -511,9 +511,9 @@ const EmbeddedClusterManagement = ({
               {generateAddNodeCommandError?.message}
             </p>
           )}
-          {!generateAddNodeCommandLoading && generateAddNodeCommand?.command && (
+          {!generateAddNodeCommandLoading && generateAddNodeCommand?.commands && (
             <div className="tw-flex tw-flex-col tw-gap-4 tw-mt-4">
-              {generateAddNodeCommand.command.map((command, index) => (
+              {generateAddNodeCommand.commands.map((command, index) => (
                 <div key={command}>
                   {addNodesCommandInstructions[index] && (
                     <p className="tw-text-gray-600 tw-font-semibold">

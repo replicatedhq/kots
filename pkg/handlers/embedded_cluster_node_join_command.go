@@ -53,7 +53,7 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 	}
 
 	JSON(w, http.StatusOK, types.GenerateEmbeddedClusterNodeJoinCommandResponse{
-		Command: nodeJoinCommands,
+		Commands: nodeJoinCommands,
 	})
 }
 
