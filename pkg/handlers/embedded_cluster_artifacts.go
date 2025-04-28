@@ -302,6 +302,7 @@ func createECChartsArchive(chartsDir string) (string, error) {
 	})
 
 	if err != nil {
+		_ = os.Remove(tmpFile.Name())
 		return "", errors.Wrap(err, "failed to walk charts directory")
 	}
 
