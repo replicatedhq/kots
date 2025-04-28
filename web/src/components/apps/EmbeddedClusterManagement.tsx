@@ -431,7 +431,7 @@ const EmbeddedClusterManagement = ({
           {rolesData?.roles &&
             rolesData.roles.length > 1 &&
             "Select one or more roles to assign to the new node."}{" "}
-          Copy the join commands and run them on the machine you'd like to join to
+          Copy the commands and run them on the machine you'd like to join to
           the cluster.
         </p>
       </div>
@@ -439,8 +439,8 @@ const EmbeddedClusterManagement = ({
   };
 
   const addNodesCommandInstructions = [
-    "Download the installation assets",
-    "Extract the installation assets",
+    "Download the binary on the new node",
+    "Extract the binary",
     "Join the node to the cluster",
   ];
 

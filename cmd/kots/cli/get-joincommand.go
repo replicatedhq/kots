@@ -49,7 +49,7 @@ func GetJoinCmd() *cobra.Command {
 
 			format := v.GetString("output")
 			if format == "string" || format == "" {
-				fmt.Println(strings.Join(joinCmd, " && \n  "))
+				fmt.Println(strings.Join(joinCmd, " && \\\n  "))
 				return nil
 			} else if format == "json" {
 				type joinCommandResponse struct {
