@@ -178,7 +178,7 @@ const EmbeddedClusterManagement = ({
   });
 
   type AddNodeCommandResponse = {
-    command: string;
+    command: string[];
     expiry: string;
   };
 
@@ -438,6 +438,12 @@ const EmbeddedClusterManagement = ({
     );
   };
 
+  const addNodesCommandInstructions = [
+    "Download the installation assets",
+    "Extract the installation assets",
+    "Join the node to the cluster",
+  ];
+
   const AddNodeCommands = () => {
     return (
       <>
@@ -506,18 +512,26 @@ const EmbeddedClusterManagement = ({
             </p>
           )}
           {!generateAddNodeCommandLoading && generateAddNodeCommand?.command && (
-            <>
-              <CodeSnippet
-                key={selectedNodeTypes.toString()}
-                language="bash"
-                canCopy={true}
-                onCopyText={
-                  <span className="u-textColor--success">Copied!</span>
-                }
-              >
-                {generateAddNodeCommand?.command}
-              </CodeSnippet>
-            </>
+            <div className="tw-flex tw-flex-col tw-gap-4 tw-mt-4">
+              {generateAddNodeCommand.command.map((command, index) => (
+                <div key={command}>
+                  {addNodesCommandInstructions[index] && (
+                    <p className="tw-text-gray-600 tw-font-semibold">
+                      {addNodesCommandInstructions[index]}
+                    </p>
+                  )}
+                  <CodeSnippet
+                    language="bash"
+                    canCopy={true}
+                    onCopyText={
+                      <span className="u-textColor--success">Copied!</span>
+                    }
+                  >
+                    {command}
+                  </CodeSnippet>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </>

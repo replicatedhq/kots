@@ -80,25 +80,18 @@ func TestGenerateAddNodeCommand(t *testing.T) {
 
 	req := require.New(t)
 
-	// Generate the add node command for online
-	gotCommand, err := GenerateAddNodeCommand(context.Background(), kbClient, "token", false)
+	gotCommand, err := GenerateAddNodeCommand(context.Background(), kbClient, "token")
 	if err != nil {
 		t.Fatalf("Failed to generate add node command: %v", err)
 	}
 
 	// Verify the generated command
-	wantCommand := "sudo ./my-app join 192.168.0.100:30000 token"
-	req.Equal(wantCommand, gotCommand)
-
-	// Generate the add node command for airgap
-	gotCommand, err = GenerateAddNodeCommand(context.Background(), kbClient, "token", true)
-	if err != nil {
-		t.Fatalf("Failed to generate add node command: %v", err)
+	wantCommands := []string{
+		"curl -k https://192.168.0.100:30000/api/v1/embedded-cluster/binary -o my-app.tar.gz",
+		"tar -xvf my-app.tar.gz",
+		"sudo ./my-app join 192.168.0.100:30000 token",
 	}
-
-	// Verify the generated command
-	wantCommand = "sudo ./my-app join 192.168.0.100:30000 token"
-	req.Equal(wantCommand, gotCommand)
+	req.Equal(wantCommands, gotCommand)
 }
 
 func TestGetAllNodeIPAddresses(t *testing.T) {
