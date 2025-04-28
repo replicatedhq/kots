@@ -660,7 +660,7 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 				Password:  "",
 			},
 			license: nil,
-			want:    `{"auths":{"proxy.replicated.com":{"auth":"Og=="},"registry.replicated.com":{"auth":"Og=="}}}`,
+			want:    `{"auths":{"proxy.replicated.com":{"auth":"TElDRU5TRV9JRDo="},"registry.replicated.com":{"auth":"TElDRU5TRV9JRDo="}}}`,
 		},
 		{
 			name: "licenseid abc",
@@ -678,7 +678,7 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 				},
 				Status: kotsv1beta1.LicenseStatus{},
 			},
-			want: `{"auths":{"proxy.replicated.com":{"auth":"YWJjOmFiYw=="},"registry.replicated.com":{"auth":"YWJjOmFiYw=="}}}`,
+			want: `{"auths":{"proxy.replicated.com":{"auth":"TElDRU5TRV9JRDphYmM="},"registry.replicated.com":{"auth":"TElDRU5TRV9JRDphYmM="}}}`,
 		},
 		{
 			name: "licenseid abc with custom domains",
@@ -700,7 +700,7 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 				},
 				Status: kotsv1beta1.LicenseStatus{},
 			},
-			want: `{"auths":{"custom.proxy.com":{"auth":"YWJjOmFiYw=="},"custom.registry.com":{"auth":"YWJjOmFiYw=="}}}`,
+			want: `{"auths":{"custom.proxy.com":{"auth":"TElDRU5TRV9JRDphYmM="},"custom.registry.com":{"auth":"TElDRU5TRV9JRDphYmM="}}}`,
 		},
 		{
 			name: "localregistry set",

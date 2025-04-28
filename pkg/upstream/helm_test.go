@@ -489,7 +489,7 @@ global:
     channelName: channel-name
     customerEmail: customer@example.com
     customerName: Customer Name
-    dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJiR2xqWlc1elpTMXBaRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6ImJHbGpaVzV6WlMxcFpEcHNhV05sYm5ObExXbGsifX19
+    dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJURWxEUlU1VFJWOUpSRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6IlRFbERSVTVUUlY5SlJEcHNhV05sYm5ObExXbGsifX19
     licenseFields:
       license-field:
         description: This is a license field
@@ -746,7 +746,7 @@ global:
     channelName: channel-name
     customerEmail: customer@example.com
     customerName: Customer Name
-    dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJiR2xqWlc1elpTMXBaRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6ImJHbGpaVzV6WlMxcFpEcHNhV05sYm5ObExXbGsifX19
+    dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJURWxEUlU1VFJWOUpSRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6IlRFbERSVTVUUlY5SlJEcHNhV05sYm5ObExXbGsifX19
     licenseFields:
       license-field:
         description: This is a license field
@@ -994,7 +994,7 @@ global:
     channelName: channel-name
     customerEmail: customer@example.com
     customerName: Customer Name
-    dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJiR2xqWlc1elpTMXBaRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6ImJHbGpaVzV6WlMxcFpEcHNhV05sYm5ObExXbGsifX19
+    dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJURWxEUlU1VFJWOUpSRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6IlRFbERSVTVUUlY5SlJEcHNhV05sYm5ObExXbGsifX19
     licenseFields:
       license-field:
         description: This is a license field
