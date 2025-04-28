@@ -131,76 +131,40 @@ func (h *Handler) GetEmbeddedClusterCharts(w http.ResponseWriter, r *http.Reques
 	// Path to charts directory
 	chartsDir := filepath.Join(dataDir, "charts")
 
-	// Check if charts directory exists
-	if _, err := os.Stat(chartsDir); os.IsNotExist(err) {
-		logger.Error(errors.Wrap(err, "charts directory not found"))
-		w.WriteHeader(http.StatusNotFound)
+	// Create .tgz archive
+	archivePath, err := createECChartsArchive(chartsDir)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to create archive"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
-	} else if err != nil {
-		logger.Error(errors.Wrap(err, "failed to stat charts directory"))
+	}
+	defer os.Remove(archivePath)
+
+	// Open archive file
+	archiveFile, err := os.Open(archivePath)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to open archive file"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer archiveFile.Close()
+
+	// Get file information
+	fileInfo, err := archiveFile.Stat()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get file info"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	// Set response headers for the .tgz file
+	// Set response headers
 	w.Header().Set("Content-Disposition", "attachment; filename=ec-charts.tgz")
 	w.Header().Set("Content-Type", "application/gzip")
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
 
-	// Create pgzip writer
-	gzipWriter := pgzip.NewWriter(w)
-	defer gzipWriter.Close()
-
-	// Create tar writer
-	tarWriter := tar.NewWriter(gzipWriter)
-	defer tarWriter.Close()
-
-	// Walk through the charts directory and add each file to the tar archive
-	err := filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return errors.Wrap(err, "error walking charts directory")
-		}
-
-		// Skip directories
-		if info.IsDir() {
-			return nil
-		}
-
-		// Get relative path for the tar header
-		relPath, err := filepath.Rel(chartsDir, path)
-		if err != nil {
-			return errors.Wrap(err, "failed to get relative path")
-		}
-
-		// Create header
-		header := &tar.Header{
-			Name:    relPath,
-			Mode:    int64(info.Mode()),
-			Size:    info.Size(),
-			ModTime: info.ModTime(),
-		}
-
-		// Write header
-		if err := tarWriter.WriteHeader(header); err != nil {
-			return errors.Wrap(err, "failed to write tar header")
-		}
-
-		// Open file
-		file, err := os.Open(path)
-		if err != nil {
-			return errors.Wrap(err, "failed to open file")
-		}
-		defer file.Close()
-
-		// Copy file contents to tar archive
-		if _, err := io.Copy(tarWriter, file); err != nil {
-			return errors.Wrap(err, "failed to write file to tar archive")
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to create tar archive of charts directory"))
+	// Stream the file to the response
+	if _, err := io.Copy(w, archiveFile); err != nil {
+		logger.Error(errors.Wrap(err, "failed to write archive to response"))
 		return
 	}
 }
@@ -274,4 +238,72 @@ func (h *Handler) GetEmbeddedClusterK0sImages(w http.ResponseWriter, r *http.Req
 		logger.Error(errors.Wrap(err, "failed to write images file to response"))
 		return
 	}
+}
+
+// createECChartsArchive creates a .tgz archive of the given embedded cluster charts directory
+func createECChartsArchive(chartsDir string) (string, error) {
+	// Create temporary .tgz file
+	tmpFile, err := os.CreateTemp("", "ec-charts-*.tgz")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temporary file")
+	}
+	defer tmpFile.Close()
+
+	// Create gzip writer
+	gzipWriter := pgzip.NewWriter(tmpFile)
+	defer gzipWriter.Close()
+
+	// Create tar writer
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	err = filepath.Walk(chartsDir, func(filePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Get relative path for tar header name
+		relPath, err := filepath.Rel(chartsDir, filePath)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get relative path for %s", filePath)
+		}
+
+		// Create tar header
+		header := &tar.Header{
+			Name:    relPath,
+			Mode:    int64(info.Mode()),
+			Size:    info.Size(),
+			ModTime: info.ModTime(),
+		}
+
+		// Write header
+		if err := tarWriter.WriteHeader(header); err != nil {
+			return errors.Wrap(err, "failed to write tar header")
+		}
+
+		// Open and copy file contents
+		chartFile, err := os.Open(filePath)
+		if err != nil {
+			return errors.Wrapf(err, "failed to open file %s", filePath)
+		}
+		defer chartFile.Close()
+
+		// Copy file data into tar writer
+		if _, err := io.Copy(tarWriter, chartFile); err != nil {
+			return errors.Wrapf(err, "failed to copy file %s to tar archive", filePath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return "", errors.Wrap(err, "failed to walk charts directory")
+	}
+
+	return tmpFile.Name(), nil
 }
