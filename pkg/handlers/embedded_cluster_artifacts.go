@@ -112,6 +112,63 @@ func (h *Handler) GetEmbeddedClusterBinary(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// GetEmbeddedClusterCharts returns the charts in the <data-dir>/charts directory as a .tgz file
+func (h *Handler) GetEmbeddedClusterCharts(w http.ResponseWriter, r *http.Request) {
+	if !util.IsEmbeddedCluster() {
+		logger.Error(errors.New("not an embedded cluster"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Get data directory path from env var
+	dataDir := util.EmbeddedClusterDataDir()
+	if dataDir == "" {
+		logger.Error(errors.New("environment variable EMBEDDED_CLUSTER_DATA_DIR not set"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Path to charts directory
+	chartsDir := filepath.Join(dataDir, "charts")
+
+	// Create .tgz archive
+	archivePath, err := createECChartsArchive(chartsDir)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to create archive"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer os.Remove(archivePath)
+
+	// Open archive file
+	archiveFile, err := os.Open(archivePath)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to open archive file"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer archiveFile.Close()
+
+	// Get file information
+	fileInfo, err := archiveFile.Stat()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get file info"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Set response headers
+	w.Header().Set("Content-Disposition", "attachment; filename=ec-charts.tgz")
+	w.Header().Set("Content-Type", "application/gzip")
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
+
+	// Stream the file to the response
+	if _, err := io.Copy(w, archiveFile); err != nil {
+		logger.Error(errors.Wrap(err, "failed to write archive to response"))
+		return
+	}
+}
+
 // GetEmbeddedClusterK0sImages returns the k0s images file
 func (h *Handler) GetEmbeddedClusterK0sImages(w http.ResponseWriter, r *http.Request) {
 	if !util.IsEmbeddedCluster() {
@@ -181,4 +238,73 @@ func (h *Handler) GetEmbeddedClusterK0sImages(w http.ResponseWriter, r *http.Req
 		logger.Error(errors.Wrap(err, "failed to write images file to response"))
 		return
 	}
+}
+
+// createECChartsArchive creates a .tgz archive of the given embedded cluster charts directory
+func createECChartsArchive(chartsDir string) (string, error) {
+	// Create temporary .tgz file
+	tmpFile, err := os.CreateTemp("", "ec-charts-*.tgz")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temporary file")
+	}
+	defer tmpFile.Close()
+
+	// Create gzip writer
+	gzipWriter := pgzip.NewWriter(tmpFile)
+	defer gzipWriter.Close()
+
+	// Create tar writer
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	err = filepath.Walk(chartsDir, func(filePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Get relative path for tar header name
+		relPath, err := filepath.Rel(chartsDir, filePath)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get relative path for %s", filePath)
+		}
+
+		// Create tar header
+		header := &tar.Header{
+			Name:    relPath,
+			Mode:    int64(info.Mode()),
+			Size:    info.Size(),
+			ModTime: info.ModTime(),
+		}
+
+		// Write header
+		if err := tarWriter.WriteHeader(header); err != nil {
+			return errors.Wrap(err, "failed to write tar header")
+		}
+
+		// Open and copy file contents
+		chartFile, err := os.Open(filePath)
+		if err != nil {
+			return errors.Wrapf(err, "failed to open file %s", filePath)
+		}
+		defer chartFile.Close()
+
+		// Copy file data into tar writer
+		if _, err := io.Copy(tarWriter, chartFile); err != nil {
+			return errors.Wrapf(err, "failed to copy file %s to tar archive", filePath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		_ = os.Remove(tmpFile.Name())
+		return "", errors.Wrap(err, "failed to walk charts directory")
+	}
+
+	return tmpFile.Name(), nil
 }
