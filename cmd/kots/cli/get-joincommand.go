@@ -49,7 +49,7 @@ func GetJoinCmd() *cobra.Command {
 
 			format := v.GetString("output")
 			if format == "string" || format == "" {
-				fmt.Println(strings.Join(joinCmd, " "))
+				fmt.Println(strings.Join(joinCmd, " && \n  "))
 				return nil
 			} else if format == "json" {
 				type joinCommandResponse struct {
@@ -58,7 +58,7 @@ func GetJoinCmd() *cobra.Command {
 				joinCmdResponse := joinCommandResponse{
 					Command: joinCmd,
 				}
-				b, err := json.Marshal(joinCmdResponse)
+				b, err := json.MarshalIndent(joinCmdResponse, "", "  ")
 				if err != nil {
 					return fmt.Errorf("failed to marshal join command: %w", err)
 				}
@@ -117,7 +117,7 @@ func getJoinCommandCmd(ctx context.Context, clientset kubernetes.Interface, name
 		return nil, fmt.Errorf("failed to get join command: %w", err)
 	}
 
-	return joinCommand.Command, nil
+	return joinCommand.Commands, nil
 }
 
 // determine the embedded cluster roles list from /api/v1/embedded-cluster/roles
