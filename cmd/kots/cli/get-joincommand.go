@@ -53,10 +53,10 @@ func GetJoinCmd() *cobra.Command {
 				return nil
 			} else if format == "json" {
 				type joinCommandResponse struct {
-					Command []string `json:"command"`
+					Commands []string `json:"commands"`
 				}
 				joinCmdResponse := joinCommandResponse{
-					Command: joinCmd,
+					Commands: joinCmd,
 				}
 				b, err := json.MarshalIndent(joinCmdResponse, "", "  ")
 				if err != nil {
