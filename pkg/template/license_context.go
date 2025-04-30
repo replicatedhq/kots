@@ -91,7 +91,7 @@ func (ctx licenseCtx) licenseDockercfg() (string, error) {
 		return "", nil
 	}
 
-	auth := fmt.Sprintf("%s:%s", ctx.License.Spec.LicenseID, ctx.License.Spec.LicenseID)
+	auth := fmt.Sprintf("%s:%s", "LICENSE_ID", ctx.License.Spec.LicenseID)
 	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
 
 	installation := &kotsv1beta1.Installation{

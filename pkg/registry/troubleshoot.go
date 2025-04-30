@@ -116,7 +116,7 @@ func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Col
 	}
 
 	makeImagePullSecret := func(namespace string) (*troubleshootv1beta2.ImagePullSecrets, error) {
-		pullSecrets, err := kotsregistry.PullSecretForRegistries(registryProxyInfo.ToSlice(), license.Spec.LicenseID, license.Spec.LicenseID, namespace, "")
+		pullSecrets, err := kotsregistry.PullSecretForRegistries(registryProxyInfo.ToSlice(), "LICENSE_ID", license.Spec.LicenseID, namespace, "")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to generate pull secret for proxy registry")
 		}

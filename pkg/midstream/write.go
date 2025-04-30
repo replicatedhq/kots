@@ -158,7 +158,7 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 			return nil, errors.Wrap(err, "get registry proxy info")
 		}
 		pullSecretRegistries = registryProxyInfo.ToSlice()
-		pullSecretUsername = opts.License.Spec.LicenseID
+		pullSecretUsername = "LICENSE_ID"
 		pullSecretPassword = opts.License.Spec.LicenseID
 	}
 

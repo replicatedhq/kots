@@ -403,7 +403,7 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 		globalReplicatedValues["licenseFields"] = licenseFields
 
 		// add docker config json
-		auth := fmt.Sprintf("%s:%s", u.License.Spec.LicenseID, u.License.Spec.LicenseID)
+		auth := fmt.Sprintf("%s:%s", "LICENSE_ID", u.License.Spec.LicenseID)
 		encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
 		dockercfg := map[string]interface{}{
 			"auths": map[string]interface{}{

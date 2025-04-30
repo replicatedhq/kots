@@ -380,7 +380,7 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() (string, error) {
 
 		secrets, err := registry.PullSecretForRegistries(
 			registryProxyInfo.ToSlice(),
-			licenseIDString,
+			"LICENSE_ID",
 			licenseIDString,
 			"default", // this value doesn't matter
 			ctx.AppSlug,
