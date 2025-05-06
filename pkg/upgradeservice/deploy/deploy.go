@@ -129,7 +129,7 @@ func Deploy(opts DeployOptions) error {
 
 		finishedCh := make(chan struct{})
 		defer close(finishedCh)
-		tasks.StartTicker(task.GetID(opts.Params.AppSlug), finishedCh)
+		go tasks.StartTicker(task.GetID(opts.Params.AppSlug), finishedCh)
 
 		if err := embeddedcluster.StartClusterUpgrade(context.Background(), opts.KotsKinds, opts.RegistrySettings); err != nil {
 			return errors.Wrap(err, "failed to start cluster upgrade")
