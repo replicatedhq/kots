@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 )
 
@@ -45,51 +42,7 @@ func injectUserAgentHeader(header http.Header) {
 	header.Add("User-Agent", buildversion.GetUserAgent())
 }
 
-// errorHandler includes the body in the response when there is an error
+// errorHandler mimics net/http rather than doing anything fancy like the retryablehttp library.
 func errorHandler(resp *http.Response, err error, attempt int) (*http.Response, error) {
-	var req http.Request
-	var bodyStr string
-
-	if resp != nil && resp.Request != nil {
-		req = *resp.Request
-
-		body, readErr := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		if readErr != nil {
-			err = errors.Wrap(err, fmt.Sprintf("failed to read response body: %v", readErr))
-		} else {
-			bodyStr = strings.TrimSpace(string(body))
-		}
-	}
-
-	// this means CheckRetry thought the request was a failure, but didn't communicate why
-	if err == nil {
-		if bodyStr != "" {
-			return resp, fmt.Errorf("%s %s giving up after %d attempt(s): %s",
-				req.Method, redactURL(req.URL), attempt, bodyStr)
-		}
-		return resp, fmt.Errorf("%s %s giving up after %d attempt(s)",
-			req.Method, redactURL(req.URL), attempt)
-	}
-
-	if bodyStr != "" {
-		return resp, fmt.Errorf("%s %s giving up after %d attempt(s) with error %w: %s",
-			req.Method, redactURL(req.URL), attempt, err, bodyStr)
-	}
-	return resp, fmt.Errorf("%s %s giving up after %d attempt(s) with error %w",
-		req.Method, redactURL(req.URL), attempt, err)
-}
-
-// Taken from url.URL#Redacted() which was introduced in go 1.15.
-// We can switch to using it directly if we'll bump the minimum required go version.
-func redactURL(u *url.URL) string {
-	if u == nil {
-		return ""
-	}
-
-	ru := *u
-	if _, has := ru.User.Password(); has {
-		ru.User = url.UserPassword(ru.User.Username(), "xxxxx")
-	}
-	return ru.String()
+	return resp, err
 }
