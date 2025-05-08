@@ -25,7 +25,7 @@ import (
 
 func bootstrap(params types.UpgradeServiceParams) (finalError error) {
 	if err := updateWithinKubeRange(params); err != nil {
-		return errors.Wrap(err, "kube version update is not within allowed range. Please update at most one minor version at a time")
+		return errors.Wrap(err, "kubernetes version update is not within allowed range. Please update at most one minor version at a time")
 	}
 
 	if err := k8sutil.InitHelmCapabilities(); err != nil {
@@ -60,7 +60,10 @@ func updateWithinKubeRange(params types.UpgradeServiceParams) error {
 	if currentVersion.Major() != updateVersion.Major() {
 		return errors.Errorf("major version mismatch: current %s, update %s", currentVersion, updateVersion)
 	}
-	if updateVersion.Minor()-currentVersion.Minor() > 1 || currentVersion.Minor()-updateVersion.Minor() > 1 {
+	if currentVersion.GreaterThan(updateVersion) {
+		return errors.Errorf("cannot downgrade the version: current %s, update %s", currentVersion, updateVersion)
+	}
+	if updateVersion.Minor() > currentVersion.Minor()+1 {
 		return errors.Errorf("cannot update more than one minor version: current %s, update %s", currentVersion, updateVersion)
 	}
 	return nil

@@ -46,16 +46,8 @@ func TestUpdateWithinKubeRange(t *testing.T) {
 				CurrentECVersion: "2.4.0+k8s-1.31-rc0",
 				UpdateECVersion:  "2.5.0+k8s-1.30-rc0",
 			},
-			expectError: false,
-		},
-		{
-			name: "two minor version downgrade",
-			params: types.UpgradeServiceParams{
-				CurrentECVersion: "2.4.0+k8s-1.32-rc0",
-				UpdateECVersion:  "2.6.0+k8s-1.30-rc0",
-			},
 			expectError:    true,
-			expectedErrMsg: "cannot update more than one minor version",
+			expectedErrMsg: "cannot downgrade the version",
 		},
 		{
 			name: "major version mismatch",
@@ -83,14 +75,6 @@ func TestUpdateWithinKubeRange(t *testing.T) {
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to extract update kube version",
-		},
-		{
-			name: "downgrade version",
-			params: types.UpgradeServiceParams{
-				CurrentECVersion: "2.4.0+k8s-1.31-rc0",
-				UpdateECVersion:  "2.5.0+k8s-1.30-rc0",
-			},
-			expectError: false,
 		},
 	}
 
