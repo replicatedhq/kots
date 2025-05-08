@@ -74,8 +74,8 @@ func Test_getJoinCommandCmd(t *testing.T) {
 
 					response := map[string][]string{
 						"commands": {
-							"curl -k https://172.17.0.2:30000/api/v1/embedded-cluster/binary -o embedded-cluster.tar.gz",
-							"tar -xzf embedded-cluster.tar.gz",
+							"curl -k https://172.17.0.2:30000/api/v1/embedded-cluster/binary -o embedded-cluster.tgz",
+							"tar -xzf embedded-cluster.tgz",
 							"sudo ./embedded-cluster join 172.17.0.2:30000 7nPgRfWVZ3QIRWOnzsITEpLt",
 						},
 					}
@@ -84,8 +84,8 @@ func Test_getJoinCommandCmd(t *testing.T) {
 				}
 			},
 			expectedCmd: []string{
-				"curl -k https://172.17.0.2:30000/api/v1/embedded-cluster/binary -o embedded-cluster.tar.gz",
-				"tar -xzf embedded-cluster.tar.gz",
+				"curl -k https://172.17.0.2:30000/api/v1/embedded-cluster/binary -o embedded-cluster.tgz",
+				"tar -xzf embedded-cluster.tgz",
 				"sudo ./embedded-cluster join 172.17.0.2:30000 7nPgRfWVZ3QIRWOnzsITEpLt",
 			},
 		},
