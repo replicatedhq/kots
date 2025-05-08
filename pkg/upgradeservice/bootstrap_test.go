@@ -110,6 +110,12 @@ func TestExtractKubeVersion(t *testing.T) {
 			expectError:     false,
 		},
 		{
+			name:            "ec version with a v prefix is valid",
+			ecVersion:       "v3.1.5+k8s-1.29",
+			expectedVersion: "1.29.0",
+			expectError:     false,
+		},
+		{
 			name:        "invalid format - missing k8s tag",
 			ecVersion:   "2.4.0-rc0",
 			expectError: true,
