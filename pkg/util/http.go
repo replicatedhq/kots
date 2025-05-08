@@ -67,19 +67,17 @@ func errorHandler(resp *http.Response, err error, attempt int) (*http.Response, 
 		if bodyStr != "" {
 			return resp, fmt.Errorf("%s %s giving up after %d attempt(s): %s",
 				req.Method, redactURL(req.URL), attempt, bodyStr)
-		} else {
-			return resp, fmt.Errorf("%s %s giving up after %d attempt(s)",
-				req.Method, redactURL(req.URL), attempt)
 		}
+		return resp, fmt.Errorf("%s %s giving up after %d attempt(s)",
+			req.Method, redactURL(req.URL), attempt)
 	}
 
 	if bodyStr != "" {
 		return resp, fmt.Errorf("%s %s giving up after %d attempt(s) with error %w: %s",
 			req.Method, redactURL(req.URL), attempt, err, bodyStr)
-	} else {
-		return resp, fmt.Errorf("%s %s giving up after %d attempt(s) with error %w",
-			req.Method, redactURL(req.URL), attempt, err)
 	}
+	return resp, fmt.Errorf("%s %s giving up after %d attempt(s) with error %w",
+		req.Method, redactURL(req.URL), attempt, err)
 }
 
 // Taken from url.URL#Redacted() which was introduced in go 1.15.
