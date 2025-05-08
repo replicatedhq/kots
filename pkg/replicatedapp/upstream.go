@@ -4,11 +4,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net"
-	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -42,7 +42,7 @@ func ParseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 	return &replicatedUpstream, nil
 }
 
-func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.License, cursor string, selectedChannelID string) (*http.Request, error) {
+func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.License, cursor string, selectedChannelID string) (*retryablehttp.Request, error) {
 	endpoint, err := getReplicatedAppEndpoint(license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get replicated app endpoint")
@@ -65,7 +65,7 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 
 	url := fmt.Sprintf("%s/%s?%s", endpoint, urlPath, urlValues.Encode())
 
-	req, err := util.NewRequest(method, url, nil)
+	req, err := util.NewRetryableRequest(method, url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}

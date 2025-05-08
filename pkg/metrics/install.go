@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"regexp"
 	"time"
 
@@ -83,13 +82,13 @@ func (m InstallMetrics) Post(url string) error {
 		return errors.Wrap(err, "failed to marshal json")
 	}
 
-	req, err := util.NewRequest("POST", url, bytes.NewBuffer(b))
+	req, err := util.NewRetryableRequest("POST", url, bytes.NewBuffer(b))
 	if err != nil {
 		return errors.Wrap(err, "failed to create new request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "failed to execute post request")
 	}

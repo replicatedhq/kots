@@ -3,7 +3,6 @@ package reporting
 import (
 	"encoding/base64"
 	"fmt"
-	"net/http"
 	"sync"
 	"time"
 
@@ -42,7 +41,7 @@ func (r *OnlineReporter) SubmitAppInfo(appID string) error {
 
 	url := fmt.Sprintf("%s/kots_metrics/license_instance/info", endpoint)
 
-	postReq, err := util.NewRequest("POST", url, nil)
+	postReq, err := util.NewRetryableRequest("POST", url, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create http request")
 	}
@@ -50,9 +49,9 @@ func (r *OnlineReporter) SubmitAppInfo(appID string) error {
 	postReq.Header.Set("Content-Type", "application/json")
 
 	reportingInfo := GetReportingInfo(a.ID)
-	InjectReportingInfoHeaders(postReq, reportingInfo)
+	InjectReportingInfoHeaders(postReq.Header, reportingInfo)
 
-	resp, err := http.DefaultClient.Do(postReq)
+	resp, err := util.DefaultHTTPClient.Do(postReq)
 	if err != nil {
 		return errors.Wrap(err, "failed to post request")
 	}
