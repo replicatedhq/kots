@@ -320,8 +320,6 @@ spec:
 
 			assert.NotEqual(t, "", gotParams.Port)
 			assert.NotEqual(t, "", gotParams.UpdateKOTSBin)
-			fmt.Println("gotParams.UpdateKOTSBin", gotParams.UpdateKOTSBin)
-			assert.Fail(t, "ttest")
 
 			tt.wantParams.Port = gotParams.Port
 			tt.wantParams.UpdateKOTSBin = gotParams.UpdateKOTSBin
