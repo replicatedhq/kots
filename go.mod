@@ -32,6 +32,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/gosimple/slug v1.15.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
+	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
 	github.com/lib/pq v1.10.9
 	github.com/manifoldco/promptui v0.9.0

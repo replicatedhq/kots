@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -361,12 +360,12 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		return nil, errors.Wrap(err, "failed to create http request")
 	}
 
-	reporting.InjectReportingInfoHeaders(getReq, reportingInfo)
+	reporting.InjectReportingInfoHeaders(getReq.Header, reportingInfo)
 
 	logger.Info("pulling app from replicated",
 		zap.String("url", getReq.URL.String()))
 
-	getResp, err := http.DefaultClient.Do(getReq)
+	getResp, err := util.DefaultHTTPClient.Do(getReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
 	}
@@ -501,16 +500,16 @@ func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt 
 
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
 
-	req, err := util.NewRequest("GET", url, nil)
+	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	reporting.InjectReportingInfoHeaders(req, reportingInfo)
+	reporting.InjectReportingInfoHeaders(req.Header, reportingInfo)
 
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to execute get request")
 	}

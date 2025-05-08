@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/mholt/archiver/v3"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	embeddedclustertypes "github.com/replicatedhq/embedded-cluster/kinds/types"
@@ -222,7 +223,7 @@ func downloadUpgradeBinary(ctx context.Context, license *kotsv1beta1.License, ve
 
 	log.Printf("Downloading upgrade binary from %s...", req.URL)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("do request: %w", err)
 	}
@@ -253,9 +254,9 @@ func downloadUpgradeBinary(ctx context.Context, license *kotsv1beta1.License, ve
 	return filepath.Join(tmpdir, upgradeBinary), nil
 }
 
-func newDownloadUpgradeBinaryRequest(ctx context.Context, license *kotsv1beta1.License, versionLabel string) (*http.Request, error) {
+func newDownloadUpgradeBinaryRequest(ctx context.Context, license *kotsv1beta1.License, versionLabel string) (*retryablehttp.Request, error) {
 	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
-	req, err := util.NewRequest(http.MethodGet, url, nil)
+	req, err := util.NewRetryableRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
 	}
