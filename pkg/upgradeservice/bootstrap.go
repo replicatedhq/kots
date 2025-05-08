@@ -60,7 +60,7 @@ func updateWithinKubeRange(params types.UpgradeServiceParams) error {
 	if currentVersion.Major() != updateVersion.Major() {
 		return errors.Errorf("major version mismatch: current %s, update %s", currentVersion, updateVersion)
 	}
-	if updateVersion.Minor() > currentVersion.Minor()+1 {
+	if updateVersion.Minor()-currentVersion.Minor() > 1 || currentVersion.Minor()-updateVersion.Minor() > 1 {
 		return errors.Errorf("cannot update more than one minor version: current %s, update %s", currentVersion, updateVersion)
 	}
 	return nil

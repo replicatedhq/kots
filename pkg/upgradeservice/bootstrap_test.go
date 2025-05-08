@@ -24,7 +24,7 @@ func TestUpdateWithinKubeRange(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "one minor version update",
+			name: "one minor version upgrade",
 			params: types.UpgradeServiceParams{
 				CurrentECVersion: "2.4.0+k8s-1.30-rc0",
 				UpdateECVersion:  "2.5.0+k8s-1.31-rc0",
@@ -32,10 +32,27 @@ func TestUpdateWithinKubeRange(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "two minor version update",
+			name: "two minor version upgrade",
 			params: types.UpgradeServiceParams{
 				CurrentECVersion: "2.4.0+k8s-1.30-rc0",
 				UpdateECVersion:  "2.6.0+k8s-1.32-rc0",
+			},
+			expectError:    true,
+			expectedErrMsg: "cannot update more than one minor version",
+		},
+		{
+			name: "one minor version downgrade",
+			params: types.UpgradeServiceParams{
+				CurrentECVersion: "2.4.0+k8s-1.31-rc0",
+				UpdateECVersion:  "2.5.0+k8s-1.30-rc0",
+			},
+			expectError: false,
+		},
+		{
+			name: "two minor version downgrade",
+			params: types.UpgradeServiceParams{
+				CurrentECVersion: "2.4.0+k8s-1.32-rc0",
+				UpdateECVersion:  "2.6.0+k8s-1.30-rc0",
 			},
 			expectError:    true,
 			expectedErrMsg: "cannot update more than one minor version",
