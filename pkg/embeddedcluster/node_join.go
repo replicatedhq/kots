@@ -234,8 +234,8 @@ func GenerateAddNodeCommand(ctx context.Context, kbClient kbclient.Client, token
 	address := net.JoinHostPort(nodeIP, fmt.Sprintf("%d", port))
 
 	commands := []string{
-		fmt.Sprintf("curl -k https://%s/api/v1/embedded-cluster/binary -o %s.tar.gz", address, binaryName),
-		fmt.Sprintf("tar -xvf %s.tar.gz", binaryName),
+		fmt.Sprintf("curl -k https://%s/api/v1/embedded-cluster/binary -o %s.tgz", address, binaryName),
+		fmt.Sprintf("tar -xvf %s.tgz", binaryName),
 		fmt.Sprintf("sudo ./%s join %s %s", binaryName, address, token),
 	}
 

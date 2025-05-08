@@ -87,8 +87,8 @@ func TestGenerateAddNodeCommand(t *testing.T) {
 
 	// Verify the generated command
 	wantCommands := []string{
-		"curl -k https://192.168.0.100:30000/api/v1/embedded-cluster/binary -o my-app.tar.gz",
-		"tar -xvf my-app.tar.gz",
+		"curl -k https://192.168.0.100:30000/api/v1/embedded-cluster/binary -o my-app.tgz",
+		"tar -xvf my-app.tgz",
 		"sudo ./my-app join 192.168.0.100:30000 token",
 	}
 	req.Equal(wantCommands, gotCommand)
