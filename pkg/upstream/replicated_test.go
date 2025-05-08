@@ -745,7 +745,7 @@ spec:
 
 		_, err := downloadReplicatedApp(upstr, license, cursor, nil, "")
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "Internal server error")
+		require.Contains(t, err.Error(), "giving up")
 	})
 
 	t.Run("Invalid gzip", func(t *testing.T) {
