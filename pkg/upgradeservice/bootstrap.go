@@ -61,7 +61,7 @@ func updateWithinKubeRange(params types.UpgradeServiceParams) error {
 		return errors.Errorf("major version mismatch: current %s, update %s", currentVersion, updateVersion)
 	}
 	if currentVersion.GreaterThan(updateVersion) {
-		return errors.Errorf("cannot downgrade the version: current %s, update %s", currentVersion, updateVersion)
+		return errors.Errorf("cannot downgrade the kubernetes version: current %s, update %s", currentVersion, updateVersion)
 	}
 	if updateVersion.Minor() > currentVersion.Minor()+1 {
 		return errors.Errorf("cannot update more than one minor version: current %s, update %s", currentVersion, updateVersion)
