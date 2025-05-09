@@ -25,7 +25,7 @@ import (
 
 func bootstrap(params types.UpgradeServiceParams) (finalError error) {
 	if err := updateWithinKubeRange(params); err != nil {
-		return errors.Wrap(err, "kubernetes version update is not within allowed range. Please update at most one minor version at a time")
+		return errors.Wrap(err, "kubernetes version update is not within allowed range")
 	}
 
 	if err := k8sutil.InitHelmCapabilities(); err != nil {
