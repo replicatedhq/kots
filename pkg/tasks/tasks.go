@@ -54,13 +54,25 @@ func StartTicker(taskID string, finishedChan <-chan struct{}) {
 	for {
 		select {
 		case <-time.After(time.Second * 2):
-			if err := UpdateTaskStatusTimestamp(taskID); err != nil {
+			if err := updateTaskStatusTimestampSafely(taskID); err != nil {
 				logger.Error(err)
 			}
 		case <-finishedChan:
 			return
 		}
 	}
+}
+
+func updateTaskStatusTimestampSafely(taskID string) error {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Errorf("recovered from panic safely while updating task (%s) status timestamp: %v", taskID, r)
+		}
+	}()
+	if err := UpdateTaskStatusTimestamp(taskID); err != nil {
+		return err
+	}
+	return nil
 }
 
 func SetTaskStatus(id string, message string, status string) error {
