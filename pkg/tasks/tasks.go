@@ -63,10 +63,10 @@ func StartTicker(taskID string, finishedChan <-chan struct{}) {
 	}
 }
 
-func updateTaskStatusTimestampSafely(taskID string) error {
+func updateTaskStatusTimestampSafely(taskID string) (finalError error) {
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Errorf("recovered from panic safely while updating task (%s) status timestamp: %v", taskID, r)
+			finalError = fmt.Errorf("recovered from panic safely while updating task (%s) status timestamp: %v", taskID, r)
 		}
 	}()
 	if err := UpdateTaskStatusTimestamp(taskID); err != nil {
