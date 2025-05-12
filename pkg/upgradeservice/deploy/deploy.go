@@ -119,6 +119,9 @@ func Deploy(opts DeployOptions) error {
 
 	go func() (finalError error) {
 		defer func() {
+			if r := recover(); r != nil {
+				finalError = fmt.Errorf("recovered from panic during cluster upgrade: %v", r)
+			}
 			if finalError != nil {
 				logger.Error(errors.Wrap(finalError, "failed to deploy"))
 				if err := task.SetStatusUpgradeFailed(opts.Params.AppSlug, finalError.Error()); err != nil {
