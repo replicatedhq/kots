@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"mime/multipart"
-	"net/http"
 	"os"
 	"strings"
 
@@ -121,7 +120,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 	}
 
-	newReq, err := util.NewRequest("POST", options.UpdateCheckEndpoint, requestBody)
+	newReq, err := util.NewRetryableRequest("POST", options.UpdateCheckEndpoint, requestBody)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to create update check request")
@@ -129,7 +128,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	newReq.Header.Add("Content-Type", contentType)
 	newReq.Header.Add("Authorization", authSlug)
 
-	resp, err := http.DefaultClient.Do(newReq)
+	resp, err := util.DefaultHTTPClient.Do(newReq)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to check for updates")

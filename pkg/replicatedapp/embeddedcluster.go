@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -18,14 +19,14 @@ import (
 
 func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (string, error) {
 	url := fmt.Sprintf("%s/clusterconfig/version/Installer?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
-	req, err := util.NewRequest("GET", url, nil)
+	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
 	}
 
 	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to execute request")
 	}
@@ -52,7 +53,7 @@ func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (
 
 func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (string, error) {
 	url := fmt.Sprintf("%s/clusterconfig/artifact/kots?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
-	req, err := util.NewRequest("GET", url, nil)
+	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
 	}
@@ -60,11 +61,10 @@ func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (stri
 
 	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			req.Header.Del("Authorization")
-			return nil
-		},
+	client := retryablehttp.NewClient()
+	client.HTTPClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		req.Header.Del("Authorization")
+		return nil
 	}
 	resp, err := client.Do(req)
 	if err != nil {

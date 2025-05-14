@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -26,13 +25,13 @@ func GetFromPlatformLicense(apiEndpoint, platformLicense string) (string, error)
 		return "", errors.Wrap(err, "failed to encode payload")
 	}
 
-	req, err := util.NewRequest("POST", url, &buf)
+	req, err := util.NewRetryableRequest("POST", url, &buf)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to execute post request")
 	}

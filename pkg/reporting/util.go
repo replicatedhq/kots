@@ -9,11 +9,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 )
 
-func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.ReportingInfo) {
-	headers := GetReportingInfoHeaders(reportingInfo)
-
-	for key, value := range headers {
-		req.Header.Set(key, value)
+func InjectReportingInfoHeaders(header http.Header, reportingInfo *types.ReportingInfo) {
+	for key, value := range GetReportingInfoHeaders(reportingInfo) {
+		header.Set(key, value)
 	}
 }
 
