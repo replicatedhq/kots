@@ -38,7 +38,7 @@ func TestUpdateWithinKubeRange(t *testing.T) {
 				UpdateECVersion:  "2.6.0+k8s-1.32-rc0",
 			},
 			expectError:    true,
-			expectedErrMsg: "cannot update more than one minor version",
+			expectedErrMsg: "cannot update by more than one kubernetes minor version",
 		},
 		{
 			name: "one minor version downgrade",
@@ -47,7 +47,7 @@ func TestUpdateWithinKubeRange(t *testing.T) {
 				UpdateECVersion:  "2.5.0+k8s-1.30-rc0",
 			},
 			expectError:    true,
-			expectedErrMsg: "cannot downgrade the version",
+			expectedErrMsg: "cannot downgrade the kubernetes version",
 		},
 		{
 			name: "major version mismatch",
