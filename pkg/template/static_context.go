@@ -111,6 +111,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["Lookup"] = ctx.lookup
 
 	funcMap["PrivateCACert"] = ctx.privateCACert
+	funcMap["HostCABundlePath"] = ctx.hostCABundlePath
 
 	return funcMap
 }
@@ -682,4 +683,10 @@ func (ctx StaticCtx) lookup(apiversion string, resource string, namespace string
 func (ctx StaticCtx) privateCACert() string {
 	// return the name of a configmap holding additional CA certificates provided by the end user at install time
 	return os.Getenv("SSL_CERT_CONFIGMAP")
+}
+
+// hostCABundlePath returns the path to the host's CA bundle. This is set by embedded cluster using the
+// an env var via the helm chart.
+func (ctx StaticCtx) hostCABundlePath() string {
+	return os.Getenv("HOST_CA_BUNDLE_PATH")
 }
