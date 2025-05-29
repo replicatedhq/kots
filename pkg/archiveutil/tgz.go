@@ -4,9 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/mholt/archives"
 	"github.com/pkg/errors"
@@ -62,7 +60,7 @@ func ExtractTGZ(ctx context.Context, archivePath string, dest string) error {
 	// Set up the CompressedArchive format
 	format := archives.CompressedArchive{
 		Compression: archives.Gz{},
-		Archival:    archives.Tar{},
+		Extraction:  archives.Tar{},
 	}
 
 	// Use the archiver's auto-detection to determine the archive type and extract
@@ -78,34 +76,6 @@ func ExtractTGZ(ctx context.Context, archivePath string, dest string) error {
 
 	return nil
 }
-
-// func filesFromDisk(ctx context.Context, srcs []string, dest string) ([]archives.FileInfo, error) {
-// 	filenames := map[string]string{}
-
-// 	var baseDir string
-// 	if implicitTopLevelFolder && multipleTopLevels(srcs) {
-// 		baseDir = folderNameFromFileName(dest)
-// 	}
-
-// 	for _, src := range srcs {
-// 		filenames[src] = path.Join(baseDir, src)
-// 	}
-
-// 	return archives.FilesFromDisk(ctx, nil, filenames)
-// }
-
-// func makeNameInArchive(src string, baseDir string) (string, error) {
-// 	fi, err := os.Stat(src)
-// 	if err != nil {
-// 		return "", errors.Wrapf(err, "stat %s", src)
-// 	}
-
-// 	name := filepath.Base(src) // start with the file or dir name
-// 	if fi.IsDir() {
-// 		src += "/" // if this is a directory, preserve the trailing slash
-// 	}
-// 	return path.Join(baseDir, name), nil // prepend the base directory
-// }
 
 func extractFileToDisk(fi archives.FileInfo, dest string) error {
 	destPath := filepath.Join(dest, fi.NameInArchive)
@@ -130,42 +100,4 @@ func extractFileToDisk(fi archives.FileInfo, dest string) error {
 	}
 
 	return os.Chmod(destPath, fi.Mode().Perm())
-}
-
-// multipleTopLevels returns true if the paths do not
-// share a common top-level folder.
-func multipleTopLevels(paths []string) bool {
-	if len(paths) < 2 {
-		return false
-	}
-	var lastTop string
-	for _, p := range paths {
-		p = strings.TrimPrefix(strings.Replace(p, `\`, "/", -1), "/")
-		for {
-			next := path.Dir(p)
-			if next == "." {
-				break
-			}
-			p = next
-		}
-		if lastTop == "" {
-			lastTop = p
-		}
-		if p != lastTop {
-			return true
-		}
-	}
-	return false
-}
-
-// folderNameFromFileName returns a name for a folder
-// that is suitable based on the filename, which will
-// be stripped of its extensions.
-func folderNameFromFileName(filename string) string {
-	base := filepath.Base(filename)
-	firstDot := strings.Index(base, ".")
-	if firstDot > -1 {
-		return base[:firstDot]
-	}
-	return base
 }

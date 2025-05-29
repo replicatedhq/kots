@@ -2,9 +2,9 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/mitchellh/hashstructure"
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
@@ -20,6 +19,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/appstate"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -387,7 +387,7 @@ func extractHelmCharts(chartsArchive []byte, dirName string) (helmDir string, er
 		return "", errors.Wrap(err, "failed to create temp dir for previous charts")
 	}
 
-	err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), chartsArchive, 0644)
+	err = os.WriteFile(path.Join(tmpDir, "archive.tar.gz"), chartsArchive, 0644)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write previous archive")
 	}
@@ -397,15 +397,8 @@ func extractHelmCharts(chartsArchive []byte, dirName string) (helmDir string, er
 		return "", errors.Wrap(err, "failed to create dir to stage previous helm archive")
 	}
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-			OverwriteExisting:      true,
-		},
-	}
-
-	if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
-		return "", errors.Wrap(err, "falied to unarchive previous helm archive")
+	if err := archiveutil.ExtractTGZ(context.TODO(), path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+		return "", errors.Wrap(err, "failed to extract previous helm archive")
 	}
 
 	return helmDir, nil

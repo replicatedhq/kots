@@ -1,23 +1,23 @@
 package kotsstore
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/blang/semver"
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/apparchive"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/filestore"
@@ -120,7 +120,7 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 		return false, nil
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -250,14 +250,8 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 	}
 	defer os.RemoveAll(bundlePath)
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-			OverwriteExisting:      true,
-		},
-	}
-	if err := tarGz.Unarchive(bundlePath, dstPath); err != nil {
-		return errors.Wrap(err, "failed to unarchive")
+	if err := archiveutil.ExtractTGZ(context.TODO(), bundlePath, dstPath); err != nil {
+		return errors.Wrap(err, "failed to extract archive")
 	}
 
 	return nil
@@ -508,7 +502,7 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 
 	previousArchiveDir := ""
 	if baseSequence != nil {
-		previousDir, err := ioutil.TempDir("", "kotsadm")
+		previousDir, err := os.MkdirTemp("", "kotsadm")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir")
 		}
@@ -869,7 +863,7 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 	}
 	d := downstreams[0]
 
-	baseArchiveDir, err := ioutil.TempDir("", "kotsadm")
+	baseArchiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create base temp dir")
 	}
@@ -879,7 +873,7 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return errors.Wrap(err, "failed to get base archive dir")
 	}
 
-	nextArchiveDir, err := ioutil.TempDir("", "kotsadm")
+	nextArchiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create next temp dir")
 	}

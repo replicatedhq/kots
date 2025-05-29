@@ -2,16 +2,16 @@ package pull
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/base"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -23,37 +23,31 @@ import (
 
 func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream, baseDir string) error {
 	// Package this app into a bundle so that the Admin Console can write it as the first version...
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: true,
-			OverwriteExisting:      true,
-		},
-	}
 
-	paths := []string{
-		path.Join(pullOptions.RootDir, u.Name, "upstream"),
-		path.Join(pullOptions.RootDir, u.Name, "base"),
-		path.Join(pullOptions.RootDir, u.Name, "overlays"),
+	paths := map[string]string{
+		path.Join(pullOptions.RootDir, u.Name, "upstream"): "",
+		path.Join(pullOptions.RootDir, u.Name, "base"):     "",
+		path.Join(pullOptions.RootDir, u.Name, "overlays"): "",
 	}
 
 	renderedPath := path.Join(pullOptions.RootDir, "rendered")
 	if _, err := os.Stat(renderedPath); err == nil {
-		paths = append(paths, renderedPath)
+		paths[renderedPath] = ""
 	}
 
 	skippedFilesPath := path.Join(pullOptions.RootDir, "skippedFiles")
 	if _, err := os.Stat(skippedFilesPath); err == nil {
-		paths = append(paths, skippedFilesPath)
+		paths[skippedFilesPath] = ""
 	}
 
-	tempDir, err := ioutil.TempDir("", "kots")
+	tempDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(tempDir)
 
-	if err := tarGz.Archive(paths, path.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
-		return errors.Wrap(err, "failed to create tar gz")
+	if err := archiveutil.ArchiveTGZ(context.TODO(), paths, path.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
+		return errors.Wrap(err, "failed to create archive")
 	}
 
 	archive, err := os.ReadFile(path.Join(tempDir, "kots-uploadable-archive.tar.gz"))

@@ -3,14 +3,13 @@ package apparchive
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pmezard/go-difflib/difflib"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -448,7 +447,7 @@ kind: Kustomization
 				fullPath := filepath.Join(tmpDir, path)
 				err := os.MkdirAll(filepath.Dir(fullPath), 0755)
 				req.NoError(err)
-				err = ioutil.WriteFile(fullPath, []byte(content), 0644)
+				err = os.WriteFile(fullPath, []byte(content), 0644)
 				req.NoError(err)
 			}
 
@@ -465,20 +464,14 @@ kind: Kustomization
 			// validate archive files
 			renderedTmp := t.TempDir()
 
-			err = ioutil.WriteFile(filepath.Join(renderedTmp, "archive.tar.gz"), gotArchive, 0644)
+			err = os.WriteFile(filepath.Join(renderedTmp, "archive.tar.gz"), gotArchive, 0644)
 			req.NoError(err)
 
 			extracted := filepath.Join(renderedTmp, "extracted")
 			err = os.MkdirAll(extracted, 0755)
 			req.NoError(err)
 
-			tarGz := archiver.TarGz{
-				Tar: &archiver.Tar{
-					ImplicitTopLevelFolder: false,
-					OverwriteExisting:      true,
-				},
-			}
-			err = tarGz.Unarchive(filepath.Join(renderedTmp, "archive.tar.gz"), extracted)
+			err = archiveutil.ExtractTGZ(t.Context(), filepath.Join(renderedTmp, "archive.tar.gz"), extracted)
 			req.NoError(err)
 
 			for wantPath, wantContent := range tt.wantRenderedFilesMap {
@@ -502,20 +495,14 @@ kind: Kustomization
 			os.RemoveAll(renderedTmp)
 			renderedTmp = t.TempDir()
 
-			err = ioutil.WriteFile(filepath.Join(renderedTmp, "archive.tar.gz"), gotArchive2, 0644)
+			err = os.WriteFile(filepath.Join(renderedTmp, "archive.tar.gz"), gotArchive2, 0644)
 			req.NoError(err)
 
 			extracted = filepath.Join(renderedTmp, "extracted")
 			err = os.MkdirAll(extracted, 0755)
 			req.NoError(err)
 
-			tarGz = archiver.TarGz{
-				Tar: &archiver.Tar{
-					ImplicitTopLevelFolder: false,
-					OverwriteExisting:      true,
-				},
-			}
-			err = tarGz.Unarchive(filepath.Join(renderedTmp, "archive.tar.gz"), extracted)
+			err = archiveutil.ExtractTGZ(t.Context(), filepath.Join(renderedTmp, "archive.tar.gz"), extracted)
 			req.NoError(err)
 
 			for wantPath, wantContent := range tt.wantRenderedFilesMap {

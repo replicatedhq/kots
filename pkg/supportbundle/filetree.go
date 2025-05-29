@@ -1,14 +1,14 @@
 package supportbundle
 
 import (
-	"io/ioutil"
+	"context"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 )
 
@@ -17,20 +17,13 @@ var (
 )
 
 func archiveToFileTree(archivePath string) (*types.FileTree, error) {
-	workDir, err := ioutil.TempDir("", "kotsadm")
+	workDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create workdir")
 	}
 	defer os.RemoveAll(workDir)
 
-	// extract the current archive to this root
-	tarGz := &archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-			OverwriteExisting:      true,
-		},
-	}
-	if err := tarGz.Unarchive(archivePath, workDir); err != nil {
+	if err := archiveutil.ExtractTGZ(context.TODO(), archivePath, workDir); err != nil {
 		return nil, errors.Wrap(err, "failed to unarchive")
 	}
 

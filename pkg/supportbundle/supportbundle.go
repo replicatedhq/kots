@@ -2,16 +2,16 @@ package supportbundle
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -163,7 +163,7 @@ func CreateSupportBundleDependencies(app *apptypes.App, sequence int64, opts typ
 }
 
 func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds, error) {
-	archivePath, err := ioutil.TempDir("", "kotsadm")
+	archivePath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -183,19 +183,13 @@ func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds,
 }
 
 func getAnalysisFromBundle(archivePath string) ([]byte, error) {
-	bundleDir, err := ioutil.TempDir("", "kots")
+	bundleDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(bundleDir)
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-			OverwriteExisting:      true,
-		},
-	}
-	if err := tarGz.Unarchive(archivePath, bundleDir); err != nil {
+	if err := archiveutil.ExtractTGZ(context.TODO(), archivePath, bundleDir); err != nil {
 		return nil, errors.Wrap(err, "failed to unarchive")
 	}
 
@@ -264,7 +258,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return errors.Wrap(err, "failed to get latest app sequence")
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		err = errors.Wrap(err, "failed to create temp dir")
 		logger.Error(err)
