@@ -37,7 +37,6 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.20
-	github.com/mholt/archiver/v3 v3.5.1
 	github.com/mholt/archives v0.1.2
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/mitchellh/hashstructure v1.1.0
@@ -417,6 +416,7 @@ require (
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/k0sproject/dig v0.4.0 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0 // indirect
+	github.com/mholt/archiver/v3 v3.5.1 // indirect
 	github.com/miekg/dns v1.1.63 // indirect
 	github.com/minio/minlz v1.0.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
