@@ -6,6 +6,7 @@ on:
       - "v*.*.*"
     branches:
       - main
+      - emosbaugh/sc-108186/fix-kots-release-failures
 
 permissions:
   contents: write
