@@ -1,11 +1,10 @@
 package version
 
 import (
-	"context"
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/archiveutil"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func ExtractArchiveToTempDirectory(archiveFilename string) (string, error) {
@@ -14,7 +13,7 @@ func ExtractArchiveToTempDirectory(archiveFilename string) (string, error) {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
 
-	if err := archiveutil.ExtractTGZ(context.TODO(), archiveFilename, tmpDir); err != nil {
+	if err := util.ExtractTGZArchive(archiveFilename, tmpDir); err != nil {
 		return "", errors.Wrap(err, "failed to extract archive")
 	}
 

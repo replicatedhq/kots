@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ArchiveTGZ(ctx context.Context, filenames map[string]string, dest string) error {
+func CreateTGZ(ctx context.Context, filenames map[string]string, dest string) error {
 	// Ensure the destination directory exists
 	err := os.MkdirAll(filepath.Dir(dest), 0755)
 	if err != nil {

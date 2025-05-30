@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"log"
@@ -19,7 +18,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/appstate"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
-	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -397,7 +395,7 @@ func extractHelmCharts(chartsArchive []byte, dirName string) (helmDir string, er
 		return "", errors.Wrap(err, "failed to create dir to stage previous helm archive")
 	}
 
-	if err := archiveutil.ExtractTGZ(context.TODO(), path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+	if err := util.ExtractTGZArchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
 		return "", errors.Wrap(err, "failed to extract previous helm archive")
 	}
 

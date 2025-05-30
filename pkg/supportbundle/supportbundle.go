@@ -2,7 +2,6 @@ package supportbundle
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -189,7 +187,7 @@ func getAnalysisFromBundle(archivePath string) ([]byte, error) {
 	}
 	defer os.RemoveAll(bundleDir)
 
-	if err := archiveutil.ExtractTGZ(context.TODO(), archivePath, bundleDir); err != nil {
+	if err := util.ExtractTGZArchive(archivePath, bundleDir); err != nil {
 		return nil, errors.Wrap(err, "failed to unarchive")
 	}
 

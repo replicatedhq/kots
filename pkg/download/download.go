@@ -1,14 +1,12 @@
 package download
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -130,7 +128,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		}
 	}
 
-	if err := archiveutil.ExtractTGZ(context.TODO(), tmpFile.Name(), path); err != nil {
+	if err := util.ExtractTGZArchive(tmpFile.Name(), path); err != nil {
 		return errors.Wrap(err, "failed to extract tar gz")
 	}
 

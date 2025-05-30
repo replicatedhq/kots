@@ -77,7 +77,7 @@ func Test_PullReplicated(t *testing.T) {
 				path.Join(actualDir, "overlays"): "",
 			}
 
-			err = archiveutil.ArchiveTGZ(t.Context(), filepaths, path.Join(actualFilesystemDir, "archive.tar.gz"))
+			err = archiveutil.CreateTGZ(t.Context(), filepaths, path.Join(actualFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
 			actualFilesystemBytes, err := os.ReadFile(path.Join(actualFilesystemDir, "archive.tar.gz"))
@@ -91,7 +91,7 @@ func Test_PullReplicated(t *testing.T) {
 				path.Join(testResourcePath, "expected", "base"):     "",
 				path.Join(testResourcePath, "expected", "overlays"): "",
 			}
-			err = archiveutil.ArchiveTGZ(t.Context(), filepaths, path.Join(expectedFilesystemDir, "archive.tar.gz"))
+			err = archiveutil.CreateTGZ(t.Context(), filepaths, path.Join(expectedFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
 			expectedFilesystemBytes, err := os.ReadFile(path.Join(expectedFilesystemDir, "archive.tar.gz"))

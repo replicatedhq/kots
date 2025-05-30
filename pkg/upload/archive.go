@@ -49,7 +49,7 @@ func createUploadableArchive(rootPath string) (string, error) {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
 
-	if err := archiveutil.ArchiveTGZ(context.TODO(), filenames, path.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
+	if err := archiveutil.CreateTGZ(context.TODO(), filenames, path.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
 		return "", errors.Wrap(err, "failed to create archive")
 	}
 

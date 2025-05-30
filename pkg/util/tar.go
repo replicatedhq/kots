@@ -23,7 +23,7 @@ func TGZArchive(dir string) ([]byte, error) {
 	filepaths := map[string]string{
 		dir: "",
 	}
-	if err := archiveutil.ArchiveTGZ(context.TODO(), filepaths, filepath.Join(tempDir, "tmp.tar.gz")); err != nil {
+	if err := archiveutil.CreateTGZ(context.TODO(), filepaths, filepath.Join(tempDir, "tmp.tar.gz")); err != nil {
 		return nil, errors.Wrap(err, "failed to create tgz archive")
 	}
 

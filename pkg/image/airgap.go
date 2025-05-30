@@ -21,7 +21,6 @@ import (
 	imagespecsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/archives"
-	"github.com/replicatedhq/kots/pkg/archiveutil"
 	dockerarchive "github.com/replicatedhq/kots/pkg/docker/archive"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
@@ -30,6 +29,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	oras "oras.land/oras-go/v2"
 	orasfile "oras.land/oras-go/v2/content/file"
@@ -151,7 +151,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		}
 		defer os.RemoveAll(extractedBundle)
 
-		if err := archiveutil.ExtractTGZ(context.TODO(), airgapBundle, extractedBundle); err != nil {
+		if err := util.ExtractTGZArchive(airgapBundle, extractedBundle); err != nil {
 			return errors.Wrap(err, "falied to unarchive airgap bundle")
 		}
 		if err := PushImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options); err != nil {

@@ -183,7 +183,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := archiveutil.ArchiveTGZ(r.Context(), paths, fileToSend); err != nil {
+	if err := archiveutil.CreateTGZ(r.Context(), paths, fileToSend); err != nil {
 		logger.Error(errors.Wrap(err, "failed to create archive"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return

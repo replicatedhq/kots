@@ -20,7 +20,6 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	embeddedclustertypes "github.com/replicatedhq/embedded-cluster/kinds/types"
-	"github.com/replicatedhq/kots/pkg/archiveutil"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -436,7 +435,7 @@ func pullFromRegistry(
 }
 
 func unarchive(archiveFilepath string, dstDir string) error {
-	return archiveutil.ExtractTGZ(context.TODO(), archiveFilepath, dstDir)
+	return util.ExtractTGZArchive(archiveFilepath, dstDir)
 }
 
 func embeddedRegistryImageName(registrySettings registrytypes.RegistrySettings, srcImage string) (string, error) {

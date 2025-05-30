@@ -1,7 +1,6 @@
 package kotsstore
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/apparchive"
-	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/filestore"
@@ -250,7 +248,7 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 	}
 	defer os.RemoveAll(bundlePath)
 
-	if err := archiveutil.ExtractTGZ(context.TODO(), bundlePath, dstPath); err != nil {
+	if err := util.ExtractTGZArchive(bundlePath, dstPath); err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}
 

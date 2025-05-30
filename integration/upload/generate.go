@@ -36,7 +36,7 @@ func GenerateTest(name string, applicationPath string) error {
 		path.Join(applicationPath, "skippedFiles"): "",
 	}
 
-	if err := archiveutil.ArchiveTGZ(context.TODO(), paths, path.Join(testRoot, "expected-archive.tar.gz")); err != nil {
+	if err := archiveutil.CreateTGZ(context.TODO(), paths, path.Join(testRoot, "expected-archive.tar.gz")); err != nil {
 		return errors.Wrap(err, "failed to create archive")
 	}
 

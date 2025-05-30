@@ -2507,7 +2507,7 @@ func Test_getRemovedCharts(t *testing.T) {
 			require.NoError(t, err)
 
 			archiveFile := filepath.Join(destDir, "helm", chart.dirName, fmt.Sprintf("%s-%s.tgz", chart.name, chart.version))
-			err = archiveutil.ArchiveTGZ(context.TODO(), map[string]string{tmpArchive: ""}, archiveFile)
+			err = archiveutil.CreateTGZ(context.TODO(), map[string]string{tmpArchive: ""}, archiveFile)
 			require.NoError(t, err)
 		}
 	}

@@ -1,15 +1,14 @@
 package supportbundle
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 var (
@@ -23,7 +22,7 @@ func archiveToFileTree(archivePath string) (*types.FileTree, error) {
 	}
 	defer os.RemoveAll(workDir)
 
-	if err := archiveutil.ExtractTGZ(context.TODO(), archivePath, workDir); err != nil {
+	if err := util.ExtractTGZArchive(archivePath, workDir); err != nil {
 		return nil, errors.Wrap(err, "failed to unarchive")
 	}
 

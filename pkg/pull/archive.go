@@ -46,7 +46,7 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 	}
 	defer os.RemoveAll(tempDir)
 
-	if err := archiveutil.ArchiveTGZ(context.TODO(), paths, path.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
+	if err := archiveutil.CreateTGZ(context.TODO(), paths, path.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
 		return errors.Wrap(err, "failed to create archive")
 	}
 

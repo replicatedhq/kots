@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/pmezard/go-difflib/difflib"
-	"github.com/replicatedhq/kots/pkg/archiveutil"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -471,7 +471,7 @@ kind: Kustomization
 			err = os.MkdirAll(extracted, 0755)
 			req.NoError(err)
 
-			err = archiveutil.ExtractTGZ(t.Context(), filepath.Join(renderedTmp, "archive.tar.gz"), extracted)
+			err = util.ExtractTGZArchive(filepath.Join(renderedTmp, "archive.tar.gz"), extracted)
 			req.NoError(err)
 
 			for wantPath, wantContent := range tt.wantRenderedFilesMap {
@@ -502,7 +502,7 @@ kind: Kustomization
 			err = os.MkdirAll(extracted, 0755)
 			req.NoError(err)
 
-			err = archiveutil.ExtractTGZ(t.Context(), filepath.Join(renderedTmp, "archive.tar.gz"), extracted)
+			err = util.ExtractTGZArchive(filepath.Join(renderedTmp, "archive.tar.gz"), extracted)
 			req.NoError(err)
 
 			for wantPath, wantContent := range tt.wantRenderedFilesMap {

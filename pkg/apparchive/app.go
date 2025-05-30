@@ -314,7 +314,7 @@ func CreateAppVersionArchive(archivePath string, outputPath string) error {
 	defer os.RemoveAll(tmpDir)
 	fileToWrite := filepath.Join(tmpDir, "archive.tar.gz")
 
-	if err := archiveutil.ArchiveTGZ(context.TODO(), filenames, fileToWrite); err != nil {
+	if err := archiveutil.CreateTGZ(context.TODO(), filenames, fileToWrite); err != nil {
 		return errors.Wrap(err, "failed to create archive")
 	}
 

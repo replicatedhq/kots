@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 // GenerateTest will create a new replicated app fixture for integration tests
@@ -63,7 +64,7 @@ spec:
 
 	expectedRoot := filepath.Join(testRoot, "expected")
 
-	err = archiveutil.ExtractTGZ(context.TODO(), filepath.Join(tempExpectedFile, "archive.tar.gz"), expectedRoot)
+	err = util.ExtractTGZArchive(filepath.Join(tempExpectedFile, "archive.tar.gz"), expectedRoot)
 	if err != nil {
 		return errors.Wrapf(err, "failed to extract archive to %s", expectedRoot)
 	}
@@ -81,7 +82,7 @@ func generateReplicatedAppArchive(rawArchivePath string) ([]byte, error) {
 	archiveFile := filepath.Join(archiveDir, "archive.tar.gz")
 
 	filenames := map[string]string{rawArchivePath: ""}
-	if err := archiveutil.ArchiveTGZ(context.TODO(), filenames, archiveFile); err != nil {
+	if err := archiveutil.CreateTGZ(context.TODO(), filenames, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to create archive")
 	}
 	b, err := os.ReadFile(archiveFile)
@@ -134,7 +135,7 @@ func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error
 	if _, err := os.Stat(skippedFilesPath); err == nil {
 		filenames[skippedFilesPath] = ""
 	}
-	if err := archiveutil.ArchiveTGZ(context.TODO(), filenames, archiveFile); err != nil {
+	if err := archiveutil.CreateTGZ(context.TODO(), filenames, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to create archive")
 	}
 	b, err := os.ReadFile(archiveFile)
