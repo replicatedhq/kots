@@ -547,7 +547,7 @@ func findChartNameAndVersionInArchive(archivePath string) (string, string, error
 	}
 	defer os.RemoveAll(tmpDir)
 
-	if err := archiveutil.ExtractTGZ(context.TODO(), archivePath, tmpDir); err != nil {
+	if err := archiveutil.ExtractTGZStripComponents(context.TODO(), archivePath, tmpDir, 1); err != nil {
 		return "", "", errors.Wrap(err, "failed to extract archive")
 	}
 

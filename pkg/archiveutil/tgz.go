@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mholt/archives"
 	"github.com/pkg/errors"
@@ -45,6 +46,10 @@ func ArchiveTGZ(ctx context.Context, filenames map[string]string, dest string) e
 }
 
 func ExtractTGZ(ctx context.Context, archivePath string, dest string) error {
+	return ExtractTGZStripComponents(ctx, archivePath, dest, 0)
+}
+
+func ExtractTGZStripComponents(ctx context.Context, archivePath string, dest string, stripComponents int) error {
 	// Ensure destination directory exists
 	if err := os.MkdirAll(dest, 0755); err != nil {
 		return errors.Wrapf(err, "create destination directory %q", dest)
@@ -65,7 +70,7 @@ func ExtractTGZ(ctx context.Context, archivePath string, dest string) error {
 
 	// Use the archiver's auto-detection to determine the archive type and extract
 	if err := format.Extract(ctx, srcFile, func(ctx context.Context, fi archives.FileInfo) error {
-		err := extractFileToDisk(fi, dest)
+		err := extractFileToDisk(fi, dest, stripComponents)
 		if err != nil {
 			return errors.Wrapf(err, "file %s", fi.NameInArchive)
 		}
@@ -77,8 +82,20 @@ func ExtractTGZ(ctx context.Context, archivePath string, dest string) error {
 	return nil
 }
 
-func extractFileToDisk(fi archives.FileInfo, dest string) error {
-	destPath := filepath.Join(dest, fi.NameInArchive)
+func extractFileToDisk(fi archives.FileInfo, dest string, stripComponents int) error {
+	name := fi.NameInArchive
+	if stripComponents > 0 {
+		if strings.Count(name, "/") < stripComponents {
+			return nil // skip path with fewer components
+		}
+
+		for i := 0; i < stripComponents; i++ {
+			slash := strings.Index(name, "/")
+			name = name[slash+1:]
+		}
+	}
+
+	destPath := filepath.Join(dest, name)
 	if fi.IsDir() {
 		return os.MkdirAll(destPath, os.ModePerm)
 	}
@@ -88,6 +105,11 @@ func extractFileToDisk(fi archives.FileInfo, dest string) error {
 		return err
 	}
 	defer src.Close()
+
+	err = os.MkdirAll(filepath.Dir(destPath), os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	dst, err := os.Create(destPath)
 	if err != nil {
