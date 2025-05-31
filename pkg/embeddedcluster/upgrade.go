@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/mholt/archiver/v3"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	embeddedclustertypes "github.com/replicatedhq/embedded-cluster/kinds/types"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
@@ -436,19 +435,7 @@ func pullFromRegistry(
 }
 
 func unarchive(archiveFilepath string, dstDir string) error {
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-			OverwriteExisting:      true,
-		},
-	}
-
-	err := tarGz.Unarchive(archiveFilepath, dstDir)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return util.ExtractTGZArchive(archiveFilepath, dstDir)
 }
 
 func embeddedRegistryImageName(registrySettings registrytypes.RegistrySettings, srcImage string) (string, error) {

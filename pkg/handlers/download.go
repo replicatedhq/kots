@@ -3,16 +3,15 @@ package handlers
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -143,33 +142,33 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	// archiveDir is unarchived, it contains the files
 	// let's package that back up for the kots cli
 	// because sending 1 file is nice. sending many files, not so nice.
-	paths := []string{
-		filepath.Join(archivePath, "upstream"),
-		filepath.Join(archivePath, "base"),
-		filepath.Join(archivePath, "overlays"),
+	paths := map[string]string{
+		filepath.Join(archivePath, "upstream"): "",
+		filepath.Join(archivePath, "base"):     "",
+		filepath.Join(archivePath, "overlays"): "",
 	}
 
 	renderedPath := filepath.Join(archivePath, "rendered")
 	if _, err := os.Stat(renderedPath); err == nil {
-		paths = append(paths, renderedPath)
+		paths[renderedPath] = ""
 	}
 
 	skippedFilesPath := filepath.Join(archivePath, "skippedFiles")
 	if _, err := os.Stat(skippedFilesPath); err == nil {
-		paths = append(paths, skippedFilesPath)
+		paths[skippedFilesPath] = ""
 	}
 
 	kotsKindsPath := filepath.Join(archivePath, "kotsKinds")
 	if _, err := os.Stat(kotsKindsPath); err == nil {
-		paths = append(paths, kotsKindsPath)
+		paths[kotsKindsPath] = ""
 	}
 
 	helmPath := filepath.Join(archivePath, "helm")
 	if _, err := os.Stat(helmPath); err == nil {
-		paths = append(paths, helmPath)
+		paths[helmPath] = ""
 	}
 
-	tmpDir, err := ioutil.TempDir("", "kotsadm")
+	tmpDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create temp dir"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -184,13 +183,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-			OverwriteExisting:      true,
-		},
-	}
-	if err := tarGz.Archive(paths, fileToSend); err != nil {
+	if err := archiveutil.CreateTGZ(r.Context(), paths, fileToSend); err != nil {
 		logger.Error(errors.Wrap(err, "failed to create archive"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return

@@ -1,12 +1,13 @@
 package upload
 
 import (
+	"context"
 	"os"
 	"path"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 )
 
 // GenerateTest will create a new upload test fixture for integration tests
@@ -27,22 +28,16 @@ func GenerateTest(name string, applicationPath string) error {
 	}
 
 	// Create the expected archive
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: true,
-			OverwriteExisting:      true,
-		},
+
+	paths := map[string]string{
+		path.Join(applicationPath, "upstream"):     "",
+		path.Join(applicationPath, "base"):         "",
+		path.Join(applicationPath, "overlays"):     "",
+		path.Join(applicationPath, "skippedFiles"): "",
 	}
 
-	paths := []string{
-		path.Join(applicationPath, "upstream"),
-		path.Join(applicationPath, "base"),
-		path.Join(applicationPath, "overlays"),
-		path.Join(applicationPath, "skippedFiles"),
-	}
-
-	if err := tarGz.Archive(paths, path.Join(testRoot, "expected-archive.tar.gz")); err != nil {
-		return errors.Wrap(err, "failed to create tar gz")
+	if err := archiveutil.CreateTGZ(context.TODO(), paths, path.Join(testRoot, "expected-archive.tar.gz")); err != nil {
+		return errors.Wrap(err, "failed to create archive")
 	}
 
 	return nil

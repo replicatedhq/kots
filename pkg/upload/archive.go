@@ -1,13 +1,13 @@
 package upload
 
 import (
-	"io/ioutil"
+	"context"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -17,47 +17,40 @@ func createUploadableArchive(rootPath string) (string, error) {
 		rootPath = strings.TrimSuffix(rootPath, string(os.PathSeparator))
 	}
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: true,
-			OverwriteExisting:      true,
-		},
-	}
-
-	paths := []string{
-		path.Join(rootPath, "upstream"),
-		path.Join(rootPath, "base"),
-		path.Join(rootPath, "overlays"),
+	filenames := map[string]string{
+		path.Join(rootPath, "upstream"): "",
+		path.Join(rootPath, "base"):     "",
+		path.Join(rootPath, "overlays"): "",
 	}
 
 	renderedPath := path.Join(rootPath, "rendered")
 	if _, err := os.Stat(renderedPath); err == nil {
-		paths = append(paths, renderedPath)
+		filenames[renderedPath] = ""
 	}
 
 	kotsKindsPath := path.Join(rootPath, "kotsKinds")
 	if _, err := os.Stat(kotsKindsPath); err == nil {
-		paths = append(paths, kotsKindsPath)
+		filenames[kotsKindsPath] = ""
 	}
 
 	helmPath := path.Join(rootPath, "helm")
 	if _, err := os.Stat(helmPath); err == nil {
-		paths = append(paths, helmPath)
+		filenames[helmPath] = ""
 	}
 
 	skippedFilesPath := path.Join(rootPath, "skippedFiles")
 	if _, err := os.Stat(skippedFilesPath); err == nil {
-		paths = append(paths, skippedFilesPath)
+		filenames[skippedFilesPath] = ""
 	}
 
 	// the caller of this function is repsonsible for deleting this file
-	tempDir, err := ioutil.TempDir("", "kots")
+	tempDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
 
-	if err := tarGz.Archive(paths, path.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
-		return "", errors.Wrap(err, "failed to create tar gz")
+	if err := archiveutil.CreateTGZ(context.TODO(), filenames, path.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
+		return "", errors.Wrap(err, "failed to create archive")
 	}
 
 	return path.Join(tempDir, "kots-uploadable-archive.tar.gz"), nil

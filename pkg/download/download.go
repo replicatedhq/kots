@@ -3,11 +3,9 @@ package download
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -101,7 +99,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		}
 	}
 
-	tmpFile, err := ioutil.TempFile("", "kots")
+	tmpFile, err := os.CreateTemp("", "kots")
 	if err != nil {
 		log.FinishSpinner()
 		return errors.Wrap(err, "failed to create temp file")
@@ -130,13 +128,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		}
 	}
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-			OverwriteExisting:      true,
-		},
-	}
-	if err := tarGz.Unarchive(tmpFile.Name(), path); err != nil {
+	if err := util.ExtractTGZArchive(tmpFile.Name(), path); err != nil {
 		return errors.Wrap(err, "failed to extract tar gz")
 	}
 
