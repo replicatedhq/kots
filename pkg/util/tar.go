@@ -4,30 +4,27 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 )
 
 func TGZArchive(dir string) ([]byte, error) {
-	tempDir, err := ioutil.TempDir("", "kots")
+	tempDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(tempDir)
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: true,
-			OverwriteExisting:      true,
-		},
+	filepaths := map[string]string{
+		dir: "",
 	}
-	if err := tarGz.Archive([]string{dir}, filepath.Join(tempDir, "tmp.tar.gz")); err != nil {
-		return nil, errors.Wrap(err, "failed to create tar gz")
+	if err := archiveutil.CreateTGZ(context.TODO(), filepaths, filepath.Join(tempDir, "tmp.tar.gz")); err != nil {
+		return nil, errors.Wrap(err, "failed to create tgz archive")
 	}
 
 	archive, err := os.ReadFile(filepath.Join(tempDir, "tmp.tar.gz"))

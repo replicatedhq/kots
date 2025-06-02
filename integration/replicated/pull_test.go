@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/mholt/archiver/v3"
 	"github.com/replicatedhq/kots/integration/util"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
@@ -71,19 +71,13 @@ func Test_PullReplicated(t *testing.T) {
 			// create an archive of the actual results
 			actualFilesystemDir := t.TempDir()
 
-			paths := []string{
-				path.Join(actualDir, "upstream"),
-				path.Join(actualDir, "base"),
-				path.Join(actualDir, "overlays"),
+			filepaths := map[string]string{
+				path.Join(actualDir, "upstream"): "",
+				path.Join(actualDir, "base"):     "",
+				path.Join(actualDir, "overlays"): "",
 			}
 
-			tarGz := archiver.TarGz{
-				Tar: &archiver.Tar{
-					ImplicitTopLevelFolder: false,
-					OverwriteExisting:      true,
-				},
-			}
-			err = tarGz.Archive(paths, path.Join(actualFilesystemDir, "archive.tar.gz"))
+			err = archiveutil.CreateTGZ(t.Context(), filepaths, path.Join(actualFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
 			actualFilesystemBytes, err := os.ReadFile(path.Join(actualFilesystemDir, "archive.tar.gz"))
@@ -92,12 +86,12 @@ func Test_PullReplicated(t *testing.T) {
 			// create an archive of the expected
 			expectedFilesystemDir := t.TempDir()
 
-			paths = []string{
-				path.Join(testResourcePath, "expected", "upstream"),
-				path.Join(testResourcePath, "expected", "base"),
-				path.Join(testResourcePath, "expected", "overlays"),
+			filepaths = map[string]string{
+				path.Join(testResourcePath, "expected", "upstream"): "",
+				path.Join(testResourcePath, "expected", "base"):     "",
+				path.Join(testResourcePath, "expected", "overlays"): "",
 			}
-			err = tarGz.Archive(paths, path.Join(expectedFilesystemDir, "archive.tar.gz"))
+			err = archiveutil.CreateTGZ(t.Context(), filepaths, path.Join(expectedFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
 			expectedFilesystemBytes, err := os.ReadFile(path.Join(expectedFilesystemDir, "archive.tar.gz"))

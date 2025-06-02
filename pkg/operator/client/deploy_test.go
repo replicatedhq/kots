@@ -1,17 +1,17 @@
 package client
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pmezard/go-difflib/difflib"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"github.com/replicatedhq/kotskinds/pkg/helmchart"
@@ -1017,7 +1017,7 @@ version: ver2
 				err := os.MkdirAll(filepath.Dir(filepath.Join(v1Beta1ChartsDir, file.path)), os.ModePerm)
 				req.NoError(err)
 
-				err = ioutil.WriteFile(filepath.Join(v1Beta1ChartsDir, file.path), []byte(file.contents), os.ModePerm)
+				err = os.WriteFile(filepath.Join(v1Beta1ChartsDir, file.path), []byte(file.contents), os.ModePerm)
 				req.NoError(err)
 			}
 
@@ -1028,7 +1028,7 @@ version: ver2
 				decoded, err := base64.StdEncoding.DecodeString(file.contents)
 				req.NoError(err)
 
-				err = ioutil.WriteFile(filepath.Join(v1Beta2ChartsDir, file.path), decoded, os.ModePerm)
+				err = os.WriteFile(filepath.Join(v1Beta2ChartsDir, file.path), decoded, os.ModePerm)
 				req.NoError(err)
 			}
 
@@ -2492,7 +2492,7 @@ func Test_getRemovedCharts(t *testing.T) {
 			err := os.MkdirAll(filepath.Join(destDir, "charts", chart.dirName), os.ModePerm)
 			require.NoError(t, err)
 
-			err = ioutil.WriteFile(filepath.Join(destDir, "charts", chart.dirName, "Chart.yaml"), []byte(fmt.Sprintf("name: %s\nversion: %s", chart.name, chart.version)), os.ModePerm)
+			err = os.WriteFile(filepath.Join(destDir, "charts", chart.dirName, "Chart.yaml"), []byte(fmt.Sprintf("name: %s\nversion: %s", chart.name, chart.version)), os.ModePerm)
 			require.NoError(t, err)
 		}
 	}
@@ -2503,17 +2503,11 @@ func Test_getRemovedCharts(t *testing.T) {
 			require.NoError(t, err)
 
 			tmpArchive := t.TempDir()
-			err = ioutil.WriteFile(filepath.Join(tmpArchive, "Chart.yaml"), []byte(fmt.Sprintf("name: %s\nversion: %s", chart.name, chart.version)), os.ModePerm)
+			err = os.WriteFile(filepath.Join(tmpArchive, "Chart.yaml"), []byte(fmt.Sprintf("name: %s\nversion: %s", chart.name, chart.version)), os.ModePerm)
 			require.NoError(t, err)
 
-			tarGz := archiver.TarGz{
-				Tar: &archiver.Tar{
-					ImplicitTopLevelFolder: false,
-					OverwriteExisting:      true,
-				},
-			}
 			archiveFile := filepath.Join(destDir, "helm", chart.dirName, fmt.Sprintf("%s-%s.tgz", chart.name, chart.version))
-			err = tarGz.Archive([]string{tmpArchive}, archiveFile)
+			err = archiveutil.CreateTGZ(context.TODO(), map[string]string{tmpArchive: ""}, archiveFile)
 			require.NoError(t, err)
 		}
 	}
