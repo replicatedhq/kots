@@ -404,7 +404,7 @@ require (
 	github.com/containers/storage v1.57.2 // indirect
 	github.com/creack/pty v1.1.24 // indirect
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
-	github.com/ebitengine/purego v0.8.2 // indirect
+	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
