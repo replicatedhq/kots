@@ -507,7 +507,7 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 		}
 
 		for _, pod := range pods.Items {
-			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
+			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil && !kuberneteserrors.IsNotFound(err) {
 				return errors.Wrapf(err, "failed to delete %s pod", pod.Name)
 			}
 		}
@@ -527,7 +527,7 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 		}
 
 		for _, pod := range pods.Items {
-			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
+			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil && !kuberneteserrors.IsNotFound(err) {
 				return errors.Wrapf(err, "failed to delete %s pod", pod.Name)
 			}
 		}
