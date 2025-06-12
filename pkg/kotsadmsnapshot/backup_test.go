@@ -824,9 +824,11 @@ func Test_appendECAnnotations(t *testing.T) {
 			name: "with pod and service cidrs",
 			in: embeddedclusterv1beta1.Installation{
 				Spec: embeddedclusterv1beta1.InstallationSpec{
-					Network: &embeddedclusterv1beta1.NetworkSpec{
-						PodCIDR:     "10.128.0.0/20",
-						ServiceCIDR: "10.129.0.0/20",
+					RuntimeConfig: &embeddedclusterv1beta1.RuntimeConfigSpec{
+						Network: embeddedclusterv1beta1.NetworkSpec{
+							PodCIDR:     "10.128.0.0/20",
+							ServiceCIDR: "10.129.0.0/20",
+						},
 					},
 				},
 			},
@@ -1056,10 +1058,6 @@ func Test_appendCommonAnnotations(t *testing.T) {
 						installation: embeddedclusterv1beta1.Installation{
 							Spec: embeddedclusterv1beta1.InstallationSpec{
 								HighAvailability: true,
-								Network: &embeddedclusterv1beta1.NetworkSpec{
-									PodCIDR:     "10.128.0.0/20",
-									ServiceCIDR: "10.129.0.0/20",
-								},
 								RuntimeConfig: &embeddedclusterv1beta1.RuntimeConfigSpec{
 									DataDir: "/var/lib/ec",
 									AdminConsole: embeddedclusterv1beta1.AdminConsoleSpec{
@@ -1067,6 +1065,10 @@ func Test_appendCommonAnnotations(t *testing.T) {
 									},
 									LocalArtifactMirror: embeddedclusterv1beta1.LocalArtifactMirrorSpec{
 										Port: 50001,
+									},
+									Network: embeddedclusterv1beta1.NetworkSpec{
+										PodCIDR:     "10.128.0.0/20",
+										ServiceCIDR: "10.129.0.0/20",
 									},
 								},
 							},
@@ -1641,10 +1643,6 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 		installation: embeddedclusterv1beta1.Installation{
 			Spec: embeddedclusterv1beta1.InstallationSpec{
 				HighAvailability: true,
-				Network: &embeddedclusterv1beta1.NetworkSpec{
-					PodCIDR:     "10.128.0.0/20",
-					ServiceCIDR: "10.129.0.0/20",
-				},
 				RuntimeConfig: &embeddedclusterv1beta1.RuntimeConfigSpec{
 					DataDir: "/var/lib/ec",
 					AdminConsole: embeddedclusterv1beta1.AdminConsoleSpec{
@@ -1652,6 +1650,10 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					},
 					LocalArtifactMirror: embeddedclusterv1beta1.LocalArtifactMirrorSpec{
 						Port: 50001,
+					},
+					Network: embeddedclusterv1beta1.NetworkSpec{
+						PodCIDR:     "10.128.0.0/20",
+						ServiceCIDR: "10.129.0.0/20",
 					},
 				},
 			},
@@ -2088,10 +2090,6 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 		installation: embeddedclusterv1beta1.Installation{
 			Spec: embeddedclusterv1beta1.InstallationSpec{
 				HighAvailability: true,
-				Network: &embeddedclusterv1beta1.NetworkSpec{
-					PodCIDR:     "10.128.0.0/20",
-					ServiceCIDR: "10.129.0.0/20",
-				},
 				RuntimeConfig: &embeddedclusterv1beta1.RuntimeConfigSpec{
 					DataDir: "/var/lib/ec",
 					AdminConsole: embeddedclusterv1beta1.AdminConsoleSpec{
@@ -2099,6 +2097,10 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					},
 					LocalArtifactMirror: embeddedclusterv1beta1.LocalArtifactMirrorSpec{
 						Port: 50001,
+					},
+					Network: embeddedclusterv1beta1.NetworkSpec{
+						PodCIDR:     "10.128.0.0/20",
+						ServiceCIDR: "10.129.0.0/20",
 					},
 				},
 			},
