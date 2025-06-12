@@ -1334,9 +1334,9 @@ func appendECAnnotations(annotations map[string]string, ecMeta ecInstanceBackupM
 	annotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()
 	annotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(ecMeta.installation.Spec.HighAvailability)
 
-	if ecMeta.installation.Spec.Network != nil {
-		annotations["kots.io/embedded-cluster-pod-cidr"] = ecMeta.installation.Spec.Network.PodCIDR
-		annotations["kots.io/embedded-cluster-service-cidr"] = ecMeta.installation.Spec.Network.ServiceCIDR
+	if ecMeta.installation.Spec.RuntimeConfig != nil {
+		annotations["kots.io/embedded-cluster-pod-cidr"] = ecMeta.installation.Spec.RuntimeConfig.Network.PodCIDR
+		annotations["kots.io/embedded-cluster-service-cidr"] = ecMeta.installation.Spec.RuntimeConfig.Network.ServiceCIDR
 	}
 
 	if ecMeta.installation.Spec.RuntimeConfig != nil {
