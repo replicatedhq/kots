@@ -2015,10 +2015,10 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@mswjs/interceptors@^0.38.7":
-  version "0.38.7"
-  resolved "https://registry.yarnpkg.com/@mswjs/interceptors/-/interceptors-0.38.7.tgz#5ca205dbf8887830ace8d0bd9b23323a211350de"
-  integrity sha512-Jkb27iSn7JPdkqlTqKfhncFfnEZsIJVYxsFbUSWEkxdIPdsyngrhoDBk0/BGD2FQcRH99vlRrkHpNTyKqI+0/w==
+"@mswjs/interceptors@^0.39.1":
+  version "0.39.2"
+  resolved "https://registry.yarnpkg.com/@mswjs/interceptors/-/interceptors-0.39.2.tgz#de9de0ab23f99d387c7904df7219a92157d1d666"
+  integrity sha512-RuzCup9Ct91Y7V79xwCb146RaBRHZ7NBbrIUySumd1rpKqHL5OonaqrGIbug5hNwP/fRyxFMA6ISgw4FTtYFYg==
   dependencies:
     "@open-draft/deferred-promise" "^2.2.0"
     "@open-draft/logger" "^0.3.0"
@@ -8287,10 +8287,10 @@ eslint-plugin-import@2.31.0:
     string.prototype.trimend "^1.0.8"
     tsconfig-paths "^3.15.0"
 
-eslint-plugin-jest@^28.13.0:
-  version "28.13.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-jest/-/eslint-plugin-jest-28.13.0.tgz#f215195915cefe3ed14145f841b6e7c90d60a672"
-  integrity sha512-4AuBcFWOriOeEqy6s4Zup/dQ7E1EPTyyfDaMYmM2YP9xEWPWwK3yYifH1dzY6aHRvyx7y53qMSIyT5s+jrorsQ==
+eslint-plugin-jest@^28.13.5:
+  version "28.13.5"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-jest/-/eslint-plugin-jest-28.13.5.tgz#b3eaaeba0fb40af25966e2c93914b046f24ca5d8"
+  integrity sha512-ThdhaLPqK78iVjWY1zIfe4WdcVB0NgxZzsOE38SRCc/i3lPIcdfkOuWMC6m96LAg9zAbPPY7LSTXXT0Pf8J7pQ==
   dependencies:
     "@typescript-eslint/utils" "^6.0.0 || ^7.0.0 || ^8.0.0"
 
@@ -12590,16 +12590,16 @@ ms@2.1.3, ms@^2.1.1:
   resolved "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-msw@^2.9.0:
-  version "2.9.0"
-  resolved "https://registry.yarnpkg.com/msw/-/msw-2.9.0.tgz#7ff036e9ea41ef39801c72641ac400c5103a3ac5"
-  integrity sha512-fNyrJ11YNbe2zl64EwtxM5OFkInFPAw5vipOljMsf9lY2ep9B2BslqQrS8EC9pB9961K61FqTUi0wsdqk6hwow==
+msw@^2.10.2:
+  version "2.10.2"
+  resolved "https://registry.yarnpkg.com/msw/-/msw-2.10.2.tgz#e7a56ed0b6865b00a30b4c4a5b59e5388fd48315"
+  integrity sha512-RCKM6IZseZQCWcSWlutdf590M8nVfRHG1ImwzOtwz8IYxgT4zhUO0rfTcTvDGiaFE0Rhcc+h43lcF3Jc9gFtwQ==
   dependencies:
     "@bundled-es-modules/cookie" "^2.0.1"
     "@bundled-es-modules/statuses" "^1.0.1"
     "@bundled-es-modules/tough-cookie" "^0.1.6"
     "@inquirer/confirm" "^5.0.0"
-    "@mswjs/interceptors" "^0.38.7"
+    "@mswjs/interceptors" "^0.39.1"
     "@open-draft/deferred-promise" "^2.2.0"
     "@open-draft/until" "^2.1.0"
     "@types/cookie" "^0.6.0"
@@ -15292,10 +15292,10 @@ sass-loader@12.4.0:
     klona "^2.0.4"
     neo-async "^2.6.2"
 
-sass@^1.89.1:
-  version "1.89.1"
-  resolved "https://registry.yarnpkg.com/sass/-/sass-1.89.1.tgz#9281c52c85b4be54264d310fef63a811dfcfb9d9"
-  integrity sha512-eMLLkl+qz7tx/0cJ9wI+w09GQ2zodTkcE/aVfywwdlRcI3EO19xGnbmJwg/JMIm+5MxVJ6outddLZ4Von4E++Q==
+sass@^1.89.2:
+  version "1.89.2"
+  resolved "https://registry.yarnpkg.com/sass/-/sass-1.89.2.tgz#a771716aeae774e2b529f72c0ff2dfd46c9de10e"
+  integrity sha512-xCmtksBKd/jdJ9Bt9p7nPKiuqrlBMBuuGkQlkhZjjQk3Ty48lv93k5Dq6OPkKt4XwxDJ7tvlfrTa1MPA9bf+QA==
   dependencies:
     chokidar "^4.0.0"
     immutable "^5.0.2"
