@@ -66,7 +66,7 @@ require (
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tj/go-spin v1.1.0
-	github.com/vmware-tanzu/velero v1.16.0
+	github.com/vmware-tanzu/velero v1.16.1
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.38.0
