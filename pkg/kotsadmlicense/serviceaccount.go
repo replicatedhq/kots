@@ -11,7 +11,27 @@ type ServiceAccountToken struct {
 	Secret   string `json:"s"`
 }
 
-func ValidateServiceAccountToken(token, currentLicenseID string) (*ServiceAccountToken, error) {
+// ValidateServiceAccountToken checks if the service account token is valid and if it matches the current license identity.
+// It returns the service account token, a boolean indicating if the secret has been updated, and an error if any.
+func ValidateServiceAccountToken(token, currentLicenseID string) (*ServiceAccountToken, bool, error) {
+	newToken, err := extractIdentityFromLicenseID(token)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to extract new token identity: %w", err)
+	}
+
+	currentToken, err := extractIdentityFromLicenseID(currentLicenseID)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to extract current license identity: %w", err)
+	}
+
+	if newToken.Identity != currentToken.Identity {
+		return nil, false, fmt.Errorf("Identity mismatch: token identity does not match current license identity")
+	}
+
+	return newToken, newToken.Secret != currentToken.Secret, nil
+}
+
+func extractIdentityFromLicenseID(token string) (*ServiceAccountToken, error) {
 	tokenBytes, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode service account token: %w", err)
@@ -30,25 +50,5 @@ func ValidateServiceAccountToken(token, currentLicenseID string) (*ServiceAccoun
 		return nil, fmt.Errorf("service account token missing secret")
 	}
 
-	currentIdentity, err := extractIdentityFromLicenseID(currentLicenseID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract current license identity: %w", err)
-	}
-
-	if saToken.Identity != currentIdentity {
-		return nil, fmt.Errorf("Identity mismatch: token identity does not match current license identity")
-	}
-
 	return &saToken, nil
-}
-
-func extractIdentityFromLicenseID(licenseID string) (string, error) {
-	if decoded, err := base64.StdEncoding.DecodeString(licenseID); err == nil {
-		var token ServiceAccountToken
-		if err := json.Unmarshal(decoded, &token); err == nil {
-			return token.Identity, nil
-		}
-	}
-
-	return licenseID, nil
 }
