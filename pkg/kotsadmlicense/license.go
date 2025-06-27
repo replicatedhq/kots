@@ -104,6 +104,23 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	return updatedLicense, synced, nil
 }
 
+func SyncWithServiceAccountToken(a *apptypes.App, serviceAccountToken string, failOnVersionCreate bool) (*kotsv1beta1.License, bool, error) {
+	currentLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to get current license")
+	}
+
+	licenseWithToken := currentLicense.DeepCopy()
+	licenseWithToken.Spec.LicenseID = serviceAccountToken
+
+	licenseData, err := replicatedapp.GetLatestLicense(licenseWithToken, a.SelectedChannelID)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to get latest license with service account token")
+	}
+
+	return Sync(a, string(licenseData.LicenseBytes), failOnVersionCreate)
+}
+
 func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, error) {
 	if newLicenseString == "" {
 		return nil, errors.New("license cannot be empty")
