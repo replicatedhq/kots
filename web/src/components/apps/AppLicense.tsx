@@ -186,10 +186,10 @@ const AppLicenseComponent = () => {
       })
       .then(async (tokenResponse) => {
         let message;
-        if (!tokenResponse.synced) {
-          message = "Service account token uploaded, license is already up to date";
-        } else {
+        if (tokenResponse.synced) {
           message = "Service account token uploaded and license synced successfully";
+        } else {
+          message = "Service account token uploaded but matched the current license - no change was made";
         }
 
         setState({
@@ -841,11 +841,11 @@ const AppLicenseComponent = () => {
           ariaHideApp={false}
           className="Modal SmallSize"
         >
-          <div className="Modal-header">
-            <h4>Replace service account token</h4>
-          </div>
-          <div className="Modal-body">
-            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
+          <div className="u-marginTop--10 u-padding--20">
+            <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
+              Replace service account token
+            </p>
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
               Enter your new service account token to update the license credentials.
             </p>
             <div className="u-marginBottom--20">
@@ -860,10 +860,23 @@ const AppLicenseComponent = () => {
                 />
               </div>
             </div>
-            <div className="flex justifyContent--flexEnd">
+            {state.message && (
+              <p
+                className={classNames(
+                  "u-fontWeight--bold u-fontSize--small u-marginTop--10 u-marginBottom--20",
+                  {
+                    "u-textColor--error": state.messageType === "error",
+                    "u-textColor--primary": state.messageType === "info",
+                  }
+                )}
+              >
+                {state.message}
+              </p>
+            )}
+            <div className="flex flex-auto">
               <button
                 type="button"
-                className="btn secondary u-marginRight--10"
+                className="btn secondary large u-marginRight--10"
                 onClick={() => setState({ 
                   showServiceAccountTokenModal: false, 
                   serviceAccountToken: "" 
@@ -873,7 +886,7 @@ const AppLicenseComponent = () => {
               </button>
               <button
                 type="button"
-                className="btn primary blue"
+                className="btn primary large"
                 disabled={!state.serviceAccountToken.trim() || state.uploadingServiceAccountToken}
                 onClick={() => uploadServiceAccountToken(state.serviceAccountToken)}
               >
