@@ -12,6 +12,7 @@ import {
   getFileContent,
   Utilities,
   getLicenseExpiryDate,
+  isServiceAccountToken,
 } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 // @ts-ignore
@@ -41,6 +42,9 @@ type State = {
   licenseChangeMessage: string;
   licenseChangeMessageType: string;
   isViewingLicenseEntitlements: boolean;
+  showServiceAccountTokenModal: boolean;
+  serviceAccountToken: string;
+  uploadingServiceAccountToken: boolean;
 };
 
 const AppLicenseComponent = () => {
@@ -62,6 +66,9 @@ const AppLicenseComponent = () => {
       licenseChangeMessage: "",
       licenseChangeMessageType: "info",
       isViewingLicenseEntitlements: false,
+      showServiceAccountTokenModal: false,
+      serviceAccountToken: "",
+      uploadingServiceAccountToken: false,
     }
   );
   const outletContext: Props = useOutletContext();
@@ -143,6 +150,69 @@ const AppLicenseComponent = () => {
         setState({ loading: false });
       });
   };
+
+  const uploadServiceAccountToken = (token: string) => {
+    setState({
+      uploadingServiceAccountToken: true,
+      message: "",
+      messageType: "info",
+    });
+
+    const payload = {
+      serviceAccountToken: token,
+    };
+
+    fetch(
+      `${process.env.API_ENDPOINT}/app/${outletContext?.app?.slug}/service-account-token`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      }
+    )
+      .then(async (response) => {
+        if (!response.ok) {
+          if (response.status == 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          const res = await response.json();
+          throw new Error(res?.error);
+        }
+        return response.json();
+      })
+      .then(async (tokenResponse) => {
+        let message;
+        if (!tokenResponse.synced) {
+          message = "Service account token uploaded, license is already up to date";
+        } else {
+          message = "Service account token uploaded and license synced successfully";
+        }
+
+        setState({
+          appLicense: tokenResponse.license,
+          message,
+          messageType: "info",
+          showServiceAccountTokenModal: false,
+          serviceAccountToken: "",
+          showNextStepModal: tokenResponse.synced,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        setState({
+          message: err ? err.message : "Failed to upload service account token",
+          messageType: "error",
+        });
+      })
+      .finally(() => {
+        setState({ uploadingServiceAccountToken: false });
+      });
+  };
+
   const onDrop = async (files: LicenseFile[]) => {
     // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
     // getFileContent returns string, ArrayBuffer, or null. Need to figure out
@@ -531,13 +601,24 @@ const AppLicenseComponent = () => {
                       </button>
                     </Dropzone>
                   ) : (
-                    <button
-                      className="btn primary blue"
-                      disabled={loading}
-                      onClick={() => syncAppLicense("")}
-                    >
-                      {loading ? "Syncing" : "Sync license"}
-                    </button>
+                    <div className="flex flex-column">
+                      <button
+                        className="btn primary blue"
+                        disabled={loading}
+                        onClick={() => syncAppLicense("")}
+                      >
+                        {loading ? "Syncing" : "Sync license"}
+                      </button>
+                      {appLicense?.id && isServiceAccountToken(appLicense.id) && (
+                        <button
+                          className="btn secondary blue u-marginTop--10"
+                          disabled={loading || state.uploadingServiceAccountToken}
+                          onClick={() => setState({ showServiceAccountTokenModal: true })}
+                        >
+                          Replace service account token
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
                 {message && (
@@ -743,6 +824,61 @@ const AppLicenseComponent = () => {
                   {changingLicense ? "Changing" : "Change license"}
                 </button>
               )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {state.showServiceAccountTokenModal && (
+        <Modal
+          isOpen={state.showServiceAccountTokenModal}
+          onRequestClose={() => setState({ 
+            showServiceAccountTokenModal: false, 
+            serviceAccountToken: "" 
+          })}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Replace service account token"
+          ariaHideApp={false}
+          className="Modal SmallSize"
+        >
+          <div className="Modal-header">
+            <h4>Replace service account token</h4>
+          </div>
+          <div className="Modal-body">
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
+              Enter your new service account token to update the license credentials.
+            </p>
+            <div className="u-marginBottom--20">
+              <div className="FormGroup">
+                <label className="field-label">Service Account Token</label>
+                <textarea
+                  className="Input"
+                  placeholder="Paste your service account token here..."
+                  value={state.serviceAccountToken}
+                  onChange={(e) => setState({ serviceAccountToken: e.target.value })}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <div className="flex justifyContent--flexEnd">
+              <button
+                type="button"
+                className="btn secondary u-marginRight--10"
+                onClick={() => setState({ 
+                  showServiceAccountTokenModal: false, 
+                  serviceAccountToken: "" 
+                })}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary blue"
+                disabled={!state.serviceAccountToken.trim() || state.uploadingServiceAccountToken}
+                onClick={() => uploadServiceAccountToken(state.serviceAccountToken)}
+              >
+                {state.uploadingServiceAccountToken ? "Uploading..." : "Upload Token"}
+              </button>
             </div>
           </div>
         </Modal>

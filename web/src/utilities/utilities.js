@@ -519,6 +519,33 @@ export function isVeleroCorrectVersion(snapshotSettings) {
   return false;
 }
 
+/**
+ * Checks if a license ID is in service account token format (base64-encoded JSON with 'i' and 's' keys)
+ * @param {string} licenseId - The license ID to check
+ * @returns {boolean} - True if it's a service account token format, false otherwise
+ */
+export function isServiceAccountToken(licenseId) {
+  if (!licenseId || typeof licenseId !== 'string') {
+    return false;
+  }
+
+  try {
+    // Try to decode as base64
+    const decoded = atob(licenseId);
+    
+    // Try to parse as JSON
+    const parsed = JSON.parse(decoded);
+    
+    // Check if it has the required 'i' and 's' keys
+    return parsed && typeof parsed === 'object' && 
+           typeof parsed.i === 'string' && typeof parsed.s === 'string' &&
+           parsed.i.length > 0 && parsed.s.length > 0;
+  } catch (error) {
+    // Not valid base64 or JSON, so it's a legacy license ID
+    return false;
+  }
+}
+
 export const Utilities = {
   getSessionRoles() {
     if (this.localStorageEnabled()) {
