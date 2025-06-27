@@ -55,7 +55,12 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	}
 
 	if currentLicense.Spec.LicenseID != updatedLicense.Spec.LicenseID {
-		return nil, false, errors.New("license ids do not match")
+		// check to see if both licenses are of the 'serviceaccount token' type, and if so check if the account ID matches
+		_, saMatchErr := ValidateServiceAccountToken(updatedLicense.Spec.LicenseID, currentLicense.Spec.LicenseID)
+
+		if saMatchErr != nil {
+			return nil, false, errors.New("license ids do not match")
+		}
 	}
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
