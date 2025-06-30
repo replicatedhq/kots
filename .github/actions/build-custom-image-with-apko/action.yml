@@ -61,4 +61,4 @@ runs:
         generic-user: ${{ inputs.registry-username }}
         generic-pass: ${{ inputs.registry-password }}
         keyring-append: ./melange.rsa.pub
-        repository-append: ./packages/
+        repository-append: ./packages
