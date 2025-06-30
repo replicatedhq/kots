@@ -27,4 +27,4 @@ pipeline:
       mv migrations/tables "${DESTDIR}/tables"
 
       # expected to have already been extracted from the schemahero image
-      mv migrations/schemahero "${DESTDIR}/schemahero"
+      mv migrations/schemahero-$(arch) "${DESTDIR}/schemahero"

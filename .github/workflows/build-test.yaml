@@ -249,14 +249,7 @@ jobs:
 
   build-kotsadm-melange-packages:
     needs: [ can-run-ci, generate-tag ]
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [
-          {name: ubuntu-24.04, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
-    runs-on: ${{ matrix.runner.name }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -267,7 +260,6 @@ jobs:
           context: deploy
           component: kotsadm
           git-tag: ${{ needs.generate-tag.outputs.tag }}
-          arch: ${{ matrix.runner.arch }}
 
   build-kotsadm:
     runs-on: ubuntu-24.04
@@ -347,14 +339,7 @@ jobs:
 
   build-kurl-proxy-melange-packages:
     needs: [ can-run-ci, generate-tag ]
-    strategy:
-      fail-fast: true
-      matrix:
-        runner: [
-          {name: ubuntu-24.04, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
-    runs-on: ${{ matrix.runner.name }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -365,7 +350,6 @@ jobs:
           context: kurl_proxy/deploy
           component: kurl-proxy
           git-tag: ${{ needs.generate-tag.outputs.tag }}
-          arch: ${{ matrix.runner.arch }}
 
   build-kurl-proxy:
     runs-on: ubuntu-24.04
@@ -385,14 +369,7 @@ jobs:
 
   build-migrations-melange-packages:
     needs: [ can-run-ci, generate-tag ]
-    strategy:
-      fail-fast: true
-      matrix:
-        runner: [
-          {name: ubuntu-24.04, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
-    runs-on: ${{ matrix.runner.name }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -403,7 +380,6 @@ jobs:
           context: migrations/deploy
           component: kotsadm-migrations
           git-tag: ${{ needs.generate-tag.outputs.tag }}
-          arch: ${{ matrix.runner.arch }}
 
   build-migrations:
     runs-on: ubuntu-24.04
