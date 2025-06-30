@@ -47,11 +47,6 @@ runs:
         export GIT_TAG=${{ inputs.git-tag }}
         envsubst '${GIT_TAG}' < ${{ inputs.context }}/apko.yaml.tmpl > ${{ inputs.context }}/apko.yaml
 
-    - name: concatenate melange keys
-      shell: bash
-      run: |
-        cat ./melange-amd64.rsa.pub ./melange-arm64.rsa.pub > ./melange.rsa.pub
-
     - uses: chainguard-images/actions/apko-publish@v1.0.0
       with:
         config: ${{ inputs.context }}/apko.yaml
@@ -60,5 +55,5 @@ runs:
         vcs-url: true
         generic-user: ${{ inputs.registry-username }}
         generic-pass: ${{ inputs.registry-password }}
-        keyring-append: ./melange.rsa.pub
-        repository-append: ./packages
+        keyring-append: ${{ inputs.context }}/melange-amd64.rsa.pub,${{ inputs.context }}/melange-arm64.rsa.pub
+        repository-append: ${{ inputs.context }}/packages
