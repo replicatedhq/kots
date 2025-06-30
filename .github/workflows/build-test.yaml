@@ -253,7 +253,7 @@ jobs:
       fail-fast: false
       matrix:
         runner: [
-          {name: ubuntu-24.04, arch: amd64},
+          {name: ubuntu-22.04, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
