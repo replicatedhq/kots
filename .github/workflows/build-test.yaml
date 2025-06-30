@@ -250,7 +250,7 @@ jobs:
   build-kotsadm-melange-packages:
     needs: [ can-run-ci, generate-tag ]
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         runner: [
           {name: ubuntu-24.04, arch: amd64},
