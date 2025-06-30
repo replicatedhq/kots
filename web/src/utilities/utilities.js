@@ -546,6 +546,37 @@ export function isServiceAccountToken(licenseId) {
   }
 }
 
+/**
+ * Checks if two service account tokens match
+ * @param {string} licenseId - The current license ID
+ * @param {string} updatedLicenseId - The updated license ID
+ * @returns {boolean} - True if the tokens match, false otherwise
+ */
+export function serviceAccountTokensMatch(licenseId, updatedLicenseId) {
+  if (!isServiceAccountToken(licenseId) || !isServiceAccountToken(updatedLicenseId)) {
+    return false;
+  }
+
+  const currentTokenID = extractIdentityFromLicenseID(licenseId);
+  const updatedTokenID = extractIdentityFromLicenseID(updatedLicenseId);
+
+  return currentTokenID === updatedTokenID;
+}
+
+/**
+ * Extracts the identity from a license ID
+ * @param {string} licenseId - The license ID to extract the identity from
+ * @returns {string} - The identity
+ */
+export function extractIdentityFromLicenseID(licenseId) {
+  // base64 decode the license ID
+  const decoded = atob(licenseId);
+  // parse the decoded string as JSON
+  const parsed = JSON.parse(decoded);
+  // return the identity
+  return parsed.i;
+}
+
 export const Utilities = {
   getSessionRoles() {
     if (this.localStorageEnabled()) {
