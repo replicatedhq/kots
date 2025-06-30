@@ -55,3 +55,5 @@ runs:
         vcs-url: true
         generic-user: ${{ inputs.registry-username }}
         generic-pass: ${{ inputs.registry-password }}
+        keyring-append: ./melange-amd64.rsa.pub,./melange-arm64.rsa.pub
+        repository-append: ./packages/
