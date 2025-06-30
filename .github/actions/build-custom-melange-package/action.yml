@@ -13,9 +13,20 @@ inputs:
     description: 'Git tag'
     required: true
 
+  arch:
+    description: 'Architecture to build for'
+    required: true
+
 runs:
   using: "composite"
   steps:
+    - name: configure packages for arm64
+      if: inputs.arch == 'arm64'
+      shell: bash
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y curl jq gettext-base pkg-config
+
     # download schemahero binary for kotsadm-migrations for the specified arch
 
     - if: inputs.component == 'kotsadm-migrations'
@@ -30,10 +41,8 @@ runs:
     - if: inputs.component == 'kotsadm-migrations'
       shell: bash
       run: |
-        crane export schemahero/schemahero:${{ steps.dotenv.outputs.SCHEMAHERO_TAG }} --platform linux/amd64 - | tar -Oxf - schemahero > migrations/schemahero-amd64
-        crane export schemahero/schemahero:${{ steps.dotenv.outputs.SCHEMAHERO_TAG }} --platform linux/arm64 - | tar -Oxf - schemahero > migrations/schemahero-arm64
-        chmod +x migrations/schemahero-amd64
-        chmod +x migrations/schemahero-arm64
+        crane export schemahero/schemahero:${{ steps.dotenv.outputs.SCHEMAHERO_TAG }} --platform linux/${{ inputs.arch }} - | tar -Oxf - schemahero > migrations/schemahero
+        chmod +x migrations/schemahero
 
     # build the melange package
 
@@ -46,7 +55,7 @@ runs:
     - uses: chainguard-dev/actions/melange-build@v1.4.3
       with:
         config: ${{ inputs.context }}/melange.yaml
-        archs: amd64,arm64
+        archs: ${{ inputs.arch }}
         git-commit: ${{ github.sha }}
         git-repo-url: ${{ github.server_url }}/${{ github.repository }}
         sign-with-temporary-key: true
@@ -55,10 +64,10 @@ runs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.component }}-melange-packages
+        name: ${{ inputs.component }}-melange-packages-${{ inputs.arch }}
         path: ./packages
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.component }}-melange-rsa-pub
-        path: ./melange.rsa.pub
+        name: ${{ inputs.component }}-melange-rsa-pub-${{ inputs.arch }}
+        path: ./melange-${{ inputs.arch }}.rsa.pub
