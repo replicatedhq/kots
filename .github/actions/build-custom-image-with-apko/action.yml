@@ -32,13 +32,13 @@ runs:
   steps:
     - uses: actions/download-artifact@v4
       with:
-        pattern: ${{ inputs.component }}-melange-packages-*
+        pattern: ${{ inputs.component }}-melange-packages
         path: ./packages/
         merge-multiple: true
 
     - uses: actions/download-artifact@v4
       with:
-        pattern: ${{ inputs.component }}-melange-rsa-pub-*
+        pattern: ${{ inputs.component }}-melange-rsa-pub
         merge-multiple: true
 
     - name: template apko config
