@@ -205,7 +205,7 @@ const AppLicenseComponent = () => {
       .catch((err) => {
         console.log(err);
         setState({
-          message: err ? err.message : "Failed to upload service account token",
+          message: err?.message || "Failed to upload service account token",
           messageType: "error",
         });
       })
