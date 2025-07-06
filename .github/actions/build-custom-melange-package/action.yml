@@ -36,7 +36,7 @@ runs:
         path: .image.env
 
     - if: inputs.component == 'kotsadm-migrations'
-      uses: imjasonh/setup-crane@v0.3
+      uses: imjasonh/setup-crane@v0.4
 
     - if: inputs.component == 'kotsadm-migrations'
       shell: bash
