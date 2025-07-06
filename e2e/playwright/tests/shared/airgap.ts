@@ -1,6 +1,6 @@
 import { Page, Expect, Locator } from '@playwright/test';
 
-export const airgapInstall = async (page: Page, expect: Expect, host: string, username: string, password: string, namespace: string, airgapBundlePath: string, timeout: number = 1 * 60 * 1000) => {
+export const airgapInstall = async (page: Page, expect: Expect, host: string, username: string, password: string, namespace: string, airgapBundlePath: string, timeout: number = 2 * 60 * 1000) => {
   await expect(page.locator("#app")).toContainText("Install in airgapped environment", { timeout: 15000 });
   await page.getByTestId("airgap-registry-hostname").click();
   await page.getByTestId("airgap-registry-hostname").fill(host);

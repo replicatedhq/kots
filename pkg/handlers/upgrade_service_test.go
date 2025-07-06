@@ -97,7 +97,7 @@ spec:
   customerName: Test Customer
   endpoint: %s
   channels:
-  - channelId: 1vusIYZLAVxMG6q760OJmRKj5i5
+  - channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
     channelName: My Channel
     channelSlug: my-channel
     isDefault: true

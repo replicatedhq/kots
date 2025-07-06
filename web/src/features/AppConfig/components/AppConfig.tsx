@@ -152,6 +152,9 @@ class AppConfig extends Component<Props, State> {
       // app not configurable - redirect
       this.props.navigate(`/app/${app.slug}`, { replace: true });
     }
+    if (app && app !== lastProps.app) {
+      this.setState({ app });
+    }
     if (params.sequence !== lastProps.params.sequence) {
       this.getConfig();
     }

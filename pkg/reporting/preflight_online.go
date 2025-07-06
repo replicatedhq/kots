@@ -3,7 +3,6 @@ package reporting
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/pkg/errors"
@@ -30,14 +29,14 @@ func (r *OnlineReporter) SubmitPreflightData(license *kotsv1beta1.License, appID
 
 	url := fmt.Sprintf("%s/kots_metrics/preflights/%s/%s?%s", endpoint, appID, clusterID, urlValues.Encode())
 	var buf bytes.Buffer
-	postReq, err := util.NewRequest("POST", url, &buf)
+	postReq, err := util.NewRetryableRequest("POST", url, &buf)
 	if err != nil {
 		return errors.Wrap(err, "failed to call newrequest")
 	}
 	postReq.Header.Add("Authorization", license.Spec.LicenseID)
 	postReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(postReq)
+	resp, err := util.DefaultHTTPClient.Do(postReq)
 	if err != nil {
 		return errors.Wrap(err, "failed to send preflights reports")
 	}

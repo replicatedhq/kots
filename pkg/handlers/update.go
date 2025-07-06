@@ -372,17 +372,17 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, error) {
 	url := fmt.Sprintf("%s/admin-console/version/latest", util.ReplicatedAppEndpoint(license))
 
-	req, err := util.NewRequest("GET", url, nil)
+	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create new request")
 	}
 
 	reportingInfo := reporting.GetReportingInfo(appID)
-	reporting.InjectReportingInfoHeaders(req, reportingInfo)
+	reporting.InjectReportingInfoHeaders(req.Header, reportingInfo)
 
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to execute get request")
 	}

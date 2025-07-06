@@ -48,10 +48,14 @@ runs:
         IMAGE_TAG=$(echo "${{ inputs.image-ref }}" | cut -d':' -f2)
         [[ "$IMAGE_TAG" == "$IMAGE_NAME" ]] && IMAGE_TAG="latest"
         SAFE_NAME=$(echo "${IMAGE_NAME}-${IMAGE_TAG}" | sed 's/[\/:]/-/g')
+        SAFE_IMAGE_NAME=$(echo "${IMAGE_NAME}" | sed 's/[\/:]/-/g')
+
         {
           echo "image_name=${IMAGE_NAME}"
           echo "image_tag=${IMAGE_TAG}"
           echo "safe_name=${SAFE_NAME}"
+          echo "safe_image_name=${SAFE_IMAGE_NAME}"
+
         } >> "$GITHUB_OUTPUT"
 
     - name: Scan image with Grype
@@ -146,7 +150,8 @@ runs:
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ${{ inputs.output-file }}
-        category: '${{ inputs.category-prefix }}${{ steps.image_details.outputs.safe_name }}'
+        category: '${{ inputs.category-prefix }}${{ steps.image_details.outputs.safe_image_name }}'
+
 
     - name: Archive scan results
       if: ${{ !cancelled() && inputs.upload-sarif == 'true' }}

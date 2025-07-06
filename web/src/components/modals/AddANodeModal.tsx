@@ -31,7 +31,7 @@ const AddANodeModal = ({
           {rolesData?.roles &&
             rolesData.roles.length > 1 &&
             "Select one or more roles to assign to the new node. "}
-          Copy the join command and run it on the machine you'd like to join to
+          Copy the commands and run them on the machine you'd like to join to
           the cluster.
         </p>
         {children}

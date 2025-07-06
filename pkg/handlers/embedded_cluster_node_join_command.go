@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/replicatedhq/embedded-cluster/kinds/types/join"
 
+	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -16,14 +17,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
-	Command []string `json:"command"`
-}
-
-type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
-	Roles []string `json:"roles"`
-}
-
 func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
 	if !util.IsEmbeddedCluster() {
 		logger.Errorf("not an embedded cluster")
@@ -31,7 +24,7 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 		return
 	}
 
-	generateEmbeddedClusterNodeJoinCommandRequest := GenerateEmbeddedClusterNodeJoinCommandRequest{}
+	generateEmbeddedClusterNodeJoinCommandRequest := types.GenerateEmbeddedClusterNodeJoinCommandRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&generateEmbeddedClusterNodeJoinCommandRequest); err != nil {
 		logger.Error(fmt.Errorf("failed to decode request body: %w", err))
 		w.WriteHeader(http.StatusBadRequest)
@@ -45,19 +38,6 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 		return
 	}
 
-	apps, err := store.GetStore().ListInstalledApps()
-	if err != nil {
-		logger.Error(fmt.Errorf("failed to list installed apps: %w", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if len(apps) == 0 {
-		logger.Error(fmt.Errorf("no installed apps found"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	app := apps[0]
-
 	kbClient, err := h.GetKubeClient(r.Context())
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to get kubeclient: %w", err))
@@ -65,15 +45,15 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 		return
 	}
 
-	nodeJoinCommand, err := embeddedcluster.GenerateAddNodeCommand(r.Context(), kbClient, token, app.IsAirgap)
+	nodeJoinCommands, err := embeddedcluster.GenerateAddNodeCommand(r.Context(), kbClient, token)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to generate add node command: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	JSON(w, http.StatusOK, GenerateEmbeddedClusterNodeJoinCommandResponse{
-		Command: []string{nodeJoinCommand},
+	JSON(w, http.StatusOK, types.GenerateEmbeddedClusterNodeJoinCommandResponse{
+		Commands: nodeJoinCommands,
 	})
 }
 

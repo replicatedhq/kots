@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,10 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/appstate"
 	"github.com/replicatedhq/kots/pkg/archives"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -392,7 +391,7 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 	foundDirs := []orderedDir{}
 
 	if v1Beta1ChartsDir != "" {
-		v1Beta1Dirs, err := ioutil.ReadDir(v1Beta1ChartsDir)
+		v1Beta1Dirs, err := os.ReadDir(v1Beta1ChartsDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read v1beta1 archive dir")
 		}
@@ -413,7 +412,7 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 	}
 
 	if v1Beta2ChartsDir != "" {
-		v1Beta2Dirs, err := ioutil.ReadDir(v1Beta2ChartsDir)
+		v1Beta2Dirs, err := os.ReadDir(v1Beta2ChartsDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read v1beta2 archive dir")
 		}
@@ -519,7 +518,7 @@ func findChartNameAndVersion(chartDir string) (string, string, error) {
 }
 
 func findChartTgz(dir string) (string, error) {
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to read dir %s", dir)
 	}
@@ -542,21 +541,14 @@ func findChartTgz(dir string) (string, error) {
 }
 
 func findChartNameAndVersionInArchive(archivePath string) (string, string, error) {
-	tmpDir, err := ioutil.TempDir("", "kots")
+	tmpDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return "", "", errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(tmpDir)
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-			StripComponents:        1, // remove the top level folder
-			OverwriteExisting:      true,
-		},
-	}
-	if err := tarGz.Unarchive(archivePath, tmpDir); err != nil {
-		return "", "", errors.Wrap(err, "failed to unarchive")
+	if err := archiveutil.ExtractTGZStripComponents(context.TODO(), archivePath, tmpDir, 1); err != nil {
+		return "", "", errors.Wrap(err, "failed to extract archive")
 	}
 
 	return findChartNameAndVersion(tmpDir)
@@ -668,7 +660,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]helmchart.HelmChartInterf
 }
 
 func findMatchingHelmCharts(chartsDir string, kotsCharts []helmchart.HelmChartInterface) ([]helmchart.HelmChartInterface, error) {
-	dirContent, err := ioutil.ReadDir(chartsDir)
+	dirContent, err := os.ReadDir(chartsDir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to list chart dir %s", chartsDir)
 	}

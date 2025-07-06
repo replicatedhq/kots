@@ -370,7 +370,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", util.ReplicatedAppEndpoint(license), license.Spec.AppSlug)
 
-	req, err := util.NewRequest("POST", endpoint, f)
+	req, err := util.NewRetryableRequest("POST", endpoint, f)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, nil)
@@ -378,7 +378,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reportingInfo := reporting.GetReportingInfo(app.ID)
-	reporting.InjectReportingInfoHeaders(req, reportingInfo)
+	reporting.InjectReportingInfoHeaders(req.Header, reportingInfo)
 
 	req.Header.Set("Content-Type", "application/tar+gzip")
 	req.Header.Set("X-Replicated-SupportBundle-CollectedAt", bundle.CreatedAt.Format(time.RFC3339))
@@ -387,7 +387,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, nil)

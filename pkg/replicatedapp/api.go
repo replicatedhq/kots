@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 
 	"github.com/pkg/errors"
@@ -92,7 +91,7 @@ func getAppIdFromLicenseId(s store.Store, licenseID string) (string, error) {
 }
 
 func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
-	req, err := util.NewRequest("GET", url, nil)
+	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
@@ -107,11 +106,11 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 
 		if appId != "" {
 			reportingInfo := reporting.GetReportingInfo(appId)
-			reporting.InjectReportingInfoHeaders(req, reportingInfo)
+			reporting.InjectReportingInfoHeaders(req.Header, reportingInfo)
 		}
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
 	}
@@ -187,12 +186,12 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 	}
 	getUrl = fmt.Sprintf("%s?%s", getUrl, v.Encode())
 
-	getReq, err := util.NewRequest("GET", getUrl, nil)
+	getReq, err := util.NewRetryableRequest("GET", getUrl, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	getResp, err := http.DefaultClient.Do(getReq)
+	getResp, err := util.DefaultHTTPClient.Do(getReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
 	}
@@ -229,18 +228,18 @@ func SendCustomAppMetricsData(license *kotsv1beta1.License, app *apptypes.App, d
 		return errors.Wrap(err, "marshal data")
 	}
 
-	req, err := util.NewRequest("POST", url, bytes.NewBuffer(reqBody))
+	req, err := util.NewRetryableRequest("POST", url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return errors.Wrap(err, "call newrequest")
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	reportingInfo := reporting.GetReportingInfo(app.ID)
-	reporting.InjectReportingInfoHeaders(req, reportingInfo)
+	reporting.InjectReportingInfoHeaders(req.Header, reportingInfo)
 
 	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "execute request")
 	}

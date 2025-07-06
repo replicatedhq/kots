@@ -27,7 +27,7 @@ function populate() {
         -e GOCACHE=/replicatedhq/kots/dev/.gocache \
         -e GOMODCACHE=/replicatedhq/kots/dev/.gomodcache \
         -w /replicatedhq/kots \
-        golang:1.24-alpine \
+        golang:1.24.2-alpine \
         /bin/sh -c "apk add make bash git && make kots build"
       ;;
     "kotsadm-web")
@@ -44,7 +44,7 @@ function populate() {
         -e GOCACHE=/replicatedhq/kots/dev/.gocache \
         -e GOMODCACHE=/replicatedhq/kots/dev/.gomodcache \
         -w /replicatedhq/kots/kurl_proxy \
-        golang:1.24-alpine \
+        golang:1.24.2-alpine \
         /bin/sh -c "apk add make bash git && make build"
       ;;
   esac

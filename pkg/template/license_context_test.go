@@ -27,10 +27,10 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 			expectDecoded: map[string]interface{}{
 				"auths": map[string]interface{}{
 					"proxy.replicated.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 					"registry.replicated.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 				},
 			},
@@ -51,10 +51,10 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 			expectDecoded: map[string]interface{}{
 				"auths": map[string]interface{}{
 					"proxy.replicated.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 					"registry.replicated.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 				},
 			},
@@ -75,10 +75,10 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 			expectDecoded: map[string]interface{}{
 				"auths": map[string]interface{}{
 					"my-proxy.example.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 					"my-registry.example.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 				},
 			},
@@ -97,10 +97,10 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 			expectDecoded: map[string]interface{}{
 				"auths": map[string]interface{}{
 					"my-proxy.example.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 					"my-registry.example.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 				},
 			},
@@ -125,10 +125,10 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 			expectDecoded: map[string]interface{}{
 				"auths": map[string]interface{}{
 					"my-proxy.example.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 					"my-registry.example.com": map[string]string{
-						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+						"auth": base64.StdEncoding.EncodeToString([]byte("LICENSE_ID:abcdef")),
 					},
 				},
 			},
