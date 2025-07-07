@@ -36,6 +36,13 @@ updates:
       security:
         update-types:
           - "patch"
+          - "minor"
+      k8s.io:
+        patterns:
+          - "k8s.io/*"
+      aws-sdk-go-v2:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2*"
 
   - package-ecosystem: "gomod"
     directory: "/kurl_proxy"
@@ -52,6 +59,12 @@ updates:
         update-types:
           - "patch"
           - "minor"
+      k8s.io:
+        patterns:
+          - "k8s.io/*"
+      aws-sdk-go-v2:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2*"
 
   ## GitHub Actions
 
