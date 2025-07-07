@@ -18,7 +18,6 @@ updates:
       security:
         update-types:
           - "patch"
-          - "minor"
 
   ## Go mod
 
@@ -36,7 +35,6 @@ updates:
       security:
         update-types:
           - "patch"
-          - "minor"
       k8s.io:
         patterns:
           - "k8s.io/*"
@@ -58,7 +56,6 @@ updates:
       security:
         update-types:
           - "patch"
-          - "minor"
       k8s.io:
         patterns:
           - "k8s.io/*"
