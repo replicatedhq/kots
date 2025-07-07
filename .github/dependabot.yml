@@ -30,10 +30,6 @@ updates:
     labels:
       - "dependabot"
       - "javascript"
-    groups:
-      security:
-        update-types:
-          - "patch"
 
   ## Go mod
 
@@ -90,10 +86,6 @@ updates:
     labels:
       - "dependabot"
       - "go"
-    groups:
-      security:
-        update-types:
-          - "patch"
 
   ## GitHub Actions
 
