@@ -60,7 +60,7 @@ require (
 	github.com/rqlite/gorqlite v0.0.0-20221028154453-256f31831ff3
 	github.com/schemahero/schemahero v0.19.2
 	github.com/segmentio/ksuid v1.0.4
-	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
+	github.com/sergi/go-diff v1.4.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1
