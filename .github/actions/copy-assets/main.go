@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/google/go-github/v39/github"
+	"github.com/google/go-github/v73/github"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
@@ -117,7 +116,7 @@ func copyAssets(ctx context.Context, client *github.Client, srcRelease *github.R
 		if err != nil {
 			var b []byte
 			if resp != nil && resp.Body != nil {
-				b, _ = ioutil.ReadAll(resp.Body)
+				b, _ = io.ReadAll(resp.Body)
 			}
 			return errors.Wrapf(err, "failed to upload %s release asset: %s", *dstRelease.TagName, b)
 		}
@@ -133,7 +132,7 @@ func downloadAsset(ctx context.Context, client *github.Client, asset *github.Rel
 	}
 	defer reader.Close()
 
-	writer, err := ioutil.TempFile("", "asset-")
+	writer, err := os.CreateTemp("", "asset-")
 	if err != nil {
 		return "", errors.Wrap(err, "failed create temp asset file")
 	}
