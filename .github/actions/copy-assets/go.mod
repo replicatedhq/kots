@@ -3,7 +3,7 @@ module github.com/replicatedhq/kots/actions/copy-assets
 go 1.24.4
 
 require (
-	github.com/google/go-github/v39 v39.0.0
+	github.com/google/go-github/v39 v39.2.0
 	github.com/pkg/errors v0.9.1
 	golang.org/x/oauth2 v0.30.0
 )
