@@ -45,6 +45,7 @@ jobs:
       with:
         apko-config: deploy/minio/apko.yaml
         image-name: index.docker.io/kotsadm/minio:${{ steps.get-tags.outputs.minio-tag }}
+        registry: index.docker.io
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
         overwrite: ${{ github.event.inputs.overwrite }}
@@ -54,6 +55,7 @@ jobs:
       with:
         apko-config: deploy/rqlite/apko.yaml
         image-name: index.docker.io/kotsadm/rqlite:${{ steps.get-tags.outputs.rqlite-tag }}
+        registry: index.docker.io
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
         overwrite: ${{ github.event.inputs.overwrite }}
@@ -63,6 +65,7 @@ jobs:
       with:
         apko-config: deploy/dex/apko.yaml
         image-name: index.docker.io/kotsadm/dex:${{ steps.get-tags.outputs.dex-tag }}
+        registry: index.docker.io
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
         overwrite: ${{ github.event.inputs.overwrite }}

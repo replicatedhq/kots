@@ -17,6 +17,11 @@ inputs:
     description: 'Full destination image name'
     required: true
 
+  registry:
+    description: 'Registry to login to'
+    default: ''
+    required: false
+
   registry-username:
     description: 'Username to login to registry'
     default: ''
@@ -48,8 +53,9 @@ runs:
         envsubst '${GIT_TAG}' < ${{ inputs.context }}/apko.yaml.tmpl > ${{ inputs.context }}/apko.yaml
 
     - uses: docker/login-action@v3
-      if: ${{ inputs.registry-username != '' && inputs.registry-password != '' }}
+      if: ${{ inputs.registry != '' }}
       with:
+        registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-username }}
         password: ${{ inputs.registry-password }}
 

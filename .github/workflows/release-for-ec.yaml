@@ -53,6 +53,7 @@ jobs:
           component: kotsadm-migrations
           git-tag: ${{ inputs.tag }}
           image-name: index.docker.io/kotsadm/kotsadm-migrations:${{ inputs.tag }}
+          registry: index.docker.io
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
@@ -86,6 +87,7 @@ jobs:
           component: kurl-proxy
           git-tag: ${{ inputs.tag }}
           image-name: index.docker.io/kotsadm/kurl-proxy:${{ inputs.tag }}
+          registry: index.docker.io
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
@@ -119,6 +121,7 @@ jobs:
           component: kotsadm
           git-tag: ${{ inputs.tag }}
           image-name: index.docker.io/kotsadm/kotsadm:${{ inputs.tag }}
+          registry: index.docker.io
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
