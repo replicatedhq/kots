@@ -501,7 +501,7 @@ jobs:
 
   validate-deps:
     runs-on: ubuntu-24.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, generate-tag, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite, push-dex ]
+    needs: [ enable-tests, can-run-ci, generate-tag, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite, push-dex ]
     steps:
       - name: Validate
         run: |
@@ -612,7 +612,7 @@ jobs:
 
   validate-smoke-test-online:
     runs-on: ubuntu-24.04
-    needs: [ validate-deps ]
+    needs: [ validate-deps, cmx-versions ]
     strategy:
       fail-fast: false
       matrix:
@@ -909,7 +909,7 @@ jobs:
 
   validate-backup-and-restore:
     runs-on: ubuntu-24.04
-    needs: [ validate-deps ]
+    needs: [ validate-deps, cmx-versions ]
     strategy:
       fail-fast: false
       matrix:
@@ -1454,7 +1454,7 @@ jobs:
 
   validate-multi-namespace:
     runs-on: ubuntu-24.04
-    needs: [ validate-deps ]
+    needs: [ validate-deps, cmx-versions ]
     strategy:
       fail-fast: false
       matrix:
@@ -1571,7 +1571,7 @@ jobs:
 
   validate-kots-pull:
     runs-on: ubuntu-24.04
-    needs: [ validate-deps ]
+    needs: [ validate-deps, cmx-versions ]
     strategy:
       fail-fast: false
       matrix:
@@ -2745,7 +2745,7 @@ jobs:
 
   validate-kots-upgrade:
     runs-on: ubuntu-24.04
-    needs: [ validate-deps ]
+    needs: [ validate-deps, cmx-versions ]
     strategy:
       fail-fast: false
       matrix:
