@@ -47,11 +47,19 @@ runs:
         export GIT_TAG=${{ inputs.git-tag }}
         envsubst '${GIT_TAG}' < ${{ inputs.context }}/apko.yaml.tmpl > ${{ inputs.context }}/apko.yaml
 
-    - uses: chainguard-images/actions/apko-publish@v1.0.0
+    - uses: docker/login-action@v3
+      with:
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-password }}
+
+    - uses: chainguard-images/actions/apko-build@v1.0.0
       with:
         config: ${{ inputs.context }}/apko.yaml
         archs: amd64,arm64
         tag: ${{ inputs.image-name }}
         vcs-url: true
-        generic-user: ${{ inputs.registry-username }}
-        generic-pass: ${{ inputs.registry-password }}
+
+    - name: Docker push
+      shell: bash
+      run: |
+        docker push ${{ inputs.image-name }}

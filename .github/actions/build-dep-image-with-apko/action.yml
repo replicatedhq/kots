@@ -40,12 +40,22 @@ runs:
           echo "image-exists=false" >> "$GITHUB_OUTPUT"
         fi
 
-    - uses: chainguard-images/actions/apko-publish@v1.0.0
+    - uses: docker/login-action@v3
+      if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
+      with:
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-password }}
+
+    - uses: chainguard-images/actions/apko-build@v1.0.0
       if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
       with:
         config: ${{ inputs.apko-config }}
         archs: amd64,arm64
         tag: ${{ inputs.image-name }}
         vcs-url: true
-        generic-user: ${{ inputs.registry-username }}
-        generic-pass: ${{ inputs.registry-password }}
+
+    - name: Docker push
+      if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
+      shell: bash
+      run: |
+        docker push ${{ inputs.image-name }}
