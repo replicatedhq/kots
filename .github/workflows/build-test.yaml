@@ -501,7 +501,7 @@ jobs:
 
   validate-deps:
     runs-on: ubuntu-24.04
-    needs: [ enable-tests, can-run-ci, generate-tag, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite, push-dex ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite, push-dex ]
     steps:
       - name: Validate
         run: |
@@ -525,7 +525,7 @@ jobs:
   validate-kurl-addon:
     runs-on: ubuntu-24.04
     if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
-    needs: [ validate-deps, kurl-addon-changes-filter ]
+    needs: [ validate-deps, kurl-addon-changes-filter, generate-tag ]
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -577,7 +577,7 @@ jobs:
   #
   # validate-existing-online-install-minimal:
   #   runs-on: ubuntu-24.04
-  #   needs: [ validate-deps ]
+  #   needs: [ validate-deps, generate-tag ]
   #   steps:
   #     - name: Checkout
   #       uses: actions/checkout@v4
