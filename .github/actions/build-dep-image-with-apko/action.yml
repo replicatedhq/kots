@@ -41,7 +41,7 @@ runs:
         fi
 
     - uses: docker/login-action@v3
-      if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
+      if: ${{ inputs.registry-username != '' && inputs.registry-password != '' && (inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false') }}
       with:
         username: ${{ inputs.registry-username }}
         password: ${{ inputs.registry-password }}
