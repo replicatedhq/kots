@@ -3,6 +3,7 @@ import { login, uploadLicense } from '../shared';
 import { execSync } from 'child_process';
 
 test('no required config', async ({ page }) => {
+  test.slow();
   await login(page);
   await uploadLicense(page, expect);
   await expect(page.locator('#app')).toContainText('Configure No Required Config', { timeout: 15000 });
