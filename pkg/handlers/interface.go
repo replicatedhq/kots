@@ -99,6 +99,7 @@ type KOTSHandler interface {
 	SyncLicense(w http.ResponseWriter, r *http.Request)
 	ChangeLicense(w http.ResponseWriter, r *http.Request)
 	GetLicense(w http.ResponseWriter, r *http.Request)
+	UploadServiceAccountToken(w http.ResponseWriter, r *http.Request)
 
 	AppUpdateCheck(w http.ResponseWriter, r *http.Request)
 	SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request)

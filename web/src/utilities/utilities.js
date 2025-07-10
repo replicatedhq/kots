@@ -519,6 +519,64 @@ export function isVeleroCorrectVersion(snapshotSettings) {
   return false;
 }
 
+/**
+ * Checks if a license ID is in service account token format (base64-encoded JSON with 'i' and 's' keys)
+ * @param {string} licenseId - The license ID to check
+ * @returns {boolean} - True if it's a service account token format, false otherwise
+ */
+export function isServiceAccountToken(licenseId) {
+  if (!licenseId || typeof licenseId !== 'string') {
+    return false;
+  }
+
+  try {
+    // Try to decode as base64
+    const decoded = atob(licenseId);
+    
+    // Try to parse as JSON
+    const parsed = JSON.parse(decoded);
+    
+    // Check if it has the required 'i' and 's' keys
+    return parsed && typeof parsed === 'object' && 
+           typeof parsed.i === 'string' && typeof parsed.s === 'string' &&
+           parsed.i.length > 0 && parsed.s.length > 0;
+  } catch (error) {
+    // Not valid base64 or JSON, so it's a legacy license ID
+    return false;
+  }
+}
+
+/**
+ * Checks if two service account tokens match
+ * @param {string} licenseId - The current license ID
+ * @param {string} updatedLicenseId - The updated license ID
+ * @returns {boolean} - True if the tokens match, false otherwise
+ */
+export function serviceAccountTokensMatch(licenseId, updatedLicenseId) {
+  if (!isServiceAccountToken(licenseId) || !isServiceAccountToken(updatedLicenseId)) {
+    return false;
+  }
+
+  const currentTokenID = extractIdentityFromLicenseID(licenseId);
+  const updatedTokenID = extractIdentityFromLicenseID(updatedLicenseId);
+
+  return currentTokenID === updatedTokenID;
+}
+
+/**
+ * Extracts the identity from a license ID
+ * @param {string} licenseId - The license ID to extract the identity from
+ * @returns {string} - The identity
+ */
+export function extractIdentityFromLicenseID(licenseId) {
+  // base64 decode the license ID
+  const decoded = atob(licenseId);
+  // parse the decoded string as JSON
+  const parsed = JSON.parse(decoded);
+  // return the identity
+  return parsed.i;
+}
+
 export const Utilities = {
   getSessionRoles() {
     if (this.localStorageEnabled()) {

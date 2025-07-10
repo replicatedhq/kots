@@ -54,7 +54,10 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		licenseString = string(licenseData.LicenseBytes)
 	}
 
-	if currentLicense.Spec.LicenseID != updatedLicense.Spec.LicenseID {
+	// check to see if both licenses are of the 'serviceaccount token' type, and if so check if the account ID matches
+	_, serviceAccountUpdated, saMatchErr := ValidateServiceAccountToken(updatedLicense.Spec.LicenseID, currentLicense.Spec.LicenseID)
+
+	if currentLicense.Spec.LicenseID != updatedLicense.Spec.LicenseID && saMatchErr != nil {
 		return nil, false, errors.New("license ids do not match")
 	}
 
@@ -78,7 +81,8 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 
 	synced := false
 	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence ||
-		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
+		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence ||
+		serviceAccountUpdated {
 
 		channelChanged := false
 		if updatedLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
@@ -102,6 +106,23 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	}
 
 	return updatedLicense, synced, nil
+}
+
+func SyncWithServiceAccountToken(a *apptypes.App, serviceAccountToken string, failOnVersionCreate bool) (*kotsv1beta1.License, bool, error) {
+	currentLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to get current license")
+	}
+
+	licenseWithToken := currentLicense.DeepCopy()
+	licenseWithToken.Spec.LicenseID = serviceAccountToken
+
+	licenseData, err := replicatedapp.GetLatestLicense(licenseWithToken, a.SelectedChannelID)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to get latest license with service account token")
+	}
+
+	return Sync(a, string(licenseData.LicenseBytes), failOnVersionCreate)
 }
 
 func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, error) {

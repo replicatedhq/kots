@@ -12,6 +12,8 @@ import {
   getFileContent,
   Utilities,
   getLicenseExpiryDate,
+  isServiceAccountToken,
+  serviceAccountTokensMatch,
 } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 // @ts-ignore
@@ -41,6 +43,9 @@ type State = {
   licenseChangeMessage: string;
   licenseChangeMessageType: string;
   isViewingLicenseEntitlements: boolean;
+  showServiceAccountTokenModal: boolean;
+  serviceAccountToken: string;
+  uploadingServiceAccountToken: boolean;
 };
 
 const AppLicenseComponent = () => {
@@ -62,6 +67,9 @@ const AppLicenseComponent = () => {
       licenseChangeMessage: "",
       licenseChangeMessageType: "info",
       isViewingLicenseEntitlements: false,
+      showServiceAccountTokenModal: false,
+      serviceAccountToken: "",
+      uploadingServiceAccountToken: false,
     }
   );
   const outletContext: Props = useOutletContext();
@@ -143,6 +151,69 @@ const AppLicenseComponent = () => {
         setState({ loading: false });
       });
   };
+
+  const uploadServiceAccountToken = (token: string) => {
+    setState({
+      uploadingServiceAccountToken: true,
+      message: "",
+      messageType: "info",
+    });
+
+    const payload = {
+      serviceAccountToken: token,
+    };
+
+    fetch(
+      `${process.env.API_ENDPOINT}/app/${outletContext?.app?.slug}/service-account-token`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      }
+    )
+      .then(async (response) => {
+        if (!response.ok) {
+          if (response.status == 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          const res = await response.json();
+          throw new Error(res?.error);
+        }
+        return response.json();
+      })
+      .then(async (tokenResponse) => {
+        let message;
+        if (tokenResponse.synced) {
+          message = "Service account token uploaded and license synced successfully";
+        } else {
+          message = "Service account token uploaded but matched the current license - no change was made";
+        }
+
+        setState({
+          appLicense: tokenResponse.license,
+          message,
+          messageType: "info",
+          showServiceAccountTokenModal: false,
+          serviceAccountToken: "",
+          showNextStepModal: tokenResponse.synced,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        setState({
+          message: err?.message || "Failed to upload service account token",
+          messageType: "error",
+        });
+      })
+      .finally(() => {
+        setState({ uploadingServiceAccountToken: false });
+      });
+  };
+
   const onDrop = async (files: LicenseFile[]) => {
     // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
     // getFileContent returns string, ArrayBuffer, or null. Need to figure out
@@ -155,6 +226,11 @@ const AppLicenseComponent = () => {
     // TODO: FIX THIS
     // @ts-ignore
     if (airgapLicense?.spec?.licenseID !== appLicense?.id) {
+      // if the license ID has changed, but the service account token is the same, we can sync the license
+      // @ts-ignore
+      if (serviceAccountTokensMatch(airgapLicense.spec?.licenseID, appLicense?.id)) {
+        return syncAppLicense(contentStr);
+      }
       setState({
         message: "Licenses do not match",
         messageType: "error",
@@ -531,13 +607,24 @@ const AppLicenseComponent = () => {
                       </button>
                     </Dropzone>
                   ) : (
-                    <button
-                      className="btn primary blue"
-                      disabled={loading}
-                      onClick={() => syncAppLicense("")}
-                    >
-                      {loading ? "Syncing" : "Sync license"}
-                    </button>
+                    <div className="flex flex-column">
+                      <button
+                        className="btn primary blue"
+                        disabled={loading}
+                        onClick={() => syncAppLicense("")}
+                      >
+                        {loading ? "Syncing" : "Sync license"}
+                      </button>
+                      {appLicense?.id && isServiceAccountToken(appLicense.id) && (
+                        <button
+                          className="btn secondary blue u-marginTop--10"
+                          disabled={loading || state.uploadingServiceAccountToken}
+                          onClick={() => setState({ showServiceAccountTokenModal: true })}
+                        >
+                          Replace service account token
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
                 {message && (
@@ -743,6 +830,74 @@ const AppLicenseComponent = () => {
                   {changingLicense ? "Changing" : "Change license"}
                 </button>
               )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {state.showServiceAccountTokenModal && (
+        <Modal
+          isOpen={state.showServiceAccountTokenModal}
+          onRequestClose={() => setState({ 
+            showServiceAccountTokenModal: false, 
+            serviceAccountToken: "" 
+          })}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Replace service account token"
+          ariaHideApp={false}
+          className="Modal SmallSize"
+        >
+          <div className="u-marginTop--10 u-padding--20">
+            <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
+              Replace service account token
+            </p>
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
+              Enter your new service account token to update the license credentials.
+            </p>
+            <div className="u-marginBottom--20">
+              <div className="FormGroup">
+                <label className="field-label">Service Account Token</label>
+                <textarea
+                  className="Input"
+                  placeholder="Paste your service account token here..."
+                  value={state.serviceAccountToken}
+                  onChange={(e) => setState({ serviceAccountToken: e.target.value })}
+                  rows={4}
+                />
+              </div>
+            </div>
+            {state.message && (
+              <p
+                className={classNames(
+                  "u-fontWeight--bold u-fontSize--small u-marginTop--10 u-marginBottom--20",
+                  {
+                    "u-textColor--error": state.messageType === "error",
+                    "u-textColor--primary": state.messageType === "info",
+                  }
+                )}
+              >
+                {state.message}
+              </p>
+            )}
+            <div className="flex flex-auto">
+              <button
+                type="button"
+                className="btn secondary large u-marginRight--10"
+                onClick={() => setState({ 
+                  showServiceAccountTokenModal: false, 
+                  serviceAccountToken: "" 
+                })}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary large"
+                disabled={!state.serviceAccountToken.trim() || state.uploadingServiceAccountToken}
+                onClick={() => uploadServiceAccountToken(state.serviceAccountToken)}
+              >
+                {state.uploadingServiceAccountToken ? "Uploading..." : "Upload Token"}
+              </button>
             </div>
           </div>
         </Modal>

@@ -11,6 +11,7 @@ import {
   getFileContent,
   getLicenseExpiryDate,
   Utilities,
+  serviceAccountTokensMatch,
 } from "@src/utilities/utilities";
 import "@src/scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
@@ -140,6 +141,12 @@ const DashboardLicenseCard = (props: Props) => {
     // @ts-ignore
     // TODO: fix this
     if (airgapLicense.spec?.licenseID !== appLicense?.id) {
+      // if the license ID has changed, but the service account token is the same, we can sync the license
+      // @ts-ignore
+      if (serviceAccountTokensMatch(airgapLicense.spec?.licenseID, appLicense?.id)) {
+        return syncLicense(contentStr);
+      }
+
       setState({
         message: "Licenses do not match",
         messageType: "error",

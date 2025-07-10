@@ -1558,6 +1558,18 @@ func (mr *MockKOTSHandlerMockRecorder) UploadNewLicense(w, r interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadNewLicense", reflect.TypeOf((*MockKOTSHandler)(nil).UploadNewLicense), w, r)
 }
 
+// UploadServiceAccountToken mocks base method.
+func (m *MockKOTSHandler) UploadServiceAccountToken(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UploadServiceAccountToken", w, r)
+}
+
+// UploadServiceAccountToken indicates an expected call of UploadServiceAccountToken.
+func (mr *MockKOTSHandlerMockRecorder) UploadServiceAccountToken(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadServiceAccountToken", reflect.TypeOf((*MockKOTSHandler)(nil).UploadServiceAccountToken), w, r)
+}
+
 // ValidateAppRegistry mocks base method.
 func (m *MockKOTSHandler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
