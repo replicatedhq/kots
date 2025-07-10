@@ -3,7 +3,7 @@
 Thank you for your interest in KOTS, we welcome your participation. Please familiarize yourself with our 
 [Code of Conduct](https://github.com/replicatedhq/kots/blob/main/CODE_OF_CONDUCT.md) prior to contributing. 
 
-## Pull Requests 
+## Pull Requests
 
 A pull request should address a single issue, feature or bug. For example, lets say you've written code that fixes two
 issues. That's great! However, you should submit two small pull requests, one for each issue as opposed to combining them
@@ -17,11 +17,12 @@ guidelines describe the things a reviewer will look for when they evaluate your 
 If your reviewer doesn't understand what the code is doing, they won't approve the pull request. Strive to make code 
 clear and well documented. If possible, request a reviewer that has some context on the PR.
 
-### Pull Request Guidelines 
+### Pull Request Guidelines
 
 ### Testing
 
-#### Unit Tests 
+#### Unit Tests
+
 Unit tests verify the feature you implemented does what it's supposed to do.  In general that means 
 testing public methods to ensure that your feature performs in accordance with the requirements it is expected to 
 satisfy, including error cases. Avoid writing tests that evaluate the private internals of a package, these types of tests 
@@ -37,20 +38,24 @@ tests run without depending on the presence of external resources. Provide integ
 interacts as expected with external services.
 
 #### Integration Tests
+
 If a feature interacts with an external service over a network for instance, provide integration tests that verify that 
 the feature can successfully interact with external resources such as databases, RESTFUL APIS etc.  Integration tests
 *must* be segregated from unit tests by including a build tag `// +build integration` on the first line of each integration 
 test file.  Use environment variables to supply credentials needed to interact with external resources. Documentation 
 must be provided for credentials that are needed to run integration tests. 
 
-### Documentation 
+### Documentation
+
 All public declarations in the PR code should be documented [Godocs](https://go.dev/blog/godoc).  If the feature includes 
 new packages, each new package should contain a file `doc.go` that describes what the package does and how to use it. 
 
-### Formatting 
+### Formatting
+
 Run `gofmt` and `goimports` before submitting code. 
 
 ### Commit History
+
 Prefer submitting a pull request that contains a single commit with a descriptive comment.  Avoid submitting pull requests
 with several 'work in progress' type commits as it clutters the commit history. It's fine to use frequent commits as you 
 work, but rebase before you submit your pull request.
