@@ -44,6 +44,8 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 		return strconv.FormatBool(ctx.License.Spec.IsSnapshotSupported)
 	case "IsDisasterRecoverySupported":
 		return strconv.FormatBool(ctx.License.Spec.IsDisasterRecoverySupported)
+	case "isDisasterRecoverySupported":
+		return strconv.FormatBool(ctx.License.Spec.IsDisasterRecoverySupported)
 	case "isGitOpsSupported":
 		return strconv.FormatBool(ctx.License.Spec.IsGitOpsSupported)
 	case "isSupportBundleUploadSupported":
@@ -76,6 +78,10 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 		return util.ReplicatedAppEndpoint(ctx.License)
 	case "licenseID", "licenseId":
 		return ctx.License.Spec.LicenseID
+	case "isKotsInstallEnabled":
+		return strconv.FormatBool(ctx.License.Spec.IsKotsInstallEnabled)
+	case "isEmbeddedClusterDownloadEnabled":
+		return strconv.FormatBool(ctx.License.Spec.IsEmbeddedClusterDownloadEnabled)
 	default:
 		entitlement, ok := ctx.License.Spec.Entitlements[name]
 		if ok {
