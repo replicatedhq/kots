@@ -14,12 +14,12 @@ type ServiceAccountToken struct {
 // ValidateServiceAccountToken checks if the service account token is valid and if it matches the current license identity.
 // It returns the service account token, a boolean indicating if the secret has been updated, and an error if any.
 func ValidateServiceAccountToken(token, currentLicenseID string) (*ServiceAccountToken, bool, error) {
-	newToken, err := extractIdentityFromLicenseID(token)
+	newToken, err := extractIdentityFromToken(token)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to extract new token identity: %w", err)
 	}
 
-	currentToken, err := extractIdentityFromLicenseID(currentLicenseID)
+	currentToken, err := extractIdentityFromToken(currentLicenseID)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to extract current license identity: %w", err)
 	}
@@ -31,9 +31,9 @@ func ValidateServiceAccountToken(token, currentLicenseID string) (*ServiceAccoun
 	return newToken, newToken.Secret != currentToken.Secret, nil
 }
 
-// extractIdentityFromLicenseID extracts the identity from the license ID.
+// extractIdentityFromToken extracts the identity from the provided token.
 // It returns an error if the provided string is not a valid service account token.
-func extractIdentityFromLicenseID(token string) (*ServiceAccountToken, error) {
+func extractIdentityFromToken(token string) (*ServiceAccountToken, error) {
 	tokenBytes, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode service account token: %w", err)

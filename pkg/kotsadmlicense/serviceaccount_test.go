@@ -106,7 +106,7 @@ func createTokenBase64(identity, secret string) string {
 	return base64.StdEncoding.EncodeToString(tokenBytes)
 }
 
-func TestExtractIdentityFromLicenseID(t *testing.T) {
+func TestExtractIdentityFromToken(t *testing.T) {
 	tests := []struct {
 		name        string
 		licenseID   string
@@ -133,7 +133,7 @@ func TestExtractIdentityFromLicenseID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := extractIdentityFromLicenseID(tt.licenseID)
+			result, err := extractIdentityFromToken(tt.licenseID)
 
 			if tt.expectError {
 				require.Error(t, err)
