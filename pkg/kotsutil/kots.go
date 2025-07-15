@@ -1689,7 +1689,7 @@ func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) 
 				}
 			}
 			if matchedChannelID == "" {
-				return "", errors.New("requested install channel slug not found in license channels")
+				return "", fmt.Errorf("requested install channel slug %q not found in license channels", requestedSlug)
 			}
 		}
 	} else { // this is an install from before the channel slug was added to the configmap
