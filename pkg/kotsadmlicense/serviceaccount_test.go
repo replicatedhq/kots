@@ -68,7 +68,7 @@ func TestValidateServiceAccountToken(t *testing.T) {
 			errorContains:    "service account token missing secret",
 		},
 		{
-			name:             "plain text license ID matches token identity",
+			name:             "plain text license ID does not match token identity",
 			token:            "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
 			currentLicenseID: "2z697ezZIGmZPUPtpgaDDWzX03X", // plain text identity
 			expectError:      true,

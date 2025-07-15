@@ -31,6 +31,8 @@ func ValidateServiceAccountToken(token, currentLicenseID string) (*ServiceAccoun
 	return newToken, newToken.Secret != currentToken.Secret, nil
 }
 
+// extractIdentityFromLicenseID extracts the identity from the license ID.
+// It returns an error if the provided string is not a valid service account token.
 func extractIdentityFromLicenseID(token string) (*ServiceAccountToken, error) {
 	tokenBytes, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {
