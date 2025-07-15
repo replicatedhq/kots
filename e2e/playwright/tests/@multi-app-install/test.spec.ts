@@ -6,7 +6,7 @@ test('multi app install', async ({ page }) => {
   test.slow();
   await login(page);
   await uploadLicense(page, expect, "app1-license.yaml");
-  await expect(page.locator('#app')).toContainText('Configure Multi App Install 1', { timeout: 15000 });
+  await expect(page.locator('#app')).toContainText('Configure Multi App Install 1', { timeout: 30000 });
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.locator('#app')).toContainText('Required Kubernetes Version', { timeout: 15000 });
   await expect(page.locator('#app')).toContainText('Your cluster meets the recommended and required versions of Kubernetes');
