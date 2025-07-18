@@ -402,6 +402,56 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			fieldName: "signature",
 			want:      "abcdef0123456789",
 		},
+		{
+			name: "built-in isDisasterRecoverySupported (camelCase)",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsDisasterRecoverySupported: true,
+				},
+			},
+			fieldName: "isDisasterRecoverySupported",
+			want:      "true",
+		},
+		{
+			name: "built-in isKotsInstallEnabled",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsKotsInstallEnabled: true,
+				},
+			},
+			fieldName: "isKotsInstallEnabled",
+			want:      "true",
+		},
+		{
+			name: "built-in isEmbeddedClusterDownloadEnabled",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsEmbeddedClusterDownloadEnabled: true,
+				},
+			},
+			fieldName: "isEmbeddedClusterDownloadEnabled",
+			want:      "true",
+		},
+		{
+			name: "built-in isKotsInstallEnabled false",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsKotsInstallEnabled: false,
+				},
+			},
+			fieldName: "isKotsInstallEnabled",
+			want:      "false",
+		},
+		{
+			name: "built-in isEmbeddedClusterDownloadEnabled false",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsEmbeddedClusterDownloadEnabled: false,
+				},
+			},
+			fieldName: "isEmbeddedClusterDownloadEnabled",
+			want:      "false",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
