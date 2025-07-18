@@ -12,6 +12,6 @@
   "license": "ISC",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "@vercel/ncc": "^0.36.1"
+    "@vercel/ncc": "^0.38.3"
   }
 }
