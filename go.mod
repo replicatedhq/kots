@@ -90,8 +90,8 @@ require (
 	oras.land/oras-go/v2 v2.6.0
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.20.4
-	sigs.k8s.io/kustomize/api v0.19.0
-	sigs.k8s.io/kustomize/kyaml v0.19.0
+	sigs.k8s.io/kustomize/api v0.20.0
+	sigs.k8s.io/kustomize/kyaml v0.20.0
 	sigs.k8s.io/yaml v1.5.0
 )
 
@@ -394,6 +394,7 @@ require (
 	github.com/bodgit/sevenzip v1.6.0 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/c9s/goprocinfo v0.0.0-20190309065803-0b2ad9ac246b // indirect
+	github.com/carapace-sh/carapace-shlex v1.0.1 // indirect
 	github.com/casbin/govaluate v1.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/cilium/ebpf v0.18.0 // indirect
