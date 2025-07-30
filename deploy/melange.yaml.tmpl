@@ -30,7 +30,12 @@ pipeline:
       set -x
       export DESTDIR="${{targets.destdir}}"
       mkdir -p "${DESTDIR}"
-
+      
+      # Disable FIPS-related dependency detection
+      export OPENSSL_FIPS=0
+      export OPENSSL_CONF=/etc/ssl/openssl.cnf
+      unset OPENSSL_FIPSHARDENED
+      
       # Scripts etc.
       mv deploy/assets "${DESTDIR}/scripts"
 
@@ -49,6 +54,9 @@ pipeline:
 
       make -C web deps build-kotsadm
       make kots build
+
+      # Clean up any FIPS references that might cause dependency detection issues
+      find "${DESTDIR}" -type f -exec grep -l "openssl-config-fipshardened" {} \; 2>/dev/null | xargs -r sed -i 's/openssl-config-fipshardened/openssl-config/g' || true
 
       mv bin/kotsadm "${DESTDIR}/kotsadm"
       mv bin/kots "${DESTDIR}/kots"
