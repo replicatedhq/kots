@@ -53,14 +53,4 @@ pipeline:
 
       ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm
       ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize
-      
-      # Download kubectl directly to avoid FIPS dependencies from system binary
-      if [ "$(uname -m)" = "x86_64" ]; then
-        curl -L "https://dl.k8s.io/release/v1.33.1/bin/linux/amd64/kubectl" -o "${DESTDIR}/usr/local/bin/kubectl"
-        chmod +x "${DESTDIR}/usr/local/bin/kubectl"
-      elif [ "$(uname -m)" = "aarch64" ]; then
-        curl -L "https://dl.k8s.io/release/v1.33.1/bin/linux/arm64/kubectl" -o "${DESTDIR}/usr/local/bin/kubectl"
-        chmod +x "${DESTDIR}/usr/local/bin/kubectl"
-      else
-        ln -s /usr/bin/kubectl ${DESTDIR}/usr/local/bin/kubectl
-      fi
+      # kubectl temporarily removed to test FIPS dependency issue
