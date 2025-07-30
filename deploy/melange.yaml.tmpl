@@ -19,6 +19,7 @@ environment:
       - go
       - nodejs
       - yarn
+      - kubectl=~1.33.2  # Test with second to latest 1.33 patch
 
 pipeline:
   - runs: |
@@ -45,12 +46,9 @@ pipeline:
       make -C web deps build-kotsadm
       make kots build
 
-      # Clean up any FIPS references that might cause dependency detection issues
-      find "${DESTDIR}" -type f -exec grep -l "openssl-config-fipshardened" {} \; 2>/dev/null | xargs -r sed -i 's/openssl-config-fipshardened/openssl-config/g' || true
-
       mv bin/kotsadm "${DESTDIR}/kotsadm"
       mv bin/kots "${DESTDIR}/kots"
 
       ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm
       ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize
-      # kubectl temporarily removed to test FIPS dependency issue
+      ln -s /usr/bin/kubectl ${DESTDIR}/usr/local/bin/kubectl
