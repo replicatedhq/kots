@@ -5,6 +5,11 @@ package:
   description: Kotsadm package
   copyright:
     - license: Apache-2.0
+  dependencies:
+    runtime:
+      - openssl-config
+      - libcrypto3
+      - libssl3
 
 environment:
   contents:
@@ -19,9 +24,6 @@ environment:
       - go
       - nodejs
       - yarn
-      - openssl-config
-      - libcrypto3
-      - libssl3
 
 pipeline:
   - runs: |
