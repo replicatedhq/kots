@@ -10,6 +10,8 @@ package:
       - openssl-config
       - libcrypto3
       - libssl3
+  provides:
+    - openssl-config-fipshardened=3.3.0-r0
 
 environment:
   contents:
@@ -30,7 +32,7 @@ pipeline:
       set -x
       export DESTDIR="${{targets.destdir}}"
       mkdir -p "${DESTDIR}"
-
+      
       # Scripts etc.
       mv deploy/assets "${DESTDIR}/scripts"
 
