@@ -8,7 +8,7 @@ contents:
     - ./melange-amd64.rsa.pub
   packages:
     - kotsadm-head  # This is expected to be built locally by `melange`.
-    - kubectl
+    # kubectl is provided directly via melange to avoid FIPS dependencies
     - bash
     - busybox
     - curl

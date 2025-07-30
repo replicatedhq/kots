@@ -5,11 +5,6 @@ package:
   description: Kotsadm package
   copyright:
     - license: Apache-2.0
-  dependencies:
-    runtime:
-      - openssl-config
-      - libcrypto3
-      - libssl3
 
 environment:
   contents:
@@ -30,12 +25,7 @@ pipeline:
       set -x
       export DESTDIR="${{targets.destdir}}"
       mkdir -p "${DESTDIR}"
-      
-      # Disable FIPS-related dependency detection
-      export OPENSSL_FIPS=0
-      export OPENSSL_CONF=/etc/ssl/openssl.cnf
-      unset OPENSSL_FIPSHARDENED
-      
+
       # Scripts etc.
       mv deploy/assets "${DESTDIR}/scripts"
 
@@ -63,4 +53,14 @@ pipeline:
 
       ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm
       ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize
-      ln -s /usr/bin/kubectl ${DESTDIR}/usr/local/bin/kubectl
+      
+      # Download kubectl directly to avoid FIPS dependencies from system binary
+      if [ "$(uname -m)" = "x86_64" ]; then
+        curl -L "https://dl.k8s.io/release/v1.33.1/bin/linux/amd64/kubectl" -o "${DESTDIR}/usr/local/bin/kubectl"
+        chmod +x "${DESTDIR}/usr/local/bin/kubectl"
+      elif [ "$(uname -m)" = "aarch64" ]; then
+        curl -L "https://dl.k8s.io/release/v1.33.1/bin/linux/arm64/kubectl" -o "${DESTDIR}/usr/local/bin/kubectl"
+        chmod +x "${DESTDIR}/usr/local/bin/kubectl"
+      else
+        ln -s /usr/bin/kubectl ${DESTDIR}/usr/local/bin/kubectl
+      fi
