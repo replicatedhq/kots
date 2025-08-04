@@ -11,10 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@actions/core": "^1.10.0",
+    "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.1",
-    "@vercel/ncc": "^0.36.1",
-    "node-fetch": "^2.6.9",
-    "semver": "^7.3.8"
+    "@vercel/ncc": "^0.38.3",
+    "node-fetch": "^3.3.2",
+    "semver": "^7.7.2"
   }
 }
