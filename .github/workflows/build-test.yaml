@@ -59,7 +59,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version-file: ./web/.nvmrc
           cache: yarn
           cache-dependency-path: web/yarn.lock
 
@@ -86,7 +86,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version-file: ./web/.nvmrc
           cache: yarn
           cache-dependency-path: web/yarn.lock
 
@@ -113,7 +113,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version-file: ./web/.nvmrc
           cache: yarn
           cache-dependency-path: web/yarn.lock
 
@@ -143,7 +143,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version-file: ./web/.nvmrc
           cache: yarn
           cache-dependency-path: web/yarn.lock
 
