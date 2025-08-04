@@ -1,10 +1,10 @@
-const core = require('@actions/core');
-const fetch = require('node-fetch');
-const semverCoerce = require('semver/functions/coerce');
-const semverMajor = require('semver/functions/major');
-const semverMinor = require('semver/functions/minor');
-const semverGt = require('semver/functions/gt');
-const semverRSort = require('semver/functions/rsort');
+import * as core from '@actions/core';
+import fetch from 'node-fetch';
+import semverCoerce from 'semver/functions/coerce.js';
+import semverMajor from 'semver/functions/major.js';
+import semverMinor from 'semver/functions/minor.js';
+import semverGt from 'semver/functions/gt.js';
+import semverRSort from 'semver/functions/rsort.js';
 
 async function getClusterVersions() {
     const url = 'https://api.replicated.com/vendor/v3/cluster/versions';
