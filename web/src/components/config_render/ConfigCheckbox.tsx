@@ -1,7 +1,5 @@
 import { ChangeEvent, Component, createRef } from "react";
-// TODO: add type checking support for react-remarkable or add a global ignore
-// @ts-ignore
-import Markdown from "react-remarkable";
+import Markdown from "../shared/Markdown";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 

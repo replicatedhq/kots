@@ -2,7 +2,7 @@ import { Component } from "react";
 import FileInput from "./FileInput";
 import ConfigItemTitle from "./ConfigItemTitle";
 import map from "lodash/map";
-import Markdown from "react-remarkable";
+import Markdown from "../shared/Markdown";
 
 export default class ConfigFileInput extends Component {
   handleOnChange = (files) => {

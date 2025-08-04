@@ -1,5 +1,5 @@
 import { Component } from "react";
-import Markdown from "react-remarkable";
+import Markdown from "../shared/Markdown";
 import classNames from "classnames";
 
 export default class ConfigItemTitle extends Component {

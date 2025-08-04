@@ -66,21 +66,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: [generate-tag]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18.x'
-    - name: Build web
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps build-kotsadm
-    - name: Upload web artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: web
-        path: ./web/dist
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ./web/.nvmrc
+      - name: Build web
+        env:
+          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps build-kotsadm
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: ./web/dist
 
   build-kurl-proxy-melange-packages:
     needs: [generate-tag]

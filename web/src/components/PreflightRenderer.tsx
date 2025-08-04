@@ -1,7 +1,5 @@
 import classNames from "classnames";
-// TODO: find replacement for react-remarkable
-// @ts-ignore
-import Markdown from "react-remarkable";
+import Markdown from "./shared/Markdown";
 import Icon from "./Icon";
 
 import { PreflightResult } from "@src/features/PreflightChecks/types";
@@ -68,7 +66,7 @@ export default function PreflightRenderer(props: Props) {
                     className="PreflightMessageRow u-marginTop--10"
                     data-testid="preflight-message-row"
                   >
-                    <Markdown source={row.message} />
+                    <Markdown>{row.message}</Markdown>
                   </div>
                   {row.learnMoreUri && (
                     <div className="u-marginTop--5">

@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import Modal from "react-modal";
-// TODO: add type checking support for react-remarkable or add a global ignore
-// @ts-ignore
-import Markdown from "react-remarkable";
+import Markdown from "../shared/Markdown";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { KotsPageTitle } from "@components/Head";
@@ -165,7 +163,7 @@ const ConfirmAndDeploy = ({
                     {error.title}
                   </p>
                   <div className="PreflightMessageRow u-marginTop--10">
-                    <Markdown source={error.message} />
+                    <Markdown>{error.message}</Markdown>
                   </div>
                   {error.showCannotFail && (
                     <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-marginTop--10">
@@ -198,7 +196,7 @@ const ConfirmAndDeploy = ({
                     {warning.title}
                   </p>
                   <div className="PreflightMessageRow u-marginTop--10">
-                    <Markdown source={warning.message} />
+                    <Markdown>{warning.message}</Markdown>
                   </div>
                 </div>
               </div>

@@ -1,5 +1,5 @@
-import { createRef } from "react";
-import Markdown from "react-remarkable";
+import React from "react";
+import Markdown from "../shared/Markdown";
 import some from "lodash/some";
 import isEmpty from "lodash/isEmpty";
 import { ConfigService } from "../../services/ConfigService";
@@ -16,7 +16,6 @@ import Icon from "../Icon";
 import ConfigDropdown from "./ConfigDropdown";
 
 const ConfigGroup = (props) => {
-  const markdownNode = createRef();
 
   const handleItemChange = (itemName, value, data) => {
     if (props.handleChange) {
@@ -272,7 +271,6 @@ const ConfigGroup = (props) => {
           {item.description !== "" ? (
             <div className="field-section-help-text help-text-color u-marginTop--10">
               <Markdown
-                ref={markdownNode}
                 options={{
                   linkTarget: "_blank",
                   linkify: true,
