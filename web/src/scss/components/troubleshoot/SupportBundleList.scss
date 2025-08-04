@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .SupportBundle--Row {
   margin-bottom: 15px;
@@ -7,7 +7,7 @@
     right: 15px;
   }
   &:hover {
-    background: $primary-light-color;
+    background: variables.$primary-light-color;
   }
   &:last-child {
     margin-bottom: 0;
@@ -15,7 +15,7 @@
 }
 
 .spec-row-wrapper {
-  border-bottom: 1px solid $border-color;
+  border-bottom: 1px solid variables.$border-color;
 
   .spec-wrapper {
     padding: 17px 12px;
@@ -23,7 +23,7 @@
 }
 
 .spec-row-wrapper:hover {
-  background-color: $primary-light-color;
+  background-color: variables.$primary-light-color;
   cursor: pointer;
 }
 
@@ -36,7 +36,7 @@
   width: 30%;
   background: #ffffff;
   font-size: 14px;
-  color: $text-color-primary;
+  color: variables.$text-color-primary;
   line-height: normal;
   outline: none;
   height: 40px;

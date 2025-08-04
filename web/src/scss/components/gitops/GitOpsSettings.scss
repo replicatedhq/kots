@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .GitOpsSettings--wrapper {
   .full-width-container {
@@ -10,7 +10,7 @@
 .GitOpsSettings {
   max-width: 800px;
   width: 100%;
-  background-color: $really-light-accent;
+  background-color: variables.$really-light-accent;
   padding: 15px;
 }
 
@@ -28,21 +28,21 @@
   .title {
     font-size: 20px;
     font-weight: bold;
-    color: $text-color-primary;
+    color: variables.$text-color-primary;
     margin-bottom: 12px;
   }
 
   .sub {
     font-size: 16px;
     font-weight: medium;
-    color: $text-color-body-copy;
+    color: variables.$text-color-body-copy;
     line-height: 1.7;
   }
 }
 
 .disable-gitops-wrapper {
   padding-top: 30px;
-  border-top: 1px solid $border-color;
+  border-top: 1px solid variables.$border-color;
 }
 .step-title {
   margin-bottom: 12px;
@@ -52,7 +52,7 @@
 .step-sub {
   font-size: 14px;
   font-weight: 500;
-  color: $text-color-body-copy;
+  color: variables.$text-color-body-copy;
   margin-bottom: 25px;
   line-height: 24px;
   text-align: left;

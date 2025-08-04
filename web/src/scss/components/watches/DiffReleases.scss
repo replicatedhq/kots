@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .diff-header-wrapper,
 .version-card-header {
@@ -13,7 +13,7 @@
   .checkmark-icon::after {
     content: "";
     height: 15px;
-    border-left: 2px solid $border-color;
+    border-left: 2px solid variables.$border-color;
     position: relative;
     bottom: -28px;
     left: 6px;

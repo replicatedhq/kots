@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .CommunityLicense--wrapper {
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
@@ -10,7 +10,7 @@
 }
 
 .License--wrapper {
-  background: $sub-nav-color;
+  background: variables.$sub-nav-color;
   border-radius: 6px;
   padding: 15px;
   width: 100%;
@@ -21,7 +21,7 @@
 .FileUpload-wrapper {
   cursor: default;
   border-radius: 4px;
-  border: 1px dashed $border-color;
+  border: 1px dashed variables.$border-color;
   padding: 20px 15px 18px;
   margin-bottom: 20px;
 
@@ -97,7 +97,7 @@
   line-height: 1.7;
   font-weight: 500;
   font-size: 12px;
-  color: $text-color-secondary;
+  color: variables.$text-color-secondary;
 
   & > span {
     margin-top: 12px;

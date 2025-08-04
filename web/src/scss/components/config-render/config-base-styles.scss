@@ -1,9 +1,10 @@
-@import "../../variables.scss";
+@use "sass:color";
+@use "../../variables.scss";
 
 #config-render-component {
   .config-item {
     padding: 10px;
-    background-color: $sub-nav-color;
+    background-color: variables.$sub-nav-color;
     border-radius: 4px;
   }
 
@@ -23,7 +24,7 @@
     padding-top: 12px;
     padding-bottom: 12px;
     background: #fff;
-    border-top: solid 1px $border-color;
+    border-top: solid 1px variables.$border-color;
     z-index: 10;
   }
 
@@ -58,20 +59,20 @@
   .default-value-section {
     font-size: 12px;
     line-height: 12px;
-    color: $text-color-body-copy;
+    color: variables.$text-color-body-copy;
     font-weight: 500;
     .value {
-      color: darken($primary-color, 42%);
+      color: color.adjust(variables.$primary-color, $lightness: -42%);
     }
   }
   .field.hidden {
     display: none;
   }
   .header-color {
-    color: $text-color-primary;
+    color: variables.$text-color-primary;
   }
   .sub-header-color {
-    color: $text-color-primary;
+    color: variables.$text-color-primary;
   }
 
   .container {
@@ -99,7 +100,7 @@
   }
 
   .spinningLoaderPath {
-    fill: $text-color-primary;
+    fill: variables.$text-color-primary;
   }
 
   .AceEditor--wrapper {
@@ -158,20 +159,20 @@
   }
 
   .custom-file-upload > label {
-    border: 1px dashed $border-color;
+    border: 1px dashed variables.$border-color;
     display: inline-block;
-    color: $border-color;
+    color: variables.$border-color;
     padding: 15px 17px;
     cursor: pointer;
     border-radius: 4px;
   }
 
   .file-uploaded {
-    border: 1px solid $border-color;
+    border: 1px solid variables.$border-color;
     display: inline-block;
     padding: 15px 17px;
     border-radius: 4px;
-    color: $text-color-primary;
+    color: variables.$text-color-primary;
   }
 }
 

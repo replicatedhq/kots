@@ -1,4 +1,4 @@
-@import "../variables.scss";
+@use "../variables.scss";
 
 /* Font families */
 .u-fontFamily--monaco {
@@ -107,7 +107,7 @@
   font-weight: 500;
   letter-spacing: 2.5px;
   text-transform: uppercase;
-  color: $text-color-body-copy;
+  color: variables.$text-color-body-copy;
   margin-bottom: 12px;
 }
 

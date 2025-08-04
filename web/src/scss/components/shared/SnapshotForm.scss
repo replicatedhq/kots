@@ -1,9 +1,9 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .snapshot-form-wrapper {
   width: 100%;
   max-width: 400px;
-  background: $sub-nav-color;
+  background: variables.$sub-nav-color;
   border-radius: 4px;
   padding: 10px;
 
@@ -17,7 +17,7 @@
   font-size: 12px;
   font-weight: 500;
   line-height: 1;
-  color: $text-color-body-copy;
+  color: variables.$text-color-body-copy;
   bottom: -18px;
 }
 
@@ -31,14 +31,14 @@
 
 .gcs-editor {
   border-radius: 4px;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   overflow: hidden;
 }
 
 .Info--wrapper {
   width: 100%;
   max-width: 400px;
-  background: $primary-light-color;
+  background: variables.$primary-light-color;
   border-radius: 4px;
   padding: 10px;
 }

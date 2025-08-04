@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .KurlClusterManagement--wrapper {
   .BoxedCheckbox {
@@ -37,15 +37,15 @@
   border-top: 1px solid #dfdfdf;
 
   &.is-expired {
-    background-color: $sub-nav-color;
+    background-color: variables.$sub-nav-color;
   }
 
   &.is-deleting {
-    background-color: $sub-nav-color;
+    background-color: variables.$sub-nav-color;
   }
 
   .nodeTag {
-    background-color: $primary-light-color;
+    background-color: variables.$primary-light-color;
     font-size: 12px;
     line-height: 12px;
     color: #73a3cd;

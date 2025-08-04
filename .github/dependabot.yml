@@ -14,7 +14,6 @@ updates:
     labels:
       - "dependabot"
       - "javascript"
-      - "type::chore"
     groups:
       security:
         update-types:
@@ -31,7 +30,6 @@ updates:
     labels:
       - "dependabot"
       - "javascript"
-      - "type::chore"
 
   ## Go mod
 
@@ -45,7 +43,6 @@ updates:
     labels:
       - "dependabot"
       - "go"
-      - "type::chore"
     groups:
       security:
         update-types:
@@ -67,7 +64,6 @@ updates:
     labels:
       - "dependabot"
       - "go"
-      - "type::chore"
     groups:
       security:
         update-types:
@@ -90,7 +86,6 @@ updates:
     labels:
       - "dependabot"
       - "go"
-      - "type::chore"
 
   ## GitHub Actions
 
@@ -104,7 +99,6 @@ updates:
     labels:
       - "dependabot"
       - "github-actions"
-      - "type::chore"
 
   - package-ecosystem: "github-actions"
     directories:
@@ -117,4 +111,3 @@ updates:
     labels:
       - "dependabot"
       - "github-actions"
-      - "type::chore"

@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .Identity--wrapper {
   padding: 20px;
@@ -8,7 +8,7 @@
 
   .FileUpload-wrapper {
     cursor: default;
-    border: 1px dashed $border-color;
+    border: 1px dashed variables.$border-color;
     box-sizing: border-box;
     border-radius: 4px;
     padding: 10px;
@@ -30,18 +30,18 @@
 
 .identityProviderBtn {
   background: #ffffff;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   box-sizing: border-box;
   border-radius: 4px;
   padding: 15px 25px;
   height: 55px;
 
   &:hover {
-    background-color: $primary-light-color;
+    background-color: variables.$primary-light-color;
   }
 
   &.is-active {
-    background: $primary-light-color;
+    background: variables.$primary-light-color;
     border: 1px solid var(--primary-color);
   }
 }

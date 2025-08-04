@@ -1,12 +1,13 @@
-@import "../../variables.scss";
+@use "sass:color";
+@use "../../variables.scss";
 
 /* Header */
 
 .NavBarWrapper {
   width: calc(100vw - 60px);
   padding: 0 30px;
-  background-color: $nav-color;
-  box-shadow: 0 1px 0 $border-color;
+  background-color: variables.$nav-color;
+  box-shadow: 0 1px 0 variables.$border-color;
   margin-bottom: 0;
   z-index: 10;
   display: flex;
@@ -41,7 +42,7 @@
   .HeaderLogo .text {
     font-size: 16px;
     font-weight: 600;
-    color: $nav-text-color;
+    color: variables.$nav-text-color;
     margin-left: 10px;
   }
 
@@ -92,7 +93,7 @@
   padding: 0;
   margin: 0;
   cursor: pointer;
-  color: $nav-text-color;
+  color: variables.$nav-text-color;
   font-size: 14px;
   font-weight: 500;
   line-height: 14px;
@@ -104,7 +105,7 @@
   }
 
   &:hover {
-    color: darken($nav-text-color, 8%);
+    color: color.adjust(variables.$nav-text-color, $lightness: -8%);
     text-decoration: none;
   }
 }

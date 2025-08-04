@@ -1,9 +1,9 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .MonacoEditor--wrapper {
   margin-bottom: 20px;
   overflow: auto;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   border-radius: 4px;
 
   .error-highlight {
@@ -23,7 +23,7 @@
 
 .MonacoDiffEditor--wrapper {
   overflow: auto;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   border-radius: 4px;
 
   .error-highlight {

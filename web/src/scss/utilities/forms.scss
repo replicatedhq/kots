@@ -1,23 +1,24 @@
-@import "../components/forms/input.scss";
-@import "../components/forms/textarea.scss";
-@import "../components/forms/select.scss";
-@import "../variables.scss";
+@use "sass:color";
+@use "../components/forms/input.scss";
+@use "../components/forms/textarea.scss";
+@use "../components/forms/select.scss";
+@use "../variables.scss";
 
 .Form-label {
   font-size: 14px;
   font-weight: 700;
-  color: $text-color-primary;
+  color: variables.$text-color-primary;
   margin-bottom: 12px;
 }
 .Form-label-subtext {
   font-size: 12px;
   line-height: 18px;
-  color: $text-color-body-copy;
+  color: variables.$text-color-body-copy;
   font-weight: 400;
 }
 
 .BoxedCheckbox {
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   border-radius: 4px;
   background-color: #ffffff;
   cursor: pointer;
@@ -35,7 +36,7 @@
 
   &.is-active {
     border-color: var(--primary-color);
-    background-color: $primary-light-color;
+    background-color: variables.$primary-light-color;
     &:hover {
       border-color: var(--primary-color);
     }
@@ -45,7 +46,7 @@
     opacity: 0.5;
     cursor: not-allowed;
     &:hover {
-      border-color: $border-color;
+      border-color: variables.$border-color;
     }
     > * {
       cursor: default;
@@ -53,7 +54,7 @@
   }
 
   &:hover {
-    border-color: darken($border-color, 30%);
+    border-color: color.adjust(variables.$border-color, $lightness: -30%);
   }
 }
 
@@ -73,7 +74,7 @@
   }
 
   .replicated-select__single-value {
-    color: $text-color-primary;
+    color: variables.$text-color-primary;
   }
 
   .replicated-select__dropdown-indicator {
@@ -81,7 +82,7 @@
   }
 
   .replicated-select__control {
-    border-color: $border-color;
+    border-color: variables.$border-color;
     cursor: pointer;
     &.replicated-select__control--is-focused {
       border-color: var(--primary-color);
@@ -99,10 +100,10 @@
   }
 
   .replicated-select__menu {
-    border-color: $border-color;
+    border-color: variables.$border-color;
     font-size: 12px;
     font-weight: 500;
-    color: $text-color-primary;
+    color: variables.$text-color-primary;
     line-height: 15px;
     z-index: 6;
   }
@@ -111,8 +112,8 @@
     padding: 12px;
 
     &.replicated-select__option--is-focused {
-      background-color: $primary-light-color;
-      color: $text-color-primary;
+      background-color: variables.$primary-light-color;
+      color: variables.$text-color-primary;
     }
   }
 
@@ -135,7 +136,7 @@
       color: #ffffff;
 
       &:not(:disabled):hover {
-        background-color: darken($primary-color, 8%);
+        background-color: color.adjust(variables.$primary-color, $lightness: -8%);
       }
     }
 
@@ -143,7 +144,7 @@
       border-color: var(--primary-color);
       cursor: pointer;
       &.replicated-select__control--is-focused {
-        border-color: darken($primary-color, 8%);
+        border-color: color.adjust(variables.$primary-color, $lightness: -8%);
         box-shadow: none;
 
         .replicated-select__dropdown-indicator {
@@ -160,7 +161,7 @@
       color: #ffffff;
 
       &:not(:disabled):hover {
-        background-color: darken($primary-color, 8%);
+        background-color: color.adjust(variables.$primary-color, $lightness: -8%);
       }
     }
     .css-dvua67-singleValue {
@@ -177,7 +178,7 @@
       border-radius: 4px;
 
       &:not(:disabled):hover {
-        background-color: darken($primary-color, 8%);
+        background-color: color.adjust(variables.$primary-color, $lightness: -8%);
       }
     }
     .css-16pqwjk-indicatorContainer {

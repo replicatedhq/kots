@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .InlineDropdown--wrapper {
   position: relative;
@@ -29,7 +29,7 @@
     right: 0;
     top: 130%;
     background-color: #ffffff;
-    border: 1px solid $border-color;
+    border: 1px solid variables.$border-color;
     border-radius: 4px;
     white-space: nowrap;
     overflow: hidden;
@@ -46,7 +46,7 @@
       transition: background-color 0.2s ease-in-out;
 
       &:hover {
-        background-color: $really-light-accent;
+        background-color: variables.$really-light-accent;
       }
     }
   }

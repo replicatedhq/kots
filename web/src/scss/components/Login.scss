@@ -1,4 +1,4 @@
-@import "../variables.scss";
+@use "../variables.scss";
 
 .Login-wrapper {
   position: relative;
@@ -37,7 +37,7 @@
   .traditional-auth-wrapper,
   .scm-form-wrapper {
     padding: 40px;
-    background-color: $sub-nav-color;
+    background-color: variables.$sub-nav-color;
     box-shadow: inset 4px 0 4px -4px rgba(0, 0, 0, 0.16);
 
     .success-wrapper {
