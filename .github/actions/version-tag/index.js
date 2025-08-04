@@ -1,4 +1,4 @@
-const core = require('@actions/core');
+import * as core from '@actions/core';
 
 const dateObj = new Date();
 const month = dateObj.getUTCMonth() + 1; // months are 0-based

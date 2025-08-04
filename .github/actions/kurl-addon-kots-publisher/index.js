@@ -2,7 +2,7 @@ import { getInput } from '@actions/core'
 import { getOctokit } from '@actions/github'
 import { HttpClient } from '@actions/http-client';
 import fs from 'node:fs/promises';
-import { appendVersion } from './publisher';
+import { appendVersion } from './publisher.js';
 
 const addonVersion = getInput('ADDON_VERSION');
 const addonPackageUrl = getInput('ADDON_PACKAGE_URL');
