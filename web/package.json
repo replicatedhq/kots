@@ -85,7 +85,7 @@
     "postcss-loader": "^8.1.1",
     "prop-types": "^15.7.2",
     "sass": "^1.89.2",
-    "sass-loader": "^12.4.0",
+    "sass-loader": "^16.0.5",
     "slugify": "^1.6.6",
     "source-map-loader": "^5.0.0",
     "stream-browserify": "^3.0.0",
