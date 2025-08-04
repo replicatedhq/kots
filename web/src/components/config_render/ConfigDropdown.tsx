@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ConfigWrapper } from "./ConfigComponents";
 import ConfigItemTitle from "./ConfigItemTitle";
 import Icon from "@components/Icon";
-import Markdown from "react-remarkable";
+import Markdown from "../shared/Markdown";
 import { isEmpty } from "lodash";
 
 const ConfigDropdown = (props) => {

@@ -4,7 +4,7 @@ import isEmpty from "lodash/isEmpty";
 
 import ConfigItemTitle from "./ConfigItemTitle";
 import ConfigRadio from "./ConfigRadio";
-import Markdown from "react-remarkable";
+import Markdown from "../shared/Markdown";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 import Icon from "../Icon";

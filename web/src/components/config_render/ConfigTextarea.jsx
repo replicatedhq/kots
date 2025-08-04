@@ -1,6 +1,6 @@
 import { Component, createRef } from "react";
 import ConfigItemTitle from "./ConfigItemTitle";
-import Markdown from "react-remarkable";
+import Markdown from "../shared/Markdown";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 
