@@ -76,7 +76,7 @@ class SecureAdminConsole extends Component<Props, State> {
             replace: true,
           });
         } else {
-          this.props.navigate("upload-license", { replace: true });
+          this.props.navigate("/upload-license", { replace: true });
         }
       } else {
         this.props.navigate("/unsupported");
