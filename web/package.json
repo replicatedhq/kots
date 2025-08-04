@@ -29,7 +29,7 @@
     "@babel/preset-env": "^7.28.0",
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
-    "@pact-foundation/pact": "^12.5.2",
+    "@pact-foundation/pact": "^15.0.1",
     "@pact-foundation/pact-node": "^10.18.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.1",
     "@testing-library/jest-dom": "^6.6.3",
