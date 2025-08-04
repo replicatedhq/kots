@@ -1,4 +1,5 @@
-@import "../../variables.scss";
+@use "sass:color";
+@use "../../variables.scss";
 
 .subnav-item {
   display: inline-block;
@@ -16,20 +17,20 @@
     padding: 12px 10px 11px;
     font-size: 14px;
     font-weight: 500;
-    color: $sub-nav-text-color;
+    color: variables.$sub-nav-text-color;
     display: inline-block;
     transition: color 0.2s;
 
     &:hover {
-      color: darken($sub-nav-text-color, 8%);
+      color: color.adjust(variables.$sub-nav-text-color, $lightness: -8%);
     }
   }
 
   &.is-active a {
-    color: darken($sub-nav-text-color, 20%);
+    color: color.adjust(variables.$sub-nav-text-color, $lightness: -20%);
 
     &:hover {
-      color: darken($sub-nav-text-color, 28%);
+      color: color.adjust(variables.$sub-nav-text-color, $lightness: -28%);
     }
     &:after {
       content: "";
@@ -112,7 +113,7 @@
 
     .midstream-banner {
       padding: 8px 12px;
-      background-color: $primary-light-color;
+      background-color: variables.$primary-light-color;
       text-align: center;
     }
 
@@ -125,7 +126,7 @@
 
     .DetailPage--downstreamRow {
       padding: 11px 12px 12px;
-      border-bottom: 1px solid $border-color;
+      border-bottom: 1px solid variables.$border-color;
     }
   }
 
@@ -136,7 +137,7 @@
     code {
       white-space: pre-wrap;
       padding: 10px;
-      background: $text-color-secondary;
+      background: variables.$text-color-secondary;
       color: white;
       margin: 12px 0;
     }
@@ -146,14 +147,14 @@
 .AirgapSettings--wrapper {
   max-width: 465px;
   width: 100%;
-  background-color: $really-light-accent;
+  background-color: variables.$really-light-accent;
   border-radius: 6px;
 
   .test-connection-box {
     padding: 14px 12px;
     border-radius: 4px;
-    background-color: $primary-light-color;
-    border: 1px solid $border-color;
+    background-color: variables.$primary-light-color;
+    border: 1px solid variables.$border-color;
   }
 }
 .details-subnav {
@@ -163,8 +164,8 @@
   z-index: 1;
   padding: 0 20px;
   background-color: var(--subnav-color);
-  border-top: 1px solid $border-color;
-  border-bottom: 1px solid $border-color;
+  border-top: 1px solid variables.$border-color;
+  border-bottom: 1px solid variables.$border-color;
   ul {
     margin: 0 auto;
   }

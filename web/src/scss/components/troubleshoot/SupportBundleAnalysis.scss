@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .empty-bundles-illustration {
   /*background-image: url("../../../images/global/empty_bundles_illustration@2x.png");*/
@@ -21,7 +21,7 @@
 }
 
 .insights-wrapper {
-  background-color: $primary-light-color;
+  background-color: variables.$primary-light-color;
   border-radius: 4px;
 
   &.fullscreen-tree-view {
@@ -55,7 +55,7 @@
 }
 
 .insights-wrapper-padded {
-  background-color: $primary-light-color;
+  background-color: variables.$primary-light-color;
   padding: 20px 10px 0;
   border-radius: 4px;
   overflow: auto;
@@ -124,7 +124,7 @@
 .SupportBundleTimeline--wrapper {
   max-width: 784px;
   height: 120px;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   border-radius: 4px;
   overflow: hidden;
   cursor: -webkit-grab;
@@ -137,9 +137,9 @@
     z-index: 2;
     box-sizing: border-box;
     padding: 8px 12px;
-    background: $primary-light-color;
+    background: variables.$primary-light-color;
     min-width: 200px;
-    border-left: solid 1px $border-color;
+    border-left: solid 1px variables.$border-color;
     cursor: initial;
 
     .inner {
@@ -157,9 +157,9 @@
       left: -12px;
       display: block;
       position: absolute;
-      background: $primary-light-color;
-      border-bottom: 1px solid $border-color;
-      border-left: 1px solid $border-color;
+      background: variables.$primary-light-color;
+      border-bottom: 1px solid variables.$border-color;
+      border-left: 1px solid variables.$border-color;
       -webkit-transform: rotate(45deg) translateY(-50%);
       -ms-transform: rotate(45deg) translateY(-50%);
       transform: rotate(45deg) translateY(-50%);
@@ -171,7 +171,7 @@
 
     .bundles--wrapper {
       &:not(:last-of-type) {
-        border-bottom: 1px solid $border-color;
+        border-bottom: 1px solid variables.$border-color;
       }
     }
   }
@@ -184,7 +184,7 @@
     }
 
     .month-header {
-      background: $sub-nav-color;
+      background: variables.$sub-nav-color;
       padding: 10px 0;
       text-align: center;
       z-index: 1;
@@ -284,7 +284,7 @@
   }
 
   &.blue.is-active::after {
-    background-color: $primary-light-color;
+    background-color: variables.$primary-light-color;
   }
 
   &:last-child {

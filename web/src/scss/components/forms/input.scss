@@ -1,22 +1,23 @@
-@import "../../variables.scss";
+@use "sass:color";
+@use "../../variables.scss";
 
 .Input {
   display: block;
   box-sizing: border-box;
   width: 100%;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   border-radius: 4px;
   outline: 0;
   font-size: 12px;
   font-weight: normal;
   line-height: normal;
-  color: $text-color-primary;
+  color: variables.$text-color-primary;
   padding: 7px 12px 8px;
   transition: border 0.2s;
   height: 38px;
 
   &.darker {
-    border: 1px solid darken($border-color, 20%);
+    border: 1px solid color.adjust(variables.$border-color, $lightness: -20%);
     padding: 6px 10px 7px;
     height: 30px;
     width: 300px;
@@ -49,8 +50,8 @@
     user-select: none;
     cursor: not-allowed;
     background-color: #f8f8f8;
-    border-color: $border-color;
-    color: $text-color-accent;
+    border-color: variables.$border-color;
+    color: variables.$text-color-accent;
   }
 }
 
@@ -93,10 +94,10 @@ input.Checkbox-toggle {
   position: relative;
   cursor: pointer;
   vertical-align: bottom;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
 }
 .Checkbox--switch.is-disabled {
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   opacity: 0.7;
 }
 .Checkbox--switch::before {
@@ -110,7 +111,7 @@ input.Checkbox-toggle {
   width: 48%;
   height: 100%;
   background: #ffffff;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   left: 0;
   cursor: pointer;
   border-radius: 50%;
@@ -122,7 +123,7 @@ input.Checkbox-toggle {
 .Checkbox--switch::after:hover,
 .Checkbox--switch::after:active,
 .Checkbox--switch::after.is-checked {
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   background: #ffffff;
 }
 

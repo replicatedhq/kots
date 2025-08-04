@@ -1,4 +1,4 @@
-@import "../variables.scss";
+@use "../variables.scss";
 
 /*
   Styles for the default global modal go here.
@@ -14,7 +14,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    border: 1px solid $border-color;
+    border: 1px solid variables.$border-color;
     border-radius: 6px;
     padding: 0;
     margin: 0;
@@ -91,13 +91,13 @@
     .Modal-header p {
       font-size: 20px;
       font-weight: 700;
-      color: $text-color-secondary;
+      color: variables.$text-color-secondary;
       line-height: 34px;
       margin: 0;
     }
 
     .Modal-header.has-border {
-      border-bottom: 1px solid $border-color;
+      border-bottom: 1px solid variables.$border-color;
       padding-bottom: 18px;
     }
 
@@ -156,8 +156,8 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 30px;
-  color: $nav-color;
-  background-color: $muted-light-accent;
+  color: variables.$nav-color;
+  background-color: variables.$muted-light-accent;
 }
 
 .Title {

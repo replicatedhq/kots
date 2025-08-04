@@ -18,6 +18,13 @@ export default class DiffEditor extends Component {
     this.setState(lineChanges);
   }
 
+  componentWillUnmount() {
+    if (this.monacoDiffEditor) {
+      this.monacoDiffEditor.dispose();
+      this.monacoDiffEditor = null;
+    }
+  }
+
   render() {
     const { addedLines, removedLines, changes } = this.state;
     const { original, value, specKey } = this.props;
@@ -49,7 +56,7 @@ export default class DiffEditor extends Component {
           <div className="flex-column u-width--full u-overflow--hidden">
             <div className="flex-column flex flex1">
               <MonacoDiffEditor
-                ref={(editor) => {
+                onMount={(editor) => {
                   this.monacoDiffEditor = editor;
                 }}
                 width="100%"

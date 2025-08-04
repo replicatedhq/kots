@@ -1,3 +1,4 @@
+@use "sass:color";
 // navigation
 $nav-color: #ffffff;
 $nav-text-color: #4a4a4a;
@@ -6,12 +7,12 @@ $sub-nav-text-color: #9c9c9c;
 
 // colors
 $primary-color: #326de6;
-$primary-dark-color: darken($primary-color, 8%);
-$primary-extra-dark-color: darken($primary-color, 35%);
-$primary-less-light-color: lighten($primary-color, 25%);
-$primary-light-color: lighten($primary-color, 43.5%);
+$primary-dark-color: color.adjust($primary-color, $lightness: -8%);
+$primary-extra-dark-color: color.adjust($primary-color, $lightness: -35%);
+$primary-less-light-color: color.adjust($primary-color, $lightness: 25%);
+$primary-light-color: color.adjust($primary-color, $lightness: 43.5%);
 $secondary-color: #9c9c9c;
-$secondary-light-color: lighten($secondary-color, 25%);
+$secondary-light-color: color.adjust($secondary-color, $lightness: 25%);
 $light-accent: #e1f0f1;
 $muted-light-accent: #bccacd;
 $really-light-accent: #f5f8f9;
@@ -24,7 +25,7 @@ $error-color-light: #ffd1c7;
 $warning-color: #f7b500;
 $warning-color-light: #fff3d3;
 $success-color: #38cc97;
-$success-color-light: lighten($success-color, 43.5%);
+$success-color-light: color.adjust($success-color, $lightness: 43.5%);
 
 // text
 $text-color-primary: #323232;
@@ -39,7 +40,7 @@ $link-color: #326de6;
 
 // misc
 $border-radius: 4px;
-$file-tree-color: darken($primary-color, 42%);
+$file-tree-color: color.adjust($primary-color, $lightness: -42%);
 $file-tree-highlight-color: #032c50;
 $gitops-color: #e9e5ef;
 

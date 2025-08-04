@@ -1,10 +1,10 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 #UploadSupportBundleModal {
   .FileUpload-wrapper {
     cursor: default;
     border-radius: 4px;
-    border: 1px dashed $border-color;
+    border: 1px dashed variables.$border-color;
     padding: 20px 15px 18px;
     margin-bottom: 10px;
 
@@ -44,7 +44,7 @@
   .UploadSuccess-wrapper p.sub {
     font-size: 16px;
     line-height: 24px;
-    color: $text-color-body-copy;
+    color: variables.$text-color-body-copy;
   }
 
   .UploadBundleSelect--wrapper {
@@ -57,7 +57,7 @@
   .InitialCommand--wrapper {
     cursor: default;
     border-radius: 4px;
-    border: 1px dashed $border-color;
+    border: 1px dashed variables.$border-color;
     padding: 7px 6px;
     margin-bottom: 10px;
     max-height: 300px;
@@ -66,14 +66,14 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: $sub-nav-color;
+      background-color: variables.$sub-nav-color;
       text-align: center;
       font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
       padding: 29px 25px;
       font-size: 10px;
       border-radius: 4px;
       line-height: 22px;
-      color: $text-color-primary;
+      color: variables.$text-color-primary;
       max-height: 160px;
       height: 130px;
     }
@@ -86,7 +86,7 @@
 .ExpandedError--wrapper {
   max-width: 350px;
   padding: 8px;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   background: #efefef;
   border-radius: 4px;
 }

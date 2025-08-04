@@ -1,4 +1,5 @@
-@import "../variables.scss";
+@use "sass:color";
+@use "../variables.scss";
 
 .button-wrapper {
   margin-top: 20px;
@@ -110,14 +111,14 @@
     background-color: #ffffff;
     border-width: 1px;
     border-style: solid;
-    border-color: $secondary-color;
-    color: $secondary-color;
+    border-color: variables.$secondary-color;
+    color: variables.$secondary-color;
     box-shadow: none;
     padding: 8px 12px 7px;
 
     &:not(:disabled):hover {
-      border-color: darken($secondary-color, 8%);
-      color: darken($secondary-color, 8%);
+      border-color: color.adjust(variables.$secondary-color, $lightness: -8%);
+      color: color.adjust(variables.$secondary-color, $lightness: -8%);
     }
   }
 
@@ -193,7 +194,7 @@
     color: #326de6;
 
     &:not(:disabled):hover {
-      background-color: $primary-light-color;
+      background-color: variables.$primary-light-color;
     }
   }
 }

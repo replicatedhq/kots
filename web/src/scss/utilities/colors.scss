@@ -1,10 +1,10 @@
-@import "../variables.scss";
+@use "../variables.scss";
 
 .u-color--primary {
   background-color: var(--primary-color);
 }
 .u-color--secondary {
-  background-color: $sub-nav-color;
+  background-color: variables.$sub-nav-color;
 }
 .u-color--accent {
   background-color: var(--primary-color);
@@ -19,32 +19,32 @@
   background-color: var(--warning-color);
 }
 .u-color--bodyCopy {
-  background-color: $text-color-body-copy;
+  background-color: variables.$text-color-body-copy;
 }
 .u-color--taupe {
-  background-color: $light-taupe;
+  background-color: variables.$light-taupe;
 }
 
 .u-textColor--primary {
-  color: $text-color-primary;
+  color: variables.$text-color-primary;
 }
 .u-textColor--secondary {
-  color: $text-color-secondary;
+  color: variables.$text-color-secondary;
 }
 .u-textColor--header {
-  color: $text-color-header;
+  color: variables.$text-color-header;
 }
 .u-textColor--bodyCopy {
-  color: $text-color-body-copy;
+  color: variables.$text-color-body-copy;
 }
 .u-textColor--info {
-  color: $text-color-info;
+  color: variables.$text-color-info;
 }
 .u-textColor--accent {
-  color: $text-color-accent;
+  color: variables.$text-color-accent;
 }
 .u-textColor--mutedAccent {
-  color: $muted-light-accent;
+  color: variables.$muted-light-accent;
 }
 .u-textColor--error {
   color: var(--error-color);
@@ -76,5 +76,5 @@
 }
 
 .help-text-color {
-  color: $text-color-body-copy;
+  color: variables.$text-color-body-copy;
 }

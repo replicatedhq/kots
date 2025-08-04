@@ -1,7 +1,7 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .Footer-wrapper {
-  background-color: $sub-nav-color;
+  background-color: variables.$sub-nav-color;
 }
 .FooterContent-wrapper {
   padding: 12px 0;
@@ -15,7 +15,7 @@ a.FooterItem {
   font-size: 12px;
   padding: 0 10px;
   position: relative;
-  color: $text-color-body-copy;
+  color: variables.$text-color-body-copy;
   font-weight: 400;
 }
 .FooterItem-wrapper:first-child .FooterItem {
@@ -32,7 +32,7 @@ a.FooterItem {
   height: 12px;
   right: 0;
   top: 2px;
-  background-color: $border-color;
+  background-color: variables.$border-color;
 }
 
 .TargetKotsVersionWrapper {

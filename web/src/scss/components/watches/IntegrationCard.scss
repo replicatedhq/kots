@@ -1,10 +1,10 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .integration-card-wrapper {
   width: 100%;
   .integration-card {
     border-radius: 4px;
-    border: 1px solid $border-color;
+    border: 1px solid variables.$border-color;
     padding: 11px 11px 0;
   }
   .integration-card .watch-icon {
@@ -21,7 +21,7 @@
   .button-wrapper {
     padding: 4px 0;
     margin-top: 16px;
-    border-top: 1px solid $border-color;
+    border-top: 1px solid variables.$border-color;
 
     .card-action {
       padding: 8px 6px;
@@ -29,7 +29,7 @@
       transition: background-color 0.3s;
 
       &:hover {
-        background-color: $primary-light-color;
+        background-color: variables.$primary-light-color;
       }
     }
   }

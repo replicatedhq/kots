@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .Dashboard {
   max-width: 1160px;
@@ -48,6 +48,6 @@
   max-width: 520px;
   p,
   h3 {
-    color: $text-color-body-copy;
+    color: variables.$text-color-body-copy;
   }
 }

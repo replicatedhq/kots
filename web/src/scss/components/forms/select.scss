@@ -1,13 +1,14 @@
-@import "../../variables.scss";
+@use "sass:color";
+@use "../../variables.scss";
 
 .Select {
   position: relative;
   width: 100%;
   background: #ffffff;
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
   border-radius: 4px;
   font-size: 14px;
-  color: $text-color-primary;
+  color: variables.$text-color-primary;
   line-height: normal;
   outline: none;
   height: 32px;
@@ -21,7 +22,7 @@
   }
 }
 .Select.no-selection {
-  color: $text-color-body-copy;
+  color: variables.$text-color-body-copy;
 }
 .Select.is-disabled {
   &.has-error {
@@ -29,6 +30,6 @@
   }
   cursor: not-allowed;
   background-color: #f8f8f8;
-  border-color: lighten($border-color, 30%);
-  color: $text-color-accent;
+  border-color: color.adjust(variables.$border-color, $lightness: 30%);
+  color: variables.$text-color-accent;
 }

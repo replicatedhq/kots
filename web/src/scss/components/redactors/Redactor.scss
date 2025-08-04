@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 .Redactors--wrapper {
   width: 800px;
 }
@@ -14,15 +14,15 @@
   padding: 12px;
   margin-bottom: 15px;
   &.is-expired {
-    background-color: $sub-nav-color;
+    background-color: variables.$sub-nav-color;
   }
 
   &.is-deleting {
-    background-color: $sub-nav-color;
+    background-color: variables.$sub-nav-color;
   }
 
   .nodeTag {
-    background-color: $primary-light-color;
+    background-color: variables.$primary-light-color;
     font-size: 12px;
     line-height: 12px;
     color: #73a3cd;

@@ -1,8 +1,8 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .ReleaseRow-wrapper {
   width: 100%;
-  border-bottom: 1px solid $border-color;
+  border-bottom: 1px solid variables.$border-color;
   position: relative;
 }
 

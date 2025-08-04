@@ -1,12 +1,12 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .CodeSnippet {
   &.variant-blue {
     .CodeSnippet-content {
       padding: 15px;
-      border: 1px solid $border-color;
+      border: 1px solid variables.$border-color;
       border-radius: 4px;
-      background-color: $primary-light-color;
+      background-color: variables.$primary-light-color;
     }
   }
 

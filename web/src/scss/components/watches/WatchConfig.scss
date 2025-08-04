@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .ConfigArea--wrapper {
   width: 100%;
@@ -30,8 +30,8 @@ a:visited {
   padding: 13px 40px 10px;
 
   &.newer {
-    background: $primary-light-color;
-    color: $text-color-body-copy;
+    background: variables.$primary-light-color;
+    color: variables.$text-color-body-copy;
   }
 
   &.older {
@@ -45,7 +45,7 @@ a:visited {
   }
 }
 .config-sidebar-wrapper {
-  background: $sub-nav-color;
+  background: variables.$sub-nav-color;
   width: 250px;
   height: fit-content;
   padding: 10px;
@@ -69,9 +69,9 @@ a:visited {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      color: $text-color-secondary;
+      color: variables.$text-color-secondary;
       &:hover {
-        color: $text-color-primary;
+        color: variables.$text-color-primary;
       }
     }
 
@@ -87,7 +87,7 @@ a:visited {
     &.is-active {
       & .group-title {
         font-weight: 700;
-        color: $text-color-primary;
+        color: variables.$text-color-primary;
       }
     }
   }
@@ -99,21 +99,21 @@ a:visited {
     display: block;
     margin-top: 10px;
     margin-bottom: 10px;
-    color: $sub-nav-text-color;
+    color: variables.$sub-nav-text-color;
     cursor: pointer;
     font-weight: 400;
     word-break: break-word;
 
     &.active-item {
       font-weight: 500;
-      color: $text-color-secondary;
+      color: variables.$text-color-secondary;
       &.has-error {
         color: var(--error-color);
       }
     }
 
     &:hover {
-      color: $text-color-secondary;
+      color: variables.$text-color-secondary;
 
       &:last-child {
         margin-bottom: 0;

@@ -1,4 +1,5 @@
-@import "../variables.scss";
+@use "sass:color";
+@use "../variables.scss";
 
 /* Utilities */
 
@@ -298,19 +299,19 @@
 /* Border classes */
 
 .u-border--gray {
-  border: 1px solid $border-color;
+  border: 1px solid variables.$border-color;
 }
 .u-borderTop--gray {
-  border-top: 1px solid $border-color;
+  border-top: 1px solid variables.$border-color;
 }
 .u-borderRight--gray {
-  border-right: 1px solid $border-color;
+  border-right: 1px solid variables.$border-color;
 }
 .u-borderBottom--gray {
-  border-bottom: 1px solid $border-color;
+  border-bottom: 1px solid variables.$border-color;
 }
 .u-borderLeft--gray {
-  border-left: 1px solid $border-color;
+  border-left: 1px solid variables.$border-color;
 }
 
 .u-border--gray.darker,
@@ -318,10 +319,10 @@
 .u-borderRight--gray.darker,
 .u-borderBottom--gray.darker,
 .u-borderLeft--gray.darker {
-  border-color: darken($border-color, 20%);
+  border-color: color.adjust(variables.$border-color, $lightness: -20%);
 }
 .u-borderRadius--rounded {
-  border-radius: $border-radius;
+  border-radius: variables.$border-radius;
 }
 
 /* Filter classes */

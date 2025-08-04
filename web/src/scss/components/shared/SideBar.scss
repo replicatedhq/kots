@@ -1,11 +1,11 @@
-@import "../../variables.scss";
+@use "../../variables.scss";
 
 .sidebar {
   padding: 20px;
-  background-color: $sub-nav-color;
-  border-right: 1px solid $border-color;
-  border-top: 1px solid $border-color;
-  border-bottom: 1px solid $border-color;
+  background-color: variables.$sub-nav-color;
+  border-right: 1px solid variables.$border-color;
+  border-top: 1px solid variables.$border-color;
+  border-bottom: 1px solid variables.$border-color;
   width: 255px;
 }
 
@@ -24,7 +24,7 @@
 
   &.selected,
   &.selected:hover {
-    background-color: $primary-light-color;
+    background-color: variables.$primary-light-color;
     border-color: #337ab7;
     box-shadow: none;
   }
