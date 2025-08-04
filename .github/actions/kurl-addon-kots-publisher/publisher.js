@@ -1,4 +1,4 @@
-import * as semver from 'semver';
+import semver from 'semver';
 
 export const appendVersion = (kotsAddonVersions, version) => {
   kotsAddonVersions = kotsAddonVersions.filter(el => el.version !== version.version);

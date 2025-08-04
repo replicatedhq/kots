@@ -6,23 +6,23 @@
     "build": "ncc build index.js",
     "test": "mocha --require @babel/register test/*.js"
   },
-  "module": "index.js",
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@actions/core": "^1.10.0",
+    "@actions/core": "^1.11.1",
     "@actions/exec": "^1.1.1",
     "@actions/github": "^6.0.1",
-    "@actions/http-client": "^2.1.0",
-    "@vercel/ncc": "^0.36.1",
-    "semver": "^7.5.2"
+    "@actions/http-client": "^2.2.3",
+    "@vercel/ncc": "^0.38.3",
+    "semver": "^7.7.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.21.0",
-    "@babel/preset-env": "^7.20.2",
-    "@babel/register": "^7.21.0",
-    "chai": "^4.3.7",
-    "mocha": "^11.1.0"
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/register": "^7.27.1",
+    "chai": "^5.2.1",
+    "mocha": "^11.7.1"
   }
 }
