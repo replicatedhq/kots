@@ -13,7 +13,6 @@ import {
   LineSeries,
   DiscreteColorLegend,
   Crosshair,
-  // @ts-expect-error
 } from "react-vis";
 import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
@@ -85,7 +84,7 @@ export default class DashboardGraphsCard extends Component<Props, State> {
             if (response?.error) {
               throw new Error(response?.error);
             }
-          } catch (_) {
+          } catch {
             // ignore
           }
           throw new Error(`Unexpected status code ${res.status}`);

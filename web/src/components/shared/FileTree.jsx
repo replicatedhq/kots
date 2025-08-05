@@ -64,7 +64,7 @@ export default class FileTree extends Component {
                   type="checkbox"
                   data-testid={file.path}
                   checked={
-                    this.state.selected.hasOwnProperty(file.path)
+                    Object.hasOwn(this.state.selected, file.path)
                       ? this.state.selected[file.path]
                       : this.arePathsSame(selectedFile, file.path)
                   }

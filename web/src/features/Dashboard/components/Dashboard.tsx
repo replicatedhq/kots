@@ -337,9 +337,6 @@ const Dashboard = (props: Props) => {
       appId: app?.id,
     };
 
-    // TODO: remove after adding type to airgap uploader
-    // eslint-disable-next-line
-    // @ts-expect-error
     airgapUploader.current?.upload(
       processParams,
       onUploadProgress,
@@ -396,7 +393,7 @@ const Dashboard = (props: Props) => {
 
     for (let i = 0; i < resourceStates.length; i++) {
       const resourceState = resourceStates[i];
-      if (!statesMap.hasOwnProperty(resourceState.state)) {
+      if (!(resourceState.state in statesMap)) {
         statesMap[resourceState.state] = [];
       }
       statesMap[resourceState.state].push(resourceState);

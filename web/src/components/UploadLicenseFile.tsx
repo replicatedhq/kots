@@ -4,8 +4,6 @@ import yaml from "js-yaml";
 import isEmpty from "lodash/isEmpty";
 import keyBy from "lodash/keyBy";
 import size from "lodash/size";
-// TODO: upgrade this dependency
-// @ts-expect-error
 import Dropzone from "react-dropzone";
 import Modal from "react-modal";
 import Select from "react-select";

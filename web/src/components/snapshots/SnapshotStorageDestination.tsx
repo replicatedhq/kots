@@ -1116,8 +1116,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   isSearchable={false}
                   getOptionValue={(cloudName) => cloudName.label}
                   value={selectedAzureCloudName}
-                  // TODO: upgrade react-select and fix this
-                  // @ts-expect-error
                   onChange={this.handleAzureCloudNameChange}
                   isOptionSelected={(option) =>
                     // TODO: fix this
@@ -1633,7 +1631,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
     const availableDestinations = [];
     if (snapshotSettings?.veleroPlugins) {
-      for (const veleroPlugin of snapshotSettings?.veleroPlugins) {
+      for (const veleroPlugin of snapshotSettings.veleroPlugins) {
         if (isEmbeddedCluster) {
           if (veleroPlugin.includes("velero-plugin-for-aws")) {
             availableDestinations.push({
@@ -1799,8 +1797,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         value={selectedDestination}
                         onChange={this.handleDestinationChange}
                         isOptionSelected={(option) => {
-                          // TODO: fix this is probably a bug
-                          // @ts-expect-error
                           return option.value === selectedDestination;
                         }}
                       />

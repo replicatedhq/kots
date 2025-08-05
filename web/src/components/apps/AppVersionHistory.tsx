@@ -114,7 +114,7 @@ type State = {
   isStartingUpgradeService: boolean;
   isSkipPreflights: boolean;
   kotsUpdateChecker: Repeater;
-  kotsUpdateError: object | undefined;
+  kotsUpdateError: string | undefined;
   kotsUpdateMessage: string;
   kotsUpdateRunning: boolean;
   kotsUpdateStatus: string;
@@ -130,13 +130,13 @@ type State = {
     preflightsFailed: boolean;
     preflightState: string;
   } | null;
-  releaseNotes: object | null;
+  releaseNotes: string | null;
   releaseWithErr: ReleaseWithError | null | undefined;
   releaseWithNoChanges: Release | null | undefined;
   secondSequence: number | string;
   selectedDiffReleases: boolean;
   selectedSequence: number;
-  selectedTab: object | null;
+  selectedTab: string | null;
   showAutomaticUpdatesModal: boolean;
   showDeployWarningModal: boolean;
   showDiffErrModal: boolean;
@@ -594,7 +594,7 @@ class AppVersionHistory extends Component<Props, State> {
   downloadVersion = (version: Version) => {
     const { app } = this.props.outletContext;
 
-    if (!this.versionDownloadStatusJobs.hasOwnProperty(version.sequence)) {
+    if (!Object.prototype.hasOwnProperty.call(this.versionDownloadStatusJobs, version.sequence)) {
       this.versionDownloadStatusJobs[version.sequence] = new Repeater();
     }
 
@@ -1649,12 +1649,14 @@ class AppVersionHistory extends Component<Props, State> {
           showVersionPreviousDownloadStatus={
             // user hasn't tried to re-download the version yet,
             // show last known download status if exists
-            !this.state.versionDownloadStatuses.hasOwnProperty(
+            !Object.prototype.hasOwnProperty.call(
+              this.state.versionDownloadStatuses,
               version.sequence
             ) && Boolean(version.downloadStatus)
           }
           showVersionDownloadingStatus={
-            this.state.versionDownloadStatuses.hasOwnProperty(
+            Object.prototype.hasOwnProperty.call(
+              this.state.versionDownloadStatuses,
               version.sequence
             ) && Boolean(this.state.versionDownloadStatuses?.[version.sequence])
           }

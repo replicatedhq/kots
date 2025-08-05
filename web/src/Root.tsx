@@ -723,7 +723,6 @@ const Root = () => {
         }}
       >
         <ToastProvider>
-          {/* eslint-disable-next-line */}
           {/* @ts-expect-error */}
 
           <NavBar
@@ -945,7 +944,6 @@ const Root = () => {
                   <Route
                     path="settings"
                     element={
-                      // eslint-disable-next-line
                       // @ts-expect-error
                       <SnapshotSettings
                         isKurlEnabled={state.adminConsoleMetadata?.isKurl}
@@ -1055,7 +1053,6 @@ const Root = () => {
 
                   <Route
                     path={":slug/version-history"}
-                    // eslint-disable-next-line
                     // @ts-expect-error
                     element={<AppVersionHistory />}
                   />
@@ -1063,7 +1060,6 @@ const Root = () => {
                     path={
                       ":slug/version-history/diff/:firstSequence/:secondSequence"
                     }
-                    // eslint-disable-next-line
                     // @ts-expect-error
                     element={<AppVersionHistory />}
                   />
