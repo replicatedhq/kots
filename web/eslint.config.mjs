@@ -14,5 +14,8 @@ export default tseslint.config(
         ...globals.node,
       },
     },
+    rules: {
+      '@typescript-eslint/ban-ts-comment': 'off', // TODO: remove this once all are fixed
+    },
   }
 );

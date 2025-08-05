@@ -596,7 +596,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
       nextState[field] = e.target.value;
     }
     // TODO: make this more explicit
-    // @ts-expect-error: nextState has the wrong type
+    // @ts-expect-error
+    // TODO: fix this
     this.setState(nextState);
   };
 

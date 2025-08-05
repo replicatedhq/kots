@@ -136,11 +136,11 @@ const DashboardLicenseCard = (props: Props) => {
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = state;
 
-    // @ts-expect-error: airgapLicense is not typed
+    // @ts-expect-error
     // TODO: fix this
     if (airgapLicense.spec?.licenseID !== appLicense?.id) {
       // if the license ID has changed, but the service account token is the same, we can sync the license
-      // @ts-expect-error: airgapLicense is not typed
+      // @ts-expect-error
       if (serviceAccountTokensMatch(airgapLicense.spec?.licenseID, appLicense?.id)) {
         return syncLicense(contentStr);
       }
@@ -152,7 +152,7 @@ const DashboardLicenseCard = (props: Props) => {
       return;
     }
 
-    // @ts-expect-error: airgapLicense is not typed
+    // @ts-expect-error
     // TODO: fix this
     if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
       setState({

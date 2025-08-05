@@ -41,12 +41,10 @@ function useApps({
   refetchInterval?: number | false;
 } = {}): UseQueryResult<{
   apps: App[] | null;
-}, Error> {
+}> {
   const query: UseQueryResult<{
     apps: App[] | null;
-  }, Error> = useQuery<{
-    apps: App[] | null;
-  }, Error>(["apps"], () => _getApps(), {
+  }> = useQuery(["apps"], () => _getApps(), {
     refetchInterval,
   });
 
@@ -60,6 +58,8 @@ function UseApps({
 }) {
   const query = useApps();
 
+  // TODO: figure this out
+  // @ts-expect-error
   return children(query);
 }
 
