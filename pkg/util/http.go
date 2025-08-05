@@ -13,6 +13,7 @@ var DefaultHTTPClient *retryablehttp.Client
 
 func init() {
 	DefaultHTTPClient = retryablehttp.NewClient()
+	DefaultHTTPClient.Logger = nil
 	DefaultHTTPClient.ErrorHandler = errorHandler
 }
 

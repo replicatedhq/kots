@@ -62,6 +62,7 @@ func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (stri
 	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
 
 	client := retryablehttp.NewClient()
+	client.Logger = nil
 	client.HTTPClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		req.Header.Del("Authorization")
 		return nil
