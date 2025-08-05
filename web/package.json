@@ -120,7 +120,6 @@
     "dayjs": "^1.11.13",
     "diff": "^8.0.2",
     "downloadjs": "^1.4.7",
-    "file-loader": "^6.2.0",
     "file-saver": "^2.0.2",
     "filereader-stream": "^2.0.0",
     "handlebars": "^4.7.8",
