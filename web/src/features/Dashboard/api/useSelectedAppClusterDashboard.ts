@@ -13,9 +13,9 @@ function useSelectedAppClusterDashboardWithIntercept(
 ) {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
 
-  let timerId = useRef<null | NodeJS.Timeout>(null);
+  const timerId = useRef<null | NodeJS.Timeout>(null);
 
-  let appClusterDashboardQuery = useSelectedAppClusterDashboard({
+  const appClusterDashboardQuery = useSelectedAppClusterDashboard({
     refetchInterval,
   });
 

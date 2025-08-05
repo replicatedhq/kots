@@ -311,7 +311,7 @@ const DashboardVersionCard = (props: Props) => {
       return;
     }
     try {
-      let clusterId = selectedApp?.downstream?.cluster?.id;
+      const clusterId = selectedApp?.downstream?.cluster?.id;
 
       setState({
         logsLoading: true,
@@ -726,11 +726,7 @@ const DashboardVersionCard = (props: Props) => {
     if (!version.diffSummary || version.diffSummary === "") {
       return null;
     }
-    try {
-      return JSON.parse(version.diffSummary);
-    } catch (err) {
-      throw err;
-    }
+    return JSON.parse(version.diffSummary);
   };
 
   const renderDiff = (version: Version) => {
@@ -912,7 +908,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const downloadVersion = (version: Version) => {
-    if (!versionDownloadStatusJobs?.hasOwnProperty(version.sequence)) {
+    if (!Object.prototype.hasOwnProperty.call(versionDownloadStatusJobs, version.sequence)) {
       versionDownloadStatusJobs[version.sequence] = new Repeater();
     }
 
@@ -1193,7 +1189,7 @@ const DashboardVersionCard = (props: Props) => {
   const renderVersionDownloadStatus = (version: Version) => {
     const { versionDownloadStatuses } = state;
 
-    if (!versionDownloadStatuses.hasOwnProperty(version.sequence)) {
+    if (!Object.prototype.hasOwnProperty.call(versionDownloadStatuses, version.sequence)) {
       // user hasn't tried to re-download the version yet, show last known download status if exists
       if (version.downloadStatus) {
         return (

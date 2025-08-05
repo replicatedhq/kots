@@ -118,7 +118,7 @@ class SecureAdminConsole extends Component<Props, State> {
       })
         .then(async (res) => {
           if (res.status >= 400) {
-            let body = await res.json();
+            const body = await res.json();
             let msg = body.error;
             if (!msg) {
               msg =

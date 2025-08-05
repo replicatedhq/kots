@@ -355,6 +355,6 @@ export const DashboardSnapshotsCard = (props: Props) => {
 };
 
 /* eslint-disable */
-// @ts-ignore
+// @ts-expect-error
 export default withRouter(DashboardSnapshotsCard) as any;
 /* eslint-enable */

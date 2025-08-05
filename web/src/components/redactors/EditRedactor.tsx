@@ -11,6 +11,7 @@ import Loader from "../shared/Loader";
 import "../../scss/components/redactors/EditRedactor.scss";
 import Icon from "../Icon";
 import { useSelectedApp } from "@features/App";
+import { Editor } from "brace";
 
 type State = {
   activeMarkers?: Marker[];
@@ -199,12 +200,10 @@ const EditRedactor = () => {
             creatingRedactor: false,
             createErrMsg: createResponse.error,
           });
-          // TODO: fix after upgradig AceEditor
-          // eslint-disable-next-line
-          // @ts-ignore
-          const editor = aceEditor.editor;
+          // @ts-expect-error: aceEditor is not properly typed
+          const editor = aceEditor.editor as Editor;
 
-          editor.scrollToLine(getEmptyNameLine(state.redactorYaml), true, true);
+          editor.scrollToLine(getEmptyNameLine(state.redactorYaml), true, true, () => {});
           editor.gotoLine(getEmptyNameLine(state.redactorYaml), 1, true);
         }
 
@@ -379,7 +378,7 @@ spec:
             markers={state.activeMarkers}
             editorProps={{
               $blockScrolling: Infinity,
-              // @ts-ignore
+              // @ts-expect-error
               useSoftTabs: true,
               tabSize: 2,
             }}

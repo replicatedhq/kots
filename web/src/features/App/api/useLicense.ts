@@ -8,9 +8,9 @@ axios.defaults.withCredentials = true;
 function useLicenseWithIntercept() {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
 
-  let timerId = useRef<null | NodeJS.Timeout>(null);
+  const timerId = useRef<null | NodeJS.Timeout>(null);
 
-  let licenseQuery = useLicense();
+  const licenseQuery = useLicense();
 
   useEffect(() => {
     axios.interceptors.request.use(

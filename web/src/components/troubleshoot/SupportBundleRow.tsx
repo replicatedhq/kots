@@ -187,7 +187,7 @@ export const SupportBundleRow = (props: Props) => {
       </span>
     );
 
-    let id = setTimeout(async () => {
+    const id = setTimeout(async () => {
       const res = await fetch(
         `${process.env.API_ENDPOINT}/troubleshoot/app/${params.slug}/supportbundle/${bundle.id}`,
         {
@@ -300,7 +300,7 @@ export const SupportBundleRow = (props: Props) => {
 
   let progressBar;
 
-  let statusDiv = (
+  const statusDiv = (
     <div className="u-fontWeight--bold u-fontSize--small .u-textColor--bodyCopy u-lineHeight--medium u-textAlign--center">
       <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center ">
         {progressData?.message && (
