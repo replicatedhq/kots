@@ -19,7 +19,7 @@ export interface Updates {
 export const getCheckForUpdates = async (
   appSlug: string
 ): Promise<UpdateResponse> => {
-  let res = await fetch(
+  const res = await fetch(
     `${process.env.API_ENDPOINT}/app/${appSlug}/updatecheck`,
     {
       headers: {

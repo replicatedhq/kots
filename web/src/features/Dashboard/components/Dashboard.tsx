@@ -178,7 +178,7 @@ const Dashboard = (props: Props) => {
 
   const onAppDownstreamSuccess = (data: Downstream) => {
     setState({ downstream: data });
-    let timerId = setTimeout(() => {
+    const timerId = setTimeout(() => {
       refreshAppData();
     }, 2000);
     timer.current.push(timerId);
@@ -339,7 +339,7 @@ const Dashboard = (props: Props) => {
 
     // TODO: remove after adding type to airgap uploader
     // eslint-disable-next-line
-    // @ts-ignore
+    // @ts-expect-error
     airgapUploader.current?.upload(
       processParams,
       onUploadProgress,
@@ -480,7 +480,7 @@ const Dashboard = (props: Props) => {
 
   const { appStatus } = state.dashboard;
 
-  const onAirgapConfigSuccess = (simultaneousUploads: Number) => {
+  const onAirgapConfigSuccess = (simultaneousUploads: number) => {
     airgapUploader.current = new AirgapUploader(
       true,
       app.slug,
@@ -584,7 +584,7 @@ const Dashboard = (props: Props) => {
         noUpdatesAvalable: true,
       });
       getAppLicense();
-      let timerId = setTimeout(() => {
+      const timerId = setTimeout(() => {
         setState({ noUpdatesAvalable: false });
       }, 3000);
       timer.current.push(timerId);

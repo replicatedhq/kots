@@ -311,7 +311,7 @@ const DashboardVersionCard = (props: Props) => {
       return;
     }
     try {
-      let clusterId = selectedApp?.downstream?.cluster?.id;
+      const clusterId = selectedApp?.downstream?.cluster?.id;
 
       setState({
         logsLoading: true,
@@ -726,11 +726,7 @@ const DashboardVersionCard = (props: Props) => {
     if (!version.diffSummary || version.diffSummary === "") {
       return null;
     }
-    try {
-      return JSON.parse(version.diffSummary);
-    } catch (err) {
-      throw err;
-    }
+    return JSON.parse(version.diffSummary);
   };
 
   const renderDiff = (version: Version) => {

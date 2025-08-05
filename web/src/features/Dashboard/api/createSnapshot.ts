@@ -13,7 +13,7 @@ export const createSnapshot = async (
   option: "full" | "partial",
   appSlug: string
 ): Promise<SnapshotResponse> => {
-  let url =
+  const url =
     option === "full"
       ? `${process.env.API_ENDPOINT}/snapshot/backup`
       : `${process.env.API_ENDPOINT}/app/${appSlug}/snapshot/backup`;

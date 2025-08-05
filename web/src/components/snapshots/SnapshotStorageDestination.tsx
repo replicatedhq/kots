@@ -587,7 +587,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
   };
 
   handleFormChange = (field: FieldName, e: ChangeEvent<HTMLInputElement>) => {
-    let nextState: {
+    const nextState: {
       [K in FieldName]?: string | boolean;
     } = {};
     if (field === "useIamAws" || field === "gcsUseIam") {
@@ -596,7 +596,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       nextState[field] = e.target.value;
     }
     // TODO: make this more explicit
-    // @ts-ignore
+    // @ts-expect-error: nextState has the wrong type
     this.setState(nextState);
   };
 
@@ -1116,11 +1116,11 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   getOptionValue={(cloudName) => cloudName.label}
                   value={selectedAzureCloudName}
                   // TODO: upgrade react-select and fix this
-                  // @ts-ignore
+                  // @ts-expect-error
                   onChange={this.handleAzureCloudNameChange}
                   isOptionSelected={(option) =>
                     // TODO: fix this
-                    // @ts-ignore
+                    // @ts-expect-error
                     option.value === selectedAzureCloudName
                   }
                 />
@@ -1788,7 +1788,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         getOptionLabel={(destination) =>
                           // TODO: upgrade react-select and use the current typing
                           // We want to display element instead of string
-                          // @ts-ignore
+                          // @ts-expect-error
                           this.getDestinationLabel(
                             destination,
                             destination.label
@@ -1799,7 +1799,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         onChange={this.handleDestinationChange}
                         isOptionSelected={(option) => {
                           // TODO: fix this is probably a bug
-                          // @ts-ignore
+                          // @ts-expect-error
                           return option.value === selectedDestination;
                         }}
                       />

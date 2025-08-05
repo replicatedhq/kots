@@ -201,7 +201,7 @@ const EditRedactor = () => {
           });
           // TODO: fix after upgradig AceEditor
           // eslint-disable-next-line
-          // @ts-ignore
+          // @ts-expect-error
           const editor = aceEditor.editor;
 
           editor.scrollToLine(getEmptyNameLine(state.redactorYaml), true, true);
@@ -379,7 +379,7 @@ spec:
             markers={state.activeMarkers}
             editorProps={{
               $blockScrolling: Infinity,
-              // @ts-ignore
+              // @ts-expect-error
               useSoftTabs: true,
               tabSize: 2,
             }}

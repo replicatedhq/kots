@@ -13,7 +13,6 @@ import {
   LineSeries,
   DiscreteColorLegend,
   Crosshair,
-  // @ts-ignore
 } from "react-vis";
 import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
@@ -85,7 +84,7 @@ export default class DashboardGraphsCard extends Component<Props, State> {
             if (response?.error) {
               throw new Error(response?.error);
             }
-          } catch (_) {
+          } catch {
             // ignore
           }
           throw new Error(`Unexpected status code ${res.status}`);
@@ -139,10 +138,7 @@ export default class DashboardGraphsCard extends Component<Props, State> {
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
       yAxisTickFormat = (v: number) =>
-        // TODO: fix typecheck
-        //  Math.round expects number, but valueFormatter returns string
-        // @ts-ignore
-        `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
+        `${Math.round(Number(valueFormatter(v).text))} ${valueFormatter(v).suffix}`;
       return yAxisTickFormat(value);
     } else if (chart.tickTemplate) {
       try {
@@ -193,13 +189,9 @@ export default class DashboardGraphsCard extends Component<Props, State> {
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      yAxisTickFormat = (v: string) =>
+      yAxisTickFormat = (v: number) =>
         `${Math.round(
-          // TODO: Fix valueFormatter typing
-          // Math.round expects number, but valueFormatter returns string
-          // @ts-ignore
-          valueFormatter(v).text
-          // @ts-ignore
+          Number(valueFormatter(v).text)
         )} ${valueFormatter(v).suffix}`;
     } else if (chart.tickTemplate) {
       try {

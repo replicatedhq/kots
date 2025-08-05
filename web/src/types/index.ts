@@ -1,6 +1,6 @@
 // This is ReponseApp in the go types
 export type App = {
-  allowRollback: Object | undefined;
+  allowRollback: object | undefined;
   allowSnapshots: boolean;
   autoDeploy: string;
   chartPath: string;

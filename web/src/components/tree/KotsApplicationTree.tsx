@@ -263,6 +263,6 @@ class KotsApplicationTree extends Component<Props, State> {
 }
 
 /* eslint-disable */
-// @ts-ignore
+// @ts-expect-error
 export default withRouter(KotsApplicationTree) as any;
 /* eslint-enable */

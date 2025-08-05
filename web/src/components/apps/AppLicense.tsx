@@ -1,8 +1,8 @@
 import { useReducer, useEffect, ReactNode } from "react";
 import { KotsPageTitle } from "@components/Head";
-// @ts-ignore
+// @ts-expect-error
 import Dropzone from "react-dropzone";
-// @ts-ignore
+// @ts-expect-error
 import yaml from "js-yaml";
 import classNames from "classnames";
 import size from "lodash/size";
@@ -16,7 +16,7 @@ import {
   serviceAccountTokensMatch,
 } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
-// @ts-ignore
+// @ts-expect-error
 import styled from "styled-components";
 
 import { App, AppLicense, LicenseFile } from "@src/types";
@@ -224,10 +224,10 @@ const AppLicenseComponent = () => {
     const { appLicense } = state;
 
     // TODO: FIX THIS
-    // @ts-ignore
+    // @ts-expect-error
     if (airgapLicense?.spec?.licenseID !== appLicense?.id) {
       // if the license ID has changed, but the service account token is the same, we can sync the license
-      // @ts-ignore
+      // @ts-expect-error
       if (serviceAccountTokensMatch(airgapLicense.spec?.licenseID, appLicense?.id)) {
         return syncAppLicense(contentStr);
       }
@@ -239,7 +239,7 @@ const AppLicenseComponent = () => {
     }
 
     // TODO: FIX THIS
-    // @ts-ignore
+    // @ts-expect-error
     if (airgapLicense?.spec?.licenseSequence === appLicense?.licenseSequence) {
       setState({
         message: "License is already up to date",
@@ -349,7 +349,7 @@ const AppLicenseComponent = () => {
   };
 
   const toggleHideDetails = (entitlement: string) => {
-    let entitlementsToShow = [...state.entitlementsToShow];
+    const entitlementsToShow = [...state.entitlementsToShow];
     const index = state.entitlementsToShow.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
     setState({ entitlementsToShow });
