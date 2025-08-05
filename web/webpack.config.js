@@ -88,8 +88,7 @@ module.exports = function (env) {
         },
         {
           test: /\.ttf$/,
-          use: [{ loader: "file-loader" }],
-          sideEffects: true,
+          type: "asset/resource",
         },
         {
           test: /\.scss$/,
@@ -162,6 +161,7 @@ module.exports = function (env) {
           "find",
           "colorDetector",
           "codelens",
+          "quickOutline",
         ],
       }),
       new webpack.ContextReplacementPlugin(
