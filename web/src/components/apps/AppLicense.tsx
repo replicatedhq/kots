@@ -1,8 +1,6 @@
 import { useReducer, useEffect, ReactNode } from "react";
 import { KotsPageTitle } from "@components/Head";
-// @ts-expect-error
 import Dropzone from "react-dropzone";
-// @ts-expect-error
 import yaml from "js-yaml";
 import classNames from "classnames";
 import size from "lodash/size";
@@ -16,7 +14,6 @@ import {
   serviceAccountTokensMatch,
 } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
-// @ts-expect-error
 import styled from "styled-components";
 
 import { App, AppLicense, LicenseFile } from "@src/types";

@@ -302,7 +302,6 @@ export const AppConfig = ({
             });
           }
         } else {
-          // @ts-expect-error
           setConfig(state.configGroups);
           navigate(`/upgrade-service/app/${slug}/preflight`, {
             replace: true,

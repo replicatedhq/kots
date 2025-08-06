@@ -312,5 +312,4 @@ export class NavBar extends PureComponent<Props, State> {
   }
 }
 
-// @ts-expect-error
 export default withRouter(NavBar);

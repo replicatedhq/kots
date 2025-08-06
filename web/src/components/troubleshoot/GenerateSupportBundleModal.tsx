@@ -3,11 +3,9 @@ import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
 import { useNavigate, useParams } from "react-router-dom";
 import { App, LicenseFile, SupportBundle } from "@types";
-// @ts-expect-error
 import Dropzone from "react-dropzone";
 import Icon from "@components/Icon";
 import isEmpty from "lodash/isEmpty";
-// @ts-expect-error
 import randomstring from "randomstring";
 import { Repeater } from "../../utilities/repeater";
 import { useSelectedApp } from "@features/App";

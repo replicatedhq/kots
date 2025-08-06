@@ -12,7 +12,6 @@ export const UpgradeServiceProvider = ({ children }) => {
 
   return (
     <UpgradeServiceContext.Provider
-      // @ts-expect-error
       value={{
         config,
         setConfig,
