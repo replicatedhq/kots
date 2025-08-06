@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"regexp"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -113,6 +113,5 @@ func getEndpoint(license *kotsv1beta1.License) (string, error) {
 }
 
 func isDevEndpoint(endpoint string) bool {
-	result, _ := regexp.MatchString(`replicated-app`, endpoint)
-	return result
+	return strings.HasPrefix(endpoint, "http://replicated-app:")
 }

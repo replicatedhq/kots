@@ -3,8 +3,8 @@ package reporting
 import (
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 )
@@ -98,6 +98,5 @@ func canReport(endpoint string) bool {
 }
 
 func isDevEndpoint(endpoint string) bool {
-	result, _ := regexp.MatchString(`replicated-app`, endpoint)
-	return result
+	return strings.HasPrefix(endpoint, "http://replicated-app:")
 }
