@@ -5,7 +5,7 @@ const ReleaseNotesModal = ({
   releaseNotes,
   hideReleaseNotes,
 }: {
-  releaseNotes: Object | null;
+  releaseNotes: string | null;
   hideReleaseNotes: () => void;
 }) => {
   return (

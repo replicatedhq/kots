@@ -124,7 +124,7 @@ const EmbeddedClusterManagement = ({
           throw new Error(
             error?.error?.message || error?.error || error?.message
           );
-        } catch (err) {
+        } catch {
           throw new Error("Unable to fetch nodes, please try again later.");
         }
       }
@@ -168,7 +168,7 @@ const EmbeddedClusterManagement = ({
           throw new Error(
             error?.error?.message || error?.error || error?.message
           );
-        } catch (err) {
+        } catch {
           throw new Error("Unable to fetch roles, please try again later.");
         }
       }
@@ -217,7 +217,7 @@ const EmbeddedClusterManagement = ({
           throw new Error(
             error?.error?.message || error?.error || error?.message
           );
-        } catch (err) {
+        } catch {
           throw new Error(
             "Unable to generate node join command, please try again later."
           );
@@ -399,7 +399,7 @@ const EmbeddedClusterManagement = ({
         throw new Error(
           error?.error?.message || error?.error || error?.message
         );
-      } catch (err) {
+      } catch {
         throw new Error(
           "Unable to confirm cluster management, please try again later."
         );

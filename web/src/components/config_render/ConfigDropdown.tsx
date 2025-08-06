@@ -10,7 +10,7 @@ const ConfigDropdown = (props) => {
     props.value || props.default || ""
   );
 
-  let options = [{ value: "", label: "Select an option" }];
+  const options = [{ value: "", label: "Select an option" }];
 
   props.items.map((item) => {
     if (isEmpty(item)) {
@@ -23,7 +23,7 @@ const ConfigDropdown = (props) => {
     setSelectedValue(val);
     props.handleOnChange(props.name, val);
   };
-  var hidden = props.hidden || props.when === "false";
+  const hidden = props.hidden || props.when === "false";
 
   return (
     <ConfigWrapper

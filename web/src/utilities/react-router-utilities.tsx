@@ -19,9 +19,9 @@ export function withRouter<TProps extends RouterProps>(
   Component: ComponentType<TProps>
 ) {
   function ComponentWithRouterProp(props: TProps) {
-    let location = useLocation();
-    let navigate = useNavigate();
-    let params = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const params = useParams();
     const outletContext = useOutletContext();
     const selectedApp = useSelectedApp();
     const { refetch: refetchApps } = useApps();

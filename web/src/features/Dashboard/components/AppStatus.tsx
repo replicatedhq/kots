@@ -54,7 +54,7 @@ export default class AppStatus extends Component<Props, State> {
 
   getOptions = () => {
     const { links } = this.props;
-    let dropdownLinks: OptionLink[] = [];
+    const dropdownLinks: OptionLink[] = [];
 
     links.map((link) => {
       const linkObj = {
@@ -73,7 +73,7 @@ export default class AppStatus extends Component<Props, State> {
         parsedUrl.hostname = window.location.hostname;
       }
       return parsedUrl.href;
-    } catch (error) {
+    } catch {
       return "";
     }
   };

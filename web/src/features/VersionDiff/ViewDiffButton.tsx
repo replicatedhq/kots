@@ -15,11 +15,7 @@ interface DiffSummary {
 
 // TODO: unmarshal this in the fetch handler
 function unmarshallDiffSummary(diffSummary: string): DiffSummary {
-  try {
-    return JSON.parse(diffSummary) || {};
-  } catch (err) {
-    throw err;
-  }
+  return JSON.parse(diffSummary) || {};
 }
 
 function getPreviousSequence(versionHistory: Version[], version: Version) {

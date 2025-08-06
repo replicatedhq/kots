@@ -6,7 +6,7 @@ export const getAirgapConfig = async (appSlug: string): Promise<number> => {
 
   let simultaneousUploads = 3;
 
-  let res = await fetch(configUrl, {
+  const res = await fetch(configUrl, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -24,7 +24,7 @@ export const getAirgapConfig = async (appSlug: string): Promise<number> => {
 };
 
 export const useAirgapConfig = (
-  onSuccess: (simultaneousUploads: Number) => void
+  onSuccess: (simultaneousUploads: number) => void
 ) => {
   const selectedApp = useSelectedApp();
   return useQuery({

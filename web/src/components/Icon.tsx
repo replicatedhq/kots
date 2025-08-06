@@ -15,7 +15,7 @@ type IconProps = {
 };
 
 const Icon = (props: IconProps) => {
-  let className = props.className ? props.className : "";
+  const className = props.className ? props.className : "";
   return (
     <IcoMoon iconSet={iconSet} {...props} className={`icons ${className}`} />
   );

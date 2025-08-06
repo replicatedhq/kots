@@ -671,9 +671,9 @@ class AppConfig extends Component<Props, State> {
   };
 
   toggleActiveGroups = (name: string) => {
-    let groupsArr = this.state.activeGroups;
+    const groupsArr = this.state.activeGroups;
     if (groupsArr.includes(name)) {
-      let updatedGroupsArr = groupsArr.filter((n) => n !== name);
+      const updatedGroupsArr = groupsArr.filter((n) => n !== name);
       this.setState({ activeGroups: updatedGroupsArr });
     } else {
       groupsArr.push(name);
@@ -731,7 +731,7 @@ class AppConfig extends Component<Props, State> {
       downstreamVersionLabel = urlParams.get("semver") || "";
     }
 
-    let saveButtonText = fromLicenseFlow ? "Continue" : "Save config";
+    const saveButtonText = fromLicenseFlow ? "Continue" : "Save config";
 
     const sections = document.querySelectorAll(".observe-elements");
 
@@ -1010,7 +1010,7 @@ class AppConfig extends Component<Props, State> {
 }
 
 /* eslint-disable */
-// @ts-ignore
+// @ts-expect-error
 const AppConfigWithRouter: any = withRouter(AppConfig);
 
 export default AppConfigWithRouter;
