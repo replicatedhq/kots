@@ -62,6 +62,7 @@ type DeployOptions struct {
 	AdditionalLabels       map[string]string
 	Tolerations            []corev1.Toleration
 	PrivateCAsConfigmap    string
+	NodeSelector           map[string]string
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig
