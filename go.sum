@@ -1906,8 +1906,8 @@ github.com/sagikazarmark/locafero v0.7.0/go.mod h1:2za3Cg5rMaTMoG/2Ulr9AwtFaIppK
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 h1:KRzFb2m7YtdldCEkzs6KqmJw4nqEVZGK7IN2kJkjTuQ=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.2/go.mod h1:JXeL+ps8p7/KNMjDQk3TCwPpBy0wYklyWTfbkIzdIFU=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
-github.com/schemahero/schemahero v0.22.0 h1:DthUBtdQsMSjh9l6lKxMwh/so8YzwFrTuaD70Hzv5Xs=
-github.com/schemahero/schemahero v0.22.0/go.mod h1:EzE8rFlqDid//jlpLwZL1t1GIffIrcAI9mZduHmjrUU=
+github.com/schemahero/schemahero v0.22.1 h1:IAjdxJ22M5sr0Qs5pwZHjxpoppqSashvGCJSnqPGlM4=
+github.com/schemahero/schemahero v0.22.1/go.mod h1:EzE8rFlqDid//jlpLwZL1t1GIffIrcAI9mZduHmjrUU=
 github.com/sebdah/goldie/v2 v2.5.5 h1:rx1mwF95RxZ3/83sdS4Yp7t2C5TCokvWP4TBRbAyEWY=
 github.com/sebdah/goldie/v2 v2.5.5/go.mod h1:oZ9fp0+se1eapSRjfYbsV/0Hqhbuu3bJVvKI/NNtssI=
 github.com/secure-systems-lab/go-securesystemslib v0.9.0 h1:rf1HIbL64nUpEIZnjLZ3mcNEL9NBPB0iuVjyxvq3LZc=
