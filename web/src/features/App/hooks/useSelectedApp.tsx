@@ -7,8 +7,8 @@ import { App } from "@types";
 import { KotsParams } from "@types";
 
 function useSelectedApp(): App | null {
-  let { slug } = useParams<KotsParams>();
-  let { data } = useApps();
+  const { slug } = useParams<KotsParams>();
+  const { data } = useApps();
 
   const { apps = [] } = data || {};
 

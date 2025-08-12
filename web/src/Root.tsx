@@ -65,8 +65,8 @@ const queryClient = new QueryClient();
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
-let browserHistory = createBrowserHistory();
-let history = connectHistory(browserHistory);
+const browserHistory = createBrowserHistory();
+const history = connectHistory(browserHistory);
 
 // TODO:  pull in the react router hook
 
@@ -211,113 +211,101 @@ const Root = () => {
   };
 
   const getPendingApp = async () => {
-    try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/pendingapp`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-          return;
-        }
-        if (res.status === 404) {
-          return;
-        }
-
-        console.log(
-          "failed to get pending apps, unexpected status code",
-          res.status
-        );
+    const res = await fetch(`${process.env.API_ENDPOINT}/pendingapp`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
         return;
       }
-      const response = await res.json();
-      const app = response.app;
-      // TODO: delete if not used
-      // setState({
-      //   pendingApp: app,
-      // });
-      return app;
-    } catch (err) {
-      throw err;
+      if (res.status === 404) {
+        return;
+      }
+
+      console.log(
+        "failed to get pending apps, unexpected status code",
+        res.status
+      );
+      return;
     }
+    const response = await res.json();
+    const app = response.app;
+    // TODO: delete if not used
+    // setState({
+    //   pendingApp: app,
+    // });
+    return app;
   };
 
   const getAppsList = async () => {
-    try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/apps`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-          return;
-        }
-        console.log("failed to list apps, unexpected status code", res.status);
+    const res = await fetch(`${process.env.API_ENDPOINT}/apps`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
         return;
       }
-      const response = await res.json();
-
-      const apps = response.apps;
-      setState({
-        appsList: apps,
-      });
-      return apps;
-    } catch (err) {
-      throw err;
+      console.log("failed to list apps, unexpected status code", res.status);
+      return;
     }
+    const response = await res.json();
+
+    const apps = response.apps;
+    setState({
+      appsList: apps,
+    });
+    return apps;
   };
 
   const fetchUpgradeStatus = async (appSlug) => {
-    try {
-      const url = `${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`;
-      const res = await fetch(url, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        method: "GET",
+    const url = `${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`;
+    const res = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      method: "GET",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
+      console.log(
+        "failed to get upgrade service status, unexpected status code",
+        res.status
+      );
+      return;
+    }
+    const response = await res.json();
+    const status = response.status;
+    if (
+      status === "upgrading-cluster" ||
+      status === "upgrading-app" ||
+      status === "upgrade-failed"
+    ) {
+      setState({
+        showUpgradeStatusModal: true,
+        upgradeStatus: status,
+        upgradeMessage: response.currentMessage,
+        upgradeAppSlug: appSlug,
       });
-      if (!res.ok) {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-          return;
-        }
-        console.log(
-          "failed to get upgrade service status, unexpected status code",
-          res.status
-        );
-        return;
-      }
-      const response = await res.json();
-      const status = response.status;
-      if (
-        status === "upgrading-cluster" ||
-        status === "upgrading-app" ||
-        status === "upgrade-failed"
-      ) {
-        setState({
-          showUpgradeStatusModal: true,
-          upgradeStatus: status,
-          upgradeMessage: response.currentMessage,
-          upgradeAppSlug: appSlug,
-        });
-        return;
-      }
-      if (state.showUpgradeStatusModal) {
-        // upgrade finished, reload the page
-        window.location.reload();
-        return;
-      }
-    } catch (err) {
-      throw err;
+      return;
+    }
+    if (state.showUpgradeStatusModal) {
+      // upgrade finished, reload the page
+      window.location.reload();
+      return;
     }
   };
 
@@ -362,7 +350,7 @@ const Root = () => {
     if (!Utilities.isLoggedIn()) {
       return;
     }
-    let apps = state.appsList;
+    const apps = state.appsList;
     const appSlugs = apps?.map((a) => a.slug);
     const url = `${process.env.API_ENDPOINT}/ping?slugs=${appSlugs}`;
     await fetch(
@@ -501,9 +489,9 @@ const Root = () => {
   };
 
   const toggleActiveGroups = (name: string) => {
-    let groupsArr = activeGroups;
+    const groupsArr = activeGroups;
     if (groupsArr.includes(name)) {
-      let updatedGroupsArr = groupsArr.filter((n) => n !== name);
+      const updatedGroupsArr = groupsArr.filter((n) => n !== name);
       setActiveGroups(updatedGroupsArr);
     } else {
       setActiveGroups([...groupsArr, name]);
@@ -735,8 +723,7 @@ const Root = () => {
         }}
       >
         <ToastProvider>
-          {/* eslint-disable-next-line */}
-          {/* @ts-ignore */}
+          {/* @ts-expect-error */}
 
           <NavBar
             logo={state.themeState.navbarLogo || state.appLogo}
@@ -957,8 +944,7 @@ const Root = () => {
                   <Route
                     path="settings"
                     element={
-                      // eslint-disable-next-line
-                      // @ts-ignore
+                      // @ts-expect-error
                       <SnapshotSettings
                         isKurlEnabled={state.adminConsoleMetadata?.isKurl}
                         isEmbeddedCluster={
@@ -1067,16 +1053,14 @@ const Root = () => {
 
                   <Route
                     path={":slug/version-history"}
-                    // eslint-disable-next-line
-                    // @ts-ignore
+                    // @ts-expect-error
                     element={<AppVersionHistory />}
                   />
                   <Route
                     path={
                       ":slug/version-history/diff/:firstSequence/:secondSequence"
                     }
-                    // eslint-disable-next-line
-                    // @ts-ignore
+                    // @ts-expect-error
                     element={<AppVersionHistory />}
                   />
                   <Route
@@ -1113,7 +1097,7 @@ const Root = () => {
                   <Route
                     path=":slug/troubleshoot"
                     element={
-                      //@ts-ignore
+                      //@ts-expect-error
                       <TroubleshootContainer />
                     }
                   >
@@ -1163,7 +1147,7 @@ const Root = () => {
                     path=":slug/license"
                     element={
                       <AppLicense
-                        //@ts-ignore
+                        //@ts-expect-error
                         isEmbeddedCluster={Boolean(
                           state.adminConsoleMetadata?.isEmbeddedCluster
                         )}

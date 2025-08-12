@@ -5,7 +5,7 @@ import { Snapshot } from "@src/types";
 interface DeleteSnapshotModalProps {
   featureName: string;
   deleteSnapshotModal: boolean;
-  toggleConfirmDeleteModal: (snapshot: Snapshot | {}) => void;
+  toggleConfirmDeleteModal: (snapshot: Snapshot | null) => void;
   snapshotToDelete: Snapshot;
   deletingSnapshot: boolean;
   handleDeleteSnapshot: (snapshot: Snapshot) => void;
@@ -30,7 +30,7 @@ export default function DeleteSnapshotModal(props: DeleteSnapshotModalProps) {
       isOpen={deleteSnapshotModal}
       shouldReturnFocusAfterClose={false}
       onRequestClose={() => {
-        toggleConfirmDeleteModal({});
+        toggleConfirmDeleteModal(null);
       }}
       ariaHideApp={false}
       contentLabel="Modal"
@@ -77,7 +77,7 @@ export default function DeleteSnapshotModal(props: DeleteSnapshotModalProps) {
             <button
               className="btn secondary blue u-marginRight--10"
               onClick={() => {
-                toggleConfirmDeleteModal({});
+                toggleConfirmDeleteModal(null);
               }}
             >
               Cancel

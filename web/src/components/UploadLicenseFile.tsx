@@ -4,8 +4,6 @@ import yaml from "js-yaml";
 import isEmpty from "lodash/isEmpty";
 import keyBy from "lodash/keyBy";
 import size from "lodash/size";
-// TODO: upgrade this dependency
-// @ts-ignore
 import Dropzone from "react-dropzone";
 import Modal from "react-modal";
 import Select from "react-select";
@@ -234,7 +232,7 @@ const UploadLicenseFile = (props: Props) => {
   };
 
   const setAvailableAppOptions = (arr: LicenseYaml[]) => {
-    let availableAppOptions: SelectedAppToInstall[] = [];
+    const availableAppOptions: SelectedAppToInstall[] = [];
     arr.map((option) => {
       const label =
         option.spec.channelName !== "Stable"
@@ -254,7 +252,7 @@ const UploadLicenseFile = (props: Props) => {
   const onDrop = async (files: { name: string }[]) => {
     const content = await getFileContent(files[0]);
     // TODO: this is probably a bug
-    // @ts-ignore
+    // @ts-expect-error
     const parsedLicenseYaml = new TextDecoder("utf-8").decode(content);
     let licenseYamls;
     try {
@@ -461,7 +459,7 @@ const UploadLicenseFile = (props: Props) => {
                               options={state.availableAppOptions}
                               getOptionLabel={(option) =>
                                 // We want to display element instead of string
-                                //  @ts-ignore
+                                //  @ts-expect-error
                                 getLabel(option.label)
                               }
                               getOptionValue={(option) => option.value}

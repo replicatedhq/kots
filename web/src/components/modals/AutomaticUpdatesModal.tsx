@@ -198,7 +198,7 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
         }
 
         if (response?.autoDeploy !== "") {
-          let selectedAutoDeploy = find(AUTO_DEPLOY_OPTIONS, [
+          const selectedAutoDeploy = find(AUTO_DEPLOY_OPTIONS, [
             "value",
             response?.autoDeploy,
           ]);
@@ -230,7 +230,7 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
       } else {
         return readable;
       }
-    } catch (error) {
+    } catch {
       return "";
     }
   };
@@ -325,8 +325,6 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
                 isSearchable={false}
                 getOptionValue={(schedule) => schedule.label}
                 value={selectedSchedule}
-                // TODO: upgrade react-select and fix this
-                // @ts-ignore
                 onChange={this.handleScheduleChange}
               />
               <div className="flex-column flex2 u-marginLeft--10">
@@ -379,8 +377,6 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
                     isSearchable={false}
                     getOptionValue={(option) => option.label}
                     value={selectedAutoDeploy}
-                    // TODO: upgrade react-select and fix this
-                    // @ts-ignore
                     onChange={this.handleAutoDeployOptionChange}
                   />
                 </>

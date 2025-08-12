@@ -7,7 +7,7 @@ type Props = {
   default: string;
   groupName: string;
   handleAddItem: () => void;
-  handleOnChange: (name: String, val: string) => void;
+  handleOnChange: (name: string, val: string) => void;
   handleRemoveItem: () => void;
   help_text: string;
   hidden: boolean;
@@ -29,7 +29,7 @@ export default class ConfigCheckbox extends Component<Props> {
 
   handleOnChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { handleOnChange, name } = this.props;
-    var val = e.target.checked ? "1" : "0";
+    const val = e.target.checked ? "1" : "0";
     if (this.props.handleOnChange && typeof handleOnChange === "function") {
       this.props.handleOnChange(name, val);
     }
@@ -40,9 +40,9 @@ export default class ConfigCheckbox extends Component<Props> {
     if (!val || val.length === 0) {
       val = this.props.default;
     }
-    var checked = val === "1";
+    const checked = val === "1";
 
-    var hidden = this.props.hidden || this.props.when === "false";
+    const hidden = this.props.hidden || this.props.when === "false";
 
     return (
       <ConfigWrapper

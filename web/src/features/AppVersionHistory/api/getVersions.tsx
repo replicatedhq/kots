@@ -147,9 +147,9 @@ function useVersions({
   currentPage?: number;
   pageSize?: number;
 } = {}) {
-  let { slug } = useParams<KotsParams>();
-  let selectedApp = useSelectedApp();
-  let { data: metadata } = useMetadata();
+  const { slug } = useParams<KotsParams>();
+  const selectedApp = useSelectedApp();
+  const { data: metadata } = useMetadata();
 
   const versionSelector = chooseVersionsSelector({
     // labels differ by installation manager and if airgapped

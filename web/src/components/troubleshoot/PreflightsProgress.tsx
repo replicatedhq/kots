@@ -58,7 +58,7 @@ export default function PreflightProgress(props: {
   }
 
   const readableName = getReadableCollectorName(pendingPreflightCheckName);
-  let statusDiv = (
+  const statusDiv = (
     <div
       className="u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center"
       data-testid="preflight-progress-status"
