@@ -60,20 +60,7 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 
 	currentECVersion := util.EmbeddedClusterVersion()
 
-	availableUpdates := []types.AvailableUpdate{}
-	for _, u := range updates.Updates {
-		deployable, cause := isUpdateDeployable(u, updates.Updates, currentECVersion)
-		availableUpdates = append(availableUpdates, types.AvailableUpdate{
-			VersionLabel:       u.VersionLabel,
-			UpdateCursor:       u.Cursor,
-			ChannelID:          u.ChannelID,
-			IsRequired:         u.IsRequired,
-			UpstreamReleasedAt: u.ReleasedAt,
-			ReleaseNotes:       u.ReleaseNotes,
-			IsDeployable:       deployable,
-			NonDeployableCause: cause,
-		})
-	}
+	availableUpdates := getAvailableUpdates(updates.Updates, currentECVersion)
 
 	return availableUpdates, nil
 }
