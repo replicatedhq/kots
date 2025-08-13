@@ -156,5 +156,5 @@ func getKubeVersionNonDeployableCause(err error) string {
 	case errors.Is(err, util.ErrKubeMajorVersionUpgrade):
 		return "Release includes a major version upgrade of the infrastructure version, which is not allowed. Cannot use release."
 	}
-	return "Cannot validate the infrastructure version compatibility for this update. Cannot use release."
+	return "This version cannot be deployed because the required infrastructure compatibility could not be verified."
 }
