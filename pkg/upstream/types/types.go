@@ -42,14 +42,15 @@ type Upstream struct {
 }
 
 type Update struct {
-	ChannelID    string     `json:"channelID"`
-	ChannelName  string     `json:"channelName"`
-	Cursor       string     `json:"cursor"`
-	VersionLabel string     `json:"versionLabel"`
-	IsRequired   bool       `json:"isRequired"`
-	ReleaseNotes string     `json:"releaseNotes"`
-	ReleasedAt   *time.Time `json:"releasedAt"`
-	AppSequence  *int64     `json:"appSequence"` // can have a sequence if update is available as a pending download app version
+	ChannelID              string     `json:"channelID"`
+	ChannelName            string     `json:"channelName"`
+	Cursor                 string     `json:"cursor"`
+	VersionLabel           string     `json:"versionLabel"`
+	IsRequired             bool       `json:"isRequired"`
+	ReleaseNotes           string     `json:"releaseNotes"`
+	ReleasedAt             *time.Time `json:"releasedAt"`
+	AppSequence            *int64     `json:"appSequence"`                      // can have a sequence if update is available as a pending download app version
+	EmbeddedClusterVersion string     `json:"embeddedClusterVersion,omitempty"` // the version of the embedded cluster (if applicable) this update contains
 }
 
 type UpdateCheckResult struct {

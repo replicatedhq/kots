@@ -12,14 +12,22 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/store"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
-func isUpdateDeployable(updateCursor string, updates []upstreamtypes.Update) (bool, string) {
-	// iterate over updates in reverse since they are sorted in descending order
+// isUpdateDeployable checks if the given update is deployable based on the current embedded cluster version and the need for any required updates previous to it.
+func isUpdateDeployable(update upstreamtypes.Update, updates []upstreamtypes.Update, currentECVersion string) (bool, string) {
+	// first we validate the k8s versions are compatible, but only do so if the update has an embedded cluster version specific
+	if update.EmbeddedClusterVersion != "" {
+		if err := util.UpdateWithinKubeRange(currentECVersion, update.EmbeddedClusterVersion); err != nil {
+			return false, fmt.Sprintf("This version cannot be deployed because of incompatible kubernetes versions, %s", err.Error())
+		}
+	}
+	// next iterate over all updates in reverse since they are sorted in descending order and check if there are any required updates
 	requiredUpdates := []string{}
 	for i := len(updates) - 1; i >= 0; i-- {
-		if updates[i].Cursor == updateCursor {
+		if updates[i].Cursor == update.Cursor {
 			break
 		}
 		if updates[i].IsRequired {

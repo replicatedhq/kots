@@ -61,12 +61,13 @@ type Release struct {
 }
 
 type ChannelRelease struct {
-	ChannelSequence int    `json:"channelSequence"`
-	ReleaseSequence int    `json:"releaseSequence"`
-	VersionLabel    string `json:"versionLabel"`
-	IsRequired      bool   `json:"isRequired"`
-	CreatedAt       string `json:"createdAt"`
-	ReleaseNotes    string `json:"releaseNotes"`
+	ChannelSequence        int    `json:"channelSequence"`
+	ReleaseSequence        int    `json:"releaseSequence"`
+	VersionLabel           string `json:"versionLabel"`
+	IsRequired             bool   `json:"isRequired"`
+	CreatedAt              string `json:"createdAt"`
+	ReleaseNotes           string `json:"releaseNotes"`
+	EmbeddedClusterVersion string `json:"embeddedClusterVersion,omitempty"` // the version of the embedded cluster (if applicable) this release contains
 }
 
 func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
@@ -94,13 +95,14 @@ func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckR
 			releasedAt = &r
 		}
 		updates = append(updates, types.Update{
-			ChannelID:    fetchOptions.CurrentChannelID,
-			ChannelName:  fetchOptions.CurrentChannelName,
-			Cursor:       strconv.Itoa(pendingRelease.ChannelSequence),
-			VersionLabel: pendingRelease.VersionLabel,
-			IsRequired:   pendingRelease.IsRequired,
-			ReleasedAt:   releasedAt,
-			ReleaseNotes: pendingRelease.ReleaseNotes,
+			ChannelID:              fetchOptions.CurrentChannelID,
+			ChannelName:            fetchOptions.CurrentChannelName,
+			Cursor:                 strconv.Itoa(pendingRelease.ChannelSequence),
+			VersionLabel:           pendingRelease.VersionLabel,
+			IsRequired:             pendingRelease.IsRequired,
+			ReleasedAt:             releasedAt,
+			ReleaseNotes:           pendingRelease.ReleaseNotes,
+			EmbeddedClusterVersion: pendingRelease.EmbeddedClusterVersion,
 		})
 	}
 	return &types.UpdateCheckResult{

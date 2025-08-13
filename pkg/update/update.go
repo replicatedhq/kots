@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/update/types"
 	upstreampkg "github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"go.uber.org/zap"
 )
@@ -57,9 +58,11 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 		return nil, errors.Wrap(err, "failed to get updates")
 	}
 
+	currentECVersion := util.EmbeddedClusterVersion()
+
 	availableUpdates := []types.AvailableUpdate{}
 	for _, u := range updates.Updates {
-		deployable, cause := isUpdateDeployable(u.Cursor, updates.Updates)
+		deployable, cause := isUpdateDeployable(u, updates.Updates, currentECVersion)
 		availableUpdates = append(availableUpdates, types.AvailableUpdate{
 			VersionLabel:       u.VersionLabel,
 			UpdateCursor:       u.Cursor,

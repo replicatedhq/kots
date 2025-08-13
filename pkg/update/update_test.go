@@ -86,6 +86,15 @@ func TestGetAvailableUpdates(t *testing.T) {
 			perChannelReleases: map[string][]upstream.ChannelRelease{
 				"channel-id": {
 					{
+						ChannelSequence:        3,
+						ReleaseSequence:        3,
+						VersionLabel:           "0.0.3",
+						IsRequired:             false,
+						CreatedAt:              testTime.Format(time.RFC3339),
+						ReleaseNotes:           "release notes",
+						EmbeddedClusterVersion: "2.4.0+k8s-1.33",
+					},
+					{
 						ChannelSequence: 2,
 						ReleaseSequence: 2,
 						VersionLabel:    "0.0.2",
@@ -105,10 +114,21 @@ func TestGetAvailableUpdates(t *testing.T) {
 			},
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
+				t.Setenv("EMBEDDED_CLUSTER_VERSION", "2.4.0+k8s-1.30")
 				args.license.Spec.Endpoint = licenseEndpoint
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want: []types.AvailableUpdate{
+				{
+					VersionLabel:       "0.0.3",
+					UpdateCursor:       "3",
+					ChannelID:          "channel-id",
+					IsRequired:         false,
+					UpstreamReleasedAt: &testTime,
+					ReleaseNotes:       "release notes",
+					IsDeployable:       false,
+					NonDeployableCause: "This version cannot be deployed because of incompatible kubernetes versions, cannot update by more than one kubernetes minor version: current 1.30.0, update 1.33.0",
+				},
 				{
 					VersionLabel:       "0.0.2",
 					UpdateCursor:       "2",
@@ -286,74 +306,137 @@ func newMockServerWithReleases(preChannelReleases map[string][]upstream.ChannelR
 }
 func TestIsUpdateDeployable(t *testing.T) {
 	tests := []struct {
-		name         string
-		updateCursor string
-		updates      []upstreamtypes.Update
-		want         bool
-		wantCause    string
+		name             string
+		updateIndex      int
+		updates          []upstreamtypes.Update
+		currentECVersion string
+		want             bool
+		wantCause        string
 	}{
 		{
-			name:         "one update",
-			updateCursor: "3",
+			name:        "one update",
+			updateIndex: 0,
 			updates: []upstreamtypes.Update{
 				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 			},
-			want:      true,
-			wantCause: "",
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             true,
+			wantCause:        "",
 		},
 		{
-			name:         "no required updates",
-			updateCursor: "3",
+			name:        "no required updates",
+			updateIndex: 1,
 			updates: []upstreamtypes.Update{
 				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
 				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: false},
 				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
 			},
-			want:      true,
-			wantCause: "",
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             true,
+			wantCause:        "",
 		},
 		{
-			name:         "no required releases before it",
-			updateCursor: "3",
+			name:        "no required updates and embedded cluster kubernetes version within range",
+			updateIndex: 1,
 			updates: []upstreamtypes.Update{
-				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: true},
-				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false, EmbeddedClusterVersion: "2.5.0+k8s-1.31"},
 				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: false},
 				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
 			},
-			want:      true,
-			wantCause: "",
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             true,
+			wantCause:        "",
 		},
 		{
-			name:         "one required release before it",
-			updateCursor: "3",
+			name:        "no required releases before it and embedded cluster kubernetes version within range",
+			updateIndex: 1,
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: true},
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false, EmbeddedClusterVersion: "2.5.0+k8s-1.31"},
+				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: false},
+				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
+			},
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             true,
+			wantCause:        "",
+		},
+		{
+			name:        "one required release before it",
+			updateIndex: 1,
 			updates: []upstreamtypes.Update{
 				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
 				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: true},
 				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
 			},
-			want:      false,
-			wantCause: "This version cannot be deployed because version 1.0.2 is required and must be deployed first.",
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             false,
+			wantCause:        "This version cannot be deployed because version 1.0.2 is required and must be deployed first.",
 		},
 		{
-			name:         "two required releases before it",
-			updateCursor: "3",
+			name:        "two required releases before it",
+			updateIndex: 1,
 			updates: []upstreamtypes.Update{
 				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
 				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: true},
 				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: true},
 			},
-			want:      false,
-			wantCause: "This version cannot be deployed because versions 1.0.2, 1.0.1 are required and must be deployed first.",
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             false,
+			wantCause:        "This version cannot be deployed because versions 1.0.2, 1.0.1 are required and must be deployed first.",
+		},
+		{
+			name:        "incompatible kubernetes versions on embedded cluster version",
+			updateIndex: 1,
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false, EmbeddedClusterVersion: "2.5.0+k8s-1.32-rc0"},
+				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: false},
+			},
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             false,
+			wantCause:        "This version cannot be deployed because of incompatible kubernetes versions, cannot update by more than one kubernetes minor version: current 1.30.0, update 1.32.0",
+		},
+		{
+			name:        "incompatible kubernetes versions on embedded cluster version (downgrade)",
+			updateIndex: 0,
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false, EmbeddedClusterVersion: "2.3.0+k8s-1.29-rc0"},
+			},
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             false,
+			wantCause:        "This version cannot be deployed because of incompatible kubernetes versions, cannot downgrade the kubernetes version: current 1.30.0, update 1.29.0",
+		},
+		{
+			name:        "incompatible kubernetes versions on embedded cluster version and one required release before it",
+			updateIndex: 1,
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false, EmbeddedClusterVersion: "2.5.0+k8s-1.32-rc0"},
+				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: true},
+			},
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             false,
+			wantCause:        "This version cannot be deployed because of incompatible kubernetes versions, cannot update by more than one kubernetes minor version: current 1.30.0, update 1.32.0",
+		},
+		{
+			name:        "invalid embedded cluster update version format",
+			updateIndex: 0,
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false, EmbeddedClusterVersion: "2.5.0-invalid-format"},
+			},
+			currentECVersion: "2.4.0+k8s-1.30-rc0",
+			want:             false,
+			wantCause:        "This version cannot be deployed because of incompatible kubernetes versions, failed to extract update kube version: failed to extract kube version from '2.5.0-invalid-format'",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, msg := isUpdateDeployable(tt.updateCursor, tt.updates)
+			result, msg := isUpdateDeployable(tt.updates[tt.updateIndex], tt.updates, tt.currentECVersion)
 			assert.Equal(t, tt.want, result)
 			assert.Equal(t, tt.wantCause, msg)
 		})
