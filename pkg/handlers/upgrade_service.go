@@ -124,7 +124,8 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 		if r.ChannelID != airgap.Spec.ChannelID {
 			return false, "channel mismatch", nil
 		}
-		isDeployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, airgap)
+		currentECVersion := util.EmbeddedClusterVersion()
+		isDeployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, airgap, currentECVersion)
 		if err != nil {
 			return false, "", errors.Wrap(err, "failed to check if airgap update is deployable")
 		}
