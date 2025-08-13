@@ -152,7 +152,7 @@ func getKubeVersionNonDeployableCause(err error) string {
 	case errors.Is(err, util.ErrKubeMinorRangeMismatch):
 		return "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update."
 	case errors.Is(err, util.ErrKubeVersionDowngrade):
-		return "Release includes a downgrade of the infrastructure version, which is not allowed. Cannot use release."
+		return "This version cannot be deployed because it would downgrade the infrastructure, which is unsupported."
 	case errors.Is(err, util.ErrKubeMajorVersionUpgrade):
 		return "Release includes a major version upgrade of the infrastructure version, which is not allowed. Cannot use release."
 	}
