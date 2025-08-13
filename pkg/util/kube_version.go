@@ -7,10 +7,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+var re = regexp.MustCompile(`\+k8s-(\d+\.\d+)`)
+
 // Utility method to extract the kube version from an EC version.
 // Given a version string like "2.4.0+k8s-1.30-rc0", it returns the kube semver version "1.30"
 func extractKubeVersion(ecVersion string) (*semver.Version, error) {
-	re := regexp.MustCompile(`\+k8s-(\d+\.\d+)`)
 	matches := re.FindStringSubmatch(ecVersion)
 	if len(matches) != 2 {
 		return nil, errors.Errorf("failed to extract kube version from '%s'", ecVersion)
