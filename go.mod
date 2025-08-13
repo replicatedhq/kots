@@ -15,7 +15,7 @@ require (
 	github.com/bitnami-labs/sealed-secrets v0.30.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containers/image/v5 v5.36.1
-	github.com/coreos/go-oidc v2.3.0+incompatible
+	github.com/coreos/go-oidc v2.4.0+incompatible
 	github.com/distribution/distribution/v3 v3.0.0
 	github.com/distribution/reference v0.6.0
 	github.com/docker/go-units v0.5.0
