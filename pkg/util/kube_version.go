@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/Masterminds/semver/v3"
@@ -8,6 +9,13 @@ import (
 )
 
 var re = regexp.MustCompile(`\+k8s-(\d+\.\d+)`)
+
+var (
+	ErrInvalidKubeVersionFormat = errors.New("failed to extract kube version")
+	ErrKubeMajorVersionUpgrade  = errors.New("major version mismatch")
+	ErrKubeVersionDowngrade     = errors.New("cannot downgrade the kubernetes version")
+	ErrKubeMinorRangeMismatch   = errors.New("cannot update by more than one kubernetes minor version")
+)
 
 // Utility method to extract the kube version from an EC version.
 // Given a version string like "2.4.0+k8s-1.30-rc0", it returns the kube semver version "1.30"
@@ -28,20 +36,20 @@ func extractKubeVersion(ecVersion string) (*semver.Version, error) {
 func UpdateWithinKubeRange(currentVersion, updateVersion string) error {
 	current, err := extractKubeVersion(currentVersion)
 	if err != nil {
-		return errors.Wrap(err, "failed to extract current kube version")
+		return fmt.Errorf("%w: %w", ErrInvalidKubeVersionFormat, err)
 	}
 	update, err := extractKubeVersion(updateVersion)
 	if err != nil {
-		return errors.Wrap(err, "failed to extract update kube version")
+		return fmt.Errorf("%w: %w", ErrInvalidKubeVersionFormat, err)
 	}
 	if current.Major() != update.Major() {
-		return errors.Errorf("major version mismatch: current %s, update %s", current, update)
+		return fmt.Errorf("%w: current %s, update %s", ErrKubeMajorVersionUpgrade, current, update)
 	}
 	if current.GreaterThan(update) {
-		return errors.Errorf("cannot downgrade the kubernetes version: current %s, update %s", current, update)
+		return fmt.Errorf("%w: current %s, update %s", ErrKubeVersionDowngrade, current, update)
 	}
 	if update.Minor() > current.Minor()+1 {
-		return errors.Errorf("cannot update by more than one kubernetes minor version: current %s, update %s", current, update)
+		return fmt.Errorf("%w: current %s, update %s", ErrKubeMinorRangeMismatch, current, update)
 	}
 	return nil
 }

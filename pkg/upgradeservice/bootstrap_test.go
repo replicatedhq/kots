@@ -49,7 +49,7 @@ func TestBootstrapUpdateWithinKubeRange(t *testing.T) {
 				UpdateECVersion:  "2.5.0+k8s-1.31-rc0",
 			},
 			expectError:    true,
-			expectedErrMsg: "failed to extract current kube version",
+			expectedErrMsg: "failed to extract kube version",
 		},
 		{
 			name: "invalid update version format",
@@ -58,7 +58,7 @@ func TestBootstrapUpdateWithinKubeRange(t *testing.T) {
 				UpdateECVersion:  "2.5.0-invalid-format",
 			},
 			expectError:    true,
-			expectedErrMsg: "failed to extract update kube version",
+			expectedErrMsg: "failed to extract kube version",
 		},
 	}
 

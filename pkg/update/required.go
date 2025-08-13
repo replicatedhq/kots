@@ -25,8 +25,6 @@ func getAvailableUpdates(updates []upstreamtypes.Update, currentECVersion string
 
 	// keep the required updates in a slice in order to add these to the cause properties of each update
 	requiredUpdates := []string{}
-	// keep a ref for the most recent deployable update so that we can reference it in our cause property
-	mostRecentDeployable := ""
 	// iterate over all updates in reverse since they are sorted in descending order
 	for i := len(updates) - 1; i >= 0; i-- {
 		upstreamUpdate := updates[i]
@@ -47,16 +45,12 @@ func getAvailableUpdates(updates []upstreamtypes.Update, currentECVersion string
 		} else if upstreamUpdate.EmbeddedClusterVersion != "" {
 			if err := util.UpdateWithinKubeRange(currentECVersion, upstreamUpdate.EmbeddedClusterVersion); err != nil {
 				availableUpdates[i].IsDeployable = false
-				availableUpdates[i].NonDeployableCause = getKubeVersionNonDeployableCause(err, mostRecentDeployable)
+				availableUpdates[i].NonDeployableCause = getKubeVersionNonDeployableCause(err)
 			}
 		}
 		// if this update is required add it to the slice so that we can mention it for the next updates
 		if upstreamUpdate.IsRequired {
 			requiredUpdates = append(requiredUpdates, upstreamUpdate.VersionLabel)
-		}
-		// finally if after all the computations the available update is deployable update our most recent deployable update label
-		if availableUpdates[i].IsDeployable {
-			mostRecentDeployable = availableUpdates[i].VersionLabel
 		}
 	}
 
@@ -152,11 +146,15 @@ func getRequiredNonDeployableCause(requiredUpdates []string) string {
 	return fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
 }
 
-// getKubeVersionNonDeployableCause constructs a non-deployable cause message based on the kube range validation error message and the most recent deployable version label
-func getKubeVersionNonDeployableCause(err error, mostRecentDeployable string) string {
-	suggestedVersion := ""
-	if mostRecentDeployable != "" {
-		suggestedVersion = fmt.Sprintf(" Update to the most recent deployable version %s.", mostRecentDeployable)
+// getKubeVersionNonDeployableCause constructs a non-deployable cause message based on the kube range validation error message
+func getKubeVersionNonDeployableCause(err error) string {
+	switch {
+	case errors.Is(err, util.ErrKubeMinorRangeMismatch):
+		return "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update."
+	case errors.Is(err, util.ErrKubeVersionDowngrade):
+		return "Release includes a downgrade of the infrastructure version, which is not allowed. Cannot use release."
+	case errors.Is(err, util.ErrKubeMajorVersionUpgrade):
+		return "Release includes a major version upgrade of the infrastructure version, which is not allowed. Cannot use release."
 	}
-	return fmt.Sprintf("This version cannot be deployed because of incompatible kubernetes versions, %s.%s", err.Error(), suggestedVersion)
+	return "Cannot validate the infrastructure version compatibility for this update. Cannot use release."
 }
