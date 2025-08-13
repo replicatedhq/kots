@@ -6,9 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 
-	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -24,7 +22,7 @@ import (
 )
 
 func bootstrap(params types.UpgradeServiceParams) (finalError error) {
-	if err := updateWithinKubeRange(params); err != nil {
+	if err := util.UpdateWithinKubeRange(params.CurrentECVersion, params.UpdateECVersion); err != nil {
 		return errors.Wrap(err, "kubernetes version update is not within allowed range")
 	}
 
@@ -44,44 +42,6 @@ func bootstrap(params types.UpgradeServiceParams) (finalError error) {
 		}
 	}
 	return nil
-}
-
-// updateWithinKubeRange checks if the update version is within the same major version and
-// at most one minor version ahead of the current version.
-func updateWithinKubeRange(params types.UpgradeServiceParams) error {
-	currentVersion, err := extractKubeVersion(params.CurrentECVersion)
-	if err != nil {
-		return errors.Wrap(err, "failed to extract current kube version")
-	}
-	updateVersion, err := extractKubeVersion(params.UpdateECVersion)
-	if err != nil {
-		return errors.Wrap(err, "failed to extract update kube version")
-	}
-	if currentVersion.Major() != updateVersion.Major() {
-		return errors.Errorf("major version mismatch: current %s, update %s", currentVersion, updateVersion)
-	}
-	if currentVersion.GreaterThan(updateVersion) {
-		return errors.Errorf("cannot downgrade the kubernetes version: current %s, update %s", currentVersion, updateVersion)
-	}
-	if updateVersion.Minor() > currentVersion.Minor()+1 {
-		return errors.Errorf("cannot update by more than one kubernetes minor version: current %s, update %s", currentVersion, updateVersion)
-	}
-	return nil
-}
-
-// Utility method to extract the kube version from an EC version.
-// Given a version string like "2.4.0+k8s-1.30-rc0", it returns the kube semver version "1.30"
-func extractKubeVersion(ecVersion string) (*semver.Version, error) {
-	re := regexp.MustCompile(`\+k8s-(\d+\.\d+)`)
-	matches := re.FindStringSubmatch(ecVersion)
-	if len(matches) != 2 {
-		return nil, errors.Errorf("failed to extract kube version from '%s'", ecVersion)
-	}
-	kubeVersion, err := semver.NewVersion(matches[1])
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse kube version from '%s'", ecVersion)
-	}
-	return kubeVersion, nil
 }
 
 func pullArchiveFromAirgap(params types.UpgradeServiceParams) (finalError error) {

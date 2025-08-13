@@ -11,25 +11,50 @@ import (
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/update/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
-func isUpdateDeployable(updateCursor string, updates []upstreamtypes.Update) (bool, string) {
-	// iterate over updates in reverse since they are sorted in descending order
+// getAvailableUpdates returns the slice of available updates given a list of upstream updates making sure to:
+// - Check for previously required versions and setting the deployabled and cause properties accordingly
+// - Check for kubernetes version compatibility for embedded cluster versions and setting the deployable and cause properties accordingly
+func getAvailableUpdates(updates []upstreamtypes.Update, currentECVersion string) []types.AvailableUpdate {
+	availableUpdates := make([]types.AvailableUpdate, len(updates))
+
+	// keep the required updates in a slice in order to add these to the cause properties of each update
 	requiredUpdates := []string{}
+	// iterate over all updates in reverse since they are sorted in descending order
 	for i := len(updates) - 1; i >= 0; i-- {
-		if updates[i].Cursor == updateCursor {
-			break
+		upstreamUpdate := updates[i]
+		availableUpdates[i] = types.AvailableUpdate{
+			VersionLabel:       upstreamUpdate.VersionLabel,
+			UpdateCursor:       upstreamUpdate.Cursor,
+			ChannelID:          upstreamUpdate.ChannelID,
+			IsRequired:         upstreamUpdate.IsRequired,
+			UpstreamReleasedAt: upstreamUpdate.ReleasedAt,
+			ReleaseNotes:       upstreamUpdate.ReleaseNotes,
+			IsDeployable:       true,
 		}
-		if updates[i].IsRequired {
-			requiredUpdates = append(requiredUpdates, updates[i].VersionLabel)
+		// if there's any required before the current update, mark it as non-deployable and set the cause
+		if len(requiredUpdates) > 0 {
+			availableUpdates[i].IsDeployable = false
+			availableUpdates[i].NonDeployableCause = getRequiredNonDeployableCause(requiredUpdates)
+			// else check the k8s versions are compatible but only do so if the update has an embeded cluster version specificied
+		} else if upstreamUpdate.EmbeddedClusterVersion != "" {
+			if err := util.UpdateWithinKubeRange(currentECVersion, upstreamUpdate.EmbeddedClusterVersion); err != nil {
+				availableUpdates[i].IsDeployable = false
+				availableUpdates[i].NonDeployableCause = getKubeVersionNonDeployableCause(err)
+			}
+		}
+		// if this update is required add it to the slice so that we can mention it for the next updates
+		if upstreamUpdate.IsRequired {
+			requiredUpdates = append(requiredUpdates, upstreamUpdate.VersionLabel)
 		}
 	}
-	if len(requiredUpdates) > 0 {
-		return false, getNonDeployableCause(requiredUpdates)
-	}
-	return true, ""
+
+	return availableUpdates
 }
 
 func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap) (bool, string, error) {
@@ -46,7 +71,7 @@ func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap) (bo
 		return false, "", errors.Wrap(err, "failed to get missing required versions")
 	}
 	if len(requiredUpdates) > 0 {
-		return false, getNonDeployableCause(requiredUpdates), nil
+		return false, getRequiredNonDeployableCause(requiredUpdates), nil
 	}
 	return true, "", nil
 }
@@ -105,7 +130,8 @@ func getRequiredAirgapUpdates(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.L
 	return requiredUpdates, nil
 }
 
-func getNonDeployableCause(requiredUpdates []string) string {
+// getRequiredNonDeployableCause constructs a non-deployable cause message based on the required updates.
+func getRequiredNonDeployableCause(requiredUpdates []string) string {
 	if len(requiredUpdates) == 0 {
 		return ""
 	}
@@ -118,4 +144,17 @@ func getNonDeployableCause(requiredUpdates []string) string {
 		return fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr)
 	}
 	return fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
+}
+
+// getKubeVersionNonDeployableCause constructs a non-deployable cause message based on the kube range validation error message
+func getKubeVersionNonDeployableCause(err error) string {
+	switch {
+	case errors.Is(err, util.ErrKubeMinorRangeMismatch):
+		return "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update."
+	case errors.Is(err, util.ErrKubeVersionDowngrade):
+		return "This version cannot be deployed because it would downgrade the infrastructure, which is unsupported."
+	case errors.Is(err, util.ErrKubeMajorVersionUpgrade):
+		return "Release includes a major version upgrade of the infrastructure version, which is not allowed. Cannot use release."
+	}
+	return "This version cannot be deployed because the required infrastructure compatibility could not be verified."
 }
