@@ -190,6 +190,7 @@ type VersionStore interface {
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
 	GetNextAppSequence(appID string) (int64, error)
 	GetCurrentUpdateCursor(appID string, channelID string) (string, error)
+	UpdateAppVersionMetadata(appID string, update upstreamtypes.Update) error
 	HasStrictPreflights(appID string, sequence int64) (bool, error)
 	GetEmbeddedClusterConfigForVersion(appID string, sequence int64) (*embeddedclusterv1beta1.Config, error)
 }

@@ -122,7 +122,6 @@ type State = {
   loadingVersionHistory: boolean;
   logs: Object | null;
   logsLoading: boolean;
-  noUpdateAvailiableText: string;
   numOfRemainingVersions: number;
   numOfSkippedVersions: number;
   pageSize: Number;
@@ -206,7 +205,6 @@ class AppVersionHistory extends Component<Props, State> {
       loadingVersionHistory: true,
       logs: null,
       logsLoading: false,
-      noUpdateAvailiableText: "",
       numOfRemainingVersions: 0,
       numOfSkippedVersions: 0,
       pageSize: 20,
@@ -992,25 +990,11 @@ class AppVersionHistory extends Component<Props, State> {
         const response = await res.json();
 
         if (response.availableUpdates === 0) {
-          if (
-            !find(this.state.versionHistory, {
-              parentSequence: response.currentAppSequence,
-            })
-          ) {
-            // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
-            this.fetchKotsDownstreamHistory();
-            this.setState({ checkingForUpdates: false });
-          } else {
-            this.setState({
-              checkingForUpdates: false,
-              noUpdateAvailiableText: "There are no updates available",
-            });
-            setTimeout(() => {
-              this.setState({
-                noUpdateAvailiableText: "",
-              });
-            }, 3000);
-          }
+          // refresh version history list as it can be out of sync because of:
+          // 1. automatic updates happening in the background
+          // 2. there can be metadata updates to pending versions already in the version history list
+          this.fetchKotsDownstreamHistory();
+          this.setState({ checkingForUpdates: false });
         } else {
           this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
         }
