@@ -77,7 +77,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.18.4
+	helm.sh/helm/v3 v3.18.5
 	k8s.io/api v0.33.3
 	k8s.io/apimachinery v0.33.3
 	k8s.io/cli-runtime v0.33.3
@@ -359,7 +359,7 @@ require (
 	k8s.io/component-base v0.33.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
-	k8s.io/kubectl v0.33.2 // indirect
+	k8s.io/kubectl v0.33.3 // indirect
 	oras.land/oras-go v1.2.6 // indirect
 	periph.io/x/host/v3 v3.8.5 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
@@ -414,6 +414,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.6 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sigstore/protobuf-specs v0.4.1 // indirect
