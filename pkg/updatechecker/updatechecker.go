@@ -365,7 +365,7 @@ func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull
 
 	for _, update := range updates.Updates {
 		if err := store.UpdateAppVersionMetadata(appID, update); err != nil {
-			logger.Error(errors.Wrapf(err, "update app version metadata for %s", update.VersionLabel))
+			logger.Error(errors.Wrapf(err, "failed to update app version metadata for %s", update.VersionLabel))
 		}
 	}
 	return nil
