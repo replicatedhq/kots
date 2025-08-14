@@ -957,6 +957,24 @@ func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (stri
 	return updateCursor.String, nil
 }
 
+func (s *KOTSStore) UpdateAppVersionMetadata(appID string, update upstreamtypes.Update) error {
+	db := persistence.MustGetDBSession()
+
+	query := `UPDATE app_version 
+			 SET is_required = ?, version_label = ?, release_notes = ? 
+			 WHERE app_id = ? AND channel_id = ? AND update_cursor = ?`
+
+	_, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{update.IsRequired, update.VersionLabel, update.ReleaseNotes, appID, update.ChannelID, update.Cursor},
+	})
+	if err != nil {
+		return fmt.Errorf("update app version metadata: %v", err)
+	}
+
+	return nil
+}
+
 func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
 	var preflightSpecStr gorqlite.NullString
 	db := persistence.MustGetDBSession()

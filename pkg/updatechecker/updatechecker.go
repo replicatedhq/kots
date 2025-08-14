@@ -274,6 +274,10 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, d.ClusterID)
 	}
 
+	if err := maybeUpdatePendingVersionsMetadata(a.ID, getUpdatesOptions, appVersions.CurrentVersion); err != nil {
+		logger.Error(errors.Wrap(err, "failed to update app version metadata"))
+	}
+
 	filteredUpdates := removeOldUpdates(updates.Updates, appVersions, licenseChan.IsSemverRequired)
 
 	var availableReleases []types.UpdateCheckRelease
@@ -331,6 +335,40 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	}
 
 	return &ucr, nil
+}
+
+// maybeUpdatePendingVersionsMetadata updates metadata for pending versions since the currently deployed version.
+//
+// Limitations:
+// - Only gets pending releases for the channel of the currently deployed version, even if channel changed in later versions
+// - Does not rerender the application archive, so the Installation object in the archive can become out of sync
+// - This is not in the critical path - errors are logged but don't fail the overall update check
+func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull.GetUpdatesOptions, currentVersion *downstreamtypes.DownstreamVersion) error {
+	if currentVersion == nil {
+		return nil
+	}
+
+	// update options to use info from the currently deployed version
+	getUpdatesOptions.CurrentCursor = currentVersion.UpdateCursor
+	getUpdatesOptions.CurrentChannelID = currentVersion.ChannelID
+	getUpdatesOptions.ChannelChanged = false // we want the api to return pending updates after the currently deployed version even if channel changed in later versions
+	if currentVersion.KOTSKinds != nil {
+		getUpdatesOptions.CurrentChannelName = currentVersion.KOTSKinds.Installation.Spec.ChannelName
+	} else {
+		getUpdatesOptions.CurrentChannelName = ""
+	}
+
+	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", getUpdatesOptions.License.Spec.AppSlug), getUpdatesOptions)
+	if err != nil {
+		return errors.Wrap(err, "get updates for metadata refresh")
+	}
+
+	for _, update := range updates.Updates {
+		if err := store.UpdateAppVersionMetadata(appID, update); err != nil {
+			logger.Error(errors.Wrapf(err, "update app version metadata for %s", update.VersionLabel))
+		}
+	}
+	return nil
 }
 
 func downloadAppUpdates(opts types.CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update, updateCheckTime time.Time) error {

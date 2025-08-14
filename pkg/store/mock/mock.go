@@ -1842,6 +1842,20 @@ func (mr *MockStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSequence,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersion", reflect.TypeOf((*MockStore)(nil).UpdateAppVersion), appID, sequence, baseSequence, filesInDir, source, skipPreflights)
 }
 
+// UpdateAppVersionMetadata mocks base method.
+func (m *MockStore) UpdateAppVersionMetadata(appID string, update types13.Update) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppVersionMetadata", appID, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAppVersionMetadata indicates an expected call of UpdateAppVersionMetadata.
+func (mr *MockStoreMockRecorder) UpdateAppVersionMetadata(appID, update interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionMetadata", reflect.TypeOf((*MockStore)(nil).UpdateAppVersionMetadata), appID, update)
+}
+
 // UpdateDownstreamDeployStatus mocks base method.
 func (m *MockStore) UpdateDownstreamDeployStatus(appID, clusterID string, sequence int64, isError bool, output types0.DownstreamOutput) error {
 	m.ctrl.T.Helper()
@@ -3717,6 +3731,20 @@ func (m *MockVersionStore) UpdateAppVersion(appID string, sequence int64, baseSe
 func (mr *MockVersionStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSequence, filesInDir, source, skipPreflights interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersion), appID, sequence, baseSequence, filesInDir, source, skipPreflights)
+}
+
+// UpdateAppVersionMetadata mocks base method.
+func (m *MockVersionStore) UpdateAppVersionMetadata(appID string, update types13.Update) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppVersionMetadata", appID, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAppVersionMetadata indicates an expected call of UpdateAppVersionMetadata.
+func (mr *MockVersionStoreMockRecorder) UpdateAppVersionMetadata(appID, update interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionMetadata", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersionMetadata), appID, update)
 }
 
 // UpdateNextAppVersionDiffSummary mocks base method.
