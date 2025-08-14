@@ -93,7 +93,8 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) 
 			return nil // skip airgap updates that are not for the current channel, preserving previous behavior
 		}
 
-		deployable, nonDeployableCause, err := IsAirgapUpdateDeployable(app, airgap)
+		currentECVersion := util.EmbeddedClusterVersion()
+		deployable, nonDeployableCause, err := IsAirgapUpdateDeployable(app, airgap, currentECVersion)
 		if err != nil {
 			return errors.Wrap(err, "failed to check if airgap update is deployable")
 		}

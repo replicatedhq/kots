@@ -57,7 +57,7 @@ func getAvailableUpdates(updates []upstreamtypes.Update, currentECVersion string
 	return availableUpdates
 }
 
-func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap) (bool, string, error) {
+func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap, currentECVersion string) (bool, string, error) {
 	appVersions, err := store.GetStore().FindDownstreamVersions(app.ID, true)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get downstream versions")
@@ -72,6 +72,12 @@ func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap) (bo
 	}
 	if len(requiredUpdates) > 0 {
 		return false, getRequiredNonDeployableCause(requiredUpdates), nil
+	}
+	// If this is an EC install, check if the update kubernetes version is within the range of what we can upgrade to
+	if currentECVersion != "" && airgap.Spec.EmbeddedClusterVersion != "" {
+		if err := util.UpdateWithinKubeRange(currentECVersion, airgap.Spec.EmbeddedClusterVersion); err != nil {
+			return false, getKubeVersionNonDeployableCause(err), nil
+		}
 	}
 	return true, "", nil
 }

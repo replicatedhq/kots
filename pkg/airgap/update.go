@@ -95,7 +95,8 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to find airgap meta")
 	}
 
-	deployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, airgap)
+	currentECVersion := util.EmbeddedClusterVersion()
+	deployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, airgap, currentECVersion)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if airgap update is deployable")
 	}
