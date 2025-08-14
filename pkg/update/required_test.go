@@ -4,8 +4,12 @@ import (
 	"testing"
 
 	"github.com/blang/semver"
+	"github.com/golang/mock/gomock"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
+	"github.com/replicatedhq/kots/pkg/store"
+	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
 )
@@ -284,6 +288,164 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 			got, err = getRequiredAirgapUpdates(tt.airgap, tt.license, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
 			req.NoError(err)
 			req.Equal(tt.wantSemver, got)
+		})
+	}
+}
+
+func TestIsAirgapUpdateDeployable(t *testing.T) {
+	tests := []struct {
+		name             string
+		airgap           *kotsv1beta1.Airgap
+		currentECVersion string
+		wantDeployable   bool
+		wantCause        string
+		setupStore       func(mockStore *mock_store.MockStore)
+	}{
+		{
+			name: "not deployable due to required releases",
+			airgap: &kotsv1beta1.Airgap{
+				Spec: kotsv1beta1.AirgapSpec{
+					ChannelID: "test-channel",
+					RequiredReleases: []kotsv1beta1.AirgapReleaseMeta{
+						{
+							VersionLabel: "1.0.0",
+							UpdateCursor: "100",
+						},
+					},
+					AirgapReleaseMeta: kotsv1beta1.AirgapReleaseMeta{
+						VersionLabel:           "1.1.0",
+						UpdateCursor:           "110",
+						EmbeddedClusterVersion: "2.7.4+k8s-1.30",
+					},
+				},
+			},
+			currentECVersion: "2.7.3+k8s-1.29",
+			wantDeployable:   false,
+			wantCause:        "This version cannot be deployed because version 1.0.0 is required and must be deployed first.",
+			setupStore: func(mockStore *mock_store.MockStore) {
+				s := semver.MustParse("0.9.0")
+				c := cursor.MustParse("90")
+				mockStore.EXPECT().FindDownstreamVersions("test-app", true).Return(&downstreamtypes.DownstreamVersions{
+					AllVersions: []*downstreamtypes.DownstreamVersion{
+						{
+							ChannelID:    "test-channel",
+							VersionLabel: "0.9.0",
+							UpdateCursor: "90",
+							Semver:       &s,
+							Cursor:       &c,
+						},
+					},
+				}, nil)
+			},
+		},
+		{
+			name: "deployable when no required updates and compatible EC version",
+			airgap: &kotsv1beta1.Airgap{
+				Spec: kotsv1beta1.AirgapSpec{
+					ChannelID: "test-channel",
+					AirgapReleaseMeta: kotsv1beta1.AirgapReleaseMeta{
+						EmbeddedClusterVersion: "2.7.4+k8s-1.30",
+					},
+				},
+			},
+			currentECVersion: "2.7.3+k8s-1.29",
+			wantDeployable:   true,
+			wantCause:        "",
+			setupStore: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().FindDownstreamVersions("test-app", true).Return(&downstreamtypes.DownstreamVersions{
+					AllVersions: []*downstreamtypes.DownstreamVersion{},
+				}, nil)
+			},
+		},
+		{
+			name: "not deployable due to EC version incompatibility",
+			airgap: &kotsv1beta1.Airgap{
+				Spec: kotsv1beta1.AirgapSpec{
+					ChannelID: "test-channel",
+					AirgapReleaseMeta: kotsv1beta1.AirgapReleaseMeta{
+						EmbeddedClusterVersion: "2.8.0+k8s-1.31",
+					},
+				},
+			},
+			currentECVersion: "2.7.4+k8s-1.29",
+			wantDeployable:   false,
+			wantCause:        "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update.",
+			setupStore: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().FindDownstreamVersions("test-app", true).Return(&downstreamtypes.DownstreamVersions{
+					AllVersions: []*downstreamtypes.DownstreamVersion{},
+				}, nil)
+			},
+		},
+		{
+			name: "deployable when airgap EC version is empty",
+			airgap: &kotsv1beta1.Airgap{
+				Spec: kotsv1beta1.AirgapSpec{
+					ChannelID: "test-channel",
+					AirgapReleaseMeta: kotsv1beta1.AirgapReleaseMeta{
+						EmbeddedClusterVersion: "",
+					},
+				},
+			},
+			currentECVersion: "2.7.3+k8s-1.29",
+			wantDeployable:   true,
+			wantCause:        "",
+			setupStore: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().FindDownstreamVersions("test-app", true).Return(&downstreamtypes.DownstreamVersions{
+					AllVersions: []*downstreamtypes.DownstreamVersion{},
+				}, nil)
+			},
+		},
+		{
+			name: "deployable when current EC version is empty (non-ec installation) even if airgap EC version is set",
+			airgap: &kotsv1beta1.Airgap{
+				Spec: kotsv1beta1.AirgapSpec{
+					ChannelID: "test-channel",
+					AirgapReleaseMeta: kotsv1beta1.AirgapReleaseMeta{
+						EmbeddedClusterVersion: "2.7.5+k8s-1.30",
+					},
+				},
+			},
+			currentECVersion: "",
+			wantDeployable:   true,
+			wantCause:        "",
+			setupStore: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().FindDownstreamVersions("test-app", true).Return(&downstreamtypes.DownstreamVersions{
+					AllVersions: []*downstreamtypes.DownstreamVersion{},
+				}, nil)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockStore := mock_store.NewMockStore(ctrl)
+			tt.setupStore(mockStore)
+
+			store.SetStore(mockStore)
+			defer store.SetStore(nil)
+
+			app := &apptypes.App{
+				ID:                "test-app",
+				SelectedChannelID: "test-channel",
+				License: `apiVersion: kots.io/v1beta1
+kind: License
+spec:
+  channelID: test-channel
+  channels:
+  - channelID: test-channel
+    channelName: Test
+    isDefault: true
+    isSemverRequired: false`,
+			}
+
+			deployable, cause, err := IsAirgapUpdateDeployable(app, tt.airgap, tt.currentECVersion)
+
+			require.NoError(t, err)
+			require.Equal(t, tt.wantDeployable, deployable)
+			require.Equal(t, tt.wantCause, cause)
 		})
 	}
 }

@@ -569,7 +569,8 @@ func (h *Handler) CanInstallAppVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		deployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, decoded.(*kotsv1beta1.Airgap))
+		currentECVersion := util.EmbeddedClusterVersion()
+		deployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, decoded.(*kotsv1beta1.Airgap), currentECVersion)
 		if err != nil {
 			response.Error = "failed to check if airgap update is deployable"
 			logger.Error(errors.Wrap(err, response.Error))
