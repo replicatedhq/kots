@@ -12,7 +12,7 @@ jobs:
       CLUSTER_NAME: kots-arm64-arc
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install replicated CLI
         env:
