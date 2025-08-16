@@ -144,7 +144,7 @@
     "react-modal": "^3.16.3",
     "react-refresh": "^0.17.0",
     "react-router": "^7.7.1",
-    "react-router-dom": "^7.7.1",
+    "react-router-dom": "^7.8.1",
     "react-select": "^5.10.2",
     "react-tooltip": "^4.2.6",
     "react-vis": "^1.12.1",
