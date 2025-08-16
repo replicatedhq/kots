@@ -34,7 +34,7 @@ jobs:
         ]
     runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/build-custom-melange-package
         with:
           context: migrations/deploy
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-migrations-melange-packages]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/build-custom-image-with-apko
         with:
           context: migrations/deploy
@@ -67,7 +67,7 @@ jobs:
         ]
     runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/build-custom-melange-package
         with:
           context: kurl_proxy/deploy
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-kurl-proxy-melange-packages]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/build-custom-image-with-apko
         with:
           context: kurl_proxy/deploy
@@ -100,7 +100,7 @@ jobs:
         ]
     runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/build-custom-melange-package
         with:
           context: deploy
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-kotsadm-melange-packages]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/build-custom-image-with-apko
         with:
           context: deploy
@@ -127,7 +127,7 @@ jobs:
     needs: [build-migrations, build-kurl-proxy, build-kotsadm]
     steps:
       - name: Checkout Chart
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: replicatedhq/kots-helm
           token: ${{ secrets.GH_PAT }}
