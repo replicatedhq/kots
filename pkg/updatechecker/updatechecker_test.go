@@ -10,11 +10,15 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
+	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/updatechecker/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,6 +29,299 @@ func TestAutoDeployDoesNotExecuteIfDisabled(t *testing.T) {
 	err := autoDeploy(opts, "cluster-id", autoDeployType)
 	if err != nil {
 		t.Errorf("autoDeploy() returned error = %v, wanted to nil", err)
+	}
+}
+
+func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
+	tests := []struct {
+		name                string
+		appID               string
+		currentVersion      *downstreamtypes.DownstreamVersion
+		pendingVersions     []*downstreamtypes.DownstreamVersion
+		getUpdatesOptions   kotspull.GetUpdatesOptions
+		mockUpdates         []upstreamtypes.Update
+		mockGetUpdatesError error
+		setupMockStore      func(*mock_store.MockStore)
+		expectedError       string
+		validateOptions     func(t *testing.T, options kotspull.GetUpdatesOptions) // To verify options are modified correctly
+	}{
+		{
+			name:            "early return when currentVersion is nil",
+			appID:           "test-app",
+			currentVersion:  nil,
+			pendingVersions: []*downstreamtypes.DownstreamVersion{},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				CurrentCursor:    "original-cursor",
+				CurrentChannelID: "original-channel",
+			},
+		},
+		{
+			name:  "getUpdates returns error",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "cursor-1",
+				ChannelID:    "channel-1",
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{
+				{
+					ChannelID:    "channel-1",
+					UpdateCursor: "cursor-2",
+				},
+			},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						AppSlug: "test-app-slug",
+					},
+				},
+			},
+			mockGetUpdatesError: errors.New("upstream error"),
+			expectedError:       "get updates for metadata refresh",
+			validateOptions: func(t *testing.T, options kotspull.GetUpdatesOptions) {
+				assert.Equal(t, "cursor-1", options.CurrentCursor)
+				assert.Equal(t, "channel-1", options.CurrentChannelID)
+				assert.False(t, options.ChannelChanged)
+				assert.Equal(t, "", options.CurrentChannelName) // Should be empty since KOTSKinds is nil
+			},
+		},
+		{
+			name:  "pending version found in upstream updates - no demotion change needed",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "cursor-1",
+				ChannelID:    "channel-1",
+				KOTSKinds: &kotsutil.KotsKinds{
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelName: "test-channel-name",
+						},
+					},
+				},
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{
+				{
+					ChannelID:    "channel-1",
+					UpdateCursor: "cursor-2",
+				},
+			},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						AppSlug: "test-app-slug",
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{
+				{
+					VersionLabel: "v1.0.0",
+					ChannelID:    "channel-1",
+					Cursor:       "cursor-2",
+				},
+			},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().UpdateAppVersionMetadata("test-app", gomock.Any()).Return(nil)
+				// No demotion call expected since version exists in both pending and updates
+			},
+			validateOptions: func(t *testing.T, options kotspull.GetUpdatesOptions) {
+				assert.Equal(t, "cursor-1", options.CurrentCursor)
+				assert.Equal(t, "channel-1", options.CurrentChannelID)
+				assert.False(t, options.ChannelChanged)
+				assert.Equal(t, "test-channel-name", options.CurrentChannelName) // Should be set from KOTSKinds
+			},
+		},
+		{
+			name:  "pending version not found in upstream updates - should demote",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "cursor-1",
+				ChannelID:    "channel-1",
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{
+				{
+					ChannelID:    "channel-1",
+					UpdateCursor: "cursor-2",
+				},
+				{
+					ChannelID:    "channel-1",
+					UpdateCursor: "cursor-3",
+				},
+			},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						AppSlug: "test-app-slug",
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{
+				{
+					VersionLabel: "v1.0.0",
+					ChannelID:    "channel-1",
+					Cursor:       "cursor-3", // Different cursor - cursor-2 not found in updates, so it should be demoted
+				},
+			},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().UpdateAppVersionMetadata("test-app", gomock.Any()).Return(nil)
+				mockStore.EXPECT().UpdateAppVersionDemotion("test-app", "channel-1", "cursor-2", true).Return(nil)
+			},
+		},
+		{
+			name:  "upstream update not found in pending versions - should undemote",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "cursor-1",
+				ChannelID:    "channel-1",
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{
+				{
+					ChannelID:    "channel-1",
+					UpdateCursor: "cursor-2",
+				},
+			},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						AppSlug: "test-app-slug",
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{
+				{
+					VersionLabel: "v1.0.0",
+					ChannelID:    "channel-1",
+					Cursor:       "cursor-2", // matches pending version
+				},
+				{
+					VersionLabel: "v1.1.0",
+					ChannelID:    "channel-1",
+					Cursor:       "cursor-3", // not in pending versions - should be un-demoted
+				},
+			},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().UpdateAppVersionMetadata("test-app", gomock.Any()).Return(nil).Times(2)
+				// cursor-3 should be un-demoted since it's in updates but not in pending
+				mockStore.EXPECT().UpdateAppVersionDemotion("test-app", "channel-1", "cursor-3", false).Return(nil)
+			},
+		},
+		{
+			name:  "no pending versions but upstream updates exist - should undemote all updates",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "cursor-1",
+				ChannelID:    "channel-1",
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{}, // empty - all were demoted
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						AppSlug: "test-app-slug",
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{
+				{
+					VersionLabel: "v1.0.0",
+					ChannelID:    "channel-1",
+					Cursor:       "cursor-2",
+				},
+				{
+					VersionLabel: "v1.1.0",
+					ChannelID:    "channel-1",
+					Cursor:       "cursor-3",
+				},
+			},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().UpdateAppVersionMetadata("test-app", gomock.Any()).Return(nil).Times(2)
+				// Both updates should be un-demoted since they're not in pending versions
+				mockStore.EXPECT().UpdateAppVersionDemotion("test-app", "channel-1", "cursor-2", false).Return(nil)
+				mockStore.EXPECT().UpdateAppVersionDemotion("test-app", "channel-1", "cursor-3", false).Return(nil)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Setup mocks
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			var mockStore *mock_store.MockStore
+			if test.setupMockStore != nil {
+				mockStore = mock_store.NewMockStore(ctrl)
+				test.setupMockStore(mockStore)
+				originalStore := store
+				store = mockStore
+				defer func() { store = originalStore }()
+			}
+
+			// Mock getUpdates function
+			originalGetUpdates := getUpdates
+			getUpdates = func(replicatedURL string, options kotspull.GetUpdatesOptions) (*upstreamtypes.UpdateCheckResult, error) {
+				// Validate that options were modified correctly
+				if test.validateOptions != nil {
+					test.validateOptions(t, options)
+				}
+
+				if test.mockGetUpdatesError != nil {
+					return nil, test.mockGetUpdatesError
+				}
+				return &upstreamtypes.UpdateCheckResult{Updates: test.mockUpdates}, nil
+			}
+			defer func() { getUpdates = originalGetUpdates }()
+
+			// Execute the function under test
+			err := maybeUpdatePendingVersionsMetadata(test.appID, test.getUpdatesOptions, test.currentVersion, test.pendingVersions)
+
+			// Assert results
+			if test.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), test.expectedError)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+// Test the helper function getVersionKey since it's used by maybeUpdatePendingVersionsMetadata
+func Test_getVersionKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		channelID   string
+		cursor      string
+		expectedKey string
+	}{
+		{
+			name:        "basic key generation",
+			channelID:   "channel-123",
+			cursor:      "cursor-456",
+			expectedKey: "channel-123-cursor-456",
+		},
+		{
+			name:        "empty channel id",
+			channelID:   "",
+			cursor:      "cursor-456",
+			expectedKey: "-cursor-456",
+		},
+		{
+			name:        "empty cursor",
+			channelID:   "channel-123",
+			cursor:      "",
+			expectedKey: "channel-123-",
+		},
+		{
+			name:        "both empty",
+			channelID:   "",
+			cursor:      "",
+			expectedKey: "-",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := getVersionKey(test.channelID, test.cursor)
+			require.Equal(t, test.expectedKey, result)
+		})
 	}
 }
 

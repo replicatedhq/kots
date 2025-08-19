@@ -28,6 +28,7 @@ type DownstreamVersion struct {
 	Cursor             *cursor.Cursor                     `json:"-"`
 	ChannelID          string                             `json:"channelId,omitempty"`
 	IsRequired         bool                               `json:"isRequired"`
+	IsDemoted          bool                               `json:"isDemoted"`
 	Status             storetypes.DownstreamVersionStatus `json:"status"`
 	CreatedOn          *time.Time                         `json:"createdOn,omitempty"`
 	ParentSequence     int64                              `json:"parentSequence"`
