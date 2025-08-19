@@ -324,7 +324,7 @@ class AppVersionHistory extends Component<Props, State> {
       this.setState({ updatesAvailable: true });
     }
     if (
-      this.props.outletContext.app.downstream.pendingVersions.length === 0 &&
+      !this.checkIfUpdatesAvailable() &&
       this.state.updatesAvailable === true
     ) {
       this.setState({ updatesAvailable: false });
