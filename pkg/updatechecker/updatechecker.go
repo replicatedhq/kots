@@ -37,6 +37,9 @@ var jobs = make(map[string]*cron.Cron)
 var mtx sync.Mutex
 var store storepkg.Store
 
+// getUpdates is a package-level variable that can be replaced in tests for mocking
+var getUpdates = kotspull.GetUpdates
+
 // Start will start the update checker
 // the frequency of those update checks are app specific and can be modified by the user
 func Start() error {
@@ -251,7 +254,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	}
 
 	// get updates
-	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
+	updates, err := getUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get updates")
 	}
@@ -363,7 +366,7 @@ func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull
 		getUpdatesOptions.CurrentChannelName = ""
 	}
 
-	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", getUpdatesOptions.License.Spec.AppSlug), getUpdatesOptions)
+	updates, err := getUpdates(fmt.Sprintf("replicated://%s", getUpdatesOptions.License.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		return errors.Wrap(err, "get updates for metadata refresh")
 	}
@@ -385,11 +388,15 @@ func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull
 		if _, ok := updateVersionsMap[key]; ok {
 			// check if the pending version is demoted. If it is we need to undemote it given we have it as part of the upstream update slice
 			if pending.IsDemoted {
-				store.UpdateAppVersionDemotion(appID, pending.ChannelID, pending.UpdateCursor, false)
+				if err := store.UpdateAppVersionDemotion(appID, pending.ChannelID, pending.UpdateCursor, false); err != nil {
+					logger.Error(errors.Wrapf(err, "failed to update app version demotion state for %s", pending.VersionLabel))
+				}
 			}
 		} else if !pending.IsDemoted {
 			// upstream update does not exist for this pending version, meaning it has been demoted. Update if it hasn't been demoted already
-			store.UpdateAppVersionDemotion(appID, pending.ChannelID, pending.UpdateCursor, true)
+			if err := store.UpdateAppVersionDemotion(appID, pending.ChannelID, pending.UpdateCursor, true); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to update app version demotion state for %s", pending.VersionLabel))
+			}
 		}
 	}
 
