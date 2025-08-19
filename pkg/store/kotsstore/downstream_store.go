@@ -271,7 +271,8 @@ func (s *KOTSStore) GetCurrentDownstreamVersion(appID string, clusterID string) 
 	av.version_label,
 	av.channel_id,
 	av.update_cursor,
-	av.is_required
+	av.is_required,
+	av.is_demoted
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -366,7 +367,8 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	av.version_label,
 	av.channel_id,
 	av.update_cursor,
-	av.is_required
+	av.is_required,
+	av.is_demoted
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -724,14 +726,22 @@ func (s *KOTSStore) getLatestDeployableDownstreamVersion(appID string, clusterID
 		return
 	}
 
-	if len(versions.PendingVersions) == 0 {
+	// filter demoted versions for ease of calculation
+	filteredPendingVersions := []*downstreamtypes.DownstreamVersion{}
+	for _, v := range versions.PendingVersions {
+		if !v.IsDemoted {
+			filteredPendingVersions = append(filteredPendingVersions, v)
+		}
+	}
+
+	if len(filteredPendingVersions) == 0 {
 		// latest version is already deployed, there's no next app version
 		return
 	}
 
-	// find required versions
+	// find required versions that haven't been demoted
 	requiredVersions := []*downstreamtypes.DownstreamVersion{}
-	for _, v := range versions.PendingVersions {
+	for _, v := range filteredPendingVersions {
 		if v.IsRequired {
 			requiredVersions = append(requiredVersions, v)
 		}
@@ -741,19 +751,19 @@ func (s *KOTSStore) getLatestDeployableDownstreamVersion(appID string, clusterID
 		// next app version is the earliest pending required version
 		latestDeployableVersion = requiredVersions[len(requiredVersions)-1]
 	} else {
-		// next app version is the latest pending version
-		latestDeployableVersion = versions.PendingVersions[0]
+		// next app version is the latest non demoted pending version
+		latestDeployableVersion = filteredPendingVersions[0]
 	}
 
 	latestDeployableVersionIndex := -1
-	for i, v := range versions.PendingVersions {
+	for i, v := range filteredPendingVersions {
 		if v.Sequence == latestDeployableVersion.Sequence {
 			latestDeployableVersionIndex = i
 			break
 		}
 	}
 
-	for i := range versions.PendingVersions {
+	for i := range filteredPendingVersions {
 		if i < latestDeployableVersionIndex {
 			numOfRemainingVersions++
 		}
@@ -798,6 +808,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row gorqlite.QueryRes
 		&channelID,
 		&updateCursor,
 		&v.IsRequired,
+		&v.IsDemoted,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}

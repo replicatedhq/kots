@@ -236,6 +236,7 @@ export type Version = {
   isChecked: boolean;
   isDeployable: boolean;
   isRequired: boolean;
+  isDemoted: boolean;
   needsKotsUpgrade: boolean;
   nonDeployableCause: string;
   parentSequence: number;
