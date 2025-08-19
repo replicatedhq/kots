@@ -271,7 +271,8 @@ func (s *KOTSStore) GetCurrentDownstreamVersion(appID string, clusterID string) 
 	av.version_label,
 	av.channel_id,
 	av.update_cursor,
-	av.is_required
+	av.is_required,
+	av.is_demoted
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -366,7 +367,8 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	av.version_label,
 	av.channel_id,
 	av.update_cursor,
-	av.is_required
+	av.is_required,
+	av.is_demoted
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -798,6 +800,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row gorqlite.QueryRes
 		&channelID,
 		&updateCursor,
 		&v.IsRequired,
+		&v.IsDemoted,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}

@@ -274,7 +274,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, d.ClusterID)
 	}
 
-	if err := maybeUpdatePendingVersionsMetadata(a.ID, getUpdatesOptions, appVersions.CurrentVersion); err != nil {
+	if err := maybeUpdatePendingVersionsMetadata(a.ID, getUpdatesOptions, appVersions.CurrentVersion, appVersions.PendingVersions); err != nil {
 		logger.Error(errors.Wrap(err, "failed to update app version metadata"))
 	}
 
@@ -337,13 +337,18 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	return &ucr, nil
 }
 
+// getVersionKey builds a string given a chhanel ID and cursor to be used as a key for version lookup maps with the format <channelID>-<cursor>
+func getVersionKey(channelID, cursor string) string {
+	return fmt.Sprintf("%s-%s", channelID, cursor)
+}
+
 // maybeUpdatePendingVersionsMetadata updates metadata for pending versions since the currently deployed version.
 //
 // Limitations:
 // - Only gets pending releases for the channel of the currently deployed version, even if channel changed in later versions
 // - Does not rerender the application archive, so the Installation object in the archive can become out of sync
 // - This is not in the critical path - errors are logged but don't fail the overall update check
-func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull.GetUpdatesOptions, currentVersion *downstreamtypes.DownstreamVersion) error {
+func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull.GetUpdatesOptions, currentVersion *downstreamtypes.DownstreamVersion, pendingVersions []*downstreamtypes.DownstreamVersion) error {
 	if currentVersion == nil {
 		return nil
 	}
@@ -363,11 +368,31 @@ func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull
 		return errors.Wrap(err, "get updates for metadata refresh")
 	}
 
+	// build a version map of the updates for fast lookup
+	updateVersionsMap := make(map[string]*upstreamtypes.Update)
 	for _, update := range updates.Updates {
 		if err := store.UpdateAppVersionMetadata(appID, update); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to update app version metadata for %s", update.VersionLabel))
 		}
+		key := getVersionKey(update.ChannelID, update.Cursor)
+		updateVersionsMap[key] = &update
 	}
+
+	// update demotion metadata for stored releases
+	for _, pending := range pendingVersions {
+		key := getVersionKey(pending.ChannelID, pending.UpdateCursor)
+		// check if we have an update for the given pending version
+		if _, ok := updateVersionsMap[key]; ok {
+			// check if the pending version is demoted. If it is we need to undemote it given we have it as part of the upstream update slice
+			if pending.IsDemoted {
+				store.UpdateAppVersionDemotion(appID, pending.ChannelID, pending.UpdateCursor, false)
+			}
+		} else if !pending.IsDemoted {
+			// upstream update does not exist for this pending version, meaning it has been demoted. Update if it hasn't been demoted already
+			store.UpdateAppVersionDemotion(appID, pending.ChannelID, pending.UpdateCursor, true)
+		}
+	}
+
 	return nil
 }
 
