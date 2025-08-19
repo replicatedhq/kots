@@ -318,24 +318,18 @@ class AppVersionHistory extends Component<Props, State> {
       this.fetchAvailableUpdates();
     }
     if (
-      this.checkIfUpdatesAvailable() &&
+      this.props.outletContext.app.downstream.pendingVersions.length > 0 &&
       this.state.updatesAvailable === false
     ) {
       this.setState({ updatesAvailable: true });
     }
     if (
-      !this.checkIfUpdatesAvailable() &&
+      this.props.outletContext.app.downstream.pendingVersions.length === 0 &&
       this.state.updatesAvailable === true
     ) {
       this.setState({ updatesAvailable: false });
     }
   };
-
-  checkIfUpdatesAvailable = () => {
-    const pendingVersions = this.props.outletContext.app.downstream.pendingVersions
-    const filtered = pendingVersions.filter(version => !version.isDemoted)
-    return filtered.length > 0;
-  }
 
   componentWillUnmount() {
     this.state.appUpdateChecker.stop();
@@ -1572,8 +1566,7 @@ class AppVersionHistory extends Component<Props, State> {
     if (
       !version ||
       isEmpty(version) ||
-      (this.state.selectedDiffReleases && version.status === "pending_download") ||
-      version.isDemoted
+      (this.state.selectedDiffReleases && version.status === "pending_download")
     ) {
       // non-downloaded versions can't be diffed
       return null;
