@@ -1,6 +1,7 @@
 package operator_test
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -269,7 +270,7 @@ spec:
 			)
 
 			BeforeEach(func() {
-				os.Setenv("KOTSADM_ENV", "test")
+				_ = os.Setenv("KOTSADM_ENV", "test")
 				previouslyDeployedSequence = -1
 				mockCtrl = gomock.NewController(GinkgoT())
 				mockStore = mock_store.NewMockStore(mockCtrl)
@@ -280,7 +281,7 @@ spec:
 			})
 
 			AfterEach(func() {
-				os.Setenv("KOTSADM_ENV", "")
+				_ = os.Setenv("KOTSADM_ENV", "")
 				mockCtrl.Finish()
 
 				err := os.RemoveAll(archiveDir)
@@ -733,20 +734,33 @@ spec: {}`,
 
 				// Expect UpdateDownstreamDeployStatus to be called with successful output
 				mockStore.EXPECT().UpdateDownstreamDeployStatus(appID, "", sequence, false, gomock.Any()).DoAndReturn(func(appID, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error {
-					// Verify the skip message is in the output
-					Expect(output.DryrunStdout).To(ContainSubstring("Skipped - deployed by V3 installer"))
-					Expect(output.ApplyStdout).To(ContainSubstring("Skipped - deployed by V3 installer"))
+					// Verify the skip message is in the output (base64 encoded)
+					dryrunDecoded, err := base64.StdEncoding.DecodeString(output.DryrunStdout)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(string(dryrunDecoded)).To(ContainSubstring("Skipped - deployed by V3 installer"))
+
+					applyDecoded, err := base64.StdEncoding.DecodeString(output.ApplyStdout)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(string(applyDecoded)).To(ContainSubstring("Skipped - deployed by V3 installer"))
 					return nil
 				})
 
 				// Expect version status to be set to deployed (by V3 skip logic)
 				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "").Return(nil)
 
+				// Expect version status to be set to deployed again (by defer function after successful return)
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "").Return(nil)
+
 				// App status will be updated after successful V3 skip
 				mockStore.EXPECT().SetAppStatus(appID, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-				// Client.DeployApp should NOT be called
+				// These calls happen before V3 check, so they should be expected
+				mockClient.EXPECT().ApplyNamespacesInformer(gomock.Any(), gomock.Any()).Times(1)
+				mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(1)
+
+				// These should NOT be called for V3 initial install (they happen after V3 check)
 				mockClient.EXPECT().DeployApp(gomock.Any()).Times(0)
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(0)
 
 				deployed, err := testOperator.DeployApp(appID, sequence)
 				Expect(err).ToNot(HaveOccurred())
@@ -826,6 +840,9 @@ spec: {}`,
 				// First call: SetDownstreamVersionStatus to "deploying" (normal flow)
 				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, "").Return(nil)
 
+				// Second call: SetDownstreamVersionStatus to "deployed" (after successful deployment)
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "").Return(nil)
+
 				mockStore.EXPECT().GetApp(appID).Return(app, nil)
 				mockStore.EXPECT().GetDownstream("").Return(&downstreamtypes.Downstream{
 					ClusterID: "",
@@ -843,6 +860,9 @@ spec: {}`,
 
 				mockClient.EXPECT().ApplyNamespacesInformer(gomock.Any(), gomock.Any()).Times(1)
 				mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(1)
+
+				// Since there are no status informers, SetAppStatus will be called
+				mockStore.EXPECT().SetAppStatus(appID, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
 				// Client.DeployApp SHOULD be called for upgrades
 				mockClient.EXPECT().DeployApp(gomock.Any()).Return(true, nil)

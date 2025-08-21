@@ -27,11 +27,11 @@ func Start() error {
 	return nil
 }
 
-func startLoop(fn func(), intervalInSeconds time.Duration) {
+func startLoop(fn func(), seconds int) {
 	go func() {
 		for {
 			fn()
-			time.Sleep(time.Second * intervalInSeconds)
+			time.Sleep(time.Second * time.Duration(seconds))
 		}
 	}()
 }
