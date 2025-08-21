@@ -113,7 +113,7 @@ func (o *Operator) DeployVersion(appID string, versionLabel string, sequence int
         // Set version as deployed
         err = store.GetStore().SetDownstreamVersionStatus(appID, clusterID, sequence, storetypes.VersionDeployed, "")
         if err != nil {
-            return false, errors.Wrap(err, "failed to set version status")
+            return false, errors.Wrap(err, "failed to set downstream version status")
         }
         
         return true, nil

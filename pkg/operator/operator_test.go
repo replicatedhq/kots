@@ -681,13 +681,13 @@ spec: {}`,
 			)
 
 			BeforeEach(func() {
-				os.Setenv("KOTSADM_ENV", "test")
+				_ = os.Setenv("KOTSADM_ENV", "test")
 				mockCtrl = gomock.NewController(GinkgoT())
 				mockStore = mock_store.NewMockStore(mockCtrl)
 				mockClient = mock_client.NewMockClientInterface(mockCtrl)
 
 				// Set V3 environment variable
-				os.Setenv("IS_EMBEDDED_CLUSTER_V3", "true")
+				_ = os.Setenv("IS_EMBEDDED_CLUSTER_V3", "true")
 
 				var err error
 				archiveDir, err = os.MkdirTemp("", "kotsadm-operator-test-")
@@ -702,10 +702,10 @@ spec: {}`,
 			})
 
 			AfterEach(func() {
-				os.Setenv("KOTSADM_ENV", "")
+				_ = os.Setenv("KOTSADM_ENV", "")
 				mockCtrl.Finish()
 				os.Unsetenv("IS_EMBEDDED_CLUSTER_V3")
-				os.RemoveAll(archiveDir)
+				_ = os.RemoveAll(archiveDir)
 			})
 
 			It("should skip deployment and mark version as deployed", func() {
@@ -790,13 +790,13 @@ spec: {}`,
 			)
 
 			BeforeEach(func() {
-				os.Setenv("KOTSADM_ENV", "test")
+				_ = os.Setenv("KOTSADM_ENV", "test")
 				mockCtrl = gomock.NewController(GinkgoT())
 				mockStore = mock_store.NewMockStore(mockCtrl)
 				mockClient = mock_client.NewMockClientInterface(mockCtrl)
 
 				// Set V3 environment variable
-				os.Setenv("IS_EMBEDDED_CLUSTER_V3", "true")
+				_ = os.Setenv("IS_EMBEDDED_CLUSTER_V3", "true")
 
 				var err error
 				archiveDir, err = os.MkdirTemp("", "kotsadm-operator-test-")
@@ -811,10 +811,10 @@ spec: {}`,
 			})
 
 			AfterEach(func() {
-				os.Setenv("KOTSADM_ENV", "")
+				_ = os.Setenv("KOTSADM_ENV", "")
 				mockCtrl.Finish()
 				os.Unsetenv("IS_EMBEDDED_CLUSTER_V3")
-				os.RemoveAll(archiveDir)
+				_ = os.RemoveAll(archiveDir)
 			})
 
 			It("should proceed with normal deployment", func() {
