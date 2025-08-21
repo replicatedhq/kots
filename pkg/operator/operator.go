@@ -420,6 +420,30 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		KotsKinds:                    kotsKinds,
 		PreviousKotsKinds:            previousKotsKinds,
 	}
+	
+	// Check if this is a V3 EC initial install that should skip deployment
+	if util.IsV3EmbeddedClusterInitialInstall(sequence) {
+		logger.Infof("Skipping deployment for V3 Embedded Cluster initial install (sequence %d)", sequence)
+		
+		// Create successful deployment record for admin console
+		emptyOutput := downstreamtypes.DownstreamOutput{
+			DryrunStdout: base64.StdEncoding.EncodeToString([]byte("Skipped - deployed by V3 installer")),
+			ApplyStdout:  base64.StdEncoding.EncodeToString([]byte("Skipped - deployed by V3 installer")),
+		}
+		err := o.store.UpdateDownstreamDeployStatus(app.ID, o.clusterID, sequence, false, emptyOutput)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to update downstream deploy status")
+		}
+		
+		// Set version as deployed
+		err = o.store.SetDownstreamVersionStatus(app.ID, sequence, storetypes.VersionDeployed, "")
+		if err != nil {
+			return false, errors.Wrap(err, "failed to set version status")
+		}
+		
+		return true, nil
+	}
+	
 	deployed, err = o.client.DeployApp(deployArgs)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy app")
