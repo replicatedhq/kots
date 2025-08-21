@@ -337,33 +337,33 @@ spec:
 				var (
 					previousArchiveFiles = map[string]string{
 						"base/kustomization.yaml": `
-	apiVersion: kustomize.config.k8s.io/v1beta1
-	kind: Kustomization
-	resources:
-	  - deployment.yaml`,
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml`,
 						"overlays/midstream/kustomization.yaml": `
-	apiVersion: kustomize.config.k8s.io/v1beta1
-	kind: Kustomization
-	resources:
-	  - ../../base`,
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base`,
 						"overlays/downstreams/kustomization.yaml": `
-	apiVersion: kustomize.config.k8s.io/v1beta1
-	kind: Kustomization
-	resources:
-	  - ../midstream`,
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../midstream`,
 						"base/deployment.yaml": `
-	apiVersion: apps/v1
-	kind: Deployment
-	metadata:
-	  this is an invalid deployment`,
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  this is an invalid deployment`,
 						"upstream/app.yaml": `
-	apiVersion: kots.io/v1beta1
-	kind: Application
-	metadata:
-	  name: my-application
-	spec:
-	  statusInformers:
-		- deployment/some-deployment`,
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-application
+spec:
+  statusInformers:
+    - deployment/some-deployment`,
 					}
 				)
 
@@ -745,10 +745,7 @@ spec: {}`,
 					return nil
 				})
 
-				// Expect version status to be set to deployed (by V3 skip logic)
-				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "").Return(nil)
-
-				// Expect version status to be set to deployed again (by defer function after successful return)
+				// Expect version status to be set to deployed by defer function after successful return
 				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "").Return(nil)
 
 				// App status will be updated after successful V3 skip
