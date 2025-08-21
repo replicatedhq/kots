@@ -435,12 +435,6 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 			return false, errors.Wrap(err, "failed to update downstream deploy status")
 		}
 
-		// Set version as deployed
-		err = o.store.SetDownstreamVersionStatus(app.ID, sequence, storetypes.VersionDeployed, "")
-		if err != nil {
-			return false, errors.Wrap(err, "failed to set downstream version status")
-		}
-
 		return true, nil
 	}
 
