@@ -117,11 +117,11 @@ func (o *Operator) Shutdown() {
 	o.client.Shutdown()
 }
 
-func startLoop(fn func(), intervalInSeconds time.Duration) {
+func startLoop(fn func(), seconds int) {
 	go func() {
 		for {
 			fn()
-			time.Sleep(time.Second * intervalInSeconds)
+			time.Sleep(time.Second * time.Duration(seconds))
 		}
 	}()
 }
@@ -420,6 +420,24 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		KotsKinds:                    kotsKinds,
 		PreviousKotsKinds:            previousKotsKinds,
 	}
+
+	// Check if this is a V3 EC initial install that should skip deployment
+	if util.IsV3EmbeddedClusterInitialInstall(sequence) {
+		logger.Infof("Skipping deployment for V3 Embedded Cluster initial install (sequence %d)", sequence)
+
+		// Create successful deployment record for admin console
+		emptyOutput := downstreamtypes.DownstreamOutput{
+			DryrunStdout: base64.StdEncoding.EncodeToString([]byte("Skipped - deployed by V3 installer")),
+			ApplyStdout:  base64.StdEncoding.EncodeToString([]byte("Skipped - deployed by V3 installer")),
+		}
+		err := o.store.UpdateDownstreamDeployStatus(app.ID, o.clusterID, sequence, false, emptyOutput)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to update downstream deploy status")
+		}
+
+		return true, nil
+	}
+
 	deployed, err = o.client.DeployApp(deployArgs)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy app")
@@ -474,12 +492,14 @@ func (o *Operator) applyStatusInformers(a *apptypes.App, sequence int64, kotsKin
 			return errors.Wrap(err, "failed to set app status")
 		}
 
-		go func() {
-			err := reporting.GetReporter().SubmitAppInfo(a.ID)
-			if err != nil {
-				logger.Debugf("failed to submit app info: %v", err)
-			}
-		}()
+		if os.Getenv("KOTSADM_ENV") != "test" {
+			go func() {
+				err := reporting.GetReporter().SubmitAppInfo(a.ID)
+				if err != nil {
+					logger.Debugf("failed to submit app info: %v", err)
+				}
+			}()
+		}
 	}
 
 	return nil

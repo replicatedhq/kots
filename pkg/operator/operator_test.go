@@ -1,6 +1,7 @@
 package operator_test
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -269,7 +270,7 @@ spec:
 			)
 
 			BeforeEach(func() {
-				os.Setenv("KOTSADM_ENV", "test")
+				_ = os.Setenv("KOTSADM_ENV", "test")
 				previouslyDeployedSequence = -1
 				mockCtrl = gomock.NewController(GinkgoT())
 				mockStore = mock_store.NewMockStore(mockCtrl)
@@ -280,7 +281,7 @@ spec:
 			})
 
 			AfterEach(func() {
-				os.Setenv("KOTSADM_ENV", "")
+				_ = os.Setenv("KOTSADM_ENV", "")
 				mockCtrl.Finish()
 
 				err := os.RemoveAll(archiveDir)
@@ -336,33 +337,33 @@ spec:
 				var (
 					previousArchiveFiles = map[string]string{
 						"base/kustomization.yaml": `
-	apiVersion: kustomize.config.k8s.io/v1beta1
-	kind: Kustomization
-	resources:
-	  - deployment.yaml`,
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml`,
 						"overlays/midstream/kustomization.yaml": `
-	apiVersion: kustomize.config.k8s.io/v1beta1
-	kind: Kustomization
-	resources:
-	  - ../../base`,
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base`,
 						"overlays/downstreams/kustomization.yaml": `
-	apiVersion: kustomize.config.k8s.io/v1beta1
-	kind: Kustomization
-	resources:
-	  - ../midstream`,
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../midstream`,
 						"base/deployment.yaml": `
-	apiVersion: apps/v1
-	kind: Deployment
-	metadata:
-	  this is an invalid deployment`,
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  this is an invalid deployment`,
 						"upstream/app.yaml": `
-	apiVersion: kots.io/v1beta1
-	kind: Application
-	metadata:
-	  name: my-application
-	spec:
-	  statusInformers:
-		- deployment/some-deployment`,
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-application
+spec:
+  statusInformers:
+    - deployment/some-deployment`,
 					}
 				)
 
@@ -643,6 +644,230 @@ spec:
 				Expect(err).ToNot(HaveOccurred())
 			})
 
+		})
+
+		When("it is a V3 Embedded Cluster initial install", func() {
+			var (
+				mockStore    *mock_store.MockStore
+				mockClient   *mock_client.MockClientInterface
+				testOperator *operator.Operator
+				mockCtrl     *gomock.Controller
+				clusterToken       = "cluster-token"
+				appID              = "some-app-id"
+				sequence     int64 = 0 // Initial install
+				archiveDir   string
+
+				archiveFiles = map[string]string{
+					"base/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []`,
+					"overlays/midstream/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base`,
+					"overlays/downstreams/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../midstream`,
+					"upstream/app.yaml": `
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-application
+spec: {}`,
+				}
+			)
+
+			BeforeEach(func() {
+				_ = os.Setenv("KOTSADM_ENV", "test")
+				mockCtrl = gomock.NewController(GinkgoT())
+				mockStore = mock_store.NewMockStore(mockCtrl)
+				mockClient = mock_client.NewMockClientInterface(mockCtrl)
+
+				// Set V3 environment variable
+				_ = os.Setenv("IS_EMBEDDED_CLUSTER_V3", "true")
+
+				var err error
+				archiveDir, err = os.MkdirTemp("", "kotsadm-operator-test-")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = writeArchiveFiles(archiveDir, archiveFiles)
+				Expect(err).ToNot(HaveOccurred())
+
+				clientset := fake.NewSimpleClientset()
+
+				testOperator = operator.Init(mockClient, mockStore, clusterToken, clientset)
+			})
+
+			AfterEach(func() {
+				_ = os.Setenv("KOTSADM_ENV", "")
+				mockCtrl.Finish()
+				os.Unsetenv("IS_EMBEDDED_CLUSTER_V3")
+				_ = os.RemoveAll(archiveDir)
+			})
+
+			It("should skip deployment and mark version as deployed", func() {
+				app := &apptypes.App{
+					ID:   appID,
+					Slug: "my-application",
+				}
+
+				// First call: SetDownstreamVersionStatus to "deploying" (normal flow)
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, "").Return(nil)
+
+				mockStore.EXPECT().GetApp(appID).Return(app, nil)
+				mockStore.EXPECT().GetDownstream("").Return(&downstreamtypes.Downstream{
+					ClusterID: "",
+				}, nil)
+				mockStore.EXPECT().GetAppVersionArchive(appID, sequence, gomock.Any()).DoAndReturn(func(id string, seq int64, archDir string) error {
+					archiveDir = archDir
+					err := writeArchiveFiles(archiveDir, archiveFiles)
+					Expect(err).ToNot(HaveOccurred())
+					return nil
+				})
+				mockStore.EXPECT().GetRegistryDetailsForApp(appID).Return(registrytypes.RegistrySettings{}, nil)
+
+				mockStore.EXPECT().GetPreviouslyDeployedSequence(appID, "").Return(int64(-1), nil)
+
+				// Expect UpdateDownstreamDeployStatus to be called with successful output
+				mockStore.EXPECT().UpdateDownstreamDeployStatus(appID, "", sequence, false, gomock.Any()).DoAndReturn(func(appID, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error {
+					// Verify the skip message is in the output (base64 encoded)
+					dryrunDecoded, err := base64.StdEncoding.DecodeString(output.DryrunStdout)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(string(dryrunDecoded)).To(ContainSubstring("Skipped - deployed by V3 installer"))
+
+					applyDecoded, err := base64.StdEncoding.DecodeString(output.ApplyStdout)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(string(applyDecoded)).To(ContainSubstring("Skipped - deployed by V3 installer"))
+					return nil
+				})
+
+				// Expect version status to be set to deployed by defer function after successful return
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "").Return(nil)
+
+				// App status will be updated after successful V3 skip
+				mockStore.EXPECT().SetAppStatus(appID, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+				// These calls happen before V3 check, so they should be expected
+				mockClient.EXPECT().ApplyNamespacesInformer(gomock.Any(), gomock.Any()).Times(1)
+				mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(1)
+
+				// These should NOT be called for V3 initial install (they happen after V3 check)
+				mockClient.EXPECT().DeployApp(gomock.Any()).Times(0)
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(0)
+
+				deployed, err := testOperator.DeployApp(appID, sequence)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(deployed).To(BeTrue())
+			})
+		})
+
+		When("it is a V3 Embedded Cluster upgrade", func() {
+			var (
+				mockStore    *mock_store.MockStore
+				mockClient   *mock_client.MockClientInterface
+				testOperator *operator.Operator
+				mockCtrl     *gomock.Controller
+				clusterToken       = "cluster-token"
+				appID              = "some-app-id"
+				sequence     int64 = 1 // Upgrade, not initial install
+				archiveDir   string
+
+				archiveFiles = map[string]string{
+					"base/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []`,
+					"overlays/midstream/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base`,
+					"overlays/downstreams/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../midstream`,
+					"upstream/app.yaml": `
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-application
+spec: {}`,
+				}
+			)
+
+			BeforeEach(func() {
+				_ = os.Setenv("KOTSADM_ENV", "test")
+				mockCtrl = gomock.NewController(GinkgoT())
+				mockStore = mock_store.NewMockStore(mockCtrl)
+				mockClient = mock_client.NewMockClientInterface(mockCtrl)
+
+				// Set V3 environment variable
+				_ = os.Setenv("IS_EMBEDDED_CLUSTER_V3", "true")
+
+				var err error
+				archiveDir, err = os.MkdirTemp("", "kotsadm-operator-test-")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = writeArchiveFiles(archiveDir, archiveFiles)
+				Expect(err).ToNot(HaveOccurred())
+
+				clientset := fake.NewSimpleClientset()
+
+				testOperator = operator.Init(mockClient, mockStore, clusterToken, clientset)
+			})
+
+			AfterEach(func() {
+				_ = os.Setenv("KOTSADM_ENV", "")
+				mockCtrl.Finish()
+				os.Unsetenv("IS_EMBEDDED_CLUSTER_V3")
+				_ = os.RemoveAll(archiveDir)
+			})
+
+			It("should proceed with normal deployment", func() {
+				app := &apptypes.App{
+					ID:   appID,
+					Slug: "my-application",
+				}
+
+				// First call: SetDownstreamVersionStatus to "deploying" (normal flow)
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, "").Return(nil)
+
+				// Second call: SetDownstreamVersionStatus to "deployed" (after successful deployment)
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "").Return(nil)
+
+				mockStore.EXPECT().GetApp(appID).Return(app, nil)
+				mockStore.EXPECT().GetDownstream("").Return(&downstreamtypes.Downstream{
+					ClusterID: "",
+				}, nil)
+				mockStore.EXPECT().GetAppVersionArchive(appID, sequence, gomock.Any()).DoAndReturn(func(id string, seq int64, archDir string) error {
+					archiveDir = archDir
+					err := writeArchiveFiles(archiveDir, archiveFiles)
+					Expect(err).ToNot(HaveOccurred())
+					return nil
+				})
+				mockStore.EXPECT().GetRegistryDetailsForApp(appID).Return(registrytypes.RegistrySettings{}, nil)
+
+				mockStore.EXPECT().GetPreviouslyDeployedSequence(appID, "").Return(int64(0), nil)
+				mockStore.EXPECT().GetParentSequenceForSequence(appID, "", int64(0)).Return(int64(-1), nil)
+
+				mockClient.EXPECT().ApplyNamespacesInformer(gomock.Any(), gomock.Any()).Times(1)
+				mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(1)
+
+				// Since there are no status informers, SetAppStatus will be called
+				mockStore.EXPECT().SetAppStatus(appID, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+				// Client.DeployApp SHOULD be called for upgrades
+				mockClient.EXPECT().DeployApp(gomock.Any()).Return(true, nil)
+
+				deployed, err := testOperator.DeployApp(appID, sequence)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(deployed).To(BeTrue())
+			})
 		})
 	})
 })
