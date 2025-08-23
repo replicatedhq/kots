@@ -381,7 +381,9 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
 	 adv.app_id = ? AND
-	 adv.cluster_id = ?`
+	 adv.cluster_id = ? AND
+	 av.is_demoted = false
+	`
 
 	if downloadedOnly {
 		query += fmt.Sprintf(` AND adv.status != '%s'`, types.VersionPendingDownload)
