@@ -975,25 +975,6 @@ func (s *KOTSStore) UpdateAppVersionMetadata(appID string, update upstreamtypes.
 	return nil
 }
 
-// UpdateAppVersionDemotion updates the is_demoted field for a specific app version.
-func (s *KOTSStore) UpdateAppVersionDemotion(appID, channelID, cursor string, isDemoted bool) error {
-	db := persistence.MustGetDBSession()
-
-	query := `UPDATE app_version 
-			 SET is_demoted = ? 
-			 WHERE app_id = ? AND channel_id = ? AND update_cursor = ?`
-
-	_, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
-		Query:     query,
-		Arguments: []interface{}{isDemoted, appID, channelID, cursor},
-	})
-	if err != nil {
-		return fmt.Errorf("update app version is demoted: %v", err)
-	}
-
-	return nil
-}
-
 func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
 	var preflightSpecStr gorqlite.NullString
 	db := persistence.MustGetDBSession()
