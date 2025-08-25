@@ -173,14 +173,6 @@ func EmbeddedClusterK0sDir() string {
 	return os.Getenv("EMBEDDED_CLUSTER_K0S_DIR")
 }
 
-func IsV3EmbeddedCluster() bool {
-	return os.Getenv("IS_EMBEDDED_CLUSTER_V3") == "true"
-}
-
-func IsV3EmbeddedClusterInitialInstall(sequence int64) bool {
-	return IsV3EmbeddedCluster() && sequence == 0
-}
-
 // ReplicatedAPIEndpoint returns the endpoint for the replicated.app API.
 func ReplicatedAppEndpoint(license *kotsv1beta1.License) string {
 	if ep := os.Getenv("REPLICATED_APP_ENDPOINT"); ep != "" {
