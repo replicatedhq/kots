@@ -34,7 +34,6 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^15.0.7",
-    "@testing-library/react-hooks": "^8.0.1",
     "@types/downloadjs": "^1.4",
     "@types/jest": "^29.5.14",
     "@types/js-yaml": "^3",
