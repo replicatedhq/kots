@@ -4,7 +4,7 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { useGetUpgradeInfo } from "./getUpgradeInfo";
 import { ReactElement } from "react";
 import { getSlug } from "@src/utilities/test-utils";
@@ -16,7 +16,9 @@ describe("useGetUpgradeInfo", () => {
   let wrapper: ({ children }: { children: ReactElement }) => ReactElement;
 
   beforeAll(() => {
-    server.listen();
+    server.listen({
+      onUnhandledRequest: 'error'
+    });
   });
 
   afterAll(() => {
@@ -47,15 +49,12 @@ describe("useGetUpgradeInfo", () => {
   });
 
 
-  it.skip("normal response", async () => {
+  it("normal response", async () => {
     const slug = getSlug(expect);
-    
     const expectedUrl = `${api}/upgrade-service/app/${slug}`;
-    console.log('Expected URL:', expectedUrl);
-    
+
     server.resetHandlers(
-      http.get(expectedUrl, ({ request }) => {
-        console.log('MSW intercepted request:', request.url);
+      http.get(expectedUrl, () => {
         return HttpResponse.json({
           isConfigurable: true,
           hasPreflight: false,
@@ -68,23 +67,14 @@ describe("useGetUpgradeInfo", () => {
       wrapper,
     });
 
-    await waitFor(() => {
-      console.log('Waiting for query to complete:', {
-        isLoading: result.current.isLoading,
-        isSuccess: result.current.isSuccess,
-        isError: result.current.isError
-      });
-      return result.current.isSuccess || result.current.isError;
-    }, { timeout: 10000 });
-    
-    console.log('Query result:', {
-      isSuccess: result.current.isSuccess,
-      isError: result.current.isError,
-      isLoading: result.current.isLoading,
-      data: result.current.data,
-      error: result.current.error
+    // Allow the query to initialize and complete
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 100));
     });
-    
+
+    // Wait for the query to complete
+    await waitFor(() => result.current.isSuccess || result.current.isError, { timeout: 5000 });
+
     expect(result.current.isSuccess).toBe(true);
     expect(result.current.data).toBeDefined();
     expect(result.current.data?.isConfigurable).toStrictEqual(true);
@@ -159,4 +149,5 @@ describe("useGetUpgradeInfo", () => {
     
     process.env.API_ENDPOINT = originalEnv;
   });
+
 });
