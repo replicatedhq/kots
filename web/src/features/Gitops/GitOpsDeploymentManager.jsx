@@ -2,16 +2,9 @@ import { useContext } from "react";
 import find from "lodash/find";
 import Loader from "../../components/shared/Loader";
 import ErrorModal from "../../components/modals/ErrorModal";
-import { requiresHostname } from "../../utilities/utilities";
-import { Flex, Paragraph } from "../../styles/common";
 import SetupProvider from "./components/SetupProvider";
 import AppGitops from "./components/AppGitops";
 import { GitOpsContext, withGitOpsConsumer } from "./context";
-import {
-  SERVICES,
-  BITBUCKET_SERVER_DEFAULT_SSH_PORT,
-  BITBUCKET_SERVER_DEFAULT_HTTP_PORT,
-} from "./constants";
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 
 const STEPS = [
@@ -25,7 +18,7 @@ const STEPS = [
   },
 ];
 
-const GitOpsDeploymentManager = (props) => {
+const GitOpsDeploymentManager = () => {
   const {
     appsList,
     errorMsg,

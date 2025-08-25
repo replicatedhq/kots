@@ -2,7 +2,6 @@ import Loader from "./shared/Loader";
 import {
   formatByteSize,
   calculateTimeDifference,
-  Utilities,
 } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 import fetch from "../utilities/fetchWithTimeout";

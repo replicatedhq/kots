@@ -584,7 +584,7 @@ class SnapshotSchedule extends Component {
                   value={this.state.selectedApp}
                   onChange={this.onAppChange}
                   isOptionSelected={(app) => {
-                    app.name === this.state.selectedApp?.name;
+                    return app.name === this.state.selectedApp?.name;
                   }}
                 />
               </div>
@@ -645,7 +645,7 @@ class SnapshotSchedule extends Component {
                         value={selectedSchedule}
                         onChange={this.handleScheduleChange}
                         isOptionSelected={(option) => {
-                          option.value === selectedSchedule;
+                          return option.value === selectedSchedule;
                         }}
                       />
                     </div>
@@ -771,7 +771,7 @@ class SnapshotSchedule extends Component {
                       value={selectedRetentionUnit}
                       onChange={this.handleRetentionUnitChange}
                       isOptionSelected={(option) => {
-                        option.value === selectedRetentionUnit;
+                        return option.value === selectedRetentionUnit;
                       }}
                     />
                   </div>

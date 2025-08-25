@@ -9,7 +9,6 @@ import RedactorRow from "./RedactorRow";
 import DeleteRedactorModal from "../modals/DeleteRedactorModal";
 import Loader from "../shared/Loader";
 
-import { Utilities } from "../../utilities/utilities";
 import Icon from "@components/Icon";
 import "../../scss/components/redactors/Redactor.scss";
 
@@ -260,7 +259,7 @@ class Redactors extends Component {
                       value={selectedOption}
                       getOptionValue={(option) => option.label}
                       isOptionSelected={(option) => {
-                        option.value === selectedOption;
+                        return option.value === selectedOption;
                       }}
                       onChange={this.handleSortChange}
                     />

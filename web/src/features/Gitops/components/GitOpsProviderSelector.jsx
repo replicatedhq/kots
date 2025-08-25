@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { Flex, Paragraph } from "../../../styles/common";
+import { Flex } from "../../../styles/common";
 import Select from "react-select";
 import { GitOpsContext, withGitOpsConsumer } from "../context";
 import {
@@ -136,7 +136,7 @@ const GitOpsProviderSelector = () => {
                 value={selectedService}
                 onChange={handleServiceChange}
                 isOptionSelected={(option) => {
-                  option.value === selectedService;
+                  return option.value === selectedService;
                 }}
               />
             </div>

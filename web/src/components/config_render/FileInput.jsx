@@ -86,12 +86,11 @@ export default class FileInput extends Component {
   };
 
   render() {
-    let label;
-    this.props.label
-      ? (label = this.props.label)
+    let label = this.props.label
+      ? this.props.label
       : this.props.multiple
-      ? (label = "Upload files")
-      : (label = "Upload a file");
+      ? "Upload files"
+      : "Upload a file";
     const hasFileOrValue =
       this.state.fileAdded ||
       this.props.value ||

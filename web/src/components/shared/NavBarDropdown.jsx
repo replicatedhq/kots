@@ -21,7 +21,7 @@ const NavBarDropdown = ({ handleLogOut, isEmbeddedCluster }) => {
     setShowDropdown(false);
   };
 
-  const handleNav = (e) => {
+  const handleNav = () => {
     // manually triggers nav because blur event happens too fast otherwise
     navigate("/upload-license");
     setShowDropdown(false);

@@ -139,8 +139,7 @@ export default class DashboardGraphsCard extends Component<Props, State> {
       const valueFormatter = getValueFormat(chart.tickFormat);
       yAxisTickFormat = (v: number) =>
         // TODO: fix typecheck
-        //  Math.round expects number, but valueFormatter returns string
-        // @ts-expect-error
+        // @ts-expect-error Math.round expects number, but valueFormatter returns string
         `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
       return yAxisTickFormat(value);
     } else if (chart.tickTemplate) {
@@ -195,10 +194,9 @@ export default class DashboardGraphsCard extends Component<Props, State> {
       yAxisTickFormat = (v: string) =>
         `${Math.round(
           // TODO: Fix valueFormatter typing
-          // Math.round expects number, but valueFormatter returns string
-          // @ts-expect-error
+          // @ts-expect-error Math.round expects number, but valueFormatter returns string
           valueFormatter(v).text
-          // @ts-expect-error
+          // @ts-expect-error Math.round expects number, but valueFormatter returns string
         )} ${valueFormatter(v).suffix}`;
     } else if (chart.tickTemplate) {
       try {

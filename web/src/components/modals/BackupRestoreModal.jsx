@@ -262,7 +262,7 @@ export default function BackupRestoreModal(props) {
                   value={selectedRestoreApp}
                   onChange={onChangeRestoreApp}
                   isOptionSelected={(app) => {
-                    app.slug === selectedRestoreApp.slug;
+                    return app.slug === selectedRestoreApp.slug;
                   }}
                 />
               </div>

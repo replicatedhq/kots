@@ -11,7 +11,7 @@ const ChangePasswordForm = ({
     status: false,
     message: "",
   });
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [inputs, setInputs] = useState({
     currentPassword: "",
     newPassword: "",

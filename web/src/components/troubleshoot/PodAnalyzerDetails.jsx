@@ -149,7 +149,7 @@ export class PodAnalyzerDetails extends Component {
                     value={this.state.selectedContainer}
                     onChange={this.onSelectedContainerChange}
                     isOptionSelected={(container) => {
-                      container.name === this.state.selectedContainer.name;
+                      return container.name === this.state.selectedContainer.name;
                     }}
                   />
                 </div>

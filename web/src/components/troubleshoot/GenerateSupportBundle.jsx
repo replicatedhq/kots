@@ -44,7 +44,7 @@ class GenerateSupportBundle extends Component {
 
   componentDidUpdate(lastProps, lastState) {
     const { navigate } = this.props;
-    const { watch, bundle } = this.props.outletContext;
+    const { watch } = this.props.outletContext;
 
     const { totalBundles, loadingSupportBundles, supportBundles, networkErr } =
       this.state;
@@ -341,7 +341,6 @@ class GenerateSupportBundle extends Component {
       displayUploadModal,
       showRunCommand,
       isGeneratingBundle,
-      generateBundleErrMsg,
       errorMsg,
     } = this.state;
     const { navigate } = this.props;
@@ -460,7 +459,7 @@ class GenerateSupportBundle extends Component {
                       If you'd prefer,{" "}
                       <a
                         href="#"
-                        onClick={(e) => this.fetchSupportBundleCommand()}
+                        onClick={() => this.fetchSupportBundleCommand()}
                         data-testid="link-generate-support-bundle-command"
                       >
                         click here

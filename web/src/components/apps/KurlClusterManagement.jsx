@@ -183,7 +183,7 @@ export class KurlClusterManagement extends Component {
       credentials: "include",
       method: "POST",
     })
-      .then(async (res) => {
+      .then(async () => {
         this.setState({ drainNodeSuccessful: true });
         setTimeout(() => {
           this.setState({
