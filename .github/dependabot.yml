@@ -19,6 +19,12 @@ updates:
       security:
         update-types:
           - "patch"
+      babel:
+        patterns:
+          - "@babel/*"
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
 
   - package-ecosystem: "npm"
     directories:

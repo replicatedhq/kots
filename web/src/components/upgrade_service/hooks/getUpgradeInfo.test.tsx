@@ -83,10 +83,7 @@ describe("useGetUpgradeInfo", () => {
 
   it("non JSON response throws an error and is handled by the hook", async () => {
     const slug = getSlug(expect);
-    
-    const originalEnv = process.env.API_ENDPOINT;
-    process.env.API_ENDPOINT = api;
-    
+
     server.use(
       http.get(`${api}/upgrade-service/app/${slug}`, () => {
         return HttpResponse.text("this should produce an error");
@@ -100,16 +97,11 @@ describe("useGetUpgradeInfo", () => {
 
     await waitFor(() => result.current.isError);
     expect(result.current.error).toBeDefined();
-    
-    process.env.API_ENDPOINT = originalEnv;
   });
 
   it("4xx response throws an error and is handled by the hook", async () => {
     const slug = getSlug(expect);
-    
-    const originalEnv = process.env.API_ENDPOINT;
-    process.env.API_ENDPOINT = api;
-    
+
     server.use(
       http.get(`${api}/upgrade-service/app/${slug}`, () => {
         return new HttpResponse("Not found", { status: 404 });
@@ -123,16 +115,11 @@ describe("useGetUpgradeInfo", () => {
 
     await waitFor(() => result.current.isError);
     expect(result.current.error).toBeDefined();
-    
-    process.env.API_ENDPOINT = originalEnv;
   });
 
   it("5xx response throws an error and is handled by the hook", async () => {
     const slug = getSlug(expect);
-    
-    const originalEnv = process.env.API_ENDPOINT;
-    process.env.API_ENDPOINT = api;
-    
+
     server.use(
       http.get(`${api}/upgrade-service/app/${slug}`, () => {
         return new HttpResponse("Something is really broken", { status: 503 });
@@ -146,8 +133,6 @@ describe("useGetUpgradeInfo", () => {
 
     await waitFor(() => result.current.isError);
     expect(result.current.error).toBeDefined();
-    
-    process.env.API_ENDPOINT = originalEnv;
   });
 
 });
