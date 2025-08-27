@@ -16,7 +16,7 @@ const AppSelector = ({ apps, selectedApp, handleAppChange, isSingleApp }) => {
           value={selectedApp}
           onChange={handleAppChange}
           isOptionSelected={(option) => {
-            option.value === selectedApp;
+            return option.value === selectedApp;
           }}
         />
       </div>

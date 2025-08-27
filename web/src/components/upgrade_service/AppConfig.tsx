@@ -57,7 +57,7 @@ const validationErrorMessage =
 export const AppConfig = ({
   setCurrentStep,
 }: {
-  setCurrentStep: (step: Number) => void;
+  setCurrentStep: (step: number) => void;
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -302,7 +302,6 @@ export const AppConfig = ({
             });
           }
         } else {
-          // @ts-ignore
           setConfig(state.configGroups);
           navigate(`/upgrade-service/app/${slug}/preflight`, {
             replace: true,
@@ -456,9 +455,9 @@ export const AppConfig = ({
   };
 
   const toggleActiveGroups = (name: string) => {
-    let groupsArr = state.activeGroups;
+    const groupsArr = state.activeGroups;
     if (groupsArr.includes(name)) {
-      let updatedGroupsArr = groupsArr.filter((n: string) => n !== name);
+      const updatedGroupsArr = groupsArr.filter((n: string) => n !== name);
       setState({ activeGroups: updatedGroupsArr });
     } else {
       groupsArr.push(name);
@@ -642,7 +641,7 @@ export const AppConfig = ({
 };
 
 /* eslint-disable */
-// @ts-ignore
+// @ts-expect-error
 const AppConfigWithRouter: any = withRouter(AppConfig);
 
 export default AppConfigWithRouter;

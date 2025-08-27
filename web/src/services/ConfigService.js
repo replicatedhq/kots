@@ -1,7 +1,7 @@
 // @TODO: Refactor this so its not using so much lodash
 // the "without" module throws if we import every lodash util piecemeal
 // TODO: fix linting issues
-/* eslint-disable */
+
 import _, { get, isEmpty, some, has } from "lodash";
 
 export const ConfigService = {

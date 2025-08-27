@@ -99,9 +99,9 @@ class TroubleshootContainer extends Component<RouterProps, State> {
 
   render() {
     const context = {
-      //@ts-ignore
+      //@ts-expect-error
       app: this.props.outletContext.app,
-      //@ts-ignore
+      //@ts-expect-error
       watch: this.props.outletContext.app,
       newBundleSlug: this.state.newBundleSlug,
       updateBundleSlug: this.updateBundleSlug,

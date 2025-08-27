@@ -5,7 +5,7 @@ import { App, Version } from "@types";
 type Props = {
   app: App | null;
   className: string;
-  showActions?: true | Object | undefined;
+  showActions?: true | object | undefined;
   showDeployLogs?: boolean;
   showText: boolean;
   preflightState: {

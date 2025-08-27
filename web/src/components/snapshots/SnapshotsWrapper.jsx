@@ -5,14 +5,7 @@ import { KotsPageTitle } from "@components/Head";
 
 import withTheme from "@src/components/context/withTheme";
 import Loader from "@src/components/shared/Loader";
-import NotFound from "@src/components/static/NotFound";
 import SubNavBar from "@src/components/shared/SubNavBar";
-import Snapshots from "@src/components/snapshots/Snapshots";
-import AppSnapshots from "@src/components/snapshots/AppSnapshots";
-import SnapshotSettings from "@src/components/snapshots/SnapshotSettings";
-import SnapshotRestore from "@src/components/snapshots/SnapshotRestore";
-import SnapshotDetails from "@src/components/snapshots/SnapshotDetails";
-import AppSnapshotRestore from "@src/components/snapshots/AppSnapshotRestore";
 
 class SnapshotsWrapper extends Component {
   render() {

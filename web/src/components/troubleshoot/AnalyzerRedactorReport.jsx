@@ -5,7 +5,6 @@ import isEmpty from "lodash/isEmpty";
 import AnalyzerRedactorReportRow from "./AnalyzerRedactorReportRow";
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
-import { Utilities } from "../../utilities/utilities";
 
 export class AnalyzerRedactorReport extends Component {
   constructor(props) {

@@ -1,15 +1,14 @@
-import { useContext, useCallback, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Utilities } from "../../../utilities/utilities";
 import DisableModal from "./modals/DisableModal";
 import { GitOpsContext, withGitOpsConsumer } from "../context";
 import AppSelector from "./AppSelector";
-import { getLabel, addLabelsToApps } from "../utils";
+import { getLabel } from "../utils";
 import GitOpsProviderSelector from "./GitOpsProviderSelector";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
-import { updateAppsList } from "../utils";
 import { KotsPageTitle } from "@components/Head";
 
-const SetupProvider = ({ appName }) => {
+const SetupProvider = () => {
   const {
     handleAppChange,
     selectedApp,

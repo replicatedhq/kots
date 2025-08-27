@@ -1,7 +1,5 @@
-import useLicense from "@features/App/api/getLicense";
 import { useLicenseWithIntercept } from "@features/App/api/useLicense";
 import { useEffect } from "react";
-import { usePrevious } from "@src/hooks/usePrevious";
 
 const LicenseTester = ({ appSlug, setLoader }) => {
   const { data, isSlowLoading } = useLicenseWithIntercept(appSlug);

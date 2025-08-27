@@ -1,10 +1,8 @@
 import { useReducer } from "react";
 import size from "lodash/size";
-// @ts-ignore
 import yaml from "js-yaml";
 import classNames from "classnames";
 import Loader from "@src/components/shared/Loader";
-// @ts-ignore
 import Dropzone from "react-dropzone";
 import Modal from "react-modal";
 import {
@@ -138,11 +136,11 @@ const DashboardLicenseCard = (props: Props) => {
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = state;
 
-    // @ts-ignore
+    // @ts-expect-error
     // TODO: fix this
     if (airgapLicense.spec?.licenseID !== appLicense?.id) {
       // if the license ID has changed, but the service account token is the same, we can sync the license
-      // @ts-ignore
+      // @ts-expect-error
       if (serviceAccountTokensMatch(airgapLicense.spec?.licenseID, appLicense?.id)) {
         return syncLicense(contentStr);
       }
@@ -154,7 +152,7 @@ const DashboardLicenseCard = (props: Props) => {
       return;
     }
 
-    // @ts-ignore
+    // @ts-expect-error
     // TODO: fix this
     if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
       setState({
@@ -178,7 +176,7 @@ const DashboardLicenseCard = (props: Props) => {
   };
 
   const toggleHideDetails = (entitlement: string) => {
-    let entitlementsToShow = [...state.entitlementsToShow];
+    const entitlementsToShow = [...state.entitlementsToShow];
     const index = state.entitlementsToShow?.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
     setState({ entitlementsToShow });

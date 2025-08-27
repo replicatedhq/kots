@@ -299,10 +299,6 @@ export class SupportBundleAnalysis extends Component {
       </div>
     );
 
-    const insightsUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug`;
-    const fileTreeUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
-    const redactorUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/redactor/report`;
-
     const showSendSupportBundleBtn =
       watch.isSupportBundleUploadSupported && !watch.isAirgap;
 

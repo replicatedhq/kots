@@ -272,6 +272,6 @@ class VersionDiff extends Component<Props, State> {
 }
 
 /* eslint-disable */
-// @ts-ignore
+// @ts-expect-error
 export default withRouter(VersionDiff) as any;
 /* eslint-enable */

@@ -75,11 +75,7 @@ export default function ShowDetailsModal(props) {
             <div className="flex justifyContent--flexStart u-marginTop--20">
               <button
                 className="btn primary blue"
-                onClick={() => {
-                  showDeployWarningModal || showSkipModal
-                    ? toggleShowDetailsModal()
-                    : forceDeploy();
-                }}
+                onClick={() => (showDeployWarningModal || showSkipModal) ? toggleShowDetailsModal() : forceDeploy()}
               >
                 Deploy
               </button>

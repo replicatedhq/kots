@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { GitOpsContext, withGitOpsConsumer } from "../context";
-import { Flex, Paragraph } from "../../../styles/common";
+import { Flex } from "../../../styles/common";
 import Loader from "../../../components/shared/Loader";
 import { usePrevious } from "../../../hooks/usePrevious";
 
@@ -24,8 +24,8 @@ const GitopsRepoDetails = () => {
     setProviderError,
     stepFrom,
   } = useContext(GitOpsContext);
-  const [action, setAction] = useState("commit");
-  const [format, setFormat] = useState("single");
+  const [action] = useState("commit");
+  const [format] = useState("single");
   const previousOwner = usePrevious(owner);
   const previousRepo = usePrevious(repo);
   const previousBranch = usePrevious(branch);

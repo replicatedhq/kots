@@ -3,11 +3,9 @@ import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
 import { useNavigate, useParams } from "react-router-dom";
 import { App, LicenseFile, SupportBundle } from "@types";
-// @ts-ignore
 import Dropzone from "react-dropzone";
 import Icon from "@components/Icon";
 import isEmpty from "lodash/isEmpty";
-// @ts-ignore
 import randomstring from "randomstring";
 import { Repeater } from "../../utilities/repeater";
 import { useSelectedApp } from "@features/App";
@@ -223,7 +221,7 @@ const GenerateSupportBundleModal = ({
       const response = await fetch(uploadBundleUrl, {
         method: "PUT",
         // using JSON.stringify(supportBundle) here will cause the request to fail
-        // @ts-ignore
+        // @ts-expect-error
         body: state.supportBundle,
         headers: {
           "Content-Type": "application/tar+gzip",

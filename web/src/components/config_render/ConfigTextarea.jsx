@@ -3,6 +3,7 @@ import ConfigItemTitle from "./ConfigItemTitle";
 import Markdown from "../shared/Markdown";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
+import Icon from "../Icon";
 
 export default class ConfigTextarea extends Component {
   constructor(props) {

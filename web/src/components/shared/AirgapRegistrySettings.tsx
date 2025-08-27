@@ -40,7 +40,7 @@ type State = {
   username: string;
   password: string;
   namespace: string;
-  lastSync: Object | null;
+  lastSync: object | null;
   testInProgress: boolean;
   testFailed: boolean;
   testMessage: string | unknown;
@@ -215,7 +215,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
   };
 
   handleFormChange = (field: string, val: string | boolean) => {
-    let nextState: { [key: string]: string | boolean } = {};
+    const nextState: { [key: string]: string | boolean } = {};
     nextState[field] = val;
 
     if (this.props.app?.isAirgap && field === "isReadOnly" && !val) {
@@ -227,7 +227,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
     //TODO: understand this better
     // Argument of type '{ [key: string]: string | boolean; }' is not assignable to parameter of type 'State | Pick<State, keyof State>
     // | ((prevState: Readonly<State>, props: Readonly<Props>) => State | Pick<...> | null) | null'.
-    // @ts-ignore
+    // @ts-expect-error
     this.setState(nextState, () => {
       if (this.props.gatherDetails) {
         const { hostname, username, password, namespace, isReadOnly } =
@@ -729,6 +729,6 @@ class AirgapRegistrySettings extends Component<Props, State> {
 }
 
 /* eslint-disable */
-// @ts-ignore
+// @ts-expect-error
 export default withRouter(AirgapRegistrySettings) as any;
 /* eslint-enable */

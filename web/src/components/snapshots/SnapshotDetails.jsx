@@ -4,7 +4,7 @@ import duration from "dayjs/plugin/duration";
 import minMax from "dayjs/plugin/minMax";
 import filter from "lodash/filter";
 import isEmpty from "lodash/isEmpty";
-import { Component, useState } from "react";
+import { Component } from "react";
 import ReactApexChart from "react-apexcharts";
 import Modal from "react-modal";
 
@@ -89,7 +89,7 @@ class SnapshotDetails extends Component {
         },
       },
       tooltip: {
-        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+        custom: function ({ seriesIndex, dataPointIndex, w }) {
           return (
             '<div class="arrow_box">' +
             '<p class="u-textColor--primary u-fontSize--normal u-fontWeight--medium">' +
@@ -124,32 +124,47 @@ class SnapshotDetails extends Component {
     this.fetchSnapshotDetails();
   }
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate = (lastProps, lastState) => {
     const { params } = this.props;
     if (params.id !== lastProps.params.id) {
       this.fetchSnapshotDetails();
     }
-  }
+
+    const { snapshotDetails } = this.state;
+    const { backupDetails } = snapshotDetails;
+    if (
+      lastState.snapshotDetails !== snapshotDetails &&
+      backupDetails.length > 0
+    ) {
+      // Filter snapshots with status not equal to "Completed"
+      const activeIds = backupDetails
+        .filter((snapshotDetail) => snapshotDetail.status !== "Completed")
+        .map((snapshotDetail) => snapshotDetail.name);
+
+      // Set the filtered snapshot names in state
+      this.setState({ activeIds });
+    }
+  };
 
   getSeriesDataForSnapshot = (snapshot) => {
     let series = [];
     if (!isEmpty(snapshot?.volumes)) {
       if (snapshot?.hooks && !isEmpty(snapshot?.hooks)) {
         series = this.getSeriesData(
-          [...snapshot?.volumes, ...snapshot?.hooks].sort(
+          [...(snapshot?.volumes || []), ...(snapshot?.hooks || [])].sort(
             (a, b) => new Date(a.started) - new Date(b.started)
           )
         );
       } else {
         series = this.getSeriesData(
-          (snapshot?.volumes).sort(
+          (snapshot?.volumes || []).sort(
             (a, b) => new Date(a.started) - new Date(b.started)
           )
         );
       }
     } else if (snapshot?.hooks && !isEmpty(snapshot?.hooks)) {
       series = this.getSeriesData(
-        (snapshot?.hooks).sort(
+        (snapshot?.hooks || []).sort(
           (a, b) => new Date(a.started) - new Date(b.started)
         )
       );
@@ -589,9 +604,9 @@ class SnapshotDetails extends Component {
     let data;
     if (!isEmpty(snapshotDetail?.volumes)) {
       if (!isEmpty(snapshotDetail?.hooks)) {
-        data = [...snapshotDetail?.volumes, ...snapshotDetail?.hooks];
+        data = [...(snapshotDetail?.volumes || []), ...(snapshotDetail?.hooks || [])];
       } else {
-        data = snapshotDetail?.volumes;
+        data = snapshotDetail?.volumes || [];
       }
     } else if (!isEmpty(snapshotDetail?.hooks)) {
       data = snapshotDetail?.hooks;
@@ -654,39 +669,19 @@ class SnapshotDetails extends Component {
     );
   };
 
-  componentDidUpdate = (lastProps, lastState) => {
-    const { snapshotDetails } = this.state;
-    const { backupDetails } = snapshotDetails;
-    if (
-      lastState.snapshotDetails !== snapshotDetails &&
-      backupDetails.length > 0
-    ) {
-      // Filter snapshots with status not equal to "Completed"
-      const activeIds = backupDetails
-        .filter((snapshotDetail) => snapshotDetail.status !== "Completed")
-        .map((snapshotDetail) => snapshotDetail.name);
-
-      // Set the filtered snapshot names in state
-      this.setState({ activeIds });
-    }
-  };
-
   renderSnapshot = () => {
     const { backupDetails, backup } = this.state.snapshotDetails;
     const {
-      series,
       selectedScriptTab,
       selectedErrorsWarningTab,
-      currentSnapshotIndex,
       activeIds,
       showAllVolumes,
       showAllPreSnapshotScripts,
       showAllPostSnapshotScripts,
       showAllWarnings,
       showAllErrors,
-      showAllScriptsOutput,
     } = this.state;
-    const { isEmbeddedCluster, navigate } = this.props;
+    const { isEmbeddedCluster } = this.props;
     let featureName = "snapshot";
     if (isEmbeddedCluster) {
       featureName = "backup";
@@ -1135,23 +1130,14 @@ class SnapshotDetails extends Component {
   };
 
   render() {
-    const { isEmbeddedCluster, navigate } = this.props;
+    const { isEmbeddedCluster } = this.props;
 
     const {
       loading,
       showScriptsOutput,
       selectedTab,
-      selectedScriptTab,
       scriptOutput,
-      showAllVolumes,
-      showAllPreSnapshotScripts,
-      showAllPostSnapshotScripts,
-      selectedErrorsWarningTab,
-      showAllErrors,
-      showAllWarnings,
       snapshotDetails,
-      currentSnapshotIndex,
-      series,
       errorMessage,
       errorTitle,
     } = this.state;

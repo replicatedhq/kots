@@ -28,7 +28,7 @@ type Props = {
   loadingBundleId: string;
   pollForBundleAnalysisProgress: () => void;
   updateBundleSlug: (slug: string) => void;
-  updateState: (value: Object) => void;
+  updateState: (value: object) => void;
   watch: App | null;
   isEmbeddedClusterEnabled: boolean;
 };
@@ -403,6 +403,6 @@ export const SupportBundleList = (props: Props) => {
 };
 
 /* eslint-disable */
-// @ts-ignore
+// @ts-expect-error
 export default withRouter(SupportBundleList) as any;
 /* eslint-enable */

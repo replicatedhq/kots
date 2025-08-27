@@ -59,7 +59,7 @@ function UseApps({
   const query = useApps();
 
   // TODO: figure this out
-  // @ts-ignore
+  // @ts-expect-error
   return children(query);
 }
 

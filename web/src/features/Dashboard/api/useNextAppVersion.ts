@@ -7,8 +7,8 @@ axios.defaults.withCredentials = true;
 
 function useNextAppVersionWithIntercept() {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
-  let timerId = useRef<null | NodeJS.Timeout>(null);
-  let nextAppVersionQuery = useNextAppVersion();
+  const timerId = useRef<null | NodeJS.Timeout>(null);
+  const nextAppVersionQuery = useNextAppVersion();
 
   useEffect(() => {
     axios.interceptors.request.use(

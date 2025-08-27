@@ -562,7 +562,6 @@ class AppSnapshots extends Component {
       switchingApps,
     } = this.state;
     const { app, appsList } = this.props;
-    const appTitle = app?.name;
     const inProgressSnapshotExist = snapshots?.find(
       (snapshot) => snapshot.status === "InProgress"
     );
@@ -720,7 +719,7 @@ class AppSnapshots extends Component {
                   value={selectedApp}
                   onChange={this.onAppChange}
                   isOptionSelected={(app) => {
-                    app.name === selectedApp.name;
+                    return app.name === selectedApp.name;
                   }}
                 />
               </div>

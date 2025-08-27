@@ -79,9 +79,9 @@ interface ParagraphProps {
 }
 
 export const Paragraph = styled.p<ParagraphProps>`
-  font-size: ${(props) => `${props.size}px` || "14px"};
+  font-size: ${(props) => (props.size ? `${props.size}px` : "14px")};
   font-weight: ${(props) => props.weight};
-  color: ${(props) => (props.color && props.color) || colors.primary};
+  color: ${(props) => (props.color || colors.primary)};
   padding: ${(props) => props.p && `${props.p}px`};
 
   padding-top: ${(props) =>
@@ -124,9 +124,9 @@ interface SpanProps {
 }
 
 export const Span = styled.span<SpanProps>`
-  font-size: ${(props) => `${props.size}px` || "14px"};
+  font-size: ${(props) => (props.size ? `${props.size}px` : "14px")};
   font-weight: ${(props) => props.weight};
-  color: ${(props) => (props.color && props.color) || colors.primary};
+  color: ${(props) => (props.color || colors.primary)};
   padding: ${(props) => props.p && `${props.p}px`};
   padding-top: ${(props) =>
     (props.pt && `${props.pt}px`) || (props.px && `${props.py}px`)};

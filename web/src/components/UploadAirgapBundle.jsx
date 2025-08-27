@@ -685,5 +685,4 @@ class UploadAirgapBundle extends Component {
   }
 }
 
-// eslint-disable-next-line
 export default withRouter(UploadAirgapBundle);

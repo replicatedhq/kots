@@ -262,7 +262,5 @@ class KotsApplicationTree extends Component<Props, State> {
   }
 }
 
-/* eslint-disable */
-// @ts-ignore
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default withRouter(KotsApplicationTree) as any;
-/* eslint-enable */

@@ -99,7 +99,7 @@ type State = {
   checkingForUpdates: boolean;
   checkingUpdateMessage: string;
   confirmType: string;
-  currentPage: Number;
+  currentPage: number;
   deployView: boolean;
   diffHovered: boolean;
   displayConfirmDeploymentModal: boolean;
@@ -108,34 +108,34 @@ type State = {
   displayShowDetailsModal: boolean;
   errorMsg: string;
   errorTitle: string;
-  firstSequence: Number | string;
+  firstSequence: number | string;
   isIframeLoading: boolean;
   isFetchingAvailableUpdates: boolean;
   isStartingUpgradeService: boolean;
   isSkipPreflights: boolean;
   kotsUpdateChecker: Repeater;
-  kotsUpdateError: Object | undefined;
+  kotsUpdateError: string | undefined;
   kotsUpdateMessage: string;
   kotsUpdateRunning: boolean;
   kotsUpdateStatus: string;
   loadingPage: boolean;
   loadingVersionHistory: boolean;
-  logs: Object | null;
+  logs: object | null;
   logsLoading: boolean;
   numOfRemainingVersions: number;
   numOfSkippedVersions: number;
-  pageSize: Number;
+  pageSize: number;
   preflightState: {
     preflightsFailed: boolean;
     preflightState: string;
   } | null;
-  releaseNotes: Object | null;
+  releaseNotes: string | null;
   releaseWithErr: ReleaseWithError | null | undefined;
   releaseWithNoChanges: Release | null | undefined;
-  secondSequence: Number | string;
+  secondSequence: number | string;
   selectedDiffReleases: boolean;
-  selectedSequence: Number;
-  selectedTab: Object | null;
+  selectedSequence: number;
+  selectedTab: string | null;
   showAutomaticUpdatesModal: boolean;
   showDeployWarningModal: boolean;
   showDiffErrModal: boolean;
@@ -143,12 +143,12 @@ type State = {
   showLogsModal: boolean;
   showNoChangesModal: boolean;
   showSkipModal: boolean;
-  totalCount: Number;
+  totalCount: number;
   updatesAvailable: boolean;
   uploadingAirgapFile: boolean;
-  uploadProgress: Number;
+  uploadProgress: number;
   uploadResuming: boolean;
-  uploadSize: Number;
+  uploadSize: number;
   upgradeServiceChecker: Repeater;
   upgradeServiceStatus: string;
   versionDownloadStatuses: {
@@ -449,7 +449,7 @@ class AppVersionHistory extends Component<Props, State> {
     const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
-      let res = await fetch(configUrl, {
+      const res = await fetch(configUrl, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -505,7 +505,7 @@ class AppVersionHistory extends Component<Props, State> {
     });
   };
 
-  onUploadError = (message: String) => {
+  onUploadError = (message: string) => {
     this.setState({
       uploadingAirgapFile: false,
       checkingForUpdates: false,
@@ -592,7 +592,7 @@ class AppVersionHistory extends Component<Props, State> {
   downloadVersion = (version: Version) => {
     const { app } = this.props.outletContext;
 
-    if (!this.versionDownloadStatusJobs.hasOwnProperty(version.sequence)) {
+    if (!Object.prototype.hasOwnProperty.call(this.versionDownloadStatusJobs, version.sequence)) {
       this.versionDownloadStatusJobs[version.sequence] = new Repeater();
     }
 
@@ -1108,7 +1108,7 @@ class AppVersionHistory extends Component<Props, State> {
   handleViewLogs = async (version: Version | null, isFailing: boolean) => {
     try {
       const { app } = this.props.outletContext;
-      let clusterId = app.downstream.cluster?.id;
+      const clusterId = app.downstream.cluster?.id;
       this.setState({
         logsLoading: true,
         showLogsModal: true,
@@ -1451,7 +1451,7 @@ class AppVersionHistory extends Component<Props, State> {
     );
   };
 
-  onGotoPage = (page: Number, ev: { preventDefault: () => void }) => {
+  onGotoPage = (page: number, ev: { preventDefault: () => void }) => {
     ev.preventDefault();
     this.setState({ currentPage: page, loadingPage: true }, async () => {
       this.props.navigate(`${this.props.location.pathname}?page=${page}`);
@@ -1633,12 +1633,14 @@ class AppVersionHistory extends Component<Props, State> {
           showVersionPreviousDownloadStatus={
             // user hasn't tried to re-download the version yet,
             // show last known download status if exists
-            !this.state.versionDownloadStatuses.hasOwnProperty(
+            !Object.prototype.hasOwnProperty.call(
+              this.state.versionDownloadStatuses,
               version.sequence
             ) && Boolean(version.downloadStatus)
           }
           showVersionDownloadingStatus={
-            this.state.versionDownloadStatuses.hasOwnProperty(
+            Object.prototype.hasOwnProperty.call(
+              this.state.versionDownloadStatuses,
               version.sequence
             ) && Boolean(this.state.versionDownloadStatuses?.[version.sequence])
           }
@@ -1736,7 +1738,7 @@ class AppVersionHistory extends Component<Props, State> {
       shortKotsUpdateMessage = shortKotsUpdateMessage.substring(0, 60) + "...";
     }
 
-    let sequenceLabel = "Sequence";
+    const sequenceLabel = "Sequence";
 
     let pendingVersion;
     if (this.state.updatesAvailable) {

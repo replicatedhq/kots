@@ -3,7 +3,6 @@ import Modal from "react-modal";
 import AceEditor from "react-ace";
 import yaml from "js-yaml";
 import Loader from "../shared/Loader";
-import { Utilities } from "../../utilities/utilities";
 import "brace/mode/text";
 import "brace/mode/yaml";
 import "brace/theme/chrome";

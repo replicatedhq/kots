@@ -34,7 +34,7 @@ class SnapshotRow extends Component {
   };
 
   render() {
-    const { snapshot, app, hideRestore, index } = this.props;
+    const { snapshot, hideRestore, index } = this.props;
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot?.expiresAt);
 
     return (

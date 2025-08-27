@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook } from "@testing-library/react-hooks";
+import { renderHook, waitFor } from "@testing-library/react";
 import { getApps, useApps } from "./getApps";
 
 describe("getApps", () => {
@@ -10,7 +10,12 @@ describe("getApps", () => {
     let queryClient;
     let wrapper;
     beforeEach(() => {
-      queryClient = new QueryClient();
+      queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
       wrapper = function wrapperFunc({ children }) {
         return (
           <QueryClientProvider client={queryClient}>
@@ -19,10 +24,14 @@ describe("getApps", () => {
         );
       };
     });
+
+    afterEach(() => {
+      queryClient.clear();
+    });
     it("calls _getApps", async () => {
       const getAppsSpy = jest.fn(() => Promise.resolve({}));
 
-      const { result, waitFor } = renderHook(
+      const { result } = renderHook(
         () => useApps({ _getApps: getAppsSpy }),
         {
           wrapper,
