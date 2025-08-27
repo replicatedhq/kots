@@ -80,7 +80,7 @@
     "terser-webpack-plugin": "^5.3.14",
     "tty-browserify": "^0.0.1",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.39.0",
+    "typescript-eslint": "^8.41.0",
     "util": "^0.12.5",
     "webpack": "^5.101.2",
     "webpack-bundle-analyzer": "^4.10.2",
