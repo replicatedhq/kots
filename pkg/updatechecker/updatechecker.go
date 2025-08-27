@@ -389,23 +389,20 @@ func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull
 		updateVersionsMap[key] = &update
 	}
 
-	// update demotion metadata for stored releases
+	// Determine versions to demote: pending but not in updates
 	for key, pending := range pendingVersionsMap {
-		// check if we don't have an update for the given pending version
-		// if so then it means it has been demoted and we need to update it
-		if _, ok := updateVersionsMap[key]; !ok {
+		if _, exists := updateVersionsMap[key]; !exists {
 			if err := store.UpdateAppVersionDemotion(appID, pending.ChannelID, pending.UpdateCursor, true); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to update app version demotion state for %s", pending.VersionLabel))
 			}
-		} else {
-			// if it exists remove the key. The leftovers should be un-demoted releases that need to be added to the pendingVersions
-			delete(updateVersionsMap, key)
 		}
 	}
-	// any leftover updates in the map are un-demoted releases that we need to add back in by updating its demotion state locally
-	for _, update := range updateVersionsMap {
-		if err := store.UpdateAppVersionDemotion(appID, update.ChannelID, update.Cursor, false); err != nil {
-			logger.Error(errors.Wrapf(err, "failed to update app version demotion state for %s", update.VersionLabel))
+	// Determine versions to un-demote: updates but not in pending
+	for key, update := range updateVersionsMap {
+		if _, exists := pendingVersionsMap[key]; !exists {
+			if err := store.UpdateAppVersionDemotion(appID, update.ChannelID, update.Cursor, false); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to update app version demotion state for %s", update.VersionLabel))
+			}
 		}
 	}
 
