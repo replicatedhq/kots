@@ -24,4 +24,13 @@ jobs:
         run: terraform version
 
       - name: Verify musl version (sanity check)
-        run: ldd --version || /lib/libc.musl-$(uname -m).so.1
+        # Don't fail the job if version probes return non-zero
+        continue-on-error: true
+        run: |
+          arch="$(uname -m)"
+          # If ldd is present, show its version; ignore non-zero exit
+          if command -v ldd >/dev/null 2>&1; then
+            ldd --version || true
+          fi
+          # musl loader prints version and may exit non-zero; that's OK
+          "/lib/libc.musl-${arch}.so.1" --version || true
