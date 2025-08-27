@@ -1,0 +1,27 @@
+name: Temp Terraform Checkout Test
+
+on:
+  push:
+    branches:
+      - '**'   # runs on any branch push
+  pull_request:
+    branches:
+      - main   # runs on PRs targeting main
+
+jobs:
+  test-checkout:
+    runs-on: ubuntu-latest
+    container:
+      image: hashicorp/terraform:1.13.1
+    steps:
+      - name: Install git + ssh client
+        run: apk add --no-cache git openssh-client
+
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Verify Terraform works
+        run: terraform version
+
+      - name: Verify musl version (sanity check)
+        run: ldd --version || /lib/libc.musl-$(uname -m).so.1
