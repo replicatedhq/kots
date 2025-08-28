@@ -39,7 +39,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v2"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
