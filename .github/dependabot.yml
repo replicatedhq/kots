@@ -24,6 +24,7 @@ updates:
           - "@babel/*"
       typescript-eslint:
         patterns:
+          - "typescript-eslint"
           - "@typescript-eslint/*"
 
   - package-ecosystem: "npm"
