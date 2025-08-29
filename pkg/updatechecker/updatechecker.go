@@ -374,9 +374,9 @@ func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull
 	// build a version map of the pending versions for fast lookup
 	pendingVersionsMap := make(map[string]*downstreamtypes.DownstreamVersion)
 	for _, pending := range pendingVersions {
-		// We want to prevent mistakenly demoting app versions by:
-		// - only considering pending versions for the current channel
-		// - making sure the cursor is different than the currently deployed version
+		// We want to prevent mistakenly updating app versions by:
+		// - only considering pending versions from the same channel as the currently deployed version
+		// - making sure the cursor is different than the currently deployed version cursor, which can be the same when changing channels.
 		if pending.ChannelID == currentVersion.ChannelID && pending.UpdateCursor != currentVersion.UpdateCursor {
 			key := getVersionKey(pending.ChannelID, pending.UpdateCursor)
 			pendingVersionsMap[key] = pending
