@@ -37,6 +37,9 @@ var jobs = make(map[string]*cron.Cron)
 var mtx sync.Mutex
 var store storepkg.Store
 
+// getUpdates is a package-level variable that can be replaced in tests for mocking
+var getUpdates = kotspull.GetUpdates
+
 // Start will start the update checker
 // the frequency of those update checks are app specific and can be modified by the user
 func Start() error {
@@ -251,7 +254,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	}
 
 	// get updates
-	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
+	updates, err := getUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get updates")
 	}
@@ -274,7 +277,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, d.ClusterID)
 	}
 
-	if err := maybeUpdatePendingVersionsMetadata(a.ID, getUpdatesOptions, appVersions.CurrentVersion); err != nil {
+	if err := maybeUpdatePendingVersionsMetadata(a.ID, getUpdatesOptions, appVersions.CurrentVersion, appVersions.PendingVersions); err != nil {
 		logger.Error(errors.Wrap(err, "failed to update app version metadata"))
 	}
 
@@ -337,13 +340,18 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	return &ucr, nil
 }
 
+// getVersionKey builds a string given a chhanel ID and cursor to be used as a key for version lookup maps with the format <channelID>-<cursor>
+func getVersionKey(channelID, cursor string) string {
+	return fmt.Sprintf("%s-%s", channelID, cursor)
+}
+
 // maybeUpdatePendingVersionsMetadata updates metadata for pending versions since the currently deployed version.
 //
 // Limitations:
 // - Only gets pending releases for the channel of the currently deployed version, even if channel changed in later versions
 // - Does not rerender the application archive, so the Installation object in the archive can become out of sync
 // - This is not in the critical path - errors are logged but don't fail the overall update check
-func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull.GetUpdatesOptions, currentVersion *downstreamtypes.DownstreamVersion) error {
+func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull.GetUpdatesOptions, currentVersion *downstreamtypes.DownstreamVersion, pendingVersions []*downstreamtypes.DownstreamVersion) error {
 	if currentVersion == nil {
 		return nil
 	}
@@ -358,16 +366,51 @@ func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull
 		getUpdatesOptions.CurrentChannelName = ""
 	}
 
-	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", getUpdatesOptions.License.Spec.AppSlug), getUpdatesOptions)
+	updates, err := getUpdates(fmt.Sprintf("replicated://%s", getUpdatesOptions.License.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		return errors.Wrap(err, "get updates for metadata refresh")
 	}
 
+	// build a version map of the pending versions for fast lookup
+	pendingVersionsMap := make(map[string]*downstreamtypes.DownstreamVersion)
+	for _, pending := range pendingVersions {
+		// We want to prevent mistakenly updating app versions by:
+		// - only considering pending versions from the same channel as the currently deployed version
+		// - making sure the cursor is different than the currently deployed version cursor, which can be the same when changing channels.
+		if pending.ChannelID == currentVersion.ChannelID && pending.UpdateCursor != currentVersion.UpdateCursor {
+			key := getVersionKey(pending.ChannelID, pending.UpdateCursor)
+			pendingVersionsMap[key] = pending
+		}
+	}
+
+	// build a version map of the updates for fast lookup
+	updateVersionsMap := make(map[string]*upstreamtypes.Update)
 	for _, update := range updates.Updates {
+		// update the app version metadata with the upstream info
 		if err := store.UpdateAppVersionMetadata(appID, update); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to update app version metadata for %s", update.VersionLabel))
 		}
+		key := getVersionKey(update.ChannelID, update.Cursor)
+		updateVersionsMap[key] = &update
 	}
+
+	// Determine versions to demote: pending but not in updates
+	for key, pending := range pendingVersionsMap {
+		if _, exists := updateVersionsMap[key]; !exists {
+			if err := store.UpdateAppVersionDemotion(appID, pending.ChannelID, pending.UpdateCursor, true); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to update app version demotion state for %s", pending.VersionLabel))
+			}
+		}
+	}
+	// Determine versions to un-demote: updates but not in pending
+	for key, update := range updateVersionsMap {
+		if _, exists := pendingVersionsMap[key]; !exists {
+			if err := store.UpdateAppVersionDemotion(appID, update.ChannelID, update.Cursor, false); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to update app version demotion state for %s", update.VersionLabel))
+			}
+		}
+	}
+
 	return nil
 }
 

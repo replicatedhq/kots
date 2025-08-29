@@ -39,6 +39,11 @@ spec:
         constraints:
           notNull: true
         default: 0
+      - name: is_demoted
+        type: integer
+        constraints:
+          notNull: true
+        default: 0
       - name: release_notes
         type: text
       - name: supportbundle_spec
