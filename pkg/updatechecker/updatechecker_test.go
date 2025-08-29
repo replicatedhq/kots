@@ -166,6 +166,71 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 			},
 		},
 		{
+			name:  "pending version not found in upstream updates but for different channel - should not do anything",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "cursor-1",
+				ChannelID:    "channel-1",
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{
+				{
+					ChannelID:    "channel-1",
+					UpdateCursor: "cursor-2",
+				},
+				{
+					ChannelID:    "channel-2",
+					UpdateCursor: "cursor-2",
+				},
+				{
+					ChannelID:    "channel-2",
+					UpdateCursor: "cursor-3",
+				},
+			},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						AppSlug: "test-app-slug",
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{
+				{
+					VersionLabel: "v1.0.0",
+					ChannelID:    "channel-1",
+					Cursor:       "cursor-2",
+				},
+			},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				mockStore.EXPECT().UpdateAppVersionMetadata("test-app", gomock.Any()).Return(nil)
+				// No demotion call expected since version mismatch is different channels
+			},
+		},
+		{
+			name:  "pending version not found in upstream updates but it has the same update cursor as the current version - should not do anything",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "cursor-1",
+				ChannelID:    "channel-1",
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{
+				{
+					UpdateCursor: "cursor-1",
+					ChannelID:    "channel-1",
+				},
+			},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						AppSlug: "test-app-slug",
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				// No demotion call expected since version mismatch is different channels
+			},
+		},
+		{
 			name:  "upstream update not found in pending versions - should undemote",
 			appID: "test-app",
 			currentVersion: &downstreamtypes.DownstreamVersion{
