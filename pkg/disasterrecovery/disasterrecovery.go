@@ -3,7 +3,7 @@ package disasterrecovery
 import (
 	"github.com/pkg/errors"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/kustomize/kyaml/resid"
 )

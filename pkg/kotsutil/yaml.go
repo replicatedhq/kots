@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 	yaml "github.com/replicatedhq/yaml/v3"
-	goyaml "gopkg.in/yaml.v3"
+	goyaml "go.yaml.in/yaml/v3"
 	k8syaml "sigs.k8s.io/yaml"
 )
 

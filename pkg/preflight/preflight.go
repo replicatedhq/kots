@@ -31,7 +31,7 @@ import (
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v2"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

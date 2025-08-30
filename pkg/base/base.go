@@ -13,7 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v2"
 	batchv1 "k8s.io/api/batch/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
