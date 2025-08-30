@@ -96,7 +96,7 @@ describe("getApps", () => {
         apiEndpoint: testAPIEndpoint,
       };
 
-      await expect(getApps(testgetAppsFetchConfig)).rejects.toThrowError(
+      await expect(getApps(testgetAppsFetchConfig)).rejects.toThrow(
         "Failed to fetch apps with status 400"
       );
     });
@@ -115,7 +115,7 @@ describe("getApps", () => {
         apiEndpoint: testAPIEndpoint,
       };
 
-      await expect(getApps(testgetAppsFetchConfig)).rejects.toThrowError(
+      await expect(getApps(testgetAppsFetchConfig)).rejects.toThrow(
         "Error parsing json"
       );
     });
@@ -130,7 +130,7 @@ describe("getApps", () => {
         apiEndpoint: testAPIEndpoint,
       };
 
-      await expect(getApps(testgetAppsFetchConfig)).rejects.toThrowError(
+      await expect(getApps(testgetAppsFetchConfig)).rejects.toThrow(
         "Error fetching"
       );
     });

@@ -55,6 +55,16 @@ describe("UpgradeService", () => {
             isConfigurable: true,
             hasPreflight: false,
           });
+        }),
+        http.get(`${api}/apps`, () => {
+          return HttpResponse.json({
+            apps: [],
+          });
+        }),
+        http.get(`${api}/upgrade-service/app/${slug}/config`, () => {
+          return HttpResponse.json({
+            config: {},
+          });
         })
       );
 
@@ -76,6 +86,23 @@ describe("UpgradeService", () => {
           return HttpResponse.json({
             isConfigurable: false,
             hasPreflight: true,
+          });
+        }),
+        http.get(`${api}/apps`, () => {
+          return HttpResponse.json({
+            apps: [],
+          });
+        }),
+        http.get(`${api}/upgrade-service/app/${slug}/preflight/result`, () => {
+          return HttpResponse.json({
+            preflightResult: {
+              result: {
+                results: [],
+                errors: []
+              },
+              skipped: false
+            },
+            preflightProgress: {}
           });
         })
       );
@@ -101,6 +128,23 @@ describe("UpgradeService", () => {
             isConfigurable: false,
             hasPreflight: false,
           });
+        }),
+        http.get(`${api}/apps`, () => {
+          return HttpResponse.json({
+            apps: [],
+          });
+        }),
+        http.get(`${api}/upgrade-service/app/${slug}/preflight/result`, () => {
+          return HttpResponse.json({
+            preflightResult: {
+              result: {
+                results: [],
+                errors: []
+              },
+              skipped: false
+            },
+            preflightProgress: {}
+          });
         })
       );
 
@@ -122,6 +166,11 @@ describe("UpgradeService", () => {
       server.use(
         http.get(`${api}/upgrade-service/app/${slug}`, () => {
           return new HttpResponse("Not found", { status: 404 });
+        }),
+        http.get(`${api}/apps`, () => {
+          return HttpResponse.json({
+            apps: [],
+          });
         })
       );
 
