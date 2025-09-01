@@ -160,7 +160,8 @@ export const deployNewVersion = async (
     await expect(confirmDeploymentModal).not.toBeVisible();
   }
 
-  await expect(versionRow).toContainText('Deploying', { timeout: 10000 });
+  // check if the deployment started or it it has already finished
+  await expect(versionRow).toContainText(/(Deploying|Currently deployed version)/, { timeout: 10000 });
   await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
@@ -200,7 +201,8 @@ export const rollbackToVersion = async (page: Page, expect: Expect, rowIndex: nu
   await confirmDeploymentModal.getByRole('button', { name: 'Yes, redeploy', exact: true }).click();
   await expect(confirmDeploymentModal).not.toBeVisible();
 
-  await expect(versionRow).toContainText('Deploying', { timeout: 10000 });
+  // check if the deployment started or it it has already finished
+  await expect(versionRow).toContainText(/(Deploying|Currently deployed version)/, { timeout: 10000 });
   await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
