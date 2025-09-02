@@ -12,7 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/util"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 

@@ -19,7 +19,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v2"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/client-go/kubernetes"
