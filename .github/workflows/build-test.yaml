@@ -282,7 +282,7 @@ jobs:
           context: deploy
           component: kotsadm
           git-tag: ${{ needs.generate-tag.outputs.tag }}
-          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
+          image-name: dev.ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
 
 
   build-kots-helm:
@@ -305,14 +305,14 @@ jobs:
           export CHART_VERSION=0.0.${{ github.run_id }}-automated
           export KOTS_VERSION=24h
           export KOTS_TAG=24h
-          export KOTSADM_REGISTRY=ttl.sh/automated-${{ github.run_id }}
+          export KOTSADM_REGISTRY=dev.ttl.sh/automated-${{ github.run_id }}
 
           envsubst < Chart.yaml.tmpl > Chart.yaml
           envsubst < values.yaml.tmpl > values.yaml
 
           CHART_NAME=$(helm package . | rev | cut -d/ -f1 | rev)
           export CHART_NAME
-          helm push "$CHART_NAME" oci://ttl.sh/automated-${{ github.run_id }}
+          helm push "$CHART_NAME" oci://dev.ttl.sh/automated-${{ github.run_id }}
 
 
   build-e2e:
@@ -380,7 +380,7 @@ jobs:
           context: kurl_proxy/deploy
           component: kurl-proxy
           git-tag: ${{ needs.generate-tag.outputs.tag }}
-          image-name: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
+          image-name: dev.ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
 
 
   build-migrations-melange-packages:
@@ -418,7 +418,7 @@ jobs:
           context: migrations/deploy
           component: kotsadm-migrations
           git-tag: ${{ needs.generate-tag.outputs.tag }}
-          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
+          image-name: dev.ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
 
   push-minio:
     runs-on: ubuntu-24.04
@@ -439,7 +439,7 @@ jobs:
           path: .image.env
 
       - name: push minio
-        run: skopeo copy --all --retry-times 5 docker://kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+        run: skopeo copy --all --retry-times 5 docker://kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} docker://dev.ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
 
 
   push-rqlite:
@@ -461,7 +461,7 @@ jobs:
           path: .image.env
 
       - name: push rqlite
-        run: skopeo copy --all --retry-times 5 docker://kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+        run: skopeo copy --all --retry-times 5 docker://kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} docker://dev.ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
 
   push-dex:
     runs-on: ubuntu-24.04
@@ -482,7 +482,7 @@ jobs:
           path: .image.env
 
       - name: push dex
-        run: skopeo copy --all --retry-times 5 docker://kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+        run: skopeo copy --all --retry-times 5 docker://kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }} docker://dev.ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
 
   cmx-versions:
     runs-on: ubuntu-24.04
@@ -552,7 +552,7 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
-          kotsadm_image_registry: ttl.sh
+          kotsadm_image_registry: dev.ttl.sh
           kotsadm_image_namespace: automated-${{ github.run_id }}
           kotsadm_image_tag: 24h
           kotsadm_binary_override: bin/kots.tar.gz
@@ -678,7 +678,7 @@ jobs:
           kots-namespace: 'airgap-smoke-test'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          kotsadm-image-registry: ttl.sh
+          kotsadm-image-registry: dev.ttl.sh
           kots-airgap: true
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
@@ -737,7 +737,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --additional-labels testlabel1=testvalue1 \
             --additional-labels test.label/two=test.value.two \
@@ -1031,7 +1031,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
             --kotsadm-tag 24h | tee output.txt
@@ -1089,7 +1089,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
             --kotsadm-tag 24h
@@ -1331,7 +1331,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h \
             --use-minimal-rbac | tee output.txt
@@ -1392,7 +1392,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h | tee output.txt
 
@@ -1511,7 +1511,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h \
             --storage-class=${{ matrix.cluster.distribution == 'eks' && 'gp2' || '' }}
@@ -1731,7 +1731,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -1789,7 +1789,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -1885,7 +1885,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
             --kotsadm-tag 24h
@@ -1982,7 +1982,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
             --kotsadm-tag 24h
@@ -2124,7 +2124,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -2200,7 +2200,7 @@ jobs:
       - name: run kots admin-console push-images
         run: |
           set +e
-          ./bin/kots admin-console push-images ./e2e/artifacts/small.airgap ttl.sh/automated-${{ github.run_id }}
+          ./bin/kots admin-console push-images ./e2e/artifacts/small.airgap dev.ttl.sh/automated-${{ github.run_id }}
 
 
   validate-kots-admin-console-generate-manifests:
@@ -2309,7 +2309,7 @@ jobs:
           set +e
           ./bin/kots admin-console generate-manifests -n "$NAMESPACE" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -2342,7 +2342,7 @@ jobs:
           set +e
           ./bin/kots admin-console generate-manifests -n "$NAMESPACE" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -2446,7 +2446,7 @@ jobs:
           kots-namespace: 'min-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          kotsadm-image-registry: ttl.sh
+          kotsadm-image-registry: dev.ttl.sh
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
@@ -2498,7 +2498,7 @@ jobs:
           kots-namespace: 'min-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          kotsadm-image-registry: ttl.sh
+          kotsadm-image-registry: dev.ttl.sh
           kots-airgap: true
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
@@ -2562,7 +2562,7 @@ jobs:
           kots-namespace: 'target-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          kotsadm-image-registry: ttl.sh
+          kotsadm-image-registry: dev.ttl.sh
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
@@ -2612,7 +2612,7 @@ jobs:
           kots-namespace: 'target-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          kotsadm-image-registry: ttl.sh
+          kotsadm-image-registry: dev.ttl.sh
           kots-airgap: true
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
@@ -2676,7 +2676,7 @@ jobs:
           kots-namespace: 'range-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          kotsadm-image-registry: ttl.sh
+          kotsadm-image-registry: dev.ttl.sh
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
@@ -2726,7 +2726,7 @@ jobs:
           kots-namespace: 'range-kots-version'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          kotsadm-image-registry: ttl.sh
+          kotsadm-image-registry: dev.ttl.sh
           kots-airgap: true
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
@@ -2833,7 +2833,7 @@ jobs:
 
           ./bin/kots admin-console upgrade \
             --namespace "$APP_SLUG" \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -2988,7 +2988,7 @@ jobs:
           # upgrade using the new KOTS version
           ./bin/kots admin-console upgrade \
             --namespace "$APP_SLUG" \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -3199,7 +3199,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -3253,7 +3253,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -3473,7 +3473,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -3695,7 +3695,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -3867,7 +3867,7 @@ jobs:
             --namespace "$KOTS_NAMESPACE" \
             --shared-password password \
             --app-version-label v1.0.0 \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -3962,7 +3962,7 @@ jobs:
             --no-port-forward \
             --namespace "$KOTS_NAMESPACE" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -4039,7 +4039,7 @@ jobs:
             --no-port-forward \
             --namespace "$KOTS_NAMESPACE" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
@@ -4148,7 +4148,7 @@ jobs:
           kots-namespace: 'support-bundle'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          kotsadm-image-registry: ttl.sh
+          kotsadm-image-registry: dev.ttl.sh
           cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
@@ -4247,7 +4247,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
           
@@ -4511,7 +4511,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --kotsadm-registry ttl.sh \
+            --kotsadm-registry dev.ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --private-ca-configmap custom-cas \
             --kotsadm-tag 24h

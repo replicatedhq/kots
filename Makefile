@@ -140,8 +140,8 @@ web:
 build-ttl.sh: export GOOS ?= $(OS)
 build-ttl.sh: export GOARCH ?= $(ARCH)
 build-ttl.sh: web kots build
-	docker build --platform $(OS)/$(ARCH) -f dev/dockerfiles/kotsadm/Dockerfile.ttlsh -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
-	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
+	docker build --platform $(OS)/$(ARCH) -f dev/dockerfiles/kotsadm/Dockerfile.ttlsh -t dev.ttl.sh/${CURRENT_USER}/kotsadm:24h .
+	docker push dev.ttl.sh/${CURRENT_USER}/kotsadm:24h
 
 .PHONY: kots-ttl.sh
 kots-ttl.sh: export GOOS ?= $(OS)
@@ -149,7 +149,7 @@ kots-ttl.sh: export GOARCH ?= $(ARCH)
 kots-ttl.sh: kots
 	cd bin && \
 	tar czf kots.tar.gz kots && \
-	oras push ttl.sh/${CURRENT_USER}/kots.tar.gz:24h \
+	oras push dev.ttl.sh/${CURRENT_USER}/kots.tar.gz:24h \
 		--artifact-type application/vnd.unknown.layer.v1+binary \
 		kots.tar.gz:application/gzip
 
@@ -158,17 +158,17 @@ all-ttl.sh: export GOOS ?= $(OS)
 all-ttl.sh: export GOARCH ?= $(ARCH)
 all-ttl.sh: build-ttl.sh
 	source .image.env && \
-		IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h \
+		IMAGE=dev.ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h \
 		DOCKER_BUILD_ARGS="--platform $(OS)/$(ARCH)" \
 		make -C migrations build_schema
 
 	docker pull --platform $(OS)/$(ARCH) kotsadm/minio:${MINIO_TAG}
-	docker tag kotsadm/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
-	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
+	docker tag kotsadm/minio:${MINIO_TAG} dev.ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
+	docker push dev.ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
 	docker pull --platform $(OS)/$(ARCH) kotsadm/rqlite:${RQLITE_TAG}
-	docker tag kotsadm/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
-	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
+	docker tag kotsadm/rqlite:${RQLITE_TAG} dev.ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
+	docker push dev.ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 
 .PHONY: kotsadm-bundle
 kotsadm-bundle:
