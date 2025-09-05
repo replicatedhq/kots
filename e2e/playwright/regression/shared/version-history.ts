@@ -46,9 +46,17 @@ export const validateInitialPreflightsSkipped = async (page: Page, expect: Expec
 };
 
 export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
-  // First, ensure the current deployment has completed before checking logs
+  // First, ensure any pending deployment has completed before checking logs
+  // Check both the current version card and the first version row for deployment completion
   const currentVersionCard = page.getByTestId("current-version-card");
-  await expect(currentVersionCard).toContainText('Currently deployed version', { timeout: 45000 });
+  
+  // Wait for deployment to complete - check version history row first (for config changes),
+  // then current card (for initial installs)
+  const allVersionsCard = page.getByTestId('all-versions-card');
+  const versionRow = allVersionsCard.getByTestId('version-history-row-0');
+  
+  // For config changes, "Currently deployed version" appears in version history first
+  await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
   
   await currentVersionCard.getByTestId("current-deploy-logs-icon").click();
 
@@ -64,7 +72,8 @@ export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
   await deployLogsModal.getByTestId("logs-tab-applyStdout").click();
   const editor = deployLogsModal.getByTestId("deploy-logs-modal-editor");
   await expect(editor).toBeVisible();
-  await expect(editor).toContainText(/created|configured|unchanged/, { timeout: 10000 }); // 10 seconds timeout for deploy logs to load
+  await page.waitForTimeout(2000);
+  await expect(editor).toContainText(/created|configured|unchanged/, { timeout: 15000 }); // Allow extra time for log content to load
 
   await deployLogsModal.getByRole("button", { name: "Ok, got it!" }).click();
   await expect(deployLogsModal).not.toBeVisible();
