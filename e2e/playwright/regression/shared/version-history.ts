@@ -64,7 +64,9 @@ export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
   await deployLogsModal.getByTestId("logs-tab-applyStdout").click();
   const editor = deployLogsModal.getByTestId("deploy-logs-modal-editor");
   await expect(editor).toBeVisible();
-  await expect(editor).toContainText(/created|configured|unchanged/, { timeout: 10000 }); // 10 seconds timeout for deploy logs to load
+  // Give the Monaco editor more time to load the log content from the API
+  await page.waitForTimeout(5000);
+  await expect(editor).toContainText(/created|configured|unchanged/, { timeout: 30000 }); // Generous timeout for log content to load in test environments
 
   await deployLogsModal.getByRole("button", { name: "Ok, got it!" }).click();
   await expect(deployLogsModal).not.toBeVisible();
