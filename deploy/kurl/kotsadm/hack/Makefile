@@ -39,7 +39,7 @@ generate:
 	
 _generate: CURRENT_USER = $(shell id -u -n)
 _generate: generate-tag
-	@cd ../template && ./generate.sh $(KOTS_VERSION) ttl.sh $(CURRENT_USER) 24h $(shell realpath ../../../../bin/kots)
+	@cd ../template && ./generate.sh $(KOTS_VERSION) dev.ttl.sh $(CURRENT_USER) 24h $(shell realpath ../../../../bin/kots)
 	@rm -rf kurl/addons/kotsadm/$(KOTS_VERSION)
 	@cp -r ../$(KOTS_VERSION) kurl/addons/kotsadm/
 	mkdir -p kurl/addons/kotsadm/$(KOTS_VERSION)/assets/

@@ -28,7 +28,7 @@ inputs:
     required: false
   kotsadm-image-registry:
     description: 'Kotsadm image registry'
-    default: 'ttl.sh'
+    default: 'dev.ttl.sh'
     required: false
   kotsadm-image-namespace:
     description: 'Kotsadm image namespace'
