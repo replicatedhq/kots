@@ -46,7 +46,7 @@ export const validateInitialPreflightsSkipped = async (page: Page, expect: Expec
 };
 
 export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
-  // First, ensure any pending deployment has completed before checking logs
+  // First, ensure the current deployment has completed before checking logs
   const currentVersionCard = page.getByTestId("current-version-card");
   await expect(currentVersionCard).toContainText('Currently deployed version', { timeout: 45000 });
   
