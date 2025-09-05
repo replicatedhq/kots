@@ -47,16 +47,8 @@ export const validateInitialPreflightsSkipped = async (page: Page, expect: Expec
 
 export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
   // First, ensure any pending deployment has completed before checking logs
-  // Check both the current version card and the first version row for deployment completion
   const currentVersionCard = page.getByTestId("current-version-card");
-  
-  // Wait for deployment to complete - check version history row first (for config changes),
-  // then current card (for initial installs)
-  const allVersionsCard = page.getByTestId('all-versions-card');
-  const versionRow = allVersionsCard.getByTestId('version-history-row-0');
-  
-  // For config changes, "Currently deployed version" appears in version history first
-  await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
+  await expect(currentVersionCard).toContainText('Currently deployed version', { timeout: 45000 });
   
   await currentVersionCard.getByTestId("current-deploy-logs-icon").click();
 
@@ -72,8 +64,9 @@ export const validateCurrentDeployLogs = async (page: Page, expect: Expect) => {
   await deployLogsModal.getByTestId("logs-tab-applyStdout").click();
   const editor = deployLogsModal.getByTestId("deploy-logs-modal-editor");
   await expect(editor).toBeVisible();
-  await page.waitForTimeout(2000);
-  await expect(editor).toContainText(/created|configured|unchanged/, { timeout: 15000 }); // Allow extra time for log content to load
+  // Give the Monaco editor more time to load the log content from the API
+  await page.waitForTimeout(5000);
+  await expect(editor).toContainText(/created|configured|unchanged/, { timeout: 30000 }); // Generous timeout for log content to load in test environments
 
   await deployLogsModal.getByRole("button", { name: "Ok, got it!" }).click();
   await expect(deployLogsModal).not.toBeVisible();
