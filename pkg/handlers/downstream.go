@@ -39,6 +39,8 @@ func (h *Handler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logger.Debugf("MAKING A CHANGE")
+
 	output, err := store.GetStore().GetDownstreamOutput(a.ID, clusterID, int64(sequence))
 	if err != nil {
 		logger.Error(err)
