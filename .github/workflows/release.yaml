@@ -458,7 +458,7 @@ jobs:
     steps:
     - name: Get latest release tag
       id: get_latest_release_tag
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const {
