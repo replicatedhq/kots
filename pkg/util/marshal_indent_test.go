@@ -8,7 +8,7 @@ import (
 )
 
 func TestMarshalIndent(t *testing.T) {
-	lineString := "this is a very very long line that would normally wrap after 80 characters with the default yaml.v3 encoder, but should not wrap here."
+	lineString := "this is a very very long line that would normally wrap after 80 characters with the default yaml.v3 encoder, but should not wrap here. this is a very very long line that would normally wrap after 80 characters with the default yaml.v3 encoder, but should not wrap here. this is a very very long line that would normally wrap after 80 characters with the default yaml.v3 encoder, but should not wrap here. this is a very very long line that would normally wrap after 80 characters with the default yaml.v3 encoder, but should not wrap here."
 	tests := []struct {
 		name   string
 		indent int

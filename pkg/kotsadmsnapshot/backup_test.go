@@ -1887,7 +1887,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					assert.Equal(t, "2", got.Annotations[types.InstanceBackupCountAnnotation])
 				}
 				if assert.Contains(t, got.Annotations, types.InstanceBackupRestoreSpecAnnotation) {
-					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","namespace":"kotsadm-backups","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{},"itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
+					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","namespace":"kotsadm-backups"},"spec":{"backupName":"test-backup","hooks":{},"itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
 				}
 			},
 		},
@@ -4130,7 +4130,7 @@ func TestGetInstanceBackupRestore(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-backup",
 						Annotations: map[string]string{
-							types.InstanceBackupRestoreSpecAnnotation: `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","creationTimestamp":null},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`,
+							types.InstanceBackupRestoreSpecAnnotation: `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore"},"spec":{"backupName":"test-backup","hooks":{}},"status":{}}`,
 						},
 					},
 				},
