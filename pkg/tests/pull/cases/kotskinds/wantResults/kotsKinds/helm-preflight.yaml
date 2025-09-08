@@ -1,7 +1,6 @@
 apiVersion: troubleshoot.sh/v1beta2
 kind: Preflight
 metadata:
-  creationTimestamp: null
   name: airgap-smoke-test-preflight
 spec:
   analyzers:

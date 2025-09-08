@@ -548,7 +548,6 @@ metadata:
 apiVersion: kots.io/v1beta1 
 kind: Config 
 metadata: 
-  creationTimestamp: null 
   name: config-sample 
 spec:  
   groups:
@@ -789,7 +788,6 @@ metadata:
 				"config.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
-  creationTimestamp: null
   name: config-sample
 spec:
   groups:
@@ -999,7 +997,6 @@ func Test_renderReplicatedHelm(t *testing.T) {
 apiVersion: kots.io/v1beta1 
 kind: Config 
 metadata: 
-  creationTimestamp: null 
   name: config-sample 
 spec:  
   groups:
@@ -1054,7 +1051,6 @@ spec:
 apiVersion: kots.io/v1beta1 
 kind: Config 
 metadata: 
-  creationTimestamp: null 
   name: config-sample 
 spec:  
   groups:
@@ -1101,7 +1097,6 @@ spec:
 				"config.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
-  creationTimestamp: null
   name: config-sample
 spec:
   groups:
@@ -1136,7 +1131,6 @@ spec:
 apiVersion: kots.io/v1beta1 
 kind: Config 
 metadata: 
-  creationTimestamp: null 
   name: config-sample 
 spec:  
   groups:
@@ -1198,7 +1192,6 @@ spec:
 apiVersion: kots.io/v1beta1 
 kind: Config 
 metadata: 
-  creationTimestamp: null 
   name: config-sample 
 spec:  
   groups:
@@ -1247,7 +1240,6 @@ spec:
 				"config.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
-  creationTimestamp: null
   name: config-sample
 spec:
   groups:
@@ -1263,7 +1255,6 @@ spec:
 				"postgresql.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: HelmChart
 metadata:
-  creationTimestamp: null
   name: postgresql
 spec:
   chart:

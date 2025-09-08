@@ -1,7 +1,6 @@
 apiVersion: kots.io/v1beta1
 kind: License
 metadata:
-  creationTimestamp: null
   name: testcustomer
 spec:
   appSlug: my-app

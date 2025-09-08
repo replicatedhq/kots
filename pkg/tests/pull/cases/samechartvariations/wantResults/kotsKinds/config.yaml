@@ -1,7 +1,6 @@
 apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
-  creationTimestamp: null
   name: my-app
 spec:
   groups:

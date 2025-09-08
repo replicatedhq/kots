@@ -142,7 +142,6 @@ spec:
 			want: `apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
-  creationTimestamp: null
   name: test-app
 spec:
   groups:
@@ -186,7 +185,6 @@ spec:
 			want: `apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
-  creationTimestamp: null
   name: test-app
 spec:
   groups:
@@ -247,7 +245,6 @@ spec:
 			want: `apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
-  creationTimestamp: null
   name: test-app
 spec:
   groups:
@@ -277,8 +274,7 @@ status: {}
 			name: "repeatable Items",
 			configSpecData: `apiVersion: kots.io/v1beta1 
 kind: Config 
-metadata: 
-  creationTimestamp: null 
+metadata:  
   name: test-app
 spec: 
   groups:
@@ -317,8 +313,7 @@ spec:
 			useAppSpec: true,
 			want: `apiVersion: kots.io/v1beta1 
 kind: Config 
-metadata: 
-  creationTimestamp: null 
+metadata:
   name: test-app
 spec: 
   groups:
