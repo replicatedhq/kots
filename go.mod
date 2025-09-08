@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.8
 	github.com/bitnami-labs/sealed-secrets v0.31.0
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/containers/image/v5 v5.36.1
+	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-oidc v2.4.0+incompatible
 	github.com/distribution/distribution/v3 v3.0.0
 	github.com/distribution/reference v0.6.0
@@ -40,7 +40,7 @@ require (
 	github.com/mholt/archives v0.1.3
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/onsi/ginkgo/v2 v2.25.2
+	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/open-policy-agent/opa v1.8.0
 	github.com/opencontainers/image-spec v1.1.1
@@ -62,7 +62,7 @@ require (
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.4.0
 	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.7
+	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tj/go-spin v1.1.0
