@@ -82,8 +82,7 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   await page.getByTestId("cancel-diff-button").click();
   await expect(versionRow).toBeVisible();
 
-  // A license sync may happen on installation and there will be a "License changed" version in the
-  // list
+  // Validate the sequence number exists and is a number
   const versionSequence = versionRow.getByTestId("version-sequence");
   const versionSequenceText = await versionSequence.textContent();
   const versionSequenceNumber = versionSequenceText.match(/\d+/);
@@ -98,7 +97,7 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
   // Click the "View files" tab and validate that the url has the correct sequence as the
   // restrictive version was unable to download
   await page.getByTestId("console-subnav").getByRole("link", { name: "View files" }).click();
-  await expect(page).toHaveURL(new RegExp(`.*\/tree\/${versionSequenceNumberInt-1}$`));
+  await expect(page).toHaveURL(new RegExp(`.*\/tree\/0$`));
 };
 
 const validateCliInstallFailsEarly = () => {
