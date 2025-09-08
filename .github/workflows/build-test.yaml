@@ -175,7 +175,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '^1.24.0'
+          go-version-file: go.mod
           cache: true
 
       - run: go mod download
@@ -191,7 +191,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '^1.24.0'
+          go-version-file: go.mod
           cache: true
 
       - name: vet
@@ -208,7 +208,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '^1.24.0'
+          go-version-file: go.mod
           cache: true
 
       - name: test
@@ -227,7 +227,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '^1.24.0'
+          go-version-file: go.mod
           cache: true
 
       - name: Download web artifact
@@ -319,14 +319,14 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/setup-go@v6
-        with:
-          go-version: '^1.24.0'
-
       - uses: actions/checkout@v5
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
 
       - name: Cache Go modules
         uses: actions/cache@v4
