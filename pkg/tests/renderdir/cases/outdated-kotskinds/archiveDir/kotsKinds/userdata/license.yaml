@@ -11,31 +11,36 @@ spec:
   endpoint: https://replicated.app
   entitlements:
     bool_field:
+      signature: {}
       title: Bool Field
-      value: false
+      value: true
       valueType: Boolean
     expires_at:
       description: License Expiration
+      signature: {}
       title: Expiration
-      value: "2029-07-27T00:00:00Z"
+      value: "2030-07-27T00:00:00Z"
       valueType: String
     hidden_field:
       isHidden: true
+      signature: {}
       title: Hidden Field
-      value: this is an old secret
+      value: this is secret
       valueType: String
     int_field:
+      signature: {}
       title: Int Field
-      value: 12
+      value: 123
       valueType: Integer
     string_field:
+      signature: {}
       title: StringField
-      value: old single line text
+      value: single line text
       valueType: String
     text_field:
+      signature: {}
       title: Text Field
       value: |-
-        old
         multi
         line
         text
