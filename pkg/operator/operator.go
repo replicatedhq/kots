@@ -67,6 +67,7 @@ type Operator struct {
 	store        store.Store
 	clusterToken string
 	clusterID    string
+	mtx          sync.Mutex
 	deployMtxs   map[string]*sync.Mutex // key is app id
 	k8sClientset kubernetes.Interface
 }
@@ -170,12 +171,36 @@ func (o *Operator) resumeDeployment(a *apptypes.App) (bool, error) {
 }
 
 func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deployError error) {
+	deployMtx := o.getDeployMtx(appID)
+
+	deployMtx.Lock()
+	defer deployMtx.Unlock()
+
+	return o.deployApp(appID, sequence)
+}
+
+func (o *Operator) GoDeployApp(appID string, sequence int64) {
+	deployMtx := o.getDeployMtx(appID)
+
+	deployMtx.Lock()
+	go func() {
+		defer deployMtx.Unlock()
+
+		_, _ = o.deployApp(appID, sequence)
+	}()
+}
+
+func (o *Operator) getDeployMtx(appID string) *sync.Mutex {
+	o.mtx.Lock()
+	defer o.mtx.Unlock()
+
 	if _, ok := o.deployMtxs[appID]; !ok {
 		o.deployMtxs[appID] = &sync.Mutex{}
 	}
-	o.deployMtxs[appID].Lock()
-	defer o.deployMtxs[appID].Unlock()
+	return o.deployMtxs[appID]
+}
 
+func (o *Operator) deployApp(appID string, sequence int64) (deployed bool, deployError error) {
 	if err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, ""); err != nil {
 		return false, errors.Wrap(err, "failed to update downstream status")
 	}
@@ -737,11 +762,10 @@ func (o *Operator) checkRestoreComplete(a *apptypes.App, restore *velerov1.Resto
 }
 
 func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool) error {
-	if _, ok := o.deployMtxs[a.ID]; !ok {
-		o.deployMtxs[a.ID] = &sync.Mutex{}
-	}
-	o.deployMtxs[a.ID].Lock()
-	defer o.deployMtxs[a.ID].Unlock()
+	deployMtx := o.getDeployMtx(a.ID)
+
+	deployMtx.Lock()
+	defer deployMtx.Unlock()
 
 	deployedVersion, err := o.store.GetCurrentDownstreamVersion(a.ID, d.ClusterID)
 	if err != nil {
@@ -1057,7 +1081,7 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) 
 		return errors.Wrap(err, "failed to mark as current downstream version")
 	}
 
-	go o.DeployApp(appID, sequence)
+	o.GoDeployApp(appID, sequence)
 
 	return nil
 }
