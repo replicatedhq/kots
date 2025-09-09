@@ -10,7 +10,7 @@ export RQLITE_HOSTNAME=kotsadm-rqlite
 export RQLITE_PORT=4001
 
 if [ -f $RQLITE_BACKUP_FILE ]; then
-    curl -f http://"$RQLITE_USERNAME":"$RQLITE_PASSWORD"@"$RQLITE_HOSTNAME":"$RQLITE_PORT"/db/load -H "Content-type: application/octet-stream" --data-binary @$RQLITE_BACKUP_FILE
+    curl -v -f http://"$RQLITE_USERNAME":"$RQLITE_PASSWORD"@"$RQLITE_HOSTNAME":"$RQLITE_PORT"/db/load -H "Content-type: application/octet-stream" --data-binary @$RQLITE_BACKUP_FILE
     rm -f $RQLITE_BACKUP_FILE
     echo ""
 fi

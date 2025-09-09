@@ -9,7 +9,7 @@ export RQLITE_USERNAME=kotsadm
 export RQLITE_HOSTNAME=kotsadm-rqlite
 export RQLITE_PORT=4001
 
-curl -f http://"$RQLITE_USERNAME":"$RQLITE_PASSWORD"@"$RQLITE_HOSTNAME":"$RQLITE_PORT"/db/backup -o $RQLITE_BACKUP_FILE
+curl -v -f http://"$RQLITE_USERNAME":"$RQLITE_PASSWORD"@"$RQLITE_HOSTNAME":"$RQLITE_PORT"/db/backup -o $RQLITE_BACKUP_FILE
 
 # back up s3 data if exists
 
