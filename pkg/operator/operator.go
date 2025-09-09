@@ -176,18 +176,40 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	deployMtx.Lock()
 	defer deployMtx.Unlock()
 
+	if err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, ""); err != nil {
+		return false, errors.Wrap(err, "failed to update downstream status")
+	}
+
 	return o.deployApp(appID, sequence)
 }
 
-func (o *Operator) GoDeployApp(appID string, sequence int64) {
-	deployMtx := o.getDeployMtx(appID)
+func (o *Operator) GoDeployApp(appID string, sequence int64) error {
+	errorCh := make(chan error, 1)
 
-	deployMtx.Lock()
 	go func() {
+		deployMtx := o.getDeployMtx(appID)
+
+		deployMtx.Lock()
 		defer deployMtx.Unlock()
 
-		_, _ = o.deployApp(appID, sequence)
+		if err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, ""); err != nil {
+			errorCh <- errors.Wrap(err, "failed to update downstream status to deploying")
+			return
+		}
+		close(errorCh)
+
+		_, err := o.deployApp(appID, sequence)
+		if err != nil {
+			logger.Errorf("Failed to deploy app sequence %d: %v", sequence, err)
+		}
 	}()
+
+	select {
+	case err := <-errorCh:
+		return err
+	case <-time.After(30 * time.Second):
+		return errors.New("timeout waiting for deployment to start")
+	}
 }
 
 func (o *Operator) getDeployMtx(appID string) *sync.Mutex {
@@ -201,10 +223,6 @@ func (o *Operator) getDeployMtx(appID string) *sync.Mutex {
 }
 
 func (o *Operator) deployApp(appID string, sequence int64) (deployed bool, deployError error) {
-	if err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, ""); err != nil {
-		return false, errors.Wrap(err, "failed to update downstream status")
-	}
-
 	if os.Getenv("KOTSADM_ENV") != "test" {
 		go func() {
 			err := reporting.GetReporter().SubmitAppInfo(appID)
