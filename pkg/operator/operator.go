@@ -67,6 +67,7 @@ type Operator struct {
 	store        store.Store
 	clusterToken string
 	clusterID    string
+	mtx          sync.Mutex
 	deployMtxs   map[string]*sync.Mutex // key is app id
 	k8sClientset kubernetes.Interface
 }
@@ -169,17 +170,57 @@ func (o *Operator) resumeDeployment(a *apptypes.App) (bool, error) {
 	return true, nil
 }
 
+// DeployApp deploys the given app and sequence. It returns an error if the deployment fails.
 func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deployError error) {
-	if _, ok := o.deployMtxs[appID]; !ok {
-		o.deployMtxs[appID] = &sync.Mutex{}
-	}
-	o.deployMtxs[appID].Lock()
-	defer o.deployMtxs[appID].Unlock()
+	deployMtx := o.getDeployMtx(appID)
+
+	deployMtx.Lock()
+	defer deployMtx.Unlock()
 
 	if err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, ""); err != nil {
 		return false, errors.Wrap(err, "failed to update downstream status")
 	}
 
+	return o.deployApp(appID, sequence)
+}
+
+// GoDeployApp starts a deployment for the given app and sequence. It returns an error if the
+// deployment fails to start. It does not wait for the deployment to complete.
+func (o *Operator) GoDeployApp(appID string, sequence int64) error {
+	startCh := make(chan error, 1)
+
+	go func() {
+		deployMtx := o.getDeployMtx(appID)
+
+		deployMtx.Lock()
+		defer deployMtx.Unlock()
+
+		if err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, ""); err != nil {
+			startCh <- errors.Wrap(err, "failed to update downstream status to deploying")
+			return
+		}
+		startCh <- nil
+
+		_, err := o.deployApp(appID, sequence)
+		if err != nil {
+			logger.Errorf("Failed to deploy app sequence %d: %v", sequence, err)
+		}
+	}()
+
+	return <-startCh
+}
+
+func (o *Operator) getDeployMtx(appID string) *sync.Mutex {
+	o.mtx.Lock()
+	defer o.mtx.Unlock()
+
+	if _, ok := o.deployMtxs[appID]; !ok {
+		o.deployMtxs[appID] = &sync.Mutex{}
+	}
+	return o.deployMtxs[appID]
+}
+
+func (o *Operator) deployApp(appID string, sequence int64) (deployed bool, deployError error) {
 	if os.Getenv("KOTSADM_ENV") != "test" {
 		go func() {
 			err := reporting.GetReporter().SubmitAppInfo(appID)
@@ -737,11 +778,10 @@ func (o *Operator) checkRestoreComplete(a *apptypes.App, restore *velerov1.Resto
 }
 
 func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool) error {
-	if _, ok := o.deployMtxs[a.ID]; !ok {
-		o.deployMtxs[a.ID] = &sync.Mutex{}
-	}
-	o.deployMtxs[a.ID].Lock()
-	defer o.deployMtxs[a.ID].Unlock()
+	deployMtx := o.getDeployMtx(a.ID)
+
+	deployMtx.Lock()
+	defer deployMtx.Unlock()
 
 	deployedVersion, err := o.store.GetCurrentDownstreamVersion(a.ID, d.ClusterID)
 	if err != nil {
@@ -1057,7 +1097,9 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) 
 		return errors.Wrap(err, "failed to mark as current downstream version")
 	}
 
-	go o.DeployApp(appID, sequence)
+	if err := o.GoDeployApp(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to start app deployment")
+	}
 
 	return nil
 }
