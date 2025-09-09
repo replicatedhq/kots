@@ -183,20 +183,24 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	return o.deployApp(appID, sequence)
 }
 
+// GoDeployApp starts a deployment for the given app and sequence. It returns an error if the
+// deployment fails to start. It does not wait for the deployment to complete.
 func (o *Operator) GoDeployApp(appID string, sequence int64) error {
-	errorCh := make(chan error, 1)
+	startCh := make(chan error, 1)
 
 	go func() {
+		defer close(startCh)
+
 		deployMtx := o.getDeployMtx(appID)
 
 		deployMtx.Lock()
 		defer deployMtx.Unlock()
 
 		if err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, ""); err != nil {
-			errorCh <- errors.Wrap(err, "failed to update downstream status to deploying")
+			startCh <- errors.Wrap(err, "failed to update downstream status to deploying")
 			return
 		}
-		close(errorCh)
+		startCh <- nil
 
 		_, err := o.deployApp(appID, sequence)
 		if err != nil {
@@ -204,12 +208,7 @@ func (o *Operator) GoDeployApp(appID string, sequence int64) error {
 		}
 	}()
 
-	select {
-	case err := <-errorCh:
-		return err
-	case <-time.After(30 * time.Second):
-		return errors.New("timeout waiting for deployment to start")
-	}
+	return <-startCh
 }
 
 func (o *Operator) getDeployMtx(appID string) *sync.Mutex {
@@ -1099,7 +1098,9 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) 
 		return errors.Wrap(err, "failed to mark as current downstream version")
 	}
 
-	o.GoDeployApp(appID, sequence)
+	if err := o.GoDeployApp(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to start app deployment")
+	}
 
 	return nil
 }

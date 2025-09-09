@@ -55,7 +55,9 @@ func DeployVersion(appID string, sequence int64) error {
 		return errors.Wrap(err, "failed to mark as current downstream version")
 	}
 
-	operator.MustGetOperator().GoDeployApp(appID, sequence)
+	if err := operator.MustGetOperator().GoDeployApp(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to start app deployment")
+	}
 
 	return nil
 }
