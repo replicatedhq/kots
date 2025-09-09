@@ -11,11 +11,13 @@ spec:
   endpoint: https://replicated.app
   entitlements:
     boolfield:
+      signature: {}
       title: bool field
       value: true
       valueType: Boolean
     expires_at:
       description: License Expiration
+      signature: {}
       title: Expiration
       value: ""
       valueType: String

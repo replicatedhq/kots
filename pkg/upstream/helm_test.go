@@ -451,6 +451,7 @@ license: |
     entitlements:
       license-field:
         description: This is a license field
+        signature: {}
         title: License Field
         value: license-field-value
         valueType: string
@@ -494,6 +495,7 @@ global:
       license-field:
         description: This is a license field
         name: license-field
+        signature: {}
         title: License Field
         value: license-field-value
         valueType: string
@@ -733,6 +735,7 @@ image:
       entitlements:
         license-field:
           description: This is a license field
+          signature: {}
           title: License Field
           value: license-field-value
           valueType: string
@@ -751,6 +754,7 @@ global:
       license-field:
         description: This is a license field
         name: license-field
+        signature: {}
         title: License Field
         value: license-field-value
         valueType: string
@@ -999,6 +1003,7 @@ global:
       license-field:
         description: This is a license field
         name: license-field
+        signature: {}
         title: License Field
         value: license-field-value
         valueType: string
@@ -1042,6 +1047,7 @@ global:
       entitlements:
         license-field:
           description: This is a license field
+          signature: {}
           title: License Field
           value: license-field-value
           valueType: string
@@ -1290,6 +1296,9 @@ some: value
 								Value: kotsv1beta1.EntitlementValue{
 									Type:   kotsv1beta1.String,
 									StrVal: "license-field-value",
+								},
+								Signature: kotsv1beta1.EntitlementFieldSignature{
+									V1: []byte{},
 								},
 							},
 						},
