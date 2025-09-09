@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - emosbaugh/sc-128841/investigate-kots-regression-test-flakiness
 
 permissions:
   contents: write
