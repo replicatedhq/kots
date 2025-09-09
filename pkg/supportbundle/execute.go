@@ -12,9 +12,14 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
+	tlogger "github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/replicatedhq/troubleshoot/pkg/redact"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/supportbundle"
 )
+
+func init() {
+	tlogger.InitKlog(4)
+}
 
 type supportBundleProgressUpdate struct {
 	Message string
