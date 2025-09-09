@@ -170,6 +170,7 @@ func (o *Operator) resumeDeployment(a *apptypes.App) (bool, error) {
 	return true, nil
 }
 
+// DeployApp deploys the given app and sequence. It returns an error if the deployment fails.
 func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deployError error) {
 	deployMtx := o.getDeployMtx(appID)
 
@@ -189,8 +190,6 @@ func (o *Operator) GoDeployApp(appID string, sequence int64) error {
 	startCh := make(chan error, 1)
 
 	go func() {
-		defer close(startCh)
-
 		deployMtx := o.getDeployMtx(appID)
 
 		deployMtx.Lock()
