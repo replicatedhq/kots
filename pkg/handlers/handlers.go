@@ -13,8 +13,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	yaml "github.com/replicatedhq/yaml/v3"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	"go.yaml.in/yaml/v3"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 

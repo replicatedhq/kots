@@ -9,10 +9,9 @@ import (
 	"github.com/pkg/errors"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
-	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
-	yaml "github.com/replicatedhq/yaml/v3"
+	"go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -156,12 +155,15 @@ func MarshalConfig(config *kotsv1beta1.Config) (string, error) {
 		return "", errors.Wrap(err, "failed to unmarshal config as yaml")
 	}
 
-	marshalledYAML, err := util.MarshalIndent(2, unmarshalledYAML)
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	err := enc.Encode(unmarshalledYAML)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal config as yaml")
 	}
 
-	return string(marshalledYAML), nil
+	return buf.String(), nil
 }
 
 func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {

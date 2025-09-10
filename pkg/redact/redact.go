@@ -1,6 +1,7 @@
 package redact
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
+	"go.yaml.in/yaml/v3"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -108,11 +110,15 @@ func getRedactSpec(configMap *v1.ConfigMap) (string, string, error) {
 		return "", "failed to build full redact yaml", err
 	}
 
-	yamlBytes, err := util.MarshalIndent(2, redactObj)
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	err = enc.Encode(redactObj)
 	if err != nil {
 		return "", "failed to render full redact yaml", err
 	}
-	return string(yamlBytes), "", nil
+
+	return buf.String(), "", nil
 }
 
 func GetRedact() (*troubleshootv1beta2.Redactor, error) {
@@ -483,6 +489,10 @@ func splitRedactors(spec string) (map[string]string, error) {
 		return nil, errors.Wrap(err, "split redactors")
 	}
 
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+
 	for idx, redactorSpec := range redactor.Spec.Redactors {
 		if redactorSpec == nil {
 			continue
@@ -496,7 +506,7 @@ func splitRedactors(spec string) (map[string]string, error) {
 			redactorSpec.Name = redactorName
 		}
 
-		newSpec, err := util.MarshalIndent(2, troubleshootv1beta2.Redactor{
+		newSpec := troubleshootv1beta2.Redactor{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Redactor",
 				APIVersion: "troubleshoot.sh/v1beta2",
@@ -507,7 +517,13 @@ func splitRedactors(spec string) (map[string]string, error) {
 			Spec: troubleshootv1beta2.RedactorSpec{
 				Redactors: []*troubleshootv1beta2.Redact{redactorSpec},
 			},
-		})
+		}
+
+		buf.Reset()
+		err = enc.Encode(newSpec)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to encode redactor %s", redactorName)
+		}
 
 		newRedactor := RedactorMetadata{
 			Metadata: types.RedactorList{
@@ -517,7 +533,7 @@ func splitRedactors(spec string) (map[string]string, error) {
 				Updated: time.Now(),
 				Enabled: true,
 			},
-			Redact: string(newSpec),
+			Redact: string(buf.String()),
 		}
 
 		jsonBytes, err := json.Marshal(newRedactor)
