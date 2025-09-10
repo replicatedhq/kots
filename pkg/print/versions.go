@@ -35,7 +35,7 @@ func printVersionsTable(versions []AppVersionResponse) {
 	w := NewTabWriter()
 	defer w.Flush()
 
-	fmtColumns := "%s\t%v\t%s\t%s\n"
+	fmtColumns := "%s\t%v\t%s\t%s\t%s\t%v\n"
 	fmt.Fprintf(w, fmtColumns, "VERSION", "SEQUENCE", "STATUS", "SOURCE", "CHANNEL ID", "CHANNEL SEQUENCE")
 	for _, version := range versions {
 		fmt.Fprintf(w, fmtColumns, version.VersionLabel, version.Sequence, version.Status, version.Source, version.ChannelID, version.ChannelSequence)
