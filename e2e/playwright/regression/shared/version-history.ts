@@ -164,7 +164,7 @@ export const deployNewVersion = async (
 
   // The row appears and disappears and appears again, so we need to make sure that it contains
   // both the sequence we are expecting and the currently deployed version text.
-  await expect(versionRow).toContainText([`Sequence ${expectedSequence}`, 'Currently deployed version'], { timeout: 45000 });
+  await expect(versionRow).toContainText(new RegExp(`Sequence ${expectedSequence}.*Currently deployed version`), { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
   if (expectedSequence > 0) {
@@ -205,7 +205,7 @@ export const rollbackToVersion = async (page: Page, expect: Expect, rowIndex: nu
 
   // The row appears and disappears and appears again, so we need to make sure that it contains
   // both the sequence we are expecting and the currently deployed version text.
-  await expect(versionRow).toContainText([`Sequence ${sequence}`, 'Currently deployed version'], { timeout: 45000 });
+  await expect(versionRow).toContainText(new RegExp(`Sequence ${sequence}.*Currently deployed version`), { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
   const nextVersionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex - 1}`);
