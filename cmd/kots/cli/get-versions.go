@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
@@ -115,13 +116,19 @@ func getVersionsCmd(cmd *cobra.Command, args []string) error {
 	appVersionResponse := []print.AppVersionResponse{}
 
 	for _, version := range appVersions.VersionHistory {
+		channelSequence, err := strconv.ParseInt(version.UpdateCursor, 10, 64)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse channel sequence")
+		}
 		response := print.AppVersionResponse{
-			VersionLabel: version.VersionLabel,
-			Sequence:     version.Sequence,
-			CreatedOn:    *version.CreatedOn,
-			DeployedAt:   version.DeployedAt,
-			Status:       string(version.Status),
-			Source:       version.Source,
+			VersionLabel:    version.VersionLabel,
+			Sequence:        version.Sequence,
+			CreatedOn:       *version.CreatedOn,
+			DeployedAt:      version.DeployedAt,
+			Status:          string(version.Status),
+			Source:          version.Source,
+			ChannelID:       version.ChannelID,
+			ChannelSequence: channelSequence,
 		}
 
 		appVersionResponse = append(appVersionResponse, response)
