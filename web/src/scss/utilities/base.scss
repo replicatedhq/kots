@@ -247,6 +247,9 @@ body a {
   &.reclaimed::before {
     background-color: #4999ad;
   }
+  &.failedvalidation::before {
+    background-color: #bc4752;
+  }
   &.partiallyfailed::before {
     background-color: #bc4752;
   }
