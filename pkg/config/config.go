@@ -7,11 +7,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
-	"go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -142,28 +142,20 @@ func MarshalConfig(config *kotsv1beta1.Config) (string, error) {
 		json.DefaultMetaFactory,
 		scheme.Scheme,
 		scheme.Scheme,
-		json.SerializerOptions{Yaml: false, Pretty: true, Strict: false},
+		json.SerializerOptions{Yaml: true, Pretty: false, Strict: false},
 	)
 
-	var marshalledJSON bytes.Buffer
-	if err := s.Encode(config, &marshalledJSON); err != nil {
+	var marshalledYAML bytes.Buffer
+	if err := s.Encode(config, &marshalledYAML); err != nil {
 		return "", errors.Wrap(err, "failed to marshal config as json")
 	}
 
-	var unmarshalledYAML interface{}
-	if err := yaml.Unmarshal(marshalledJSON.Bytes(), &unmarshalledYAML); err != nil {
-		return "", errors.Wrap(err, "failed to unmarshal config as yaml")
-	}
-
-	var buf bytes.Buffer
-	enc := yaml.NewEncoder(&buf)
-	enc.SetIndent(2)
-	err := enc.Encode(unmarshalledYAML)
+	b, err := kotsutil.FixUpYAML(marshalledYAML.Bytes())
 	if err != nil {
-		return "", errors.Wrap(err, "failed to marshal config as yaml")
+		return "", errors.Wrap(err, "failed to fix up yaml")
 	}
 
-	return buf.String(), nil
+	return string(b), nil
 }
 
 func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {
