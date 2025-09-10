@@ -1,7 +1,6 @@
 package redact
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,17 +11,18 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/redact/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	"go.yaml.in/yaml/v3"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	k8syaml "sigs.k8s.io/yaml"
 )
 
 func init() {
@@ -110,15 +110,18 @@ func getRedactSpec(configMap *v1.ConfigMap) (string, string, error) {
 		return "", "failed to build full redact yaml", err
 	}
 
-	var buf bytes.Buffer
-	enc := yaml.NewEncoder(&buf)
-	enc.SetIndent(2)
-	err = enc.Encode(redactObj)
+	b, err := k8syaml.Marshal(redactObj)
 	if err != nil {
-		return "", "failed to render full redact yaml", err
+		return "", "failed to marshal full redact yaml", err
 	}
 
-	return buf.String(), "", nil
+	// NOTE(ethan): I am not sure why this is necessary but I'm not going to change it
+	b, err = kotsutil.FixUpYAML(b)
+	if err != nil {
+		return "", "failed to fix up full redact yaml", err
+	}
+
+	return string(b), "", nil
 }
 
 func GetRedact() (*troubleshootv1beta2.Redactor, error) {
@@ -489,10 +492,6 @@ func splitRedactors(spec string) (map[string]string, error) {
 		return nil, errors.Wrap(err, "split redactors")
 	}
 
-	var buf bytes.Buffer
-	enc := yaml.NewEncoder(&buf)
-	enc.SetIndent(2)
-
 	for idx, redactorSpec := range redactor.Spec.Redactors {
 		if redactorSpec == nil {
 			continue
@@ -519,10 +518,15 @@ func splitRedactors(spec string) (map[string]string, error) {
 			},
 		}
 
-		buf.Reset()
-		err = enc.Encode(newSpec)
+		b, err := k8syaml.Marshal(newSpec)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to encode redactor %s", redactorName)
+			return nil, errors.Wrapf(err, "unable to marshal redactor %s", redactorName)
+		}
+
+		// NOTE(ethan): I am not sure why this is necessary but I'm not going to change it
+		b, err = kotsutil.FixUpYAML(b)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to fix up redactor %s", redactorName)
 		}
 
 		newRedactor := RedactorMetadata{
@@ -533,12 +537,12 @@ func splitRedactors(spec string) (map[string]string, error) {
 				Updated: time.Now(),
 				Enabled: true,
 			},
-			Redact: string(buf.String()),
+			Redact: string(b),
 		}
 
 		jsonBytes, err := json.Marshal(newRedactor)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to marshal redactor %s", redactorName)
+			return nil, errors.Wrapf(err, "unable to marshal redactor metadata %s", redactorName)
 		}
 
 		newMap[newRedactor.Metadata.Slug] = string(jsonBytes)
