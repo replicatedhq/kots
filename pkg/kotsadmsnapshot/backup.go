@@ -1244,7 +1244,11 @@ func getBackupDetailForBackup(ctx context.Context, ctrlClient ctrlclient.Client,
 	}
 	result.VolumeSizeHuman = units.HumanSize(float64(totalBytesDone)) // TODO: should this be TotalBytes rather than BytesDone?
 
-	if backup.Status.Phase == velerov1.BackupPhaseCompleted || backup.Status.Phase == velerov1.BackupPhasePartiallyFailed || backup.Status.Phase == velerov1.BackupPhaseFailed {
+	if backup.Status.Phase == velerov1.BackupPhaseCompleted ||
+		backup.Status.Phase == velerov1.BackupPhaseFailedValidation ||
+		backup.Status.Phase == velerov1.BackupPhasePartiallyFailed ||
+		backup.Status.Phase == velerov1.BackupPhaseFailed {
+
 		errs, warnings, execs, err := downloadBackupLogs(ctx, veleroNamespace, backup.Name)
 		result.Errors = errs
 		result.Warnings = warnings

@@ -91,7 +91,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	switch backup.Status.Phase {
 	case velerov1.BackupPhaseCompleted:
 		break
-	case velerov1.BackupPhaseFailed, velerov1.BackupPhasePartiallyFailed:
+	case velerov1.BackupPhaseFailedValidation, velerov1.BackupPhaseFailed, velerov1.BackupPhasePartiallyFailed:
 		return errors.Wrap(err, "cannot restore a failed backup")
 	default:
 		return errors.Wrap(err, "backup is still in progress")
@@ -309,6 +309,8 @@ func waitForVeleroRestoreCompleted(ctx context.Context, veleroNamespace string, 
 		switch restore.Status.Phase {
 		case velerov1.RestorePhaseCompleted:
 			return &restore, nil
+		case velerov1.RestorePhaseFailedValidation:
+			return &restore, errors.New("restore failed validation")
 		case velerov1.RestorePhaseFailed:
 			return &restore, errors.New("restore failed")
 		case velerov1.RestorePhasePartiallyFailed:
@@ -471,7 +473,7 @@ func waitForKotsadmApplicationsRestore(backupID string, kotsadmNamespace string,
 			switch s.RestoreDetail.Phase {
 			case velerov1.RestorePhaseCompleted:
 				break
-			case velerov1.RestorePhaseFailed, velerov1.RestorePhasePartiallyFailed:
+			case velerov1.RestorePhaseFailedValidation, velerov1.RestorePhaseFailed, velerov1.RestorePhasePartiallyFailed:
 				errMsg := fmt.Sprintf("restore failed for app %s with %d errors and %d warnings", s.AppSlug, len(s.RestoreDetail.Errors), len(s.RestoreDetail.Warnings))
 				errs = append(errs, errMsg)
 				break

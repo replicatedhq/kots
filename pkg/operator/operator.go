@@ -761,7 +761,7 @@ func (o *Operator) checkRestoreComplete(a *apptypes.App, restore *velerov1.Resto
 		}
 		break
 
-	case velerov1.RestorePhaseFailed, velerov1.RestorePhasePartiallyFailed:
+	case velerov1.RestorePhaseFailedValidation, velerov1.RestorePhaseFailed, velerov1.RestorePhasePartiallyFailed:
 		logger.Info("restore failed, resetting app restore")
 
 		if err := app.ResetRestore(a.ID); err != nil {

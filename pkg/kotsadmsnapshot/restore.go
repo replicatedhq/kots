@@ -218,7 +218,11 @@ func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreID s
 		Warnings: make([]types.SnapshotError, 0),
 	}
 
-	if restore.Status.Phase == velerov1.RestorePhaseCompleted || restore.Status.Phase == velerov1.RestorePhasePartiallyFailed || restore.Status.Phase == velerov1.RestorePhaseFailed {
+	if restore.Status.Phase == velerov1.RestorePhaseCompleted ||
+		restore.Status.Phase == velerov1.RestorePhaseFailedValidation ||
+		restore.Status.Phase == velerov1.RestorePhasePartiallyFailed ||
+		restore.Status.Phase == velerov1.RestorePhaseFailed {
+
 		warnings, errs, err := DownloadRestoreResults(ctx, veleroNamespace, restore.Name)
 		if err != nil {
 			// do not fail on error

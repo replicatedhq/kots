@@ -162,16 +162,16 @@ export const deployNewVersion = async (
     await expect(confirmDeploymentModal).not.toBeVisible();
   }
 
-  // check if the deployment started or it it has already finished
-  await expect(versionRow).toContainText(/(Deploying|Currently deployed version)/, { timeout: 10000 });
-  await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
+  // The row appears and disappears and appears again, so we need to make sure that it contains
+  // both the sequence we are expecting and the currently deployed version text.
+  await expect(versionRow).toContainText(new RegExp(`Sequence ${expectedSequence}.*Currently deployed version`), { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
   if (expectedSequence > 0) {
     const previousVersionRow = allVersionsCard.getByTestId('version-history-row-1');
+    await expect(previousVersionRow).toContainText(`Sequence ${expectedSequence - 1}`);
     await expect(previousVersionRow).toContainText('Previously deployed');
     await expect(previousVersionRow.getByRole('button', { name: 'Rollback', exact: true })).toBeVisible({ visible: supportsRollback });
-    await expect(previousVersionRow).toContainText(`Sequence ${expectedSequence - 1}`);
   }
 
   const currentVersionCard = page.getByTestId("current-version-card");
@@ -203,9 +203,9 @@ export const rollbackToVersion = async (page: Page, expect: Expect, rowIndex: nu
   await confirmDeploymentModal.getByRole('button', { name: 'Yes, redeploy', exact: true }).click();
   await expect(confirmDeploymentModal).not.toBeVisible();
 
-  // check if the deployment started or it it has already finished
-  await expect(versionRow).toContainText(/(Deploying|Currently deployed version)/, { timeout: 10000 });
-  await expect(versionRow).toContainText('Currently deployed version', { timeout: 45000 });
+  // The row appears and disappears and appears again, so we need to make sure that it contains
+  // both the sequence we are expecting and the currently deployed version text.
+  await expect(versionRow).toContainText(new RegExp(`Sequence ${sequence}.*Currently deployed version`), { timeout: 45000 });
   await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
 
   const nextVersionRow = allVersionsCard.getByTestId(`version-history-row-${rowIndex - 1}`);

@@ -243,6 +243,8 @@ func waitForVeleroBackupCompleted(ctx context.Context, clientset kubernetes.Inte
 		switch backup.Status.Phase {
 		case velerov1.BackupPhaseCompleted:
 			return &backup, nil
+		case velerov1.BackupPhaseFailedValidation:
+			return &backup, errors.New("backup failed validation")
 		case velerov1.BackupPhaseFailed:
 			return &backup, errors.New("backup failed")
 		case velerov1.BackupPhasePartiallyFailed:
