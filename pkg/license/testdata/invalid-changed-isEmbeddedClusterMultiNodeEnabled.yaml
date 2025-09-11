@@ -1,7 +1,6 @@
 apiVersion: kots.io/v1beta1
 kind: License
 metadata:
-  creationTimestamp: null
   name: salahecdev
 spec:
   appSlug: embedded-cluster-smoke-test-staging-app

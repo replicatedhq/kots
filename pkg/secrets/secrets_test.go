@@ -543,14 +543,12 @@ metadata:
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  creationTimestamp: null
   name: test-secret-0
   namespace: test-namespace`
 				transformedSecret2 := `---
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace`
 
@@ -583,7 +581,6 @@ metadata:
 apiVersion: v1
 kind: Pod
 metadata:
-  creationTimestamp: null
   name: test-pod
   namespace: test-namespace
 `
@@ -591,7 +588,6 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace
   labels:
@@ -610,7 +606,6 @@ metadata:
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace`
 				updatedFile, err := os.ReadFile(tmpFile.Name())
@@ -640,7 +635,6 @@ metadata:
 apiVersion: bitnami.com/v1alpha1
 kind: Pod
 metadata:
-  creationTimestamp: null
   name: test-pod
   namespace: test-namespace
 `
@@ -648,7 +642,6 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace
   labels:
@@ -667,7 +660,6 @@ metadata:
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace`
 				updatedFile, err := os.ReadFile(tmpFile.Name())
@@ -697,7 +689,6 @@ metadata:
 apiVersion: bitnami.com/v1alpha1
 kind: Secret
 metadata:
-  creationTimestamp: null
   name: test-unlabeled-secret
   namespace: test-namespace
 `
@@ -705,7 +696,6 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace
   labels:
@@ -724,7 +714,6 @@ metadata:
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace`
 

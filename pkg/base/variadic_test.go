@@ -293,9 +293,8 @@ func Test_getUpstreamTemplateData(t *testing.T) {
 			name: "has metadata",
 			content: []byte(`
 apiVersion: kots.io/v1beta1 
-kind: Config 
-metadata: 
-  creationTimestamp: null 
+kind: Config
+metadata:
   name: config-sample
   namespace: test`),
 			wantMetadata: kotsv1beta1.RepeatTemplate{
@@ -311,7 +310,6 @@ metadata:
 apiVersion: kots.io/v1beta1 
 kind: Config 
 data: 
-  creationTimestamp: null
   metadata:
     name: config-sample
     namespace: test`),

@@ -94,13 +94,11 @@ metadata:
   annotations:
     helm.sh/hook-delete-policy: hook-succeeded
     kots.io/hook-delete-policy: hook-succeeded
-  creationTimestamp: null
   name: pi
 spec:
   backoffLimit: 4
   template:
-    metadata:
-      creationTimestamp: null
+    metadata: {}
     spec:
       containers:
       - command:

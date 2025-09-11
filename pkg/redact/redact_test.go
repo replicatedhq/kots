@@ -88,26 +88,28 @@ spec:
       - abc.xyz.*`,
 				},
 			},
-			want: `kind: Redactor
-apiVersion: troubleshoot.sh/v1beta2
+			want: `apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
 metadata:
   name: kotsadm-redact
 spec:
   redactors:
-  - name: replace password
-    fileSelector:
-      file: data/my-password-dump
-    removals:
-      values:
-      - abc123
-  - name: all files
-    removals:
-      regex:
-      - redactor: (another)(?P<mask>.*)(here)
-      - selector: S3_ENDPOINT
-        redactor: '("value": ").*(")'
-      yamlPath:
-      - abc.xyz.*
+    - fileSelector:
+        file: data/my-password-dump
+      name: replace password
+      removals:
+        values:
+          - abc123
+    - fileSelector: {}
+      name: all files
+      removals:
+        regex:
+          - redactor: (another)(?P<mask>.*)(here)
+          - redactor: '("value": ").*(")'
+            selector: S3_ENDPOINT
+        yamlPath:
+          - abc.xyz.*
+status: {}
 `,
 			errstring: "",
 		},
@@ -121,26 +123,28 @@ spec:
 					"all-files":        `{"metadata":{"name":"all files","slug":"all-files","createdAt":"2020-06-15T14:26:10.721733-04:00","updatedAt":"2020-06-15T14:26:10.721734-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: all files\nspec:\n  redactors:\n  - name: all files\n    removals:\n      regex:\n      - redactor: (another)(?P\u003cmask\u003e.*)(here)\n      - selector: S3_ENDPOINT\n        redactor: '(\"value\": \").*(\")'\n      yamlPath:\n      - abc.xyz.*\n"}`,
 				},
 			},
-			want: `kind: Redactor
-apiVersion: troubleshoot.sh/v1beta2
+			want: `apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
 metadata:
   name: kotsadm-redact
 spec:
   redactors:
-  - name: all files
-    removals:
-      regex:
-      - redactor: (another)(?P<mask>.*)(here)
-      - selector: S3_ENDPOINT
-        redactor: '("value": ").*(")'
-      yamlPath:
-      - abc.xyz.*
-  - name: replace password
-    fileSelector:
-      file: data/my-password-dump
-    removals:
-      values:
-      - abc123
+    - fileSelector: {}
+      name: all files
+      removals:
+        regex:
+          - redactor: (another)(?P<mask>.*)(here)
+          - redactor: '("value": ").*(")'
+            selector: S3_ENDPOINT
+        yamlPath:
+          - abc.xyz.*
+    - fileSelector:
+        file: data/my-password-dump
+      name: replace password
+      removals:
+        values:
+          - abc123
+status: {}
 `,
 			errstring: "",
 		},
@@ -193,20 +197,22 @@ spec:
 						Slug:    "all-files",
 						Enabled: true,
 					},
-					Redact: `kind: Redactor
-apiVersion: troubleshoot.sh/v1beta2
+					Redact: `apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
 metadata:
   name: all files
 spec:
   redactors:
-  - name: all files
-    removals:
-      regex:
-      - redactor: (another)(?P<mask>.*)(here)
-      - selector: S3_ENDPOINT
-        redactor: '("value": ").*(")'
-      yamlPath:
-      - abc.xyz.*
+    - fileSelector: {}
+      name: all files
+      removals:
+        regex:
+          - redactor: (another)(?P<mask>.*)(here)
+          - redactor: '("value": ").*(")'
+            selector: S3_ENDPOINT
+        yamlPath:
+          - abc.xyz.*
+status: {}
 `,
 				},
 				"replace-password": {
@@ -215,18 +221,19 @@ spec:
 						Slug:    "replace-password",
 						Enabled: true,
 					},
-					Redact: `kind: Redactor
-apiVersion: troubleshoot.sh/v1beta2
+					Redact: `apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
 metadata:
   name: replace password
 spec:
   redactors:
-  - name: replace password
-    fileSelector:
-      file: data/my-password-dump
-    removals:
-      values:
-      - abc123
+    - fileSelector:
+        file: data/my-password-dump
+      name: replace password
+      removals:
+        values:
+          - abc123
+status: {}
 `,
 				},
 			},

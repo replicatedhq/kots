@@ -55,7 +55,7 @@ const validateOnlineUpdateRestrictive = async (page: Page, expect: Expect) => {
 
   const availableUpdateCard = page.getByTestId("available-updates-card");
   const card = availableUpdateCard.getByTestId("version-history-row-0");
-  await expect(card.getByTestId("version-label")).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER);
+  await expect(card.getByTestId("version-label")).toContainText(constants.VENDOR_RESTRICTIVE_RELEASE_SEMVER, { timeout: 10 * 1000 });
   await expect(card.getByTestId("version-action-button")).toContainText("Download");
   await expect(card.getByTestId("version-status")).toContainText("Pending download");
 

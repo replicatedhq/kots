@@ -440,7 +440,6 @@ license: |
   apiVersion: kots.io/v1beta1
   kind: License
   metadata:
-    creationTimestamp: null
     name: kots-license
   spec:
     appSlug: app-slug
@@ -724,7 +723,6 @@ image:
     apiVersion: kots.io/v1beta1
     kind: License
     metadata:
-      creationTimestamp: null
       name: kots-license
     spec:
       appSlug: app-slug
@@ -1036,7 +1034,6 @@ global:
     apiVersion: kots.io/v1beta1
     kind: License
     metadata:
-      creationTimestamp: null
       name: kots-license
     spec:
       appSlug: app-slug

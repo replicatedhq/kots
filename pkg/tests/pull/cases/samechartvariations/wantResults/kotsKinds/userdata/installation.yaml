@@ -1,7 +1,6 @@
 apiVersion: kots.io/v1beta1
 kind: Installation
 metadata:
-  creationTimestamp: null
   name: replicated-kots-app
 spec:
   channelID: 1YHCrcZzBxY2nJF5kcTCN9PHpk0

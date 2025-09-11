@@ -13,7 +13,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	yaml "github.com/replicatedhq/yaml/v3"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -412,17 +411,4 @@ func StreamJSON(c *gwebsocket.Conn, payload interface{}) {
 		logger.Error(err)
 		return
 	}
-}
-
-func YAML(w http.ResponseWriter, code int, payload interface{}) {
-	response, err := yaml.Marshal(payload)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/yaml")
-	w.WriteHeader(code)
-	w.Write(response)
 }
