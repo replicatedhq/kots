@@ -206,7 +206,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), clientset, veleroClient, util.PodNamespace)
 		if err != nil {
 			logger.Warnf("failed to find backup store location: %v", err.Error())
-		} else {
+		} else if bsl != nil {
 			report, err := getSnapshotReport(store.GetStore(), bsl, appID, r.ClusterID)
 			if err != nil {
 				logger.Warnf("failed to get snapshot report: %v", err.Error())
@@ -267,10 +267,12 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		di.Status = string(currentVersion.Status)
 
 		var preflightResults *troubleshootpreflight.UploadPreflightResults
-		if err := json.Unmarshal([]byte(currentVersion.PreflightResult), &preflightResults); err != nil {
-			logger.Warnf("failed to unmarshal preflight results: %v", err.Error())
+		if currentVersion.PreflightResult != "" {
+			if err := json.Unmarshal([]byte(currentVersion.PreflightResult), &preflightResults); err != nil {
+				logger.Warnf("failed to unmarshal preflight results: %v", err.Error())
+			}
+			di.PreflightState = getPreflightState(preflightResults)
 		}
-		di.PreflightState = getPreflightState(preflightResults)
 		di.SkipPreflights = currentVersion.PreflightSkipped
 
 		if deployedKotsKinds.V1Beta1HelmCharts != nil && len(deployedKotsKinds.V1Beta1HelmCharts.Items) > 0 {
