@@ -1,10 +1,10 @@
 module.exports = {
   // Use jsdom environment for DOM testing
   testEnvironment: 'jsdom',
-  
+
   // Setup files to run before tests
   setupFilesAfterEnv: ['<rootDir>/src/jest-setup.ts'],
-  
+
   // Transform files with babel and ts-jest
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest',
@@ -12,7 +12,7 @@ module.exports = {
       useESM: true
     }],
   },
-  
+
   // Handle ES modules
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
 
@@ -33,19 +33,19 @@ module.exports = {
     'handlebars': '<rootDir>/handlebars/dist/handlebars.js',
     '@src/(.*)$': '<rootDir>/src/$1'
   },
-  
+
   // Test environment options
   testEnvironmentOptions: {
     customExportConditions: [''],
   },
-  
+
   // Jest worker configuration to prevent process exceptions
   maxWorkers: 1,
   workerIdleMemoryLimit: '512MB',
-  
+
   // Timeout configuration
   testTimeout: 10000,
-  
+
   // Coverage configuration
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
@@ -54,34 +54,34 @@ module.exports = {
     '!src/**/*.test.{js,jsx,ts,tsx}',
     '!src/**/index.{js,jsx,ts,tsx}',
   ],
-  
+
   // Test file patterns
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}',
   ],
-  
+
   // Module file extensions
   moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx', 'json'],
-  
+
   // Clear mocks between tests
   clearMocks: true,
-  
+
   // Restore mocks between tests
   restoreMocks: true,
-  
+
   // Reset modules between tests
   resetModules: true,
-  
+
   // Collect coverage
   collectCoverage: false,
-  
+
   // Coverage directory
   coverageDirectory: 'coverage',
-  
+
   // Coverage reporters
   coverageReporters: ['text', 'lcov', 'html'],
-  
+
   // Coverage thresholds
   coverageThreshold: {
     global: {
@@ -91,13 +91,13 @@ module.exports = {
       statements: 80,
     },
   },
-  
+
   // Verbose output
   verbose: true,
-  
+
   // Force exit after tests
   forceExit: true,
-  
+
   // Detect open handles
   detectOpenHandles: true,
 };
