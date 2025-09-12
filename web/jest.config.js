@@ -5,11 +5,22 @@ module.exports = {
   // Setup files to run before tests
   setupFilesAfterEnv: ['<rootDir>/src/jest-setup.ts'],
   
-  // Transform files with babel (Jest 30 automatically uses babel-jest)
+  // Transform files with babel and ts-jest
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+    '^.+\\.(js|jsx)$': 'babel-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      useESM: true
+    }],
   },
   
+  // Handle ES modules
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+
+  // Transform ignore patterns for ES modules
+  transformIgnorePatterns: [
+    'node_modules/(?!(query-string|intersection-observer|@tanstack|msw|decode-uri-component|filter-obj|split-on-first)/)'
+  ],
+
   // Module name mapping for imports
   moduleNameMapper: {
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': '<rootDir>/__mocks__/fileMock.js',
