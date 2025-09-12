@@ -8,7 +8,7 @@ import subNavConfig from "@src/config-ui/subNavConfig";
 export default function SubNavBar({
   className,
   activeTab,
-  app,
+  app = {},
   isVeleroInstalled,
   isAccess = false,
   isSnapshots = false,
@@ -142,10 +142,6 @@ export default function SubNavBar({
     </div>
   );
 }
-
-SubNavBar.defaultProps = {
-  app: {},
-};
 
 SubNavBar.propTypes = {
   className: PropTypes.string,
