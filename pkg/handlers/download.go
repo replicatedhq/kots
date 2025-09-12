@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -177,12 +178,6 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	defer os.RemoveAll(tmpDir)
 	fileToSend := filepath.Join(tmpDir, "archive.tar.gz")
 
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to process temp dir"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	if err := archiveutil.CreateTGZ(r.Context(), paths, fileToSend); err != nil {
 		logger.Error(errors.Wrap(err, "failed to create archive"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -335,4 +330,70 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 	downloadUpstreamVersionResponse.Success = true
 
 	JSON(w, http.StatusOK, downloadUpstreamVersionResponse)
+}
+
+type DownloadUpstreamUpdateRequest struct {
+	ChannelID       string `json:"channelId"`
+	ChannelSequence int64  `json:"channelSequence"`
+	SkipPreflights  bool   `json:"skipPreflights"`
+}
+
+type DownloadUpstreamUpdateResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func (h *Handler) DownloadUpstreamUpdate(w http.ResponseWriter, r *http.Request) {
+	downloadUpstreamUpdateResponse := DownloadUpstreamUpdateResponse{
+		Success: false,
+	}
+
+	downloadUpstreamUpdateRequest := DownloadUpstreamUpdateRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&downloadUpstreamUpdateRequest); err != nil {
+		downloadUpstreamUpdateResponse.Error = "failed to decode request"
+		logger.Error(errors.Wrap(err, downloadUpstreamUpdateResponse.Error))
+		JSON(w, http.StatusInternalServerError, downloadUpstreamUpdateResponse)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to get app for slug %s", appSlug)
+		logger.Error(errors.Wrap(err, errMsg))
+		downloadUpstreamUpdateResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, downloadUpstreamUpdateResponse)
+		return
+	}
+
+	// Create upstreamtypes.Update with provided channel info
+	update := upstreamtypes.Update{
+		ChannelID:   downloadUpstreamUpdateRequest.ChannelID,
+		Cursor:      strconv.FormatInt(downloadUpstreamUpdateRequest.ChannelSequence, 10),
+		AppSequence: nil, // nil creates new version
+	}
+
+	// Call upstream.DownloadUpdate to create new version
+	finalSequence, err := upstream.DownloadUpdate(a.ID, update, downloadUpstreamUpdateRequest.SkipPreflights, false)
+	if err != nil {
+		cause := errors.Cause(err)
+		if _, ok := cause.(util.ActionableError); ok {
+			downloadUpstreamUpdateResponse.Error = cause.Error()
+		} else {
+			downloadUpstreamUpdateResponse.Error = "failed to download upstream update"
+		}
+		logger.Error(errors.Wrap(err, "failed to download upstream update"))
+		JSON(w, http.StatusInternalServerError, downloadUpstreamUpdateResponse)
+		return
+	}
+
+	if finalSequence != nil {
+		logger.Infof("Successfully downloaded upstream update for app %s, new sequence: %d", appSlug, *finalSequence)
+	} else {
+		logger.Infof("Successfully downloaded upstream update for app %s", appSlug)
+	}
+
+	downloadUpstreamUpdateResponse.Success = true
+	JSON(w, http.StatusOK, downloadUpstreamUpdateResponse)
 }
