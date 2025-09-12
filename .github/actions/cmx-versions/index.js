@@ -42,8 +42,8 @@ async function getClusterVersions() {
             instance_type: "m7g.large" // arm64
         },
         openshift: {
-            // filtering out all versions except 4.15.0-okd for now per sc-90893
-            versions: new Set(["4.15.0-okd"])
+            // filtering out all versions except 4.19.0-okd for now per sc-90893
+            versions: new Set(["4.19.0-okd"])
         },
         // disable oke for now per sc-120817
         // oke: {
