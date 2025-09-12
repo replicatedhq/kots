@@ -262,7 +262,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 			finalError = errors.Wrap(err, "failed to read kots kinds after update")
 			return
 		}
-		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeInstallation.UpdateCursor && afterKotsKinds.Installation.Spec.ChannelID == beforeInstallation.ChannelID {
+		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeInstallation.UpdateCursor && afterKotsKinds.Installation.Spec.ChannelID == beforeInstallation.ChannelID && !util.IsV3EmbeddedCluster() {
 			return
 		}
 		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", false, false, skipPreflights)
