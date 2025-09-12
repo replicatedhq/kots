@@ -1,5 +1,5 @@
-require("intersection-observer");
-require("@testing-library/jest-dom");
+import "intersection-observer";
+import "@testing-library/jest-dom";
 
 // Set default API endpoint for tests to prevent undefined URLs
 process.env.API_ENDPOINT = process.env.API_ENDPOINT || "http://test-api";
