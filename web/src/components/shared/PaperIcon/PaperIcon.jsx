@@ -3,7 +3,7 @@ import classNames from "classnames";
 import "@src/scss/components/shared/PaperIcon.scss";
 
 export default function PaperIcon(props) {
-  const { iconClass, className, onClick, height, width } = props;
+  const { iconClass, className, onClick, height = "25px", width = "25px" } = props;
 
   return (
     <div
@@ -20,7 +20,3 @@ export default function PaperIcon(props) {
   );
 }
 
-PaperIcon.defaultProps = {
-  height: "25px",
-  width: "25px",
-};

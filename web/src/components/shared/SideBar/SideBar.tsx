@@ -6,16 +6,12 @@ import "@src/scss/components/shared/SideBar.scss";
 
 interface Props {
   className?: string;
-  items: (JSX.Element | undefined)[];
+  items?: (JSX.Element | undefined)[];
   loading?: boolean;
 }
 class SideBar extends Component<Props> {
-  static defaultProps = {
-    items: [],
-  };
-
   render() {
-    const { className, items, loading } = this.props;
+    const { className, items = [], loading } = this.props;
 
     if (loading) {
       return (

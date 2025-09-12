@@ -336,11 +336,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
     };
   }
 
-  static defaultProps = {
-    snapshotSettings: {
-      store: {},
-    },
-  };
 
   componentDidMount() {
     if (this.props.snapshotSettings && !this.props.checkForVeleroAndNodeAgent) {
