@@ -6,10 +6,10 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/pkg/errors v0.9.1
 	github.com/soheilhy/cmux v0.1.5
-	go.yaml.in/yaml/v2 v2.4.2
-	k8s.io/api v0.34.0
-	k8s.io/apimachinery v0.34.0
-	k8s.io/client-go v0.34.0
+	go.yaml.in/yaml/v2 v2.4.3
+	k8s.io/api v0.34.1
+	k8s.io/apimachinery v0.34.1
+	k8s.io/client-go v0.34.1
 )
 
 require (
