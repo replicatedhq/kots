@@ -68,7 +68,7 @@ require (
 	github.com/vmware-tanzu/velero v1.16.2
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
-	go.yaml.in/yaml/v2 v2.4.2
+	go.yaml.in/yaml/v2 v2.4.3
 	go.yaml.in/yaml/v3 v3.0.4
 	golang.org/x/crypto v0.42.0
 	golang.org/x/oauth2 v0.30.0
