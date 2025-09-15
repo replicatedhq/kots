@@ -74,7 +74,7 @@ type KOTSHandler interface {
 	UpdateAdminConsole(w http.ResponseWriter, r *http.Request)
 	GetAdminConsoleUpdateStatus(w http.ResponseWriter, r *http.Request)
 	DownloadAppVersion(w http.ResponseWriter, r *http.Request)
-	DownloadUpstreamUpdate(w http.ResponseWriter, r *http.Request)
+	UpstreamUpdate(w http.ResponseWriter, r *http.Request)
 	GetAppVersionDownloadStatus(w http.ResponseWriter, r *http.Request)
 	DeployAppVersion(w http.ResponseWriter, r *http.Request)
 	RedeployAppVersion(w http.ResponseWriter, r *http.Request)

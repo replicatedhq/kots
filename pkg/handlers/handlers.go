@@ -164,8 +164,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GetAdminConsoleUpdateStatus))
 	r.Name("DownloadAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/download").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.DownloadAppVersion))
-	r.Name("DownloadUpstreamUpdate").Path("/api/v1/app/{appSlug}/upstream/download").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.DownloadUpstreamUpdate))
+	r.Name("UpstreamUpdate").Path("/api/v1/app/{appSlug}/upstream/update").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.UpstreamUpdate))
 	r.Name("GetAppVersionDownloadStatus").Path("/api/v1/app/{appSlug}/sequence/{sequence}/task/updatedownload").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetAppVersionDownloadStatus)) // NOTE: appSlug is unused
 	r.Name("DeployAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").
