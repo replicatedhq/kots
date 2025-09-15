@@ -48,6 +48,10 @@ func DeployCmd() *cobra.Command {
 				return errors.New("either --airgap-bundle OR (--channel-id AND --channel-sequence) must be provided")
 			}
 
+			if airgapBundle != "" && license == "" {
+				return errors.New("license is required in airgap mode")
+			}
+
 			if license != "" && airgapBundle == "" {
 				return errors.New("license can only be provided in airgap mode")
 			}
