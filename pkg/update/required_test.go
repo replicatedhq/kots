@@ -294,12 +294,13 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 
 func TestIsAirgapUpdateDeployable(t *testing.T) {
 	tests := []struct {
-		name             string
-		airgap           *kotsv1beta1.Airgap
-		currentECVersion string
-		wantDeployable   bool
-		wantCause        string
-		setupStore       func(mockStore *mock_store.MockStore)
+		name                string
+		airgap              *kotsv1beta1.Airgap
+		currentECVersion    string
+		wantDeployable      bool
+		wantCause           string
+		isV3EmbeddedCluster bool
+		setupStore          func(mockStore *mock_store.MockStore)
 	}{
 		{
 			name: "not deployable due to required releases",
@@ -414,12 +415,43 @@ func TestIsAirgapUpdateDeployable(t *testing.T) {
 				}, nil)
 			},
 		},
+		{
+			name: "always deployable in V3 Embedded Cluster (version checks handled separately)",
+			airgap: &kotsv1beta1.Airgap{
+				Spec: kotsv1beta1.AirgapSpec{
+					ChannelID: "test-channel",
+					RequiredReleases: []kotsv1beta1.AirgapReleaseMeta{
+						{
+							VersionLabel: "1.0.0",
+							UpdateCursor: "100",
+						},
+					},
+					AirgapReleaseMeta: kotsv1beta1.AirgapReleaseMeta{
+						VersionLabel:           "1.1.0",
+						UpdateCursor:           "110",
+						EmbeddedClusterVersion: "2.8.0+k8s-1.31",
+					},
+				},
+			},
+			currentECVersion:    "2.7.3+k8s-1.29",
+			wantDeployable:      true,
+			wantCause:           "",
+			isV3EmbeddedCluster: true,
+			setupStore: func(mockStore *mock_store.MockStore) {
+				// No store calls should be made in V3 EC mode
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
+
+			// Set V3 EC environment
+			if tt.isV3EmbeddedCluster {
+				t.Setenv("IS_EMBEDDED_CLUSTER_V3", "true")
+			}
 
 			mockStore := mock_store.NewMockStore(ctrl)
 			tt.setupStore(mockStore)

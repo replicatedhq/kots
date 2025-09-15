@@ -330,4 +330,3 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 
 	JSON(w, http.StatusOK, downloadUpstreamVersionResponse)
 }
-
