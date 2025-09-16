@@ -441,7 +441,7 @@ func (h *Handler) UpstreamUpdate(w http.ResponseWriter, r *http.Request) {
 // handleAirgapUpdate processes the entire airgap update flow
 func handleAirgapUpdate(w http.ResponseWriter, r *http.Request, app *apptypes.App, skipPreflights bool, deploy bool, skipCompatibilityCheck bool) {
 	if !app.IsAirgap {
-		logger.Error(errors.New("not an airgap app"))
+		logger.Error(errors.New("not an airgap installation"))
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Cannot update an online install using an airgap bundle"))
 		return
@@ -472,6 +472,7 @@ func handleAirgapUpdate(w http.ResponseWriter, r *http.Request, app *apptypes.Ap
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		defer part.Close()
 
 		fileName := filepath.Join(rootDir, part.FormName())
 		file, err := os.Create(fileName)
@@ -489,9 +490,10 @@ func handleAirgapUpdate(w http.ResponseWriter, r *http.Request, app *apptypes.Ap
 			return
 		}
 		file.Close()
+		part.Close()
 	}
 
-	finishedChan := make(chan error)
+	finishedChan := make(chan error, 1)
 	defer close(finishedChan)
 
 	tasks.StartTaskMonitor("update-download", finishedChan)

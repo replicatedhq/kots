@@ -221,17 +221,13 @@ func PushImagesFromAirgapBundle(airgapBundle string, registryConfig kotsadmtypes
 func CreateAirgapMultipartRequest(airgapBundle string) (io.Reader, string, error) {
 	buffer := &bytes.Buffer{}
 	writer := multipart.NewWriter(buffer)
+	defer writer.Close()
 
 	if err := createPartFromFile(writer, airgapBundle, "airgap.yaml"); err != nil {
 		return nil, "", errors.Wrap(err, "failed to create part from airgap.yaml")
 	}
 	if err := createPartFromFile(writer, airgapBundle, "app.tar.gz"); err != nil {
 		return nil, "", errors.Wrap(err, "failed to create part from app.tar.gz")
-	}
-
-	err := writer.Close()
-	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to close multi-part writer")
 	}
 
 	contentType := writer.FormDataContentType()

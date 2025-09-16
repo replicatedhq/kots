@@ -27,6 +27,7 @@ func DeployCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "deploy [appSlug]",
 		Hidden: true, // Hidden from help
+		Args:   cobra.ExactArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
@@ -171,7 +172,7 @@ func handleLicenseSync(v *viper.Viper, appSlug string, localPort int, authSlug s
 		return errors.Wrap(err, "failed to marshal license sync request json")
 	}
 
-	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/license", localPort, url.QueryEscape(appSlug))
+	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/license", localPort, url.PathEscape(appSlug))
 	newRequest, err := http.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return errors.Wrap(err, "failed to create license sync http request")
@@ -195,7 +196,10 @@ func handleLicenseSync(v *viper.Viper, appSlug string, localPort int, authSlug s
 		Error   string `json:"error,omitempty"`
 		Synced  bool   `json:"synced"`
 	}{}
-	_ = json.Unmarshal(respBody, &response)
+
+	if err := json.Unmarshal(respBody, &response); err != nil && resp.StatusCode == http.StatusOK {
+		return errors.Wrap(err, "failed to parse license sync response")
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		if response.Error != "" {
@@ -245,7 +249,7 @@ func handleUpstreamUpdate(v *viper.Viper, appSlug string, localPort int, authSlu
 		urlVals.Set("channelSequence", strconv.FormatInt(channelSequence, 10))
 	}
 
-	upstreamURL := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/upstream/update?%s", localPort, url.QueryEscape(appSlug), urlVals.Encode())
+	upstreamURL := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/upstream/update?%s", localPort, url.PathEscape(appSlug), urlVals.Encode())
 
 	newRequest, err := http.NewRequest("POST", upstreamURL, requestBody)
 	if err != nil {
@@ -269,7 +273,10 @@ func handleUpstreamUpdate(v *viper.Viper, appSlug string, localPort int, authSlu
 		Success bool   `json:"success"`
 		Error   string `json:"error,omitempty"`
 	}{}
-	_ = json.Unmarshal(respBody, &response)
+
+	if err := json.Unmarshal(respBody, &response); err != nil && resp.StatusCode == http.StatusOK {
+		return errors.Wrap(err, "failed to parse upstream update response")
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		if response.Error != "" {
@@ -322,7 +329,7 @@ func handleSetConfigAndDeploy(v *viper.Viper, appSlug string, localPort int, aut
 		return errors.Wrap(err, "failed to marshal config request json")
 	}
 
-	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/values", localPort, url.QueryEscape(appSlug))
+	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/values", localPort, url.PathEscape(appSlug))
 	newRequest, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return errors.Wrap(err, "failed to create config http request")
@@ -344,7 +351,10 @@ func handleSetConfigAndDeploy(v *viper.Viper, appSlug string, localPort int, aut
 	response := struct {
 		Error string `json:"error"`
 	}{}
-	_ = json.Unmarshal(respBody, &response)
+
+	if err := json.Unmarshal(respBody, &response); err != nil && resp.StatusCode == http.StatusOK {
+		return errors.Wrap(err, "failed to parse config response")
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
