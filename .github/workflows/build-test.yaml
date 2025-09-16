@@ -947,6 +947,21 @@ jobs:
           kubectl create ns "$APP_SLUG"
           kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
+      - name: create initial config file for deploy command
+        run: |
+          cat > config.yaml << EOF
+          apiVersion: kots.io/v1beta1
+          kind: ConfigValues
+          metadata:
+            name: $APP_SLUG
+          spec:
+            values:
+              required_field:
+                value: "initial-test-value"
+              optional_field:
+                value: "initial-optional"
+          EOF
+
       - name: install app with initial version
         run: |
           set +e
@@ -955,6 +970,7 @@ jobs:
             install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --app-version-label "$APP_VERSION_LABEL" \
+            --config-values config.yaml \
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
@@ -988,7 +1004,7 @@ jobs:
           echo "App is ready, initial version installed"
           ./bin/kots get apps --namespace "$APP_SLUG"
 
-      - name: create config file for deploy command
+      - name: create update config file for deploy command
         run: |
           cat > config.yaml << EOF
           apiVersion: kots.io/v1beta1
@@ -997,7 +1013,7 @@ jobs:
             name: $APP_SLUG
           spec:
             values:
-              a_required_text:
+              required_field:
                 value: "updated-test-value"
               optional_field:
                 value: "updated-optional"
@@ -1155,7 +1171,7 @@ jobs:
             name: $APP_SLUG
           spec:
             values:
-              a_required_text:
+              required_field:
                 value: "initial-test-value"
               optional_field:
                 value: "initial-optional"
@@ -1213,7 +1229,7 @@ jobs:
             name: $APP_SLUG
           spec:
             values:
-              a_required_text:
+              required_field:
                 value: "updated-test-value"
               optional_field:
                 value: "updated-optional"
