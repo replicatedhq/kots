@@ -916,7 +916,7 @@ jobs:
           {distribution: kind, version: v1.30.0}
         ]
     env:
-      APP_SLUG: app-version-label
+      APP_SLUG: deploy-command-online
       APP_VERSION_LABEL: v1.0.0
     steps:
       - name: Checkout
@@ -1227,6 +1227,8 @@ jobs:
             --namespace "$APP_SLUG" \
             --license update-license.yaml \
             --airgap-bundle app-seq2.airgap \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
             --config-values config.yaml \
             --skip-preflights
 
