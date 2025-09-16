@@ -1008,7 +1008,7 @@ jobs:
           set +e
           ./bin/kots deploy "$APP_SLUG" \
             --namespace "$APP_SLUG" \
-            --channel-id <TODO> \
+            --channel-id 32nD0iE4LcNHzzUaPQ3YvhBt9AZ \
             --channel-sequence 2 \
             --config-values config.yaml \
             --skip-preflights
@@ -1105,7 +1105,7 @@ jobs:
           {distribution: kind, version: v1.30.0}
         ]
     env:
-      APP_SLUG: deploy-airgap-test
+      APP_SLUG: deploy-command-airgap
       APP_VERSION_LABEL: v1.0.0
     steps:
       - name: Checkout
