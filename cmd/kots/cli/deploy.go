@@ -161,7 +161,6 @@ func handleLicenseSync(v *viper.Viper, appSlug string, localPort int, authSlug s
 		}
 		licenseData = string(data)
 	}
-	// If no license provided, licenseData is empty and sync uses current license
 
 	requestPayload := map[string]interface{}{
 		"licenseData": licenseData,

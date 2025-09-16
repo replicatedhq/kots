@@ -659,6 +659,17 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
+	"UpstreamUpdate": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app", "sequence": "1"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.UpstreamUpdate(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 	"GetAppVersionDownloadStatus": {
 		{
 			Vars:         map[string]string{"appSlug": "my-app", "sequence": "1"},
