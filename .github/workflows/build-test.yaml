@@ -1046,7 +1046,7 @@ jobs:
           echo "Versions JSON: $VERSIONS_JSON"
 
           # Check that we have 4 versions total (sequence 0, 1, 2, 3)
-          VERSION_COUNT=$(echo "$VERSIONS_JSON" | jq '.versions | length')
+          VERSION_COUNT=$(echo "$VERSIONS_JSON" | jq 'length')
           if [ "$VERSION_COUNT" -ne 4 ]; then
             echo "Expected 4 versions but got $VERSION_COUNT"
             echo "$VERSIONS_JSON"
@@ -1054,7 +1054,7 @@ jobs:
           fi
 
           # Check that the latest version (top of list) is deployed
-          LATEST_VERSION=$(echo "$VERSIONS_JSON" | jq -r '.versions[0]')
+          LATEST_VERSION=$(echo "$VERSIONS_JSON" | jq -r '.[0]')
           DEPLOYED_STATUS=$(echo "$LATEST_VERSION" | jq -r '.status')
           SOURCE=$(echo "$LATEST_VERSION" | jq -r '.source')
           SEQUENCE=$(echo "$LATEST_VERSION" | jq -r '.sequence')
@@ -1078,8 +1078,8 @@ jobs:
           fi
 
           # Verify that license change and upstream update were not deployed
-          LICENSE_CHANGE=$(echo "$VERSIONS_JSON" | jq -r '.versions[] | select(.source == "License Change") | .status')
-          UPSTREAM_UPDATE=$(echo "$VERSIONS_JSON" | jq -r '.versions[] | select(.source == "Upstream Update") | .status')
+          LICENSE_CHANGE=$(echo "$VERSIONS_JSON" | jq -r '.[] | select(.source == "License Change") | .status')
+          UPSTREAM_UPDATE=$(echo "$VERSIONS_JSON" | jq -r '.[] | select(.source == "Upstream Update") | .status')
 
           if [ "$LICENSE_CHANGE" != "pending" ]; then
             echo "License Change version should be pending but got status: $LICENSE_CHANGE"
@@ -1265,7 +1265,7 @@ jobs:
           echo "Versions JSON: $VERSIONS_JSON"
 
           # Check that we have 4 versions total (sequence 0, 1, 2, 3)
-          VERSION_COUNT=$(echo "$VERSIONS_JSON" | jq '.versions | length')
+          VERSION_COUNT=$(echo "$VERSIONS_JSON" | jq 'length')
           if [ "$VERSION_COUNT" -ne 4 ]; then
             echo "Expected 4 versions but got $VERSION_COUNT"
             echo "$VERSIONS_JSON"
@@ -1273,7 +1273,7 @@ jobs:
           fi
 
           # Check that the latest version (top of list) is deployed
-          LATEST_VERSION=$(echo "$VERSIONS_JSON" | jq -r '.versions[0]')
+          LATEST_VERSION=$(echo "$VERSIONS_JSON" | jq -r '.[0]')
           DEPLOYED_STATUS=$(echo "$LATEST_VERSION" | jq -r '.status')
           SOURCE=$(echo "$LATEST_VERSION" | jq -r '.source')
           SEQUENCE=$(echo "$LATEST_VERSION" | jq -r '.sequence')
@@ -1297,8 +1297,8 @@ jobs:
           fi
 
           # Verify that license update and airgap update were not deployed
-          LICENSE_UPDATE=$(echo "$VERSIONS_JSON" | jq -r '.versions[] | select(.source == "License Update") | .status')
-          AIRGAP_UPDATE=$(echo "$VERSIONS_JSON" | jq -r '.versions[] | select(.source == "Airgap Update") | .status')
+          LICENSE_UPDATE=$(echo "$VERSIONS_JSON" | jq -r '.[] | select(.source == "License Update") | .status')
+          AIRGAP_UPDATE=$(echo "$VERSIONS_JSON" | jq -r '.[] | select(.source == "Airgap Update") | .status')
 
           if [ "$LICENSE_UPDATE" != "pending" ]; then
             echo "License Update version should be pending but got status: $LICENSE_UPDATE"
