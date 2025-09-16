@@ -973,7 +973,7 @@ jobs:
 
           # Wait for app to be ready
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "Ready" ]; do
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
             ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
@@ -1189,7 +1189,7 @@ jobs:
 
           # Wait for app to be ready
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "Ready" ]; do
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
             ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
