@@ -1004,6 +1004,14 @@ jobs:
           echo "App is ready, initial version installed"
           ./bin/kots get apps --namespace "$APP_SLUG"
 
+      - name: install replicated cli
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download --repo replicatedhq/replicated --pattern '*_linux_amd64.tar.gz' --output /tmp/replicated.tar.gz --clobber
+          tar -xzf /tmp/replicated.tar.gz -C /tmp
+          mv /tmp/replicated /usr/local/bin/replicated
+
       - name: update customer to trigger a license change
         env:
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
@@ -1303,12 +1311,12 @@ jobs:
             exit 1
           fi
 
-          # Verify that license update and airgap update were not deployed
-          LICENSE_UPDATE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "License Update") | .status')
+          # Verify that license change and airgap update were not deployed
+          LICENSE_CHANGE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "License Change") | .status')
           AIRGAP_UPDATE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "Airgap Update") | .status')
 
-          if [ "$LICENSE_UPDATE" != "pending" ]; then
-            echo "License Update version should be pending but got status: $LICENSE_UPDATE"
+          if [ "$LICENSE_CHANGE" != "pending" ]; then
+            echo "License Change version should be pending but got status: $LICENSE_CHANGE"
             exit 1
           fi
 
