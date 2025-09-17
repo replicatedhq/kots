@@ -177,12 +177,6 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	defer os.RemoveAll(tmpDir)
 	fileToSend := filepath.Join(tmpDir, "archive.tar.gz")
 
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to process temp dir"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	if err := archiveutil.CreateTGZ(r.Context(), paths, fileToSend); err != nil {
 		logger.Error(errors.Wrap(err, "failed to create archive"))
 		w.WriteHeader(http.StatusInternalServerError)

@@ -15,9 +15,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
+	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -28,6 +30,7 @@ import (
 	updatetypes "github.com/replicatedhq/kots/pkg/update/types"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	updatecheckertypes "github.com/replicatedhq/kots/pkg/updatechecker/types"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
@@ -133,78 +136,8 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if contentType == "multipart/form-data" {
-		if !app.IsAirgap {
-			logger.Error(errors.New("not an airgap app"))
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Cannot update an online install using an airgap bundle"))
-			return
-		}
-
-		rootDir, err := ioutil.TempDir("", "kotsadm-airgap")
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to create temp dir"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		defer os.RemoveAll(rootDir)
-
-		formReader, err := r.MultipartReader()
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to get multipart reader"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		for {
-			part, err := formReader.NextPart()
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				logger.Error(errors.Wrap(err, "failed to get next part"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			fileName := filepath.Join(rootDir, part.FormName())
-			file, err := os.Create(fileName)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to create file"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			defer file.Close()
-
-			_, err = io.Copy(file, part)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to copy part data"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			file.Close()
-		}
-
-		finishedChan := make(chan error)
-		defer close(finishedChan)
-
-		tasks.StartTaskMonitor("update-download", finishedChan)
-
-		err = airgap.UpdateAppFromPath(app, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
-		if err != nil {
-			finishedChan <- err
-
-			logger.Error(errors.Wrap(err, "failed to upgrade app"))
-			w.WriteHeader(http.StatusInternalServerError)
-
-			cause := errors.Cause(err)
-			if _, ok := cause.(util.ActionableError); ok {
-				w.Write([]byte(cause.Error()))
-			}
-			return
-		}
-
-		JSON(w, http.StatusOK, struct{}{})
-
+		// Use the shared airgap processing function
+		handleAirgapUpdate(w, r, app, skipPreflights, deploy, skipCompatibilityCheck)
 		return
 	}
 
@@ -436,4 +369,148 @@ func (h *Handler) GetAdminConsoleUpdateStatus(w http.ResponseWriter, r *http.Req
 	getAdminConsoleUpdateStatusResponse.Status = string(status)
 	getAdminConsoleUpdateStatusResponse.Message = message
 	JSON(w, http.StatusOK, getAdminConsoleUpdateStatusResponse)
+}
+
+// UpstreamUpdateResponse represents the response for upstream updates
+type UpstreamUpdateResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+// UpstreamUpdate handles both channel-based and airgap-based upstream updates
+// Only used by V3 embedded cluster installs
+func (h *Handler) UpstreamUpdate(w http.ResponseWriter, r *http.Request) {
+	upstreamUpdateResponse := UpstreamUpdateResponse{
+		Success: false,
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+	channelID := r.URL.Query().Get("channelId")
+	channelSequenceStr := r.URL.Query().Get("channelSequence")
+	skipPreflights, _ := strconv.ParseBool(r.URL.Query().Get("skipPreflights"))
+
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to get app for slug %s", appSlug)
+		logger.Error(errors.Wrap(err, errMsg))
+		upstreamUpdateResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, upstreamUpdateResponse)
+		return
+	}
+
+	// Check content type to determine if this is an airgap request
+	contentType := strings.Split(r.Header.Get("Content-Type"), ";")[0]
+	contentType = strings.TrimSpace(contentType)
+
+	if contentType == "multipart/form-data" {
+		// Use the shared airgap processing function
+		handleAirgapUpdate(w, r, a, skipPreflights, false, false)
+		return
+	}
+
+	update := upstreamtypes.Update{
+		ChannelID:   channelID,
+		Cursor:      channelSequenceStr,
+		AppSequence: nil, // nil creates a new version
+	}
+
+	// Download release from replicated app
+	finalSequence, err := upstream.DownloadUpdate(a.ID, update, skipPreflights, false)
+	if err != nil {
+		cause := errors.Cause(err)
+		if _, ok := cause.(util.ActionableError); ok {
+			upstreamUpdateResponse.Error = cause.Error()
+		} else {
+			upstreamUpdateResponse.Error = "failed to download upstream update"
+		}
+		logger.Error(errors.Wrap(err, "failed to download upstream update"))
+		JSON(w, http.StatusInternalServerError, upstreamUpdateResponse)
+		return
+	}
+
+	if finalSequence != nil {
+		logger.Infof("Successfully downloaded upstream update for app %s, new sequence: %d", appSlug, *finalSequence)
+	} else {
+		logger.Infof("Successfully downloaded upstream update for app %s", appSlug)
+	}
+
+	upstreamUpdateResponse.Success = true
+	JSON(w, http.StatusOK, upstreamUpdateResponse)
+}
+
+// handleAirgapUpdate processes the entire airgap update flow
+func handleAirgapUpdate(w http.ResponseWriter, r *http.Request, app *apptypes.App, skipPreflights bool, deploy bool, skipCompatibilityCheck bool) {
+	if !app.IsAirgap {
+		logger.Error(errors.New("not an airgap installation"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Cannot update an online install using an airgap bundle"))
+		return
+	}
+
+	rootDir, err := os.MkdirTemp("", "kotsadm-airgap")
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to create temp dir"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(rootDir)
+
+	formReader, err := r.MultipartReader()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get multipart reader"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	for {
+		part, err := formReader.NextPart()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			logger.Error(errors.Wrap(err, "failed to get next part"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer part.Close()
+
+		fileName := filepath.Join(rootDir, part.FormName())
+		file, err := os.Create(fileName)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to create file"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer file.Close()
+
+		_, err = io.Copy(file, part)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to copy part data"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		file.Close()
+		part.Close()
+	}
+
+	finishedChan := make(chan error, 1)
+	defer close(finishedChan)
+
+	tasks.StartTaskMonitor("update-download", finishedChan)
+
+	err = airgap.UpdateAppFromPath(app, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
+	if err != nil {
+		finishedChan <- err
+
+		logger.Error(errors.Wrap(err, "failed to upgrade app"))
+		w.WriteHeader(http.StatusInternalServerError)
+
+		cause := errors.Cause(err)
+		if _, ok := cause.(util.ActionableError); ok {
+			w.Write([]byte(cause.Error()))
+		}
+		return
+	}
+
+	JSON(w, http.StatusOK, struct{}{})
 }

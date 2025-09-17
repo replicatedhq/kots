@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"os"
 	"strings"
@@ -55,22 +54,10 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		log.Silence()
 	}
 
-	if options.AirgapBundle != "" {
-		pushOptions := imagetypes.PushImagesOptions{
-			Registry: registrytypes.RegistryOptions{
-				Endpoint:  options.RegistryConfig.OverrideRegistry,
-				Namespace: options.RegistryConfig.OverrideNamespace,
-				Username:  options.RegistryConfig.Username,
-				Password:  options.RegistryConfig.Password,
-			},
-			ProgressWriter: os.Stdout,
-		}
-
-		if !options.DisableImagePush {
-			err := image.TagAndPushImagesFromBundle(options.AirgapBundle, pushOptions)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to tag and push app images from path")
-			}
+	if options.AirgapBundle != "" && !options.DisableImagePush {
+		err := PushImagesFromAirgapBundle(options.AirgapBundle, options.RegistryConfig)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -86,23 +73,11 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	if options.AirgapBundle == "" {
 		requestBody = strings.NewReader("{}")
 	} else {
-		buffer := &bytes.Buffer{}
-		writer := multipart.NewWriter(buffer)
-
-		if err := createPartFromFile(writer, options.AirgapBundle, "airgap.yaml"); err != nil {
-			return nil, errors.Wrap(err, "failed to create part from airgap.yaml")
-		}
-		if err := createPartFromFile(writer, options.AirgapBundle, "app.tar.gz"); err != nil {
-			return nil, errors.Wrap(err, "failed to create part from app.tar.gz")
-		}
-
-		err := writer.Close()
+		var err error
+		requestBody, contentType, err = CreateAirgapMultipartRequest(options.AirgapBundle)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to close multi-part writer")
+			return nil, errors.Wrap(err, "failed to create airgap multipart request")
 		}
-
-		contentType = writer.FormDataContentType()
-		requestBody = buffer
 	}
 
 	clientset, err := k8sutil.GetClientset()
@@ -135,7 +110,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to read server response")
@@ -220,6 +195,43 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	}
 
 	return &ur, nil
+}
+
+// PushImagesFromAirgapBundle pushes images from an airgap bundle to registry if image push is enabled
+func PushImagesFromAirgapBundle(airgapBundle string, registryConfig kotsadmtypes.RegistryConfig) error {
+	pushOptions := imagetypes.PushImagesOptions{
+		Registry: registrytypes.RegistryOptions{
+			Endpoint:  registryConfig.OverrideRegistry,
+			Namespace: registryConfig.OverrideNamespace,
+			Username:  registryConfig.Username,
+			Password:  registryConfig.Password,
+		},
+		ProgressWriter: os.Stdout,
+	}
+
+	err := image.TagAndPushImagesFromBundle(airgapBundle, pushOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to tag and push app images from bundle")
+	}
+
+	return nil
+}
+
+// CreateAirgapMultipartRequest creates a multipart request body for airgap bundle upload
+func CreateAirgapMultipartRequest(airgapBundle string) (io.Reader, string, error) {
+	buffer := &bytes.Buffer{}
+	writer := multipart.NewWriter(buffer)
+	defer writer.Close()
+
+	if err := createPartFromFile(writer, airgapBundle, "airgap.yaml"); err != nil {
+		return nil, "", errors.Wrap(err, "failed to create part from airgap.yaml")
+	}
+	if err := createPartFromFile(writer, airgapBundle, "app.tar.gz"); err != nil {
+		return nil, "", errors.Wrap(err, "failed to create part from app.tar.gz")
+	}
+
+	contentType := writer.FormDataContentType()
+	return buffer, contentType, nil
 }
 
 func createPartFromFile(partWriter *multipart.Writer, path string, fileName string) error {

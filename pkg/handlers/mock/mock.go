@@ -1570,6 +1570,18 @@ func (mr *MockKOTSHandlerMockRecorder) UploadServiceAccountToken(w, r interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadServiceAccountToken", reflect.TypeOf((*MockKOTSHandler)(nil).UploadServiceAccountToken), w, r)
 }
 
+// UpstreamUpdate mocks base method.
+func (m *MockKOTSHandler) UpstreamUpdate(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpstreamUpdate", w, r)
+}
+
+// UpstreamUpdate indicates an expected call of UpstreamUpdate.
+func (mr *MockKOTSHandlerMockRecorder) UpstreamUpdate(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpstreamUpdate", reflect.TypeOf((*MockKOTSHandler)(nil).UpstreamUpdate), w, r)
+}
+
 // ValidateAppRegistry mocks base method.
 func (m *MockKOTSHandler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

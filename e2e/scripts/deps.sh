@@ -63,7 +63,8 @@ main() {
     curl -sL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash -e && \
         ( [ $(id -u) -eq 0 -o "$USE_SUDO" != "true" ] || runAsRoot chown $(id -u):$(id -g) $INSTALL_DIR/helm )
 
-    VELERO_RELEASE=$(curl -s "https://api.github.com/repos/vmware-tanzu/velero/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    # VELERO_RELEASE=$(curl -s "https://api.github.com/repos/vmware-tanzu/velero/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    VELERO_RELEASE=v1.16.2 # pin to 1.16.2 as 1.17.0 removed restic support
     echo "VELERO_RELEASE=$VELERO_RELEASE"
     curl -fsLo velero.tar.gz "https://github.com/vmware-tanzu/velero/releases/download/$VELERO_RELEASE/velero-$VELERO_RELEASE-$OS-$ARCH.tar.gz" \
         && tar xzf velero.tar.gz \

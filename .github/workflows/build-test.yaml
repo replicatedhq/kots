@@ -906,6 +906,443 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
+  validate-deploy-command-online:
+    runs-on: ubuntu-24.04
+    needs: [ validate-deps ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.30.0}
+        ]
+    env:
+      APP_SLUG: deploy-command-online
+      APP_VERSION_LABEL: v1.0.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Create Cluster
+        id: create-cluster
+        uses: replicatedhq/replicated-actions/create-cluster@v1
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
+      - name: download kots binary
+        uses: actions/download-artifact@v5
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
+      - name: create initial config file for deploy command
+        run: |
+          cat > config.yaml << EOF
+          apiVersion: kots.io/v1beta1
+          kind: ConfigValues
+          metadata:
+            name: $APP_SLUG
+          spec:
+            values:
+              required_field:
+                value: "initial-test-value"
+              optional_field:
+                value: "initial-optional"
+          EOF
+
+      - name: install app with initial version
+        run: |
+          set +e
+          echo ${{ secrets.DEPLOY_COMMAND_ONLINE_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --app-version-label "$APP_VERSION_LABEL" \
+            --config-values config.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$APP_SLUG" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit $EXIT_CODE
+          fi
+
+          # Wait for app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          echo "App is ready, initial version installed"
+          ./bin/kots get apps --namespace "$APP_SLUG"
+
+      - name: install replicated cli
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download --repo replicatedhq/replicated --pattern '*_linux_amd64.tar.gz' --output /tmp/replicated.tar.gz --clobber
+          tar -xzf /tmp/replicated.tar.gz -C /tmp
+          mv /tmp/replicated /usr/local/bin/replicated
+
+      - name: update customer to trigger a license change
+        env:
+          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
+          REPLICATED_APP: deploy-command-online
+          CUSTOMER_ID: 32nDBO06D2pYpTMHyOUlNXQAZ1X
+        run: |
+          RANDOM_STRING=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)
+          replicated customer update --customer "$CUSTOMER_ID" --name github-action --channel Automated --custom-id "$RANDOM_STRING"
+
+      - name: create update config file for deploy command
+        run: |
+          cat > config.yaml << EOF
+          apiVersion: kots.io/v1beta1
+          kind: ConfigValues
+          metadata:
+            name: $APP_SLUG
+          spec:
+            values:
+              required_field:
+                value: "updated-test-value"
+              optional_field:
+                value: "updated-optional"
+          EOF
+
+      - name: test deploy command with online update
+        run: |
+          set +e
+          ./bin/kots deploy "$APP_SLUG" \
+            --namespace "$APP_SLUG" \
+            --channel-id 32nD0iE4LcNHzzUaPQ3YvhBt9AZ \
+            --channel-sequence 2 \
+            --config-values config.yaml \
+            --skip-preflights
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Deploy command failed"
+            echo "------kotsadm logs:"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit $EXIT_CODE
+          fi
+
+          echo "Deploy command completed successfully"
+
+      - name: validate deployment results
+        run: |
+          # Get current version information
+          VERSIONS_JSON=$(./bin/kots get versions "$APP_SLUG" --namespace "$APP_SLUG" -o json)
+          echo "Versions JSON: $VERSIONS_JSON"
+
+          # Sort versions by sequence (descending) to ensure proper order
+          SORTED_VERSIONS=$(echo "$VERSIONS_JSON" | jq 'sort_by(.sequence) | reverse')
+          echo "Sorted versions: $SORTED_VERSIONS"
+
+          # Check that we have 4 versions total (sequence 0, 1, 2, 3)
+          VERSION_COUNT=$(echo "$SORTED_VERSIONS" | jq 'length')
+          if [ "$VERSION_COUNT" -ne 4 ]; then
+            echo "Expected 4 versions but got $VERSION_COUNT"
+            exit 1
+          fi
+
+          # Check that the latest version (top of list) is deployed
+          LATEST_VERSION=$(echo "$SORTED_VERSIONS" | jq -r '.[0]')
+          DEPLOYED_STATUS=$(echo "$LATEST_VERSION" | jq -r '.status')
+          SOURCE=$(echo "$LATEST_VERSION" | jq -r '.source')
+          SEQUENCE=$(echo "$LATEST_VERSION" | jq -r '.sequence')
+
+          if [ "$SEQUENCE" -ne 3 ]; then
+            echo "Expected latest sequence to be 3 but got $SEQUENCE"
+            exit 1
+          fi
+
+          if [ "$SOURCE" != "Config Change" ]; then
+            echo "Expected latest version to be a Config Change but got source: $SOURCE"
+            exit 1
+          fi
+
+          if [ "$DEPLOYED_STATUS" != "deployed" ]; then
+            echo "Expected latest version to be deployed but got status: $DEPLOYED_STATUS"
+            exit 1
+          fi
+
+          # Verify that license change and upstream update were not deployed
+          LICENSE_CHANGE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "License Change") | .status')
+          UPSTREAM_UPDATE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "Upstream Update") | .status')
+
+          if [ "$LICENSE_CHANGE" != "pending" ]; then
+            echo "License Change version should be pending but got status: $LICENSE_CHANGE"
+            exit 1
+          fi
+
+          if [ "$UPSTREAM_UPDATE" != "pending" ]; then
+            echo "Upstream Update version should be pending but got status: $UPSTREAM_UPDATE"
+            exit 1
+          fi
+
+          echo "Deploy command test passed"
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
+  validate-deploy-command-airgap:
+    runs-on: ubuntu-24.04
+    needs: [ validate-deps ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.30.0}
+        ]
+    env:
+      APP_SLUG: deploy-command-airgap
+      APP_VERSION_LABEL: v1.0.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Create Cluster
+        id: create-cluster
+        uses: replicatedhq/replicated-actions/create-cluster@v1
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
+      - name: download kots binary
+        uses: actions/download-artifact@v5
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: download airgap bundles
+        env:
+          CUSTOMER_ID: 32nDkj22qp7zkJMqjUGrPYV002o
+          PORTAL_B64_PASSWORD: bm90LWEtc2VjcmV0 # no-a-secret
+        run: |
+          # Download initial version airgap bundle (sequence 1)
+          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=1" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle1.json
+          BUNDLE1_URL=$(jq -r .url < bundle1.json)
+          curl "${BUNDLE1_URL}" -o app-seq1.airgap
+
+          # Download update version airgap bundle (sequence 2)
+          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=2" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle2.json
+          BUNDLE2_URL=$(jq -r .url < bundle2.json)
+          curl "${BUNDLE2_URL}" -o app-seq2.airgap
+
+      - name: create initial config file for deploy command
+        run: |
+          cat > config.yaml << EOF
+          apiVersion: kots.io/v1beta1
+          kind: ConfigValues
+          metadata:
+            name: $APP_SLUG
+          spec:
+            values:
+              required_field:
+                value: "initial-test-value"
+              optional_field:
+                value: "initial-optional"
+          EOF
+
+      - name: install app with initial version
+        run: |
+          set +e
+          echo ${{ secrets.DEPLOY_COMMAND_AIRGAP_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --config-values config.yaml \
+            --app-version-label "$APP_VERSION_LABEL" \
+            --airgap-bundle app-seq1.airgap \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$APP_SLUG" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit $EXIT_CODE
+          fi
+
+          # Wait for app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          echo "App is ready, initial version installed"
+          ./bin/kots get apps --namespace "$APP_SLUG"
+
+      - name: create update config file for deploy command
+        run: |
+          cat > config.yaml << EOF
+          apiVersion: kots.io/v1beta1
+          kind: ConfigValues
+          metadata:
+            name: $APP_SLUG
+          spec:
+            values:
+              required_field:
+                value: "updated-test-value"
+              optional_field:
+                value: "updated-optional"
+          EOF
+
+      - name: test deploy command with airgap update
+        run: |
+          set +e
+          echo ${{ secrets.DEPLOY_COMMAND_AIRGAP_UPDATE_LICENSE }} | base64 -d > update-license.yaml
+          ./bin/kots deploy "$APP_SLUG" \
+            --namespace "$APP_SLUG" \
+            --license update-license.yaml \
+            --airgap-bundle app-seq2.airgap \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --config-values config.yaml \
+            --skip-preflights
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Deploy command failed"
+            echo "------kotsadm logs:"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit $EXIT_CODE
+          fi
+
+          echo "Deploy command completed successfully"
+
+      - name: validate deployment results
+        run: |
+          # Get current version information
+          VERSIONS_JSON=$(./bin/kots get versions "$APP_SLUG" --namespace "$APP_SLUG" -o json)
+          echo "Versions JSON: $VERSIONS_JSON"
+
+          # Sort versions by sequence (descending) to ensure proper order
+          SORTED_VERSIONS=$(echo "$VERSIONS_JSON" | jq 'sort_by(.sequence) | reverse')
+          echo "Sorted versions: $SORTED_VERSIONS"
+
+          # Check that we have 4 versions total (sequence 0, 1, 2, 3)
+          VERSION_COUNT=$(echo "$SORTED_VERSIONS" | jq 'length')
+          if [ "$VERSION_COUNT" -ne 4 ]; then
+            echo "Expected 4 versions but got $VERSION_COUNT"
+            exit 1
+          fi
+
+          # Check that the latest version (top of list) is deployed
+          LATEST_VERSION=$(echo "$SORTED_VERSIONS" | jq -r '.[0]')
+          DEPLOYED_STATUS=$(echo "$LATEST_VERSION" | jq -r '.status')
+          SOURCE=$(echo "$LATEST_VERSION" | jq -r '.source')
+          SEQUENCE=$(echo "$LATEST_VERSION" | jq -r '.sequence')
+
+          if [ "$SEQUENCE" -ne 3 ]; then
+            echo "Expected latest sequence to be 3 but got $SEQUENCE"
+            exit 1
+          fi
+
+          if [ "$SOURCE" != "Config Change" ]; then
+            echo "Expected latest version to be a Config Change but got source: $SOURCE"
+            exit 1
+          fi
+
+          if [ "$DEPLOYED_STATUS" != "deployed" ]; then
+            echo "Expected latest version to be deployed but got status: $DEPLOYED_STATUS"
+            exit 1
+          fi
+
+          # Verify that license change and airgap update were not deployed
+          LICENSE_CHANGE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "License Change") | .status')
+          AIRGAP_UPDATE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "Airgap Update") | .status')
+
+          if [ "$LICENSE_CHANGE" != "pending" ]; then
+            echo "License Change version should be pending but got status: $LICENSE_CHANGE"
+            exit 1
+          fi
+
+          if [ "$AIRGAP_UPDATE" != "pending" ]; then
+            echo "Airgap Update version should be pending but got status: $AIRGAP_UPDATE"
+            exit 1
+          fi
+
+          echo "Deploy command test passed"
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-backup-and-restore:
     runs-on: ubuntu-24.04
@@ -4601,6 +5038,8 @@ jobs:
       - validate-multi-namespace
       - validate-kots-pull
       - validate-app-version-label
+      - validate-deploy-command-online
+      - validate-deploy-command-airgap
       - validate-helm-install-order
       - validate-no-redeploy-on-restart
       - validate-kubernetes-installer-preflight

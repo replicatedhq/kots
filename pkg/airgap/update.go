@@ -259,6 +259,11 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 }
 
 func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License) error {
+	if util.IsV3EmbeddedCluster() {
+		// Update version checks in V3 EC are handled separately
+		return nil
+	}
+
 	var beforeSemver, afterSemver *semver.Version
 	if license.Spec.IsSemverRequired {
 		if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
