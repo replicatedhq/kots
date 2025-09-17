@@ -1019,7 +1019,7 @@ jobs:
           CUSTOMER_ID: 32nDBO06D2pYpTMHyOUlNXQAZ1X
         run: |
           RANDOM_STRING=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)
-          replicated customer update --customer $CUSTOMER_ID --name github-action --channel Automated --custom-id "$RANDOM_STRING"
+          replicated customer update --customer "$CUSTOMER_ID" --name github-action --channel Automated --custom-id "$RANDOM_STRING"
 
       - name: create update config file for deploy command
         run: |
@@ -1169,12 +1169,12 @@ jobs:
         run: |
           # Download initial version airgap bundle (sequence 1)
           curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=1" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle1.json
-          BUNDLE1_URL=$(cat bundle1.json | jq -r .url)
+          BUNDLE1_URL=$(jq -r .url < bundle1.json)
           curl "${BUNDLE1_URL}" -o app-seq1.airgap
 
           # Download update version airgap bundle (sequence 2)
           curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=2" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle2.json
-          BUNDLE2_URL=$(cat bundle2.json | jq -r .url)
+          BUNDLE2_URL=$(jq -r .url < bundle2.json)
           curl "${BUNDLE2_URL}" -o app-seq2.airgap
 
       - name: create initial config file for deploy command
