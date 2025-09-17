@@ -1004,6 +1004,15 @@ jobs:
           echo "App is ready, initial version installed"
           ./bin/kots get apps --namespace "$APP_SLUG"
 
+      - name: update customer to trigger a license change
+        env:
+          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
+          REPLICATED_APP: deploy-command-online
+          CUSTOMER_ID: 32nDBO06D2pYpTMHyOUlNXQAZ1X
+        run: |
+          RANDOM_STRING=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)
+          replicated customer update --customer $CUSTOMER_ID --name github-action --channel Automated --custom-id "$RANDOM_STRING"
+
       - name: create update config file for deploy command
         run: |
           cat > config.yaml << EOF
@@ -1045,51 +1054,49 @@ jobs:
           VERSIONS_JSON=$(./bin/kots get versions "$APP_SLUG" --namespace "$APP_SLUG" -o json)
           echo "Versions JSON: $VERSIONS_JSON"
 
+          # Sort versions by sequence (descending) to ensure proper order
+          SORTED_VERSIONS=$(echo "$VERSIONS_JSON" | jq 'sort_by(.sequence) | reverse')
+          echo "Sorted versions: $SORTED_VERSIONS"
+
           # Check that we have 4 versions total (sequence 0, 1, 2, 3)
-          VERSION_COUNT=$(echo "$VERSIONS_JSON" | jq 'length')
+          VERSION_COUNT=$(echo "$SORTED_VERSIONS" | jq 'length')
           if [ "$VERSION_COUNT" -ne 4 ]; then
             echo "Expected 4 versions but got $VERSION_COUNT"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           # Check that the latest version (top of list) is deployed
-          LATEST_VERSION=$(echo "$VERSIONS_JSON" | jq -r '.[0]')
+          LATEST_VERSION=$(echo "$SORTED_VERSIONS" | jq -r '.[0]')
           DEPLOYED_STATUS=$(echo "$LATEST_VERSION" | jq -r '.status')
           SOURCE=$(echo "$LATEST_VERSION" | jq -r '.source')
           SEQUENCE=$(echo "$LATEST_VERSION" | jq -r '.sequence')
 
           if [ "$SEQUENCE" -ne 3 ]; then
             echo "Expected latest sequence to be 3 but got $SEQUENCE"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           if [ "$SOURCE" != "Config Change" ]; then
             echo "Expected latest version to be a Config Change but got source: $SOURCE"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           if [ "$DEPLOYED_STATUS" != "deployed" ]; then
             echo "Expected latest version to be deployed but got status: $DEPLOYED_STATUS"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           # Verify that license change and upstream update were not deployed
-          LICENSE_CHANGE=$(echo "$VERSIONS_JSON" | jq -r '.[] | select(.source == "License Change") | .status')
-          UPSTREAM_UPDATE=$(echo "$VERSIONS_JSON" | jq -r '.[] | select(.source == "Upstream Update") | .status')
+          LICENSE_CHANGE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "License Change") | .status')
+          UPSTREAM_UPDATE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "Upstream Update") | .status')
 
           if [ "$LICENSE_CHANGE" != "pending" ]; then
             echo "License Change version should be pending but got status: $LICENSE_CHANGE"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           if [ "$UPSTREAM_UPDATE" != "pending" ]; then
             echo "Upstream Update version should be pending but got status: $UPSTREAM_UPDATE"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
@@ -1264,51 +1271,49 @@ jobs:
           VERSIONS_JSON=$(./bin/kots get versions "$APP_SLUG" --namespace "$APP_SLUG" -o json)
           echo "Versions JSON: $VERSIONS_JSON"
 
+          # Sort versions by sequence (descending) to ensure proper order
+          SORTED_VERSIONS=$(echo "$VERSIONS_JSON" | jq 'sort_by(.sequence) | reverse')
+          echo "Sorted versions: $SORTED_VERSIONS"
+
           # Check that we have 4 versions total (sequence 0, 1, 2, 3)
-          VERSION_COUNT=$(echo "$VERSIONS_JSON" | jq 'length')
+          VERSION_COUNT=$(echo "$SORTED_VERSIONS" | jq 'length')
           if [ "$VERSION_COUNT" -ne 4 ]; then
             echo "Expected 4 versions but got $VERSION_COUNT"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           # Check that the latest version (top of list) is deployed
-          LATEST_VERSION=$(echo "$VERSIONS_JSON" | jq -r '.[0]')
+          LATEST_VERSION=$(echo "$SORTED_VERSIONS" | jq -r '.[0]')
           DEPLOYED_STATUS=$(echo "$LATEST_VERSION" | jq -r '.status')
           SOURCE=$(echo "$LATEST_VERSION" | jq -r '.source')
           SEQUENCE=$(echo "$LATEST_VERSION" | jq -r '.sequence')
 
           if [ "$SEQUENCE" -ne 3 ]; then
             echo "Expected latest sequence to be 3 but got $SEQUENCE"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           if [ "$SOURCE" != "Config Change" ]; then
             echo "Expected latest version to be a Config Change but got source: $SOURCE"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           if [ "$DEPLOYED_STATUS" != "deployed" ]; then
             echo "Expected latest version to be deployed but got status: $DEPLOYED_STATUS"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           # Verify that license update and airgap update were not deployed
-          LICENSE_UPDATE=$(echo "$VERSIONS_JSON" | jq -r '.[] | select(.source == "License Update") | .status')
-          AIRGAP_UPDATE=$(echo "$VERSIONS_JSON" | jq -r '.[] | select(.source == "Airgap Update") | .status')
+          LICENSE_UPDATE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "License Update") | .status')
+          AIRGAP_UPDATE=$(echo "$SORTED_VERSIONS" | jq -r '.[] | select(.source == "Airgap Update") | .status')
 
           if [ "$LICENSE_UPDATE" != "pending" ]; then
             echo "License Update version should be pending but got status: $LICENSE_UPDATE"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
           if [ "$AIRGAP_UPDATE" != "pending" ]; then
             echo "Airgap Update version should be pending but got status: $AIRGAP_UPDATE"
-            echo "$VERSIONS_JSON"
             exit 1
           fi
 
