@@ -59,7 +59,7 @@ runs:
         } >> "$GITHUB_OUTPUT"
 
     - name: Scan image with Grype
-      uses: anchore/scan-action@v6
+      uses: anchore/scan-action@v7
       id: scan
       continue-on-error: ${{ inputs.fail-build != 'true' }}
       with:
