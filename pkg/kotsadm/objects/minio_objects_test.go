@@ -94,10 +94,13 @@ func Test_MinioStatefulset_ResourceRequirements(t *testing.T) {
 		wantErr       bool
 	}{
 		{
-			name:          "sets resource requests for non-autopilot",
+			name:          "sets resource requests and limits for non-autopilot",
 			deployOptions: types.DeployOptions{},
 			size:          resource.MustParse("10Gi"),
 			want: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					"memory": resource.MustParse("512Mi"),
+				},
 				Requests: corev1.ResourceList{
 					"cpu":    resource.MustParse("50m"),
 					"memory": resource.MustParse("100Mi"),
@@ -106,12 +109,15 @@ func Test_MinioStatefulset_ResourceRequirements(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "sets resource requests for autopilot",
+			name: "sets resource requests and limits for autopilot",
 			deployOptions: types.DeployOptions{
 				IsGKEAutopilot: true,
 			},
 			size: resource.MustParse("10Gi"),
 			want: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					"memory": resource.MustParse("512Mi"),
+				},
 				Requests: corev1.ResourceList{
 					"cpu":    resource.MustParse("250m"),
 					"memory": resource.MustParse("512Mi"),
@@ -120,13 +126,16 @@ func Test_MinioStatefulset_ResourceRequirements(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "sets resource requests for autopilot with migration",
+			name: "sets resource requests and limits for autopilot with migration",
 			deployOptions: types.DeployOptions{
 				IsGKEAutopilot:   true,
 				MigrateToMinioXl: true,
 			},
 			size: resource.MustParse("10Gi"),
 			want: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					"memory": resource.MustParse("512Mi"),
+				},
 				Requests: corev1.ResourceList{
 					"cpu":    resource.MustParse("250m"),
 					"memory": resource.MustParse("512Mi"),

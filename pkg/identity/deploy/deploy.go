@@ -473,6 +473,9 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 								{Name: themeVolume.Name, MountPath: "/web/themes/kots"},
 							},
 							Resources: corev1.ResourceRequirements{
+								// Limits: corev1.ResourceList{
+								// 	"memory": dexMemoryResource,
+								// },
 								Requests: corev1.ResourceList{
 									"cpu":    dexCPUResource,
 									"memory": dexMemoryResource,

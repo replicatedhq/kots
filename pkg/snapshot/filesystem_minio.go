@@ -901,6 +901,9 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 						},
 					},
 					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							"memory": resource.MustParse("100Mi"),
+						},
 						Requests: corev1.ResourceList{
 							"cpu":    resource.MustParse("50m"),
 							"memory": resource.MustParse("50Mi"),

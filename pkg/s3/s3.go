@@ -259,6 +259,9 @@ func s3BucketPod(clientset kubernetes.Interface, podOptions S3OpsPodOptions, com
 					Command:         command,
 					Env:             env,
 					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							"memory": resource.MustParse("100Mi"),
+						},
 						Requests: corev1.ResourceList{
 							"cpu":    resource.MustParse("50m"),
 							"memory": resource.MustParse("50Mi"),

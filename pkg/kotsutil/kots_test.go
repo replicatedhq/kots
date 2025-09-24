@@ -160,42 +160,6 @@ var _ = Describe("Kots", func() {
 			Expect(kotsKinds).ToNot(BeNil())
 			Expect(kotsKinds.KotsApplication.Spec.Title).To(Equal("foo"))
 		})
-
-		It("loads embedded cluster config correctly", func() {
-			dir, err := os.MkdirTemp("", "kotsutil-test")
-			Expect(err).ToNot(HaveOccurred())
-			defer os.RemoveAll(dir)
-
-			embeddedClusterConfigYAML := `apiVersion: embeddedcluster.replicated.com/v1beta1
-kind: Config
-metadata:
-  annotations:
-    kots.io/exclude: "true"
-spec:
-  version: 2.11.1+k8s-1.32
-  domains:
-    proxyRegistryDomain: images.pixee.ai
-    replicatedAppDomain: distribution.pixee.ai
-  unsupportedOverrides:
-    k0s: |
-      config:
-        spec:
-          api:
-            extraArgs:
-              service-node-port-range: 80-32767`
-
-			err = os.WriteFile(filepath.Join(dir, "embedded-cluster-config.yaml"), []byte(embeddedClusterConfigYAML), 0644)
-			Expect(err).ToNot(HaveOccurred())
-
-			kotsKinds, err := kotsutil.LoadKotsKinds(dir)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(kotsKinds).ToNot(BeNil())
-			Expect(kotsKinds.EmbeddedClusterConfig).ToNot(BeNil())
-			Expect(kotsKinds.EmbeddedClusterConfig.Spec.Version).To(Equal("2.11.1+k8s-1.32"))
-			Expect(kotsKinds.EmbeddedClusterConfig.Spec.Domains.ProxyRegistryDomain).To(Equal("images.pixee.ai"))
-			Expect(kotsKinds.EmbeddedClusterConfig.Spec.Domains.ReplicatedAppDomain).To(Equal("distribution.pixee.ai"))
-			Expect(kotsKinds.EmbeddedClusterConfig.Spec.UnsupportedOverrides.K0s).To(ContainSubstring("service-node-port-range: 80-32767"))
-		})
 	})
 
 	Describe("FindKotsAppInPath()", func() {

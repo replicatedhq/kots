@@ -38,27 +38,13 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 	volumes := getRqliteVolumes()
 	volumeMounts := getRqliteVolumeMounts()
 
-	resourceRequirements := corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("100m"),
-			"memory": resource.MustParse("100Mi"),
-		},
-	}
+	cpuRequest := "100m"
+	memoryRequest, memoryLimit := "100Mi", "1Gi" // rqlite uses an in-memory db by default for a better performance, so the limit should approximately match the pvc size. the pvc is used by rqlite for raft logs and compressed db snapshots.
 
 	if deployOptions.IsGKEAutopilot {
-		// limits can be higher than requests for clusters that support bursting: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#resource-limits
-		// otherwise, the limit will be set to match requests
-		// additionally, cpu requests must be in multiples of 250m: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#min-max-requests
-
-		resourceRequirements = corev1.ResourceRequirements{
-			Limits: corev1.ResourceList{
-				"memory": resource.MustParse("1Gi"),
-			},
-			Requests: corev1.ResourceList{
-				"cpu":    resource.MustParse("500m"),
-				"memory": resource.MustParse("512Mi"),
-			},
-		}
+		// need to increase the cpu and memory request to meet GKE Autopilot's minimum requirement of 500m when using pod anti affinity
+		cpuRequest = "500m"
+		memoryRequest, memoryLimit = "512Mi", "1Gi"
 	}
 
 	var storageClassName *string
@@ -192,7 +178,15 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 									},
 								},
 							},
-							Resources:       resourceRequirements,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"memory": resource.MustParse(memoryLimit),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse(cpuRequest),
+									"memory": resource.MustParse(memoryRequest),
+								},
+							},
 							SecurityContext: k8sutil.SecureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},
