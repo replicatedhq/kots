@@ -152,8 +152,6 @@ spec:
             readOnly: true
             mountPath: /etc/kurl-proxy/ca
         resources:
-          limits:
-            cpu: 1
           requests:
             cpu: 100m
             memory: 100Mi
@@ -179,7 +177,6 @@ spec:
           value: /migrations/plan.yaml              
         resources:
           limits:
-            cpu: 100m
             memory: 100Mi
           requests:
             cpu: 50m
@@ -203,7 +200,6 @@ spec:
               key: uri
         resources:
           limits:
-            cpu: 100m
             memory: 100Mi
           requests:
             cpu: 50m
@@ -224,8 +220,6 @@ spec:
         - mountPath: /backup
           name: backup
         resources:
-          limits:
-            cpu: 1
           requests:
             cpu: 100m
             memory: 100Mi
@@ -259,8 +253,6 @@ spec:
         - mountPath: /backup
           name: backup
         resources:
-          limits:
-            cpu: 1
           requests:
             cpu: 100m
             memory: 100Mi

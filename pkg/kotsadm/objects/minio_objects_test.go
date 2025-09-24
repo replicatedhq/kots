@@ -99,7 +99,6 @@ func Test_MinioStatefulset_ResourceRequirements(t *testing.T) {
 			size:          resource.MustParse("10Gi"),
 			want: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
-					"cpu":    resource.MustParse("100m"),
 					"memory": resource.MustParse("512Mi"),
 				},
 				Requests: corev1.ResourceList{
@@ -117,7 +116,6 @@ func Test_MinioStatefulset_ResourceRequirements(t *testing.T) {
 			size: resource.MustParse("10Gi"),
 			want: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
-					"cpu":    resource.MustParse("250m"),
 					"memory": resource.MustParse("512Mi"),
 				},
 				Requests: corev1.ResourceList{
@@ -136,7 +134,6 @@ func Test_MinioStatefulset_ResourceRequirements(t *testing.T) {
 			size: resource.MustParse("10Gi"),
 			want: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
-					"cpu":    resource.MustParse("250m"),
 					"memory": resource.MustParse("512Mi"),
 				},
 				Requests: corev1.ResourceList{

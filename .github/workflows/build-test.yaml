@@ -526,6 +526,8 @@ jobs:
     runs-on: ubuntu-24.04
     if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
     needs: [ validate-deps, kurl-addon-changes-filter, generate-tag ]
+    permissions:
+      pull-requests: write
     steps:
       - name: checkout
         uses: actions/checkout@v5

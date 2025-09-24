@@ -531,7 +531,6 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
 									"memory": resource.MustParse("100Mi"),
 								},
 								Requests: corev1.ResourceList{
@@ -575,7 +574,6 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
 									"memory": resource.MustParse("100Mi"),
 								},
 								Requests: corev1.ResourceList{
@@ -617,7 +615,6 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
 									"memory": resource.MustParse("2Gi"),
 								},
 								Requests: corev1.ResourceList{
@@ -678,7 +675,6 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
 									"memory": resource.MustParse("2Gi"),
 								},
 								Requests: corev1.ResourceList{
@@ -716,7 +712,6 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							Env:          env,
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
 									"memory": resource.MustParse("2Gi"),
 								},
 								Requests: corev1.ResourceList{
@@ -1113,7 +1108,6 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
 									"memory": resource.MustParse("100Mi"),
 								},
 								Requests: corev1.ResourceList{
@@ -1157,7 +1151,6 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
 									"memory": resource.MustParse("100Mi"),
 								},
 								Requests: corev1.ResourceList{
@@ -1203,7 +1196,6 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
 									"memory": resource.MustParse("2Gi"),
 								},
 								Requests: corev1.ResourceList{
@@ -1266,7 +1258,6 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
 									"memory": resource.MustParse("2Gi"),
 								},
 								Requests: corev1.ResourceList{
@@ -1304,7 +1295,6 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							Env:          env,
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
 									"memory": resource.MustParse("2Gi"),
 								},
 								Requests: corev1.ResourceList{
