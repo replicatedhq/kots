@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -37,13 +38,27 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 	volumes := getRqliteVolumes()
 	volumeMounts := getRqliteVolumeMounts()
 
-	cpuRequest, cpuLimit := "100m", "200m"
-	memoryRequest, memoryLimit := "100Mi", "1Gi" // rqlite uses an in-memory db by default for a better performance, so the limit should approximately match the pvc size. the pvc is used by rqlite for raft logs and compressed db snapshots.
+	resourceRequirements := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			"cpu":    resource.MustParse("100m"),
+			"memory": resource.MustParse("100Mi"),
+		},
+	}
 
 	if deployOptions.IsGKEAutopilot {
-		// need to increase the cpu and memory request to meet GKE Autopilot's minimum requirement of 500m when using pod anti affinity
-		cpuRequest, cpuLimit = "500m", "500m"
-		memoryRequest, memoryLimit = "512Mi", "1Gi"
+		// limits can be higher than requests for clusters that support bursting: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#resource-limits
+		// otherwise, the limit will be set to match requests
+		// additionally, cpu requests must be in multiples of 250m: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#min-max-requests
+
+		resourceRequirements = corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				"memory": resource.MustParse("1Gi"),
+			},
+			Requests: corev1.ResourceList{
+				"cpu":    resource.MustParse("500m"),
+				"memory": resource.MustParse("512Mi"),
+			},
+		}
 	}
 
 	var storageClassName *string
@@ -177,16 +192,7 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse(cpuLimit),
-									"memory": resource.MustParse(memoryLimit),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse(cpuRequest),
-									"memory": resource.MustParse(memoryRequest),
-								},
-							},
+							Resources:       resourceRequirements,
 							SecurityContext: k8sutil.SecureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},

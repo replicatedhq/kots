@@ -152,8 +152,6 @@ spec:
             readOnly: true
             mountPath: /etc/kurl-proxy/ca
         resources:
-          limits:
-            cpu: 1
           requests:
             cpu: 100m
             memory: 100Mi
@@ -178,9 +176,6 @@ spec:
         - name: SCHEMAHERO_OUT
           value: /migrations/plan.yaml              
         resources:
-          limits:
-            cpu: 100m
-            memory: 100Mi
           requests:
             cpu: 50m
             memory: 50Mi
@@ -202,9 +197,6 @@ spec:
               name: kotsadm-rqlite
               key: uri
         resources:
-          limits:
-            cpu: 100m
-            memory: 100Mi
           requests:
             cpu: 50m
             memory: 50Mi
@@ -224,8 +216,6 @@ spec:
         - mountPath: /backup
           name: backup
         resources:
-          limits:
-            cpu: 1
           requests:
             cpu: 100m
             memory: 100Mi
@@ -259,8 +249,6 @@ spec:
         - mountPath: /backup
           name: backup
         resources:
-          limits:
-            cpu: 1
           requests:
             cpu: 100m
             memory: 100Mi

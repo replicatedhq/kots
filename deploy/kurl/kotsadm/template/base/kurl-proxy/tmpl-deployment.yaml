@@ -38,9 +38,6 @@ spec:
         - name: kotsadm-config
           mountPath: /etc/kotsadm
         resources:
-          limits:
-            cpu: 200m
-            memory: 200Mi
           requests:
             cpu: 50m
             memory: 50Mi

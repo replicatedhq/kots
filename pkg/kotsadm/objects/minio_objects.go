@@ -50,26 +50,24 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 		securityContext = psc
 	}
 
-	cpuRequest, cpuLimit := "50m", "100m"
-	memoryRequest, memoryLimit := "100Mi", "512Mi"
-
-	if deployOptions.IsGKEAutopilot {
-		// requests and limits must be the same for GKE autopilot: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#resource-limits
-		// otherwise, the limit will be lowered to match the request
-		// additionally, cpu requests must be in multiples of 250m: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#min-max-requests
-		cpuRequest, cpuLimit = "250m", "250m"
-		memoryRequest, memoryLimit = "512Mi", "512Mi"
+	resourceRequirements := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			"cpu":    resource.MustParse("50m"),
+			"memory": resource.MustParse("100Mi"),
+		},
 	}
 
-	resourceRequirements := corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse(cpuLimit),
-			"memory": resource.MustParse(memoryLimit),
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse(cpuRequest),
-			"memory": resource.MustParse(memoryRequest),
-		},
+	if deployOptions.IsGKEAutopilot {
+		// limits can be higher than requests for clusters that support bursting: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#resource-limits
+		// otherwise, the limit will be set to match requests
+		// additionally, cpu requests must be in multiples of 250m: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#min-max-requests
+
+		resourceRequirements = corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				"cpu":    resource.MustParse("250m"),
+				"memory": resource.MustParse("512Mi"),
+			},
+		}
 	}
 
 	var storageClassName *string
