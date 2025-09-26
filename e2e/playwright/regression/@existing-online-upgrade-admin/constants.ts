@@ -1,6 +1,6 @@
 export const NAMESPACE = "qakotsregression";
-export const VENDOR_INITIAL_CHANNEL_SEQUENCE = 83;
-export const VENDOR_UPDATE_CHANNEL_SEQUENCE = 84;
+export const VENDOR_INITIAL_CHANNEL_SEQUENCE = 102;
+export const VENDOR_UPDATE_CHANNEL_SEQUENCE = 103;
 export const LICENSE_ID = "1quls1rUvyduplcjShmd9WFLwM2";
 export const CUSTOMER_ID = "1quls067uTEUQdI04hnVZ5nvEjD";
 export const CUSTOMER_NAME = "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin";
