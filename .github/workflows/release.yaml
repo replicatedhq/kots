@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - emosbaugh/sc-129584/kots-regression-tests-use-bitnami-images
 
 permissions:
   contents: write
