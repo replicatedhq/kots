@@ -18,7 +18,7 @@ module.exports = {
 
   // Transform ignore patterns for ES modules
   transformIgnorePatterns: [
-    'node_modules/(?!(query-string|intersection-observer|@tanstack|msw|decode-uri-component|filter-obj|split-on-first)/)'
+    'node_modules/(?!(query-string|intersection-observer|@tanstack|msw|decode-uri-component|filter-obj|split-on-first|until-async)/)'
   ],
 
   // Module name mapping for imports
