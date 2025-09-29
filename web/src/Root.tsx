@@ -37,7 +37,7 @@ import NavBar from "./components/shared/NavBar";
 import connectHistory from "./services/matomo";
 
 // types
-import { App, Metadata, ThemeState } from "@types";
+import { App, Metadata, ThemeState, NavbarConfigGroup } from "@types";
 import { ToastProvider } from "./context/ToastContext";
 import Redactors from "@components/redactors/Redactors";
 import EditRedactor from "@components/redactors/EditRedactor";
@@ -75,27 +75,8 @@ const ThemeContext = createContext({
     console.log("setThemeState used before being set", themeState);
   },
   getThemeState: (): ThemeState => ({ navbarLogo: null }),
-  clearThemeState: () => {},
+  clearThemeState: () => { },
 });
-
-type ConfigGroupItem = {
-  name: string;
-  title: string;
-  type: string;
-  hidden: boolean;
-  validationError: boolean;
-  error: boolean;
-  when: string;
-};
-
-type NavbarConfigGroup = {
-  name: string;
-  title: string;
-  items: ConfigGroupItem[];
-  hidden: boolean;
-  hasError: boolean;
-  when: string;
-};
 
 type AppBranding = {
   css?: string[];
@@ -544,16 +525,14 @@ const Root = () => {
                   return (
                     <a
                       className={`u-fontSize--normal u-lineHeight--normal
-                                ${
-                                  item.validationError || item.error
-                                    ? "has-error"
-                                    : ""
-                                }
-                                ${
-                                  hash === `${item.name}-group`
-                                    ? "active-item"
-                                    : ""
-                                }`}
+                                ${item.validationError || item.error
+                          ? "has-error"
+                          : ""
+                        }
+                                ${hash === `${item.name}-group`
+                          ? "active-item"
+                          : ""
+                        }`}
                       href={`#${item.name}-group`}
                       key={`${j}-${item.name}-${item.title}`}
                     >
@@ -668,9 +647,8 @@ const Root = () => {
                 className="tw-mr-2"
               />
               <span
-                className={`${getStepProps(index).fontClass} ${
-                  getStepProps(index).textColor
-                } tw-flex-1`}
+                className={`${getStepProps(index).fontClass} ${getStepProps(index).textColor
+                  } tw-flex-1`}
               >
                 {step.title}
               </span>
@@ -879,21 +857,21 @@ const Root = () => {
                 )}
                 {(state.adminConsoleMetadata?.isKurl ||
                   state.adminConsoleMetadata?.isEmbeddedCluster) && (
-                  <Route
-                    path="/cluster/manage"
-                    element={
-                      state.adminConsoleMetadata?.isKurl ? (
-                        <KurlClusterManagement />
-                      ) : (
-                        <EmbeddedClusterManagement
-                          onMount={() =>
-                            setCurrentStep(getStepNumber("cluster"))
-                          }
-                        />
-                      )
-                    }
-                  />
-                )}
+                    <Route
+                      path="/cluster/manage"
+                      element={
+                        state.adminConsoleMetadata?.isKurl ? (
+                          <KurlClusterManagement />
+                        ) : (
+                          <EmbeddedClusterManagement
+                            onMount={() =>
+                              setCurrentStep(getStepNumber("cluster"))
+                            }
+                          />
+                        )
+                      }
+                    />
+                  )}
                 {state.adminConsoleMetadata?.isEmbeddedCluster && (
                   <Route
                     path="/cluster/:nodeName"

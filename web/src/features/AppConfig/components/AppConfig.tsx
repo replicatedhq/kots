@@ -18,7 +18,7 @@ import { Utilities } from "../../../utilities/utilities";
 import Icon from "@src/components/Icon";
 
 // Types
-import { App, KotsParams, Version } from "@types";
+import { App, KotsParams, Version, NavbarConfigGroup } from "@types";
 
 type Props = {
   location: ReturnType<typeof useLocation>;
@@ -30,7 +30,7 @@ type Props = {
   refetchApps: () => void;
   navigate: ReturnType<typeof useNavigate>;
   onMount: () => void;
-  setNavbarConfigGroups: (ConfigGroup) => void;
+  setNavbarConfigGroups: (groups: NavbarConfigGroup[]) => void;
   setActiveGroups: (ConfigGroup) => void;
 };
 
@@ -606,7 +606,7 @@ class AppConfig extends Component<Props, State> {
         const changed = this.isConfigChanged(newGroups);
         this.setState({ configGroups: newGroups, changed });
         if (this.props.isEmbeddedCluster) {
-          this.props.setNavbarConfigGroups({ newGroups, changed });
+          this.props.setNavbarConfigGroups(newGroups);
         }
       })
       .catch((error) => {
@@ -646,7 +646,7 @@ class AppConfig extends Component<Props, State> {
         link.click();
         link.parentNode?.removeChild(link);
       })
-      .catch(function (error) {
+      .catch(function(error) {
         console.log(error); // TODO handle error
       });
   };
@@ -791,85 +791,82 @@ class AppConfig extends Component<Props, State> {
             {!(
               Utilities.isInitialAppInstall(app) && this.props.isEmbeddedCluster
             ) && (
-              <div
-                id="configSidebarWrapper"
-                className="config-sidebar-wrapper card-bg clickable"
-                data-testid="config-sidebar-wrapper"
-              >
-                {configGroups?.map((group, i) => {
-                  if (
-                    group.title === "" ||
-                    group.title.length === 0 ||
-                    group.hidden ||
-                    group.when === "false"
-                  ) {
-                    return;
-                  }
-                  return (
-                    <div
-                      key={`${i}-${group.name}-${group.title}`}
-                      className={`side-nav-group ${
-                        this.state.activeGroups.includes(group.name) ||
-                        group.hasError
+                <div
+                  id="configSidebarWrapper"
+                  className="config-sidebar-wrapper card-bg clickable"
+                  data-testid="config-sidebar-wrapper"
+                >
+                  {configGroups?.map((group, i) => {
+                    if (
+                      group.title === "" ||
+                      group.title.length === 0 ||
+                      group.hidden ||
+                      group.when === "false"
+                    ) {
+                      return;
+                    }
+                    return (
+                      <div
+                        key={`${i}-${group.name}-${group.title}`}
+                        className={`side-nav-group ${this.state.activeGroups.includes(group.name) ||
+                          group.hasError
                           ? "group-open"
                           : ""
-                      }`}
-                      id={`config-group-nav-${group.name}`}
-                    >
-                      <div
-                        className="flex alignItems--center"
-                        onClick={() => this.toggleActiveGroups(group.name)}
+                          }`}
+                        id={`config-group-nav-${group.name}`}
                       >
-                        <div className="u-lineHeight--normal group-title u-fontSize--normal">
-                          {group.title}
+                        <div
+                          className="flex alignItems--center"
+                          onClick={() => this.toggleActiveGroups(group.name)}
+                        >
+                          <div className="u-lineHeight--normal group-title u-fontSize--normal">
+                            {group.title}
+                          </div>
+                          {/* adding the arrow-down classes, will rotate the icon when clicked */}
+                          <Icon
+                            icon="down-arrow"
+                            className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
+                            size={12}
+                            style={{}}
+                            color={""}
+                            disableFill={false}
+                            removeInlineStyle={false}
+                          />
                         </div>
-                        {/* adding the arrow-down classes, will rotate the icon when clicked */}
-                        <Icon
-                          icon="down-arrow"
-                          className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                          size={12}
-                          style={{}}
-                          color={""}
-                          disableFill={false}
-                          removeInlineStyle={false}
-                        />
-                      </div>
-                      {group.items ? (
-                        <div className="side-nav-items">
-                          {group.items
-                            ?.filter((item) => item.type !== "label")
-                            ?.map((item, j) => {
-                              const hash = this.props.location.hash.slice(1);
-                              if (item.hidden || item.when === "false") {
-                                return;
-                              }
-                              return (
-                                <a
-                                  className={`u-fontSize--normal u-lineHeight--normal
-                                ${
-                                  item.validationError || item.error
-                                    ? "has-error"
-                                    : ""
+                        {group.items ? (
+                          <div className="side-nav-items">
+                            {group.items
+                              ?.filter((item) => item.type !== "label")
+                              ?.map((item, j) => {
+                                const hash = this.props.location.hash.slice(1);
+                                if (item.hidden || item.when === "false") {
+                                  return;
                                 }
-                                ${
-                                  hash === `${item.name}-group`
-                                    ? "active-item"
-                                    : ""
-                                }`}
-                                  href={`#${item.name}-group`}
-                                  key={`${j}-${item.name}-${item.title}`}
-                                >
-                                  {item.title}
-                                </a>
-                              );
-                            })}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                                return (
+                                  <a
+                                    className={`u-fontSize--normal u-lineHeight--normal
+                                ${item.validationError || item.error
+                                        ? "has-error"
+                                        : ""
+                                      }
+                                ${hash === `${item.name}-group`
+                                        ? "active-item"
+                                        : ""
+                                      }`}
+                                    href={`#${item.name}-group`}
+                                    key={`${j}-${item.name}-${item.title}`}
+                                  >
+                                    {item.title}
+                                  </a>
+                                );
+                              })}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             <div
               data-testid="config-area"
               className="ConfigArea--wrapper !tw-pt-0"
