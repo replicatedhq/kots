@@ -12,13 +12,9 @@ export default class Tooltip extends Component {
     minWidth: PropTypes.string,
   };
 
-  static defaultProps = {
-    position: "top-center",
-    minWidth: "80",
-  };
 
   render() {
-    const { className, visible, text, content, position, minWidth } =
+    const { className, visible, text, content, position = "top-center", minWidth = "80" } =
       this.props;
 
     const wrapperClass = `Tooltip-wrapper tooltip-${position} ${

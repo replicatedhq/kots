@@ -69,7 +69,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Setup Node.js environment
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: ./web/.nvmrc
       - name: Build web
@@ -119,11 +119,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-web, generate-tag]
     steps:
-    - uses: actions/setup-go@v5
-      with:
-        go-version: '^1.24.0'
     - name: Checkout
       uses: actions/checkout@v5
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
@@ -189,9 +189,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v5
 
-    - uses: actions/setup-go@v5
+    - uses: actions/setup-go@v6
       with:
-        go-version: '^1.24.0'
+        go-version-file: go.mod
 
     - name: Run bundle registry
       run: |
@@ -231,12 +231,12 @@ jobs:
     if: github.ref_type != 'branch'
     needs: [generate-tag, build-web]
     steps:
-    - uses: actions/setup-go@v5
-      with:
-        go-version: '^1.24.0'
-
     - name: Checkout
       uses: actions/checkout@v5
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
 
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -256,7 +256,7 @@ jobs:
         TAG="$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')"
         export TAG
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> "$GITHUB_ENV"
-    - uses: sigstore/cosign-installer@v3.9.2
+    - uses: sigstore/cosign-installer@v3.10.0
     - name: Get Cosign Key
       run: |
         echo "$COSIGN_KEY" | base64 -d > ./cosign.key
@@ -287,9 +287,9 @@ jobs:
     needs: [ generate-tag, goreleaser ]
     steps:
     - uses: actions/checkout@v5
-    - uses: actions/setup-go@v5
+    - uses: actions/setup-go@v6
       with:
-        go-version: '^1.24.0'
+        go-version-file: go.mod
     - uses: replicatedhq/action-install-pact@main
     - name: Publish pact contracts
       env:
@@ -458,7 +458,7 @@ jobs:
     steps:
     - name: Get latest release tag
       id: get_latest_release_tag
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const {

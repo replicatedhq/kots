@@ -22,7 +22,7 @@ import (
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kotskinds/pkg/helmchart"
-	"github.com/replicatedhq/yaml/v3"
+	"go.yaml.in/yaml/v3"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

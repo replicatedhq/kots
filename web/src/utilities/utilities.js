@@ -814,12 +814,12 @@ export const Utilities = {
   snapshotStatusToDisplayName(status) {
     // The front end replacessome status values with user friendly messages
     switch (status) {
+      case "FailedValidation":
+        return "Failed Validation";
       case "PartiallyFailed":
         return "Incomplete (Failed)";
       case "InProgress":
         return "In Progress";
-      case "FailedValidation":
-        return "Failed Validation";
     }
 
     return status;

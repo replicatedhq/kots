@@ -7,8 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
-	yaml "github.com/replicatedhq/yaml/v3"
-	goyaml "gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 	k8syaml "sigs.k8s.io/yaml"
 )
 
@@ -17,21 +16,26 @@ import (
 func FixUpYAML(inputContent []byte) ([]byte, error) {
 	docs := util.ConvertToSingleDocs(inputContent)
 
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+
 	fixedUpDocs := make([][]byte, 0)
-	for _, doc := range docs {
+	for i, doc := range docs {
 		yamlObj := map[string]interface{}{}
 
 		err := yaml.Unmarshal(doc, &yamlObj)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal yaml")
+			return nil, errors.Wrapf(err, "unmarshal yaml doc %d", i)
 		}
 
-		fixedUpDoc, err := util.MarshalIndent(2, yamlObj)
+		buf.Reset()
+		err = enc.Encode(yamlObj)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal yaml")
+			return nil, errors.Wrapf(err, "encode yaml doc %d", i)
 		}
 
-		fixedUpDocs = append(fixedUpDocs, fixedUpDoc)
+		fixedUpDocs = append(fixedUpDocs, buf.Bytes())
 	}
 
 	// MarshalIndent add a line break at the end of each file
@@ -89,7 +93,7 @@ func removeNilFieldsFromMap(input map[string]interface{}) bool {
 	return removedItems
 }
 
-func MergeYAMLNodes(targetNodes []*goyaml.Node, overrideNodes []*goyaml.Node) []*goyaml.Node {
+func MergeYAMLNodes(targetNodes []*yaml.Node, overrideNodes []*yaml.Node) []*yaml.Node {
 	// Since inputs are arrays and not maps, we need to:
 	// 1. Copy all keys in targetNodes, overriding the ones that match from overrideNodes
 	// 2. Add all keys from overrideNodes that don't exist in targetNodes
@@ -104,10 +108,10 @@ func MergeYAMLNodes(targetNodes []*goyaml.Node, overrideNodes []*goyaml.Node) []
 
 	// Special case where top level node is either a mapping node or an array
 	if len(targetNodes) == 1 && len(overrideNodes) == 1 {
-		if targetNodes[0].Kind == goyaml.MappingNode && overrideNodes[0].Kind == goyaml.MappingNode {
-			return []*goyaml.Node{
+		if targetNodes[0].Kind == yaml.MappingNode && overrideNodes[0].Kind == yaml.MappingNode {
+			return []*yaml.Node{
 				{
-					Kind:    goyaml.MappingNode,
+					Kind:    yaml.MappingNode,
 					Content: MergeYAMLNodes(targetNodes[0].Content, overrideNodes[0].Content),
 				},
 			}
@@ -121,9 +125,9 @@ func MergeYAMLNodes(targetNodes []*goyaml.Node, overrideNodes []*goyaml.Node) []
 	}
 
 	// 1. Copy all keys in targetNodes, overriding the ones that match from overrideNodes
-	newNodes := make([]*goyaml.Node, 0)
+	newNodes := make([]*yaml.Node, 0)
 	for i := 0; i < len(targetNodes)-1; i += 2 {
-		var additionalNode *goyaml.Node
+		var additionalNode *yaml.Node
 		for j := 0; j < len(overrideNodes)-1; j += 2 {
 			nodeNameI := targetNodes[i]
 			nodeValueI := targetNodes[i+1]
@@ -135,7 +139,7 @@ func MergeYAMLNodes(targetNodes []*goyaml.Node, overrideNodes []*goyaml.Node) []
 				continue
 			}
 
-			additionalNode = &goyaml.Node{
+			additionalNode = &yaml.Node{
 				Kind:        nodeValueJ.Kind,
 				Tag:         nodeValueJ.Tag,
 				Line:        nodeValueJ.Line,
@@ -149,7 +153,7 @@ func MergeYAMLNodes(targetNodes []*goyaml.Node, overrideNodes []*goyaml.Node) []
 				Column:      nodeValueJ.Column,
 			}
 
-			if nodeValueI.Kind == goyaml.MappingNode && nodeValueJ.Kind == goyaml.MappingNode {
+			if nodeValueI.Kind == yaml.MappingNode && nodeValueJ.Kind == yaml.MappingNode {
 				additionalNode.Content = MergeYAMLNodes(nodeValueI.Content, nodeValueJ.Content)
 			} else {
 				additionalNode.Content = nodeValueJ.Content
@@ -179,7 +183,7 @@ func MergeYAMLNodes(targetNodes []*goyaml.Node, overrideNodes []*goyaml.Node) []
 				continue
 			}
 
-			if nodeValueI.Kind == goyaml.MappingNode && additionalNodeValue.Kind == goyaml.MappingNode {
+			if nodeValueI.Kind == yaml.MappingNode && additionalNodeValue.Kind == yaml.MappingNode {
 				nodeValueI.Content = MergeYAMLNodes(nodeValueI.Content, additionalNodeValue.Content)
 			}
 
@@ -195,14 +199,14 @@ func MergeYAMLNodes(targetNodes []*goyaml.Node, overrideNodes []*goyaml.Node) []
 	return newNodes
 }
 
-func ContentToDocNode(doc *goyaml.Node, nodes []*goyaml.Node) *goyaml.Node {
+func ContentToDocNode(doc *yaml.Node, nodes []*yaml.Node) *yaml.Node {
 	if doc == nil {
-		return &goyaml.Node{
-			Kind:    goyaml.DocumentNode,
+		return &yaml.Node{
+			Kind:    yaml.DocumentNode,
 			Content: nodes,
 		}
 	}
-	return &goyaml.Node{
+	return &yaml.Node{
 		Kind:        doc.Kind,
 		Tag:         doc.Tag,
 		Line:        doc.Line,
@@ -218,9 +222,9 @@ func ContentToDocNode(doc *goyaml.Node, nodes []*goyaml.Node) *goyaml.Node {
 	}
 }
 
-func NodeToYAML(node *goyaml.Node) ([]byte, error) {
+func NodeToYAML(node *yaml.Node) ([]byte, error) {
 	var renderedContents bytes.Buffer
-	yamlEncoder := goyaml.NewEncoder(&renderedContents)
+	yamlEncoder := yaml.NewEncoder(&renderedContents)
 	yamlEncoder.SetIndent(2) // this may change indentations of the original values.yaml, but this matches out tests
 	err := yamlEncoder.Encode(node)
 	if err != nil {
@@ -231,12 +235,12 @@ func NodeToYAML(node *goyaml.Node) ([]byte, error) {
 }
 
 // Handy functions for printing YAML nodes
-func PrintNodes(nodes []*goyaml.Node, i int) {
+func PrintNodes(nodes []*yaml.Node, i int) {
 	for _, n := range nodes {
 		PrintNode(n, i)
 	}
 }
-func PrintNode(n *goyaml.Node, i int) {
+func PrintNode(n *yaml.Node, i int) {
 	if n == nil {
 		return
 	}

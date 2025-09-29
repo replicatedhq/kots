@@ -58,6 +58,10 @@ func getAvailableUpdates(updates []upstreamtypes.Update, currentECVersion string
 }
 
 func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap, currentECVersion string) (bool, string, error) {
+	if util.IsV3EmbeddedCluster() {
+		// Update version checks in V3 EC are handled separately
+		return true, "", nil
+	}
 	appVersions, err := store.GetStore().FindDownstreamVersions(app.ID, true)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get downstream versions")

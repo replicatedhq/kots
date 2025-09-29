@@ -24,13 +24,8 @@ export default class TabView extends Component {
     onTabChange: PropTypes.func,
   };
 
-  static defaultProps = {
-    separator: "|",
-    onTabChange: () => {},
-  };
-
   setTab = (name) => {
-    const { onTabChange } = this.props;
+    const { onTabChange = () => {} } = this.props;
 
     this.setState(
       {
@@ -41,7 +36,7 @@ export default class TabView extends Component {
   };
 
   render() {
-    const { className, children, separator } = this.props;
+    const { className, children, separator = "|" } = this.props;
     const { currentTab } = this.state;
     const childToRender = Children.toArray(children).find(
       (child) => child.props.name === currentTab

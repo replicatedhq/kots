@@ -10,7 +10,7 @@ import (
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	dockertypes "github.com/replicatedhq/kots/pkg/docker/types"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func TestTempRegistry_GetImageLayers(t *testing.T) {

@@ -13,7 +13,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	yaml "github.com/replicatedhq/yaml/v3"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -165,6 +164,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GetAdminConsoleUpdateStatus))
 	r.Name("DownloadAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/download").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.DownloadAppVersion))
+	r.Name("UpstreamUpdate").Path("/api/v1/app/{appSlug}/upstream/update").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.UpstreamUpdate))
 	r.Name("GetAppVersionDownloadStatus").Path("/api/v1/app/{appSlug}/sequence/{sequence}/task/updatedownload").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetAppVersionDownloadStatus)) // NOTE: appSlug is unused
 	r.Name("DeployAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").
@@ -412,17 +413,4 @@ func StreamJSON(c *gwebsocket.Conn, payload interface{}) {
 		logger.Error(err)
 		return
 	}
-}
-
-func YAML(w http.ResponseWriter, code int, payload interface{}) {
-	response, err := yaml.Marshal(payload)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/yaml")
-	w.WriteHeader(code)
-	w.Write(response)
 }

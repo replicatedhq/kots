@@ -1018,7 +1018,6 @@ func TestKotsKinds_Marshal(t *testing.T) {
 			want: `apiVersion: velero.io/v1
 kind: Backup
 metadata:
-  creationTimestamp: null
   name: backup-name
 spec:
   csiSnapshotTimeout: 0s
@@ -1069,7 +1068,6 @@ status: {}
 			want: `apiVersion: velero.io/v1
 kind: Backup
 metadata:
-  creationTimestamp: null
   name: backup-name
 spec:
   csiSnapshotTimeout: 0s

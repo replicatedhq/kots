@@ -67,7 +67,7 @@ module.exports = function (env) {
         handlebars: "handlebars/dist/handlebars.js",
         "@src": path.resolve(__dirname, "src"),
       },
-      mainFields: ["browser", "main"],
+      mainFields: ["browser", "module", "main"],
     },
     module: {
       rules: [

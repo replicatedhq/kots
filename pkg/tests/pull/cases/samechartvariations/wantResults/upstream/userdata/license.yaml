@@ -1,7 +1,6 @@
 apiVersion: kots.io/v1beta1
 kind: License
 metadata:
-  creationTimestamp: null
   name: testcustomer
 spec:
   appSlug: default-kots-app-4
@@ -11,11 +10,13 @@ spec:
   endpoint: https://replicated.app
   entitlements:
     boolfield:
+      signature: {}
       title: bool field
       value: true
       valueType: Boolean
     expires_at:
       description: License Expiration
+      signature: {}
       title: Expiration
       value: ""
       valueType: String

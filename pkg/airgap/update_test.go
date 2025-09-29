@@ -15,9 +15,10 @@ func Test_canInstall(t *testing.T) {
 		license         *kotsv1beta1.License
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name                string
+		args                args
+		wantErr             bool
+		isV3EmbeddedCluster bool
 	}{
 		{
 			name: "semver not enabled, version labels are dfferent, and cursors are different",
@@ -214,10 +215,56 @@ func Test_canInstall(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "V3 Embedded Cluster - always allows installation (version checks handled separately)",
+			args: args{
+				beforeKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID: "test-channel-id",
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "1",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+				afterKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID: "test-channel-id",
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "1",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsSemverRequired: true,
+					},
+				},
+			},
+			wantErr:             false, // Should not error in V3 EC mode even with same cursor/version
+			isV3EmbeddedCluster: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
+
+			// Set V3 EC environment
+			if tt.isV3EmbeddedCluster {
+				t.Setenv("IS_EMBEDDED_CLUSTER_V3", "true")
+			}
+
 			err := canInstall(tt.args.beforeKotsKinds, tt.args.afterKotsKinds, tt.args.license)
 			if tt.wantErr {
 				req.Error(err)

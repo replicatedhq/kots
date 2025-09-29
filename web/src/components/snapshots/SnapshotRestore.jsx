@@ -35,7 +35,7 @@ class SnapshotRestore extends Component {
         (a) => a.appSlug === appSlug
       );
       const phase = currentAppDetails?.restoreDetail?.phase;
-      if (phase && phase !== "New" && phase !== "InProgress") {
+      if (isRestoreCompleted(phase)) {
         this.state.fetchRestoreDetailJob.stop();
       }
     }
@@ -321,11 +321,8 @@ class SnapshotRestore extends Component {
         !currentAppDetails?.restoreDetail?.errors) ||
       (currentAppDetails?.restoreDetail?.warnings?.length === 0 &&
         currentAppDetails?.restoreDetail?.errors?.length === 0);
-    const restoreCompleted =
-      currentAppDetails?.restoreDetail?.phase === "Completed";
-    const restoreFailing =
-      currentAppDetails?.restoreDetail?.phase === "PartiallyFailed" ||
-      restoreDetail?.phase === "Failed";
+    const restoreCompleted = isRestoreSucceeded(currentAppDetails?.restoreDetail?.phase);
+    const restoreFailing = isRestoreFailed(currentAppDetails?.restoreDetail?.phase);
     const restoreLoading =
       !currentAppDetails?.restoreDetail?.warnings &&
       !currentAppDetails?.restoreDetail?.errors;
@@ -440,6 +437,20 @@ class SnapshotRestore extends Component {
       </div>
     );
   }
+}
+
+function isRestoreCompleted(phase) {
+  return isRestoreSucceeded(phase) || isRestoreFailed(phase);
+}
+
+function isRestoreFailed(phase) {
+  return phase === "FailedValidation"
+    || phase === "Failed"
+    || phase === "PartiallyFailed";
+}
+
+function isRestoreSucceeded(phase) {
+  return phase === "Completed";
 }
 
 export default withRouter(SnapshotRestore);

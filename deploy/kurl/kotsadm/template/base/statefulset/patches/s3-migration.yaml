@@ -34,8 +34,6 @@
     - name: kotsadmdata
       mountPath: /kotsadmdata
     resources:
-      limits:
-        cpu: 1
       requests:
         cpu: 100m
         memory: 100Mi

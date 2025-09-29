@@ -47,7 +47,7 @@ runs:
         export GIT_TAG=${{ inputs.git-tag }}
         envsubst '${GIT_TAG}' < ${{ inputs.context }}/apko.yaml.tmpl > ${{ inputs.context }}/apko.yaml
 
-    - uses: chainguard-images/actions/apko-publish@v1.0.0
+    - uses: chainguard-images/actions/apko-publish@v1.0.3
       with:
         config: ${{ inputs.context }}/apko.yaml
         archs: amd64,arm64

@@ -1842,6 +1842,20 @@ func (mr *MockStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSequence,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersion", reflect.TypeOf((*MockStore)(nil).UpdateAppVersion), appID, sequence, baseSequence, filesInDir, source, skipPreflights)
 }
 
+// UpdateAppVersionDemotion mocks base method.
+func (m *MockStore) UpdateAppVersionDemotion(appID, channelID, cursor string, isDemoted bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppVersionDemotion", appID, channelID, cursor, isDemoted)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAppVersionDemotion indicates an expected call of UpdateAppVersionDemotion.
+func (mr *MockStoreMockRecorder) UpdateAppVersionDemotion(appID, channelID, cursor, isDemoted interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionDemotion", reflect.TypeOf((*MockStore)(nil).UpdateAppVersionDemotion), appID, channelID, cursor, isDemoted)
+}
+
 // UpdateAppVersionMetadata mocks base method.
 func (m *MockStore) UpdateAppVersionMetadata(appID string, update types13.Update) error {
 	m.ctrl.T.Helper()
@@ -1854,20 +1868,6 @@ func (m *MockStore) UpdateAppVersionMetadata(appID string, update types13.Update
 func (mr *MockStoreMockRecorder) UpdateAppVersionMetadata(appID, update interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionMetadata", reflect.TypeOf((*MockStore)(nil).UpdateAppVersionMetadata), appID, update)
-}
-
-// UpdateAppVersionDemotion mocks base method.
-func (m *MockStore) UpdateAppVersionDemotion(appID, channelID, cursor string, isDemoted bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppVersionDemotion", appID, channelID, cursor, isDemoted)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateAppVersionDemotion indicates an expected call of UpdateAppVersionDemotion.
-func (mr *MockStoreMockRecorder) UpdateAppVersionDemotion(appID, channelID, cursor string, isDemoted bool) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionDemotion", reflect.TypeOf((*MockStore)(nil).UpdateAppVersionDemotion), appID, channelID, cursor, isDemoted)
 }
 
 // UpdateDownstreamDeployStatus mocks base method.
@@ -3747,6 +3747,20 @@ func (mr *MockVersionStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersion), appID, sequence, baseSequence, filesInDir, source, skipPreflights)
 }
 
+// UpdateAppVersionDemotion mocks base method.
+func (m *MockVersionStore) UpdateAppVersionDemotion(appID, channelID, cursor string, isDemoted bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppVersionDemotion", appID, channelID, cursor, isDemoted)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAppVersionDemotion indicates an expected call of UpdateAppVersionDemotion.
+func (mr *MockVersionStoreMockRecorder) UpdateAppVersionDemotion(appID, channelID, cursor, isDemoted interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionDemotion", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersionDemotion), appID, channelID, cursor, isDemoted)
+}
+
 // UpdateAppVersionMetadata mocks base method.
 func (m *MockVersionStore) UpdateAppVersionMetadata(appID string, update types13.Update) error {
 	m.ctrl.T.Helper()
@@ -3759,20 +3773,6 @@ func (m *MockVersionStore) UpdateAppVersionMetadata(appID string, update types13
 func (mr *MockVersionStoreMockRecorder) UpdateAppVersionMetadata(appID, update interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionMetadata", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersionMetadata), appID, update)
-}
-
-// UpdateAppVersionDemotion mocks base method.
-func (m *MockVersionStore) UpdateAppVersionDemotion(appID, channelID, cursor string, isDemoted bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppVersionDemotion", appID, channelID, cursor, isDemoted)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateAppVersionDemotion indicates an expected call of UpdateAppVersionDemotion.
-func (mr *MockVersionStoreMockRecorder) UpdateAppVersionDemotion(appID, channelID, cursor string, isDemoted bool) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionMetadata", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersionMetadata), appID, channelID, cursor, isDemoted)
 }
 
 // UpdateNextAppVersionDiffSummary mocks base method.

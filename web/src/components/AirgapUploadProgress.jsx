@@ -74,8 +74,8 @@ class AirgapUploadProgress extends Component {
 
   render() {
     const {
-      total,
-      progress,
+      total = 0,
+      progress = 0,
       resuming,
       onProgressError,
       onProgressSuccess,
@@ -345,9 +345,5 @@ class AirgapUploadProgress extends Component {
   }
 }
 
-AirgapUploadProgress.defaultProps = {
-  total: 0,
-  progress: 0,
-};
 
 export default AirgapUploadProgress;

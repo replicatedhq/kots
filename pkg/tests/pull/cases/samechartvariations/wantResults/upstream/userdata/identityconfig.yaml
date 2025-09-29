@@ -1,7 +1,6 @@
 apiVersion: kots.io/v1beta1
 kind: IdentityConfig
 metadata:
-  creationTimestamp: null
   name: identity
 spec:
   clientID: default-kots-app-4

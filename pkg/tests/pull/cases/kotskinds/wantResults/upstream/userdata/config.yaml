@@ -1,7 +1,6 @@
 apiVersion: kots.io/v1beta1
 kind: ConfigValues
 metadata:
-  creationTimestamp: null
   name: my-app
 spec:
   values:

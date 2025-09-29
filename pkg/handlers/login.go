@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/identity"
 	identityclient "github.com/replicatedhq/kots/pkg/identity/client"
@@ -24,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/oauth2"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type LoginRequest struct {
@@ -83,7 +86,21 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err == user.ErrTooManyAttempts {
 		resetPasswordCmd := "kubectl kots reset-password"
-		if util.PodNamespace != "" {
+		if util.IsEmbeddedCluster() {
+			kbClient, err := h.GetKubeClient(r.Context())
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get kube client"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			resetPasswordCmd, err = getECResetPasswordCommand(r.Context(), kbClient)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get embedded cluster reset password command"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		} else if util.PodNamespace != "" {
 			resetPasswordCmd = fmt.Sprintf("%s -n %s", resetPasswordCmd, util.PodNamespace)
 		}
 		loginResponse.Error = fmt.Sprintf("Admin Console has been locked.  Please reset password using the \"%s\" command.", resetPasswordCmd)
@@ -435,4 +452,14 @@ func (h *Handler) GetLoginInfo(w http.ResponseWriter, r *http.Request) {
 	getLoginInfoResponse.Method = IdentityService
 
 	JSON(w, http.StatusOK, getLoginInfoResponse)
+}
+
+func getECResetPasswordCommand(ctx context.Context, kbClient kbclient.Client) (string, error) {
+	// Get current installation
+	installation, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get current installation")
+	}
+
+	return fmt.Sprintf("sudo ./%s admin-console reset-password", installation.Spec.BinaryName), nil
 }

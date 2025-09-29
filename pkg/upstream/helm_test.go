@@ -440,7 +440,6 @@ license: |
   apiVersion: kots.io/v1beta1
   kind: License
   metadata:
-    creationTimestamp: null
     name: kots-license
   spec:
     appSlug: app-slug
@@ -451,6 +450,7 @@ license: |
     entitlements:
       license-field:
         description: This is a license field
+        signature: {}
         title: License Field
         value: license-field-value
         valueType: string
@@ -494,6 +494,7 @@ global:
       license-field:
         description: This is a license field
         name: license-field
+        signature: {}
         title: License Field
         value: license-field-value
         valueType: string
@@ -722,7 +723,6 @@ image:
     apiVersion: kots.io/v1beta1
     kind: License
     metadata:
-      creationTimestamp: null
       name: kots-license
     spec:
       appSlug: app-slug
@@ -733,6 +733,7 @@ image:
       entitlements:
         license-field:
           description: This is a license field
+          signature: {}
           title: License Field
           value: license-field-value
           valueType: string
@@ -751,6 +752,7 @@ global:
       license-field:
         description: This is a license field
         name: license-field
+        signature: {}
         title: License Field
         value: license-field-value
         valueType: string
@@ -999,6 +1001,7 @@ global:
       license-field:
         description: This is a license field
         name: license-field
+        signature: {}
         title: License Field
         value: license-field-value
         valueType: string
@@ -1031,7 +1034,6 @@ global:
     apiVersion: kots.io/v1beta1
     kind: License
     metadata:
-      creationTimestamp: null
       name: kots-license
     spec:
       appSlug: app-slug
@@ -1042,6 +1044,7 @@ global:
       entitlements:
         license-field:
           description: This is a license field
+          signature: {}
           title: License Field
           value: license-field-value
           valueType: string
@@ -1290,6 +1293,9 @@ some: value
 								Value: kotsv1beta1.EntitlementValue{
 									Type:   kotsv1beta1.String,
 									StrVal: "license-field-value",
+								},
+								Signature: kotsv1beta1.EntitlementFieldSignature{
+									V1: []byte{},
 								},
 							},
 						},

@@ -25,16 +25,9 @@ class CodeSnippet extends Component {
     dataTestId: PropTypes.string,
   };
 
-  static defaultProps = {
-    variant: "plain",
-    language: "bash",
-    copyText: "Copy command",
-    onCopyText: "Copied!",
-    copyDelay: 3000,
-  };
 
   copySnippet = () => {
-    const { children, copyDelay } = this.props;
+    const { children, copyDelay = 3000 } = this.props;
     const textToCopy = Array.isArray(children) ? children.join("\n") : children;
 
     if (navigator.clipboard && window.isSecureContext) {
@@ -88,12 +81,12 @@ class CodeSnippet extends Component {
     const {
       className,
       children,
-      language,
+      language = "bash",
       preText,
       canCopy,
-      copyText,
-      onCopyText,
-      variant,
+      copyText = "Copy command",
+      onCopyText = "Copied!",
+      variant = "plain",
       trimWhitespace = true,
       dataTestId,
     } = this.props;
