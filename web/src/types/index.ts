@@ -345,3 +345,22 @@ export type SnapshotSettings = {
     hostPath: { path: string };
   };
 };
+
+export type ConfigGroupItem = {
+  name: string;
+  title: string;
+  type: string;
+  hidden: boolean;
+  validationError: string;
+  error: string;
+  when: string;
+};
+
+export type NavbarConfigGroup = {
+  name: string;
+  title: string;
+  items: ConfigGroupItem[];
+  hidden: boolean;
+  hasError: boolean;
+  when: string;
+};
