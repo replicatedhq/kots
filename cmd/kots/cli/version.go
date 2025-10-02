@@ -20,7 +20,7 @@ func VersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print the current version and exit",
-		Long:  `Print the current version and exit`,
+		Long:  `Print the current version and, if available, the latest version`,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
