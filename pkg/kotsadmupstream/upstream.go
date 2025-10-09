@@ -128,10 +128,31 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 	defer os.RemoveAll(archiveDir)
 
+	logger.Debugf("[Channel Switch Debug] GetAppVersionBaseArchive returned archiveDir=%s, baseSequence=%v for version=%s", archiveDir, baseSequence, update.VersionLabel)
+
+	// Log what directories exist in the archive before loading
+	if entries, err := os.ReadDir(archiveDir); err == nil {
+		dirNames := []string{}
+		for _, entry := range entries {
+			if entry.IsDir() {
+				dirNames = append(dirNames, entry.Name())
+			}
+		}
+		logger.Debugf("[Channel Switch Debug] Archive directories before LoadKotsKinds: %v", dirNames)
+	}
+
 	beforeKotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		finalError = errors.Wrap(err, "failed to read kots kinds before update")
 		return
+	}
+
+	logger.Debugf("[Channel Switch Debug] BEFORE LoadKotsKinds - EmbeddedClusterConfig present: %t, ChannelID: %s, Cursor: %s",
+		beforeKotsKinds.EmbeddedClusterConfig != nil,
+		beforeKotsKinds.Installation.Spec.ChannelID,
+		beforeKotsKinds.Installation.Spec.UpdateCursor)
+	if beforeKotsKinds.EmbeddedClusterConfig != nil {
+		logger.Debugf("[Channel Switch Debug] BEFORE EmbeddedClusterConfig version: %s", beforeKotsKinds.EmbeddedClusterConfig.Spec.Version)
 	}
 
 	beforeInstallation := beforeKotsKinds.Installation.Spec
@@ -204,9 +225,22 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		return
 	}
 
+	logger.Debugf("[Channel Switch Debug] Calling CleanBaseArchive on archiveDir=%s", archiveDir)
+
 	if err := pull.CleanBaseArchive(archiveDir); err != nil {
 		finalError = errors.Wrap(err, "failed to clean base archive")
 		return
+	}
+
+	// Log what directories exist after cleaning
+	if entries, err := os.ReadDir(archiveDir); err == nil {
+		dirNames := []string{}
+		for _, entry := range entries {
+			if entry.IsDir() {
+				dirNames = append(dirNames, entry.Name())
+			}
+		}
+		logger.Debugf("[Channel Switch Debug] Archive directories after CleanBaseArchive: %v", dirNames)
 	}
 
 	pullOptions := pull.PullOptions{
@@ -257,13 +291,25 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	if update.AppSequence == nil {
+		logger.Debugf("[Channel Switch Debug] Loading KotsKinds AFTER pull.Pull from archiveDir=%s", archiveDir)
+
 		afterKotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to read kots kinds after update")
 			return
 		}
+
+		logger.Debugf("[Channel Switch Debug] AFTER LoadKotsKinds - EmbeddedClusterConfig present: %t, ChannelID: %s, Cursor: %s",
+			afterKotsKinds.EmbeddedClusterConfig != nil,
+			afterKotsKinds.Installation.Spec.ChannelID,
+			afterKotsKinds.Installation.Spec.UpdateCursor)
+		if afterKotsKinds.EmbeddedClusterConfig != nil {
+			logger.Debugf("[Channel Switch Debug] AFTER EmbeddedClusterConfig version: %s", afterKotsKinds.EmbeddedClusterConfig.Spec.Version)
+		}
+
 		// Update version checks in V3 EC are handled separately
 		if !util.IsV3EmbeddedCluster() && afterKotsKinds.Installation.Spec.UpdateCursor == beforeInstallation.UpdateCursor && afterKotsKinds.Installation.Spec.ChannelID == beforeInstallation.ChannelID {
+			logger.Debugf("[Channel Switch Debug] No changes detected - cursor and channel ID match, returning early")
 			return
 		}
 		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", false, false, skipPreflights)
