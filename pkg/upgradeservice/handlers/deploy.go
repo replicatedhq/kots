@@ -36,21 +36,12 @@ func (h *Handler) Deploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Debugf("[Channel Switch Debug] Deploy handler - Loading KotsKinds from AppArchive: %s", params.AppArchive)
-
 	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
 		response.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
-	}
-
-	logger.Debugf("[Channel Switch Debug] Deploy handler - KotsKinds loaded. EmbeddedClusterConfig present: %t, ChannelID: %s",
-		kotsKinds.EmbeddedClusterConfig != nil,
-		kotsKinds.Installation.Spec.ChannelID)
-	if kotsKinds.EmbeddedClusterConfig != nil {
-		logger.Debugf("[Channel Switch Debug] Deploy handler - EmbeddedClusterConfig version: %s", kotsKinds.EmbeddedClusterConfig.Spec.Version)
 	}
 
 	registrySettings := registrytypes.RegistrySettings{

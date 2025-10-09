@@ -679,13 +679,9 @@ func GetKotsKindsPath(archive string) string {
 	if _, err := os.Stat(filepath.Join(archive, "kotsKinds")); err == nil {
 		// contains the rendered kots kinds if exists, prioritize it over upstream. only newer versions of kots create this directory.
 		kotsKindsPath = filepath.Join(archive, "kotsKinds")
-		logger.Debugf("[Channel Switch Debug] GetKotsKindsPath: Found kotsKinds/ directory, using: %s", kotsKindsPath)
 	} else if _, err := os.Stat(filepath.Join(archive, "upstream")); err == nil {
 		// contains the non-rendered kots kinds, fallback to it if kotsKinds directory doesn't exist. this directory should always exist.
 		kotsKindsPath = filepath.Join(archive, "upstream")
-		logger.Debugf("[Channel Switch Debug] GetKotsKindsPath: kotsKinds/ not found, using upstream/: %s", kotsKindsPath)
-	} else {
-		logger.Debugf("[Channel Switch Debug] GetKotsKindsPath: Neither kotsKinds/ nor upstream/ found, using archive root: %s", kotsKindsPath)
 	}
 
 	return kotsKindsPath
@@ -711,8 +707,6 @@ func LoadKotsKindsWithOpts(archive string, opts LoadKotsKindsOptions) (*KotsKind
 	if fromDir == "" {
 		return &kotsKinds, nil
 	}
-
-	logger.Debugf("[Channel Switch Debug] LoadKotsKindsWithOpts: Loading from directory: %s", fromDir)
 
 	err := filepath.Walk(fromDir,
 		func(path string, info os.FileInfo, err error) error {
@@ -743,11 +737,6 @@ func LoadKotsKindsWithOpts(archive string, opts LoadKotsKindsOptions) (*KotsKind
 				return nil
 			}
 
-			// Log when we find an EmbeddedClusterConfig
-			if o.APIVersion == "embeddedcluster.replicated.com/v1beta1" && o.Kind == "Config" {
-				logger.Debugf("[Channel Switch Debug] LoadKotsKindsWithOpts: Found EmbeddedClusterConfig in file: %s", path)
-			}
-
 			if err := kotsKinds.addKotsKinds(contents); err != nil {
 				if opts.Strict {
 					return errors.Wrapf(err, "failed to add kots kinds from %s", path)
@@ -759,8 +748,6 @@ func LoadKotsKindsWithOpts(archive string, opts LoadKotsKindsOptions) (*KotsKind
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to walk upstream dir")
 	}
-
-	logger.Debugf("[Channel Switch Debug] LoadKotsKindsWithOpts: Finished loading. EmbeddedClusterConfig present: %t", kotsKinds.EmbeddedClusterConfig != nil)
 
 	return &kotsKinds, nil
 }
