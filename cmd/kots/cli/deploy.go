@@ -112,8 +112,8 @@ func DeployCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to sync license")
 			}
 
-			// Step 2: If airgap bundle, push images first
-			if airgapBundle != "" {
+			// Step 2: If airgap bundle, push images first (unless disabled)
+			if airgapBundle != "" && !v.GetBool("disable-image-push") {
 				if err := handleAirgapImagePush(v, clientset, appSlug, log); err != nil {
 					return errors.Wrap(err, "failed to push airgap images")
 				}
@@ -141,6 +141,7 @@ func DeployCmd() *cobra.Command {
 	cmd.Flags().String("airgap-bundle", "", "path to airgap bundle")
 	cmd.Flags().String("config-values", "", "path to config values file")
 	cmd.Flags().Bool("skip-preflights", false, "skip preflight checks")
+	cmd.Flags().Bool("disable-image-push", false, "disable pushing images from airgap bundle")
 
 	cmd.MarkFlagRequired("config-values")
 
