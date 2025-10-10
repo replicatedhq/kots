@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"k8s.io/client-go/kubernetes"
 )
 
 func DeployCmd() *cobra.Command {
@@ -111,12 +112,19 @@ func DeployCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to sync license")
 			}
 
-			// Step 2: Upstream Update (both online and airgap)
+			// Step 2: If airgap bundle, push images first (unless disabled)
+			if airgapBundle != "" && !v.GetBool("disable-image-push") {
+				if err := handleAirgapImagePush(v, clientset, appSlug, log); err != nil {
+					return errors.Wrap(err, "failed to push airgap images")
+				}
+			}
+
+			// Step 3: Upstream Update (both online and airgap)
 			if err := handleUpstreamUpdate(v, appSlug, localPort, authSlug, log); err != nil {
 				return errors.Wrap(err, "failed to process upstream update")
 			}
 
-			// Step 3: Set Config + Deploy
+			// Step 4: Set Config + Deploy
 			if err := handleSetConfigAndDeploy(v, appSlug, localPort, authSlug, log); err != nil {
 				return errors.Wrap(err, "failed to set config and deploy")
 			}
@@ -133,6 +141,7 @@ func DeployCmd() *cobra.Command {
 	cmd.Flags().String("airgap-bundle", "", "path to airgap bundle")
 	cmd.Flags().String("config-values", "", "path to config values file")
 	cmd.Flags().Bool("skip-preflights", false, "skip preflight checks")
+	cmd.Flags().Bool("disable-image-push", false, "disable pushing images from airgap bundle")
 
 	cmd.MarkFlagRequired("config-values")
 
@@ -279,6 +288,25 @@ func handleUpstreamUpdate(v *viper.Viper, appSlug string, localPort int, authSlu
 
 	log.ActionWithoutSpinner("Upstream update processed successfully")
 
+	return nil
+}
+
+func handleAirgapImagePush(v *viper.Viper, clientset kubernetes.Interface, appSlug string, log *logger.CLILogger) error {
+	log.ActionWithoutSpinner("Pushing airgap images...")
+
+	airgapBundle := v.GetString("airgap-bundle")
+
+	registryConfig, err := getRegistryConfig(v, clientset, appSlug)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry config")
+	}
+
+	err = upstream.PushImagesFromAirgapBundle(airgapBundle, *registryConfig)
+	if err != nil {
+		return err
+	}
+
+	log.ActionWithoutSpinner("Images pushed successfully")
 	return nil
 }
 
