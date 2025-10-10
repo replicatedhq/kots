@@ -262,7 +262,6 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 			finalError = errors.Wrap(err, "failed to read kots kinds after update")
 			return
 		}
-
 		// Update version checks in V3 EC are handled separately
 		if !util.IsV3EmbeddedCluster() && afterKotsKinds.Installation.Spec.UpdateCursor == beforeInstallation.UpdateCursor && afterKotsKinds.Installation.Spec.ChannelID == beforeInstallation.ChannelID {
 			return

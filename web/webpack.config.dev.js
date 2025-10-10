@@ -27,11 +27,10 @@ module.exports = {
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new ReactRefreshWebpackPlugin(),
-    // Temporarily disabled ESLint plugin due to FlatESLint compatibility issue
-    // new ESLintPlugin({
-    //   configType: 'flat',
-    //   eslintPath: require.resolve('eslint'),
-    // }),
+    new ESLintPlugin({
+      configType: 'flat',
+      eslintPath: require.resolve('eslint'),
+    }),
   ],
   optimization: {
     moduleIds: "named",

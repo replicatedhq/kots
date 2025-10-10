@@ -23,11 +23,9 @@ func RequiresClusterUpgrade(ctx context.Context, kbClient kbclient.Client, kotsK
 	if kotsKinds == nil || kotsKinds.EmbeddedClusterConfig == nil {
 		return false, nil
 	}
-
 	if !util.IsEmbeddedCluster() {
 		return false, nil
 	}
-
 	curcfg, err := ClusterConfig(ctx, kbClient)
 	if err != nil {
 		// if there is no installation object we can't start an upgrade. this is a valid
@@ -39,7 +37,6 @@ func RequiresClusterUpgrade(ctx context.Context, kbClient kbclient.Client, kotsK
 		}
 		return false, fmt.Errorf("failed to get current cluster config: %w", err)
 	}
-
 	serializedCur, err := json.Marshal(curcfg)
 	if err != nil {
 		return false, err
@@ -48,7 +45,6 @@ func RequiresClusterUpgrade(ctx context.Context, kbClient kbclient.Client, kotsK
 	if err != nil {
 		return false, err
 	}
-
 	return !bytes.Equal(serializedCur, serializedNew), nil
 }
 
