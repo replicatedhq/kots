@@ -147,15 +147,18 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 
 	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != latestLicense.Spec.ChannelID {
 		// channel changed and this is an online installation, fetch the latest release for the new channel
-		go func(appID string) {
-			opts := updatecheckertypes.CheckForUpdatesOpts{
-				AppID: appID,
-			}
-			_, err := updatechecker.CheckForUpdates(opts)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
-			}
-		}(foundApp.ID)
+		// skip auto-check in EC environments to allow manual upgrade through the upgrade service flow
+		if !util.IsEmbeddedCluster() {
+			go func(appID string) {
+				opts := updatecheckertypes.CheckForUpdatesOpts{
+					AppID: appID,
+				}
+				_, err := updatechecker.CheckForUpdates(opts)
+				if err != nil {
+					logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
+				}
+			}(foundApp.ID)
+		}
 	}
 
 	licenseResponse, err := licenseResponseFromLicense(latestLicense, foundApp)
@@ -645,15 +648,18 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 
 	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != newLicense.Spec.ChannelID {
 		// channel changed and this is an online installation, fetch the latest release for the new channel
-		go func(appID string) {
-			opts := updatecheckertypes.CheckForUpdatesOpts{
-				AppID: appID,
-			}
-			_, err := updatechecker.CheckForUpdates(opts)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
-			}
-		}(foundApp.ID)
+		// skip auto-check in EC environments to allow manual upgrade through the upgrade service flow
+		if !util.IsEmbeddedCluster() {
+			go func(appID string) {
+				opts := updatecheckertypes.CheckForUpdatesOpts{
+					AppID: appID,
+				}
+				_, err := updatechecker.CheckForUpdates(opts)
+				if err != nil {
+					logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
+				}
+			}(foundApp.ID)
+		}
 	}
 
 	licenseResponse, err := licenseResponseFromLicense(newLicense, foundApp)
