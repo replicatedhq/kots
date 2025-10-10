@@ -7647,9 +7647,9 @@ async function getClusterVersions() {
             versions: new Set(["4.20.0-okd"])
         },
         // disable oke for now per sc-120817
-        // oke: {
-        //     versions: new Set(["1.30.1"])
-        // }
+        oke: {
+            versions: new Set(["1.34.0"])
+        }
     }
 
     // versions to test looks like this:
