@@ -147,7 +147,7 @@ runs:
 
     - name: Upload SARIF file
       if: ${{ !cancelled() && inputs.upload-sarif == 'true' }}
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       with:
         sarif_file: ${{ inputs.output-file }}
         category: '${{ inputs.category-prefix }}${{ steps.image_details.outputs.safe_image_name }}'
