@@ -145,7 +145,7 @@ jobs:
       - name: Print scan report
         run: cat rqlite-scan-output.sarif
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: rqlite-scan-output.sarif
 
@@ -175,7 +175,7 @@ jobs:
       - name: Print scan report
         run: cat minio-scan-output.sarif
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'minio-scan-output.sarif'
 
@@ -205,7 +205,7 @@ jobs:
       - name: Print scan report
         run: cat dex-scan-output.sarif
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: dex-scan-output.sarif
 
@@ -231,7 +231,7 @@ jobs:
       - name: Print scan report
         run: cat kurl-proxy-scan-output.sarif
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: kurl-proxy-scan-output.sarif
 
@@ -261,7 +261,7 @@ jobs:
       - name: Print scan report
         run: cat scan-output.sarif
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: scan-output.sarif
 
@@ -287,7 +287,7 @@ jobs:
       - name: Print scan report
         run: cat kotsadm-scan-output.sarif
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: kotsadm-scan-output.sarif
 
@@ -312,7 +312,7 @@ jobs:
       - name: Print scan report
         run: cat kotsadm-migration-scan-output.sarif
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: kotsadm-migration-scan-output.sarif
 
