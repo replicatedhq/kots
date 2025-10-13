@@ -274,7 +274,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 
 	minioImage := fmt.Sprintf("kotsadm/minio:%s", minioTag)
 	if strings.HasPrefix(minioTag, "RELEASE.") {
-		minioImage = fmt.Sprintf("minio/minio:%s", minioTag)
+		minioImage = fmt.Sprintf("docker.io/minio/minio:%s", minioTag)
 	}
 
 	imagePullSecrets := []corev1.LocalObjectReference{}

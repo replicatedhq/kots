@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
@@ -40,11 +41,18 @@ func (v *CLI) Install(workspace, kubeconfig string, minio minio.Minio) {
 }
 
 func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Session, error) {
+	// Get the velero CLI version to construct the fully-qualified image for OpenShift compatibility
+	veleroImage, err := getVeleroImageWithRegistry()
+	if err != nil {
+		return nil, err
+	}
+
 	args := []string{
 		"install",
 		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 		"--provider=aws",
-		"--plugins=velero/velero-plugin-for-aws:v1.6.1",
+		fmt.Sprintf("--image=%s", veleroImage),
+		"--plugins=docker.io/velero/velero-plugin-for-aws:v1.6.1",
 		fmt.Sprintf("--bucket=%s", bucket),
 		fmt.Sprintf("--backup-location-config=region=minio,s3ForcePathStyle=true,s3Url=%s", s3Url),
 		fmt.Sprintf("--secret-file=%s", filepath.Join(workspace, "aws-credentials")),
@@ -63,6 +71,31 @@ func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Sessi
 		"--wait",
 	}
 	return util.RunCommand(exec.Command("velero", args...))
+}
+
+// getVeleroImageWithRegistry returns the fully-qualified velero image by querying the CLI version.
+// This matches velero's default behavior but adds the docker.io registry for OpenShift CRI-O K8s 1.34+ compatibility.
+// Returns: "docker.io/velero/velero:v1.16.2" (example)
+func getVeleroImageWithRegistry() (string, error) {
+	cmd := exec.Command("velero", "version", "--client-only")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to get velero version: %w (output: %s)", err, output)
+	}
+
+	// Parse version from output like "Client:\n  Version: v1.16.2\n..."
+	for _, line := range strings.Split(string(output), "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "Version:") {
+			version := strings.TrimSpace(strings.TrimPrefix(line, "Version:"))
+			if version != "" {
+				// Construct the fully-qualified image (same as velero's default but with registry prefix)
+				return fmt.Sprintf("docker.io/velero/velero:%s", version), nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("could not parse velero version from output: %s", output)
 }
 
 func writeAWSCredentialsFile(workspace, accessKey, secretKey string) error {
