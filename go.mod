@@ -40,7 +40,7 @@ require (
 	github.com/mholt/archives v0.1.5
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/onsi/ginkgo/v2 v2.25.3
+	github.com/onsi/ginkgo/v2 v2.26.0
 	github.com/onsi/gomega v1.38.2
 	github.com/open-policy-agent/opa v1.8.0
 	github.com/opencontainers/image-spec v1.1.1
