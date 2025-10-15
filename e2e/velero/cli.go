@@ -44,7 +44,7 @@ func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Sessi
 	// Get the velero CLI version to construct the fully-qualified image for OpenShift compatibility
 	veleroImage, err := getVeleroImageWithRegistry()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get velero image: %w", err)
 	}
 
 	args := []string{
@@ -95,7 +95,7 @@ func getVeleroImageWithRegistry() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("could not parse velero version from output: %s", output)
+	return "", fmt.Errorf("failed to parse velero version from output: %s", output)
 }
 
 func writeAWSCredentialsFile(workspace, accessKey, secretKey string) error {
