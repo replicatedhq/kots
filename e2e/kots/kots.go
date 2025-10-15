@@ -15,6 +15,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/e2e/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
@@ -107,6 +110,14 @@ func (i *Installer) install(kubeconfig string, test inventory.Test) (*gexec.Sess
 		args = append(args, "--storage-class=gp2")
 	}
 
+	// Enable strict security context for OpenShift to comply with Pod Security Standards
+	// Use k8sutil.IsOpenShift() to detect OpenShift clusters
+	if clientset, err := getClientsetFromKubeconfig(kubeconfig); err == nil {
+		if k8sutil.IsOpenShift(clientset) {
+			args = append(args, "--strict-security-context")
+		}
+	}
+
 	cmd := exec.Command("kots", args...)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "DISABLE_KOTSADM_OUTBOUND_CONNECTIONS=false")
@@ -155,4 +166,18 @@ func getFreePort() (string, error) {
 	ln.Close()
 	_, port, err := net.SplitHostPort(ln.Addr().String())
 	return port, err
+}
+
+func getClientsetFromKubeconfig(kubeconfig string) (kubernetes.Interface, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to build config from kubeconfig")
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	return clientset, nil
 }

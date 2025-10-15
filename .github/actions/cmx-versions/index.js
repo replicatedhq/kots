@@ -42,13 +42,12 @@ async function getClusterVersions() {
             instance_type: "m7g.large" // arm64
         },
         openshift: {
-            // filtering out all versions except 4.19.0-okd for now per sc-90893
-            versions: new Set(["4.19.0-okd"])
+            // filtering out all versions except 4.20.0-okd for now
+            versions: new Set(["4.20.0-okd"])
         },
-        // disable oke for now per sc-120817
-        // oke: {
-        //     versions: new Set(["1.30.1"])
-        // }
+        oke: {
+            versions: new Set(["1.34.0"])
+        }
     }
 
     // versions to test looks like this:
@@ -95,7 +94,7 @@ async function getClusterVersions() {
 
         if (!!filters[distroName].latest_minor_versions) {
             // latest minor versions
-            const latestMinorVersions = getLatestMinorVersions(distribution, getLastMajorMinorVersions(distribution, filters[distroName].numOfLatestVersions)  );
+            const latestMinorVersions = getLatestMinorVersions(distribution, getLastMajorMinorVersions(distribution, filters[distroName].numOfLatestVersions));
             Object.keys(latestMinorVersions).forEach((minorVersion) => {
                 versionsToTest.push({ distribution: distroName, version: latestMinorVersions[minorVersion], instance_type: instanceType, stage });
             });
@@ -146,7 +145,7 @@ function getLatestMinorVersions(distribution, majorMinorVersionFilter) {
         const parsed = semverCoerce(version);
         // Check if majorVersions is null, undefined, empty, or includes the current version's major
         const majorMinor = `${semverMajor(parsed)}.${semverMinor(parsed)}`;
-        if(!majorMinorVersionFilter?.length || majorMinorVersionFilter.includes(majorMinor)) {
+        if (!majorMinorVersionFilter?.length || majorMinorVersionFilter.includes(majorMinor)) {
             if (latestMinorVersions[majorMinor] === undefined) {
                 latestMinorVersions[majorMinor] = version;
             } else {
