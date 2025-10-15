@@ -16,7 +16,7 @@
     "@actions/github": "^6.0.1",
     "@actions/http-client": "^2.2.3",
     "@vercel/ncc": "^0.38.4",
-    "semver": "^7.7.2"
+    "semver": "^7.7.3"
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",
