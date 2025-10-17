@@ -5,7 +5,7 @@ package image
 // image name.
 
 const (
-	Minio      = "docker.io/kotsadm/minio:0.20250907.161309-r0"
+	Minio      = "docker.io/kotsadm/minio:0.20251015.172955-r0"
 	Rqlite     = "docker.io/kotsadm/rqlite:9.1.2-r0"
 	Dex        = "docker.io/kotsadm/dex:2.44.0-r3"
 	Schemahero = "docker.io/schemahero/schemahero:0.22.1"
