@@ -43,7 +43,7 @@ func GetEmbeddedRegistryCreds(clientset kubernetes.Interface) (hostname string, 
 	// kURL registry secret is always in the 'default' namespace
 	// The Embedded Cluster registry secret is located in the 'kotsadm' namespace
 	// or in the application's namespace (named after the app slug in EC V3).
-	for _, ns := range []string{"default", "kotsadm", util.PodNamespace} {
+	for _, ns := range []string{util.PodNamespace, "default", "kotsadm"} {
 		secret, err = clientset.CoreV1().Secrets(ns).Get(context.TODO(), "registry-creds", metav1.GetOptions{})
 		if err == nil {
 			break
