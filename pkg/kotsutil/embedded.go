@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,9 +41,9 @@ func GetEmbeddedRegistryCreds(clientset kubernetes.Interface) (hostname string, 
 	var err error
 
 	// kURL registry secret is always in the 'default' namespace
-	// Embedded cluster registry secret is always in the 'kotsadm' namespace
-
-	for _, ns := range []string{"default", "kotsadm"} {
+	// The Embedded Cluster registry secret is located in the 'kotsadm' namespace
+	// or in the application's namespace (named after the app slug in EC V3).
+	for _, ns := range []string{util.PodNamespace, "default", "kotsadm"} {
 		secret, err = clientset.CoreV1().Secrets(ns).Get(context.TODO(), "registry-creds", metav1.GetOptions{})
 		if err == nil {
 			break
