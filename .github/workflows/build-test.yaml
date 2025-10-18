@@ -57,7 +57,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version-file: ./web/.nvmrc
           cache: yarn
@@ -84,7 +84,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version-file: ./web/.nvmrc
           cache: yarn
@@ -111,7 +111,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version-file: ./web/.nvmrc
           cache: yarn
@@ -141,7 +141,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version-file: ./web/.nvmrc
           cache: yarn
