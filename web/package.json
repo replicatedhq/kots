@@ -137,7 +137,7 @@
     "react-vis": "^1.12.1",
     "resumablejs": "^1.1.0",
     "semver": "^7.7.3",
-    "styled-components": "^5.3.5",
+    "styled-components": "^6.1.19",
     "tar-stream": "^3.1.7",
     "universal-cookie": "^8.0.1"
   },
