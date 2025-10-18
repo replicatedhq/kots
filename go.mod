@@ -71,7 +71,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3
 	go.yaml.in/yaml/v3 v3.0.4
 	golang.org/x/crypto v0.42.0
-	golang.org/x/oauth2 v0.31.0
+	golang.org/x/oauth2 v0.32.0
 	golang.org/x/sync v0.17.0
 	google.golang.org/api v0.252.0
 	gopkg.in/go-playground/assert.v1 v1.2.1
