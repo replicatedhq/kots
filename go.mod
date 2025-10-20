@@ -22,7 +22,7 @@ require (
 	github.com/drone/envsubst/v2 v2.0.0-20210730161058-179042472c46
 	github.com/fatih/color v1.18.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-git/go-git/v5 v5.13.2
+	github.com/go-git/go-git/v5 v5.16.3
 	github.com/go-logfmt/logfmt v0.6.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/golang/mock v1.6.0
@@ -299,7 +299,7 @@ require (
 	github.com/sigstore/fulcio v1.6.6 // indirect
 	github.com/sigstore/sigstore v1.9.5 // indirect
 	github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af // indirect
-	github.com/skeema/knownhosts v1.3.0 // indirect
+	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
