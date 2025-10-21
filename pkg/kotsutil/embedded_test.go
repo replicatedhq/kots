@@ -3,6 +3,7 @@ package kotsutil
 import (
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -107,8 +108,15 @@ func TestHasEmbeddedRegistry(t *testing.T) {
 }
 
 func TestGetEmbeddedRegistryCreds(t *testing.T) {
+	// Save original PodNamespace and restore after test
+	originalPodNamespace := util.PodNamespace
+	defer func() {
+		util.PodNamespace = originalPodNamespace
+	}()
+
 	type args struct {
-		clientset kubernetes.Interface
+		clientset    kubernetes.Interface
+		podNamespace string
 	}
 	tests := []struct {
 		name     string
@@ -130,6 +138,7 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 						".dockerconfigjson": []byte(`{"auths":{"host":{"username":"kurl","password":"password"}}}`),
 					},
 				}),
+				podNamespace: "",
 			},
 			wantHost: "host",
 			wantUser: "kurl",
@@ -148,6 +157,7 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 						".dockerconfigjson": []byte(`{"auths":{"host":{"username":"incorrect","password":"password"}}}`),
 					},
 				}),
+				podNamespace: "",
 			},
 			wantHost: "",
 			wantUser: "",
@@ -166,6 +176,7 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 						".dockerconfigjson": []byte(`{"auths":{"host":{"username":"embedded-cluster","password":"password"}}}`),
 					},
 				}),
+				podNamespace: "",
 			},
 			wantHost: "host",
 			wantUser: "embedded-cluster",
@@ -184,6 +195,45 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 						".dockerconfigjson": []byte(`{"auths":{"host":{"username":"incorrect","password":"password"}}}`),
 					},
 				}),
+				podNamespace: "",
+			},
+			wantHost: "",
+			wantUser: "",
+			wantPass: "",
+		},
+		{
+			name: "my-app namespace with correct type and user",
+			args: args{
+				clientset: fake.NewSimpleClientset(&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "registry-creds",
+						Namespace: "my-app-namespace",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						".dockerconfigjson": []byte(`{"auths":{"host":{"username":"embedded-cluster","password":"password"}}}`),
+					},
+				}),
+				podNamespace: "my-app-namespace",
+			},
+			wantHost: "host",
+			wantUser: "embedded-cluster",
+			wantPass: "password",
+		},
+		{
+			name: "my-app namespace with correct type but incorrect user",
+			args: args{
+				clientset: fake.NewSimpleClientset(&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "registry-creds",
+						Namespace: "my-app-namespace",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						".dockerconfigjson": []byte(`{"auths":{"host":{"username":"incorrect","password":"password"}}}`),
+					},
+				}),
+				podNamespace: "my-app-namespace",
 			},
 			wantHost: "",
 			wantUser: "",
@@ -199,6 +249,7 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 					},
 					Type: corev1.SecretTypeOpaque,
 				}),
+				podNamespace: "",
 			},
 			wantHost: "",
 			wantUser: "",
@@ -214,6 +265,7 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 					},
 					Type: corev1.SecretTypeOpaque,
 				}),
+				podNamespace: "",
 			},
 			wantHost: "",
 			wantUser: "",
@@ -232,6 +284,7 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 						".dockerconfigjson": []byte(`{"auths":{"host":{"username":"kurl","password":"password"}}}`),
 					},
 				}),
+				podNamespace: "",
 			},
 			wantHost: "",
 			wantUser: "",
@@ -250,6 +303,7 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 						".dockerconfigjson": []byte(`{"auths":{"host":{"username":"incorrect","password":"password"}}}`),
 					},
 				}),
+				podNamespace: "",
 			},
 			wantHost: "",
 			wantUser: "",
@@ -265,6 +319,7 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 					},
 					Type: corev1.SecretTypeOpaque,
 				}),
+				podNamespace: "",
 			},
 			wantHost: "",
 			wantUser: "",
@@ -273,6 +328,9 @@ func TestGetEmbeddedRegistryCreds(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Set PodNamespace for this test
+			util.PodNamespace = tt.args.podNamespace
+
 			gotHost, gotUser, gotPass := GetEmbeddedRegistryCreds(tt.args.clientset)
 			if gotHost != tt.wantHost {
 				t.Errorf("GetEmbeddedRegistryCreds() gotHost = %v, want %v", gotHost, tt.wantHost)
