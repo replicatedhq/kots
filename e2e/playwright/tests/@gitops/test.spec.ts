@@ -30,7 +30,7 @@ test('gitops install', async ({ page }) => {
   // generate a random path to use for this test
   const randomPath = `/test-${Math.random().toString(36).substring(2, 15)}`;
 
-  await page.getByText('GitOps').click();
+  await page.locator('.NavItem').getByText('GitOps').click();
   await expect(page.getByText('GitHub')).toBeVisible();
   await filloutGitopsForm(page, gitopsOwner, gitopsRepo, randomBranch, randomPath);
   await page.getByRole('button', { name: 'Generate SSH key' }).click();
@@ -108,7 +108,7 @@ test('gitops install', async ({ page }) => {
   // turn off gitops so we can test the behavior of kots afterwards
   await resetGithub(githubToken, gitopsOwner, gitopsRepo, keyId, randomBranch);
 
-  await page.locator('span').filter({ hasText: 'GitOps' }).click();
+  await page.locator('.NavItem').getByText('GitOps').click();
   await expect(page.getByTestId('gitops-enabled')).toBeVisible();
   await page.getByText('Disable GitOps for this app').click();
   await expect(page.getByText('Are you sure you want to disable GitOps for this application?')).toBeVisible();
@@ -130,7 +130,7 @@ test('gitops install', async ({ page }) => {
   console.log('new version deployed')
 
   // test reenabling gitops but with a failed ssh connection
-  await page.locator('div').filter({ hasText: /^GitOps$/ }).click();
+  await page.locator('.NavItem').getByText('GitOps').click();
   await filloutGitopsForm(page, gitopsOwner, gitopsRepo, randomBranch, randomPath);
   await page.getByRole('button', { name: 'Generate SSH key' }).click();
   await page.getByRole('button', { name: 'Test connection to repository' }).click();
