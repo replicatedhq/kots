@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to use for building images and tagging Helm chart (must end with -ec.<digit>, e.g. v1.92.0-ec.1)'
+        description: "Tag to use for building images and tagging Helm chart (must end with -ec.<digit>, e.g. v1.128.2-ec.1)"
         required: true
         type: string
 
@@ -17,8 +17,12 @@ jobs:
     steps:
       - name: Validate tag format
         run: |
+          if ! [[ "${{ inputs.tag }}" =~ ^v ]]; then
+            echo "Error: Tag must start with 'v' (e.g. v1.128.2-ec.1)"
+            exit 1
+          fi
           if ! [[ "${{ inputs.tag }}" =~ -ec\.[0-9]+$ ]]; then
-            echo "Error: Tag must end with -ec.<digit> suffix (e.g. v1.92.0-ec.1)"
+            echo "Error: Tag must end with -ec.<digit> suffix (e.g. v1.128.2-ec.1)"
             exit 1
           fi
           echo "Tag format is valid: ${{ inputs.tag }}"
@@ -28,10 +32,11 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        runner: [
-          {name: ubuntu-latest, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
+        runner:
+          [
+            { name: ubuntu-latest, arch: amd64 },
+            { name: arm64-runner-set, arch: arm64 },
+          ]
     runs-on: ${{ matrix.runner.name }}
     steps:
       - uses: actions/checkout@v5
@@ -61,10 +66,11 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        runner: [
-          {name: ubuntu-latest, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
+        runner:
+          [
+            { name: ubuntu-latest, arch: amd64 },
+            { name: arm64-runner-set, arch: arm64 },
+          ]
     runs-on: ${{ matrix.runner.name }}
     steps:
       - uses: actions/checkout@v5
@@ -94,10 +100,11 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        runner: [
-          {name: ubuntu-latest, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
+        runner:
+          [
+            { name: ubuntu-latest, arch: amd64 },
+            { name: arm64-runner-set, arch: arm64 },
+          ]
     runs-on: ${{ matrix.runner.name }}
     steps:
       - uses: actions/checkout@v5
@@ -132,7 +139,7 @@ jobs:
           repository: replicatedhq/kots-helm
           token: ${{ secrets.GH_PAT }}
           ref: main
-          
+
       - name: Tag Chart
         run: |
           git tag "${{ inputs.tag }}+${GITHUB_SHA:0:7}"

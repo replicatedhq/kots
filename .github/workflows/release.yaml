@@ -69,7 +69,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Setup Node.js environment
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version-file: ./web/.nvmrc
       - name: Build web
@@ -256,7 +256,7 @@ jobs:
         TAG="$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')"
         export TAG
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> "$GITHUB_ENV"
-    - uses: sigstore/cosign-installer@v3.10.0
+    - uses: sigstore/cosign-installer@v4.0.0
     - name: Get Cosign Key
       run: |
         echo "$COSIGN_KEY" | base64 -d > ./cosign.key
