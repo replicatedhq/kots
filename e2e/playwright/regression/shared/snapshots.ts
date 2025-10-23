@@ -374,7 +374,7 @@ export const deleteAppSnapshot = async (page: Page, expect: Expect) => {
 
 export const createFullSnapshot = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
-  await page.getByRole('link', { name: 'Full Snapshots (Instance)' }).click();
+  await page.getByTestId('console-subnav').getByRole('link', { name: 'Full Snapshots (Instance)' }).click();
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
 
   // Full snapshots page
@@ -501,7 +501,7 @@ export const restoreFullSnapshot = async (
   isAirgapped: boolean
 ) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
-  await page.getByRole('link', { name: 'Full Snapshots (Instance)' }).click();
+  await page.getByTestId('console-subnav').getByRole('link', { name: 'Full Snapshots (Instance)' }).click();
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
 
   const fullSnapshotsCard = page.getByTestId('full-snapshots-card');
@@ -534,7 +534,7 @@ export const restoreFullSnapshot = async (
 
 export const deleteFullSnapshot = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
-  await page.getByRole('link', { name: 'Full Snapshots (Instance)' }).click();
+  await page.getByTestId('console-subnav').getByRole('link', { name: 'Full Snapshots (Instance)' }).click();
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
 
   const fullSnapshotsCard = page.getByTestId('full-snapshots-card');
