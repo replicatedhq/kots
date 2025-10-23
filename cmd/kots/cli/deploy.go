@@ -323,6 +323,7 @@ func handleSetConfigAndDeploy(v *viper.Viper, appSlug string, localPort int, aut
 		"configValues":   configValues,
 		"deploy":         true, // HARDCODED - always deploy
 		"skipPreflights": v.GetBool("skip-preflights"),
+		"sequence":       -1, // HARDCODED - always use the latest sequence
 	}
 
 	requestBody, err := json.Marshal(requestPayload)
