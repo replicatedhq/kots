@@ -100,8 +100,9 @@ type KotsKinds struct {
 	Config       *kotsv1beta1.Config
 	ConfigValues *kotsv1beta1.ConfigValues
 
-	Installation kotsv1beta1.Installation
-	License      *kotsv1beta1.License
+	Installation   kotsv1beta1.Installation
+	License        *kotsv1beta1.License
+	V1Beta2License *kotsv1beta2.License
 
 	Identity       *kotsv1beta1.Identity
 	IdentityConfig *kotsv1beta1.IdentityConfig
@@ -352,6 +353,15 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 					return "", errors.Wrap(err, "failed to encode v1beta2 helmcharts")
 				}
 				return string(b.Bytes()), nil
+			case "License":
+				if o.V1Beta2License == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.V1Beta2License, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode v1beta2 license")
+				}
+				return string(b.Bytes()), nil
 			}
 		}
 	}
@@ -554,6 +564,8 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 				}
 			}
 			k.V1Beta2HelmCharts.Items = append(k.V1Beta2HelmCharts.Items, *decoded.(*kotsv1beta2.HelmChart))
+		case "kots.io/v1beta2, Kind=License":
+			k.V1Beta2License = decoded.(*kotsv1beta2.License)
 		case "kots.io/v1beta1, Kind=LintConfig":
 			k.LintConfig = decoded.(*kotsv1beta1.LintConfig)
 		case "troubleshoot.sh/v1beta2, Kind=Collector":
@@ -975,6 +987,20 @@ func LoadLicenseFromBytes(data []byte) (*kotsv1beta1.License, error) {
 	}
 
 	return obj.(*kotsv1beta1.License), nil
+}
+
+func LoadV1Beta2LicenseFromBytes(data []byte) (*kotsv1beta2.License, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode([]byte(data), nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode v1beta2 license data")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta2" || gvk.Kind != "License" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta2.License), nil
 }
 
 func LoadEmbeddedClusterConfigFromBytes(data []byte) (*embeddedclusterv1beta1.Config, error) {
