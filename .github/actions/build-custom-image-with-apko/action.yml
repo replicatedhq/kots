@@ -30,13 +30,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with:
         pattern: ${{ inputs.component }}-melange-packages-*
         path: ./packages/
         merge-multiple: true
 
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with:
         pattern: ${{ inputs.component }}-melange-rsa-pub-*
         merge-multiple: true
