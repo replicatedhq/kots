@@ -215,7 +215,7 @@ func responseAppFromApp(ctx context.Context, a *apptypes.App, kcb kubeclient.Kub
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestVersion.ParentSequence)
 	}
-	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
+	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.IsIdentityServiceSupported()
 
 	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestVersion.ParentSequence)
 	if err != nil {
@@ -240,12 +240,12 @@ func responseAppFromApp(ctx context.Context, a *apptypes.App, kcb kubeclient.Kub
 
 	var allowSnapshots bool
 	if util.IsEmbeddedCluster() {
-		allowSnapshots = s && license.Spec.IsDisasterRecoverySupported
+		allowSnapshots = s && license.IsDisasterRecoverySupported()
 	} else {
-		allowSnapshots = s && license.Spec.IsSnapshotSupported
+		allowSnapshots = s && license.IsSnapshotSupported()
 	}
 
-	isGitopsSupported := license.Spec.IsGitOpsSupported && !util.IsEmbeddedCluster() // gitops is not allowed in embedded cluster installations today
+	isGitopsSupported := license.IsGitOpsSupported() && !util.IsEmbeddedCluster() // gitops is not allowed in embedded cluster installations today
 
 	links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
 	if err != nil {
@@ -320,16 +320,16 @@ func responseAppFromApp(ctx context.Context, a *apptypes.App, kcb kubeclient.Kub
 		AutoDeploy:                        a.AutoDeploy,
 		AppState:                          appState,
 		IsGitOpsSupported:                 isGitopsSupported,
-		IsIdentityServiceSupported:        license.Spec.IsIdentityServiceSupported,
+		IsIdentityServiceSupported:        license.IsIdentityServiceSupported(),
 		IsAppIdentityServiceSupported:     isAppIdentityServiceSupported,
-		IsGeoaxisSupported:                license.Spec.IsGeoaxisSupported,
-		IsSemverRequired:                  license.Spec.IsSemverRequired,
-		IsSupportBundleUploadSupported:    license.Spec.IsSupportBundleUploadSupported,
-		IsEmbeddedClusterMultiNodeEnabled: license.Spec.IsEmbeddedClusterMultiNodeEnabled,
+		IsGeoaxisSupported:                license.IsGeoaxisSupported(),
+		IsSemverRequired:                  license.IsSemverRequired(),
+		IsSupportBundleUploadSupported:    license.IsSupportBundleUploadSupported(),
+		IsEmbeddedClusterMultiNodeEnabled: license.IsEmbeddedClusterMultiNodeEnabled(),
 		AllowRollback:                     allowRollback,
 		AllowSnapshots:                    allowSnapshots,
 		TargetKotsVersion:                 targetKotsVersion,
-		LicenseType:                       license.Spec.LicenseType,
+		LicenseType:                       license.GetLicenseType(),
 		Downstream:                        responseDownstream,
 	}
 
