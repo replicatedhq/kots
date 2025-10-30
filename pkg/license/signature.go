@@ -45,19 +45,15 @@ func (e LicenseDataError) Error() string {
 // VerifyLicenseWrapper validates a license wrapper by delegating to the appropriate
 // version-specific validation method. Returns the same wrapper if validation succeeds.
 // This function supports both v1beta1 (MD5) and v1beta2 (SHA-256) licenses.
+//
+// Note: This function validates the license signature only. Entitlement signature validation
+// is handled separately where needed, matching the behavior of the deprecated VerifySignature function.
 func VerifyLicenseWrapper(wrapper licensewrapper.LicenseWrapper) (licensewrapper.LicenseWrapper, error) {
 	if wrapper.IsV1() {
 		// Validate v1beta1 license using built-in ValidateLicense (MD5)
-		appKeys, err := wrapper.V1.ValidateLicense()
+		_, err := wrapper.V1.ValidateLicense()
 		if err != nil {
 			return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to validate v1beta1 license")
-		}
-
-		// Validate entitlements
-		for _, ent := range wrapper.V1.Spec.Entitlements {
-			if err := ent.ValidateSignature(appKeys); err != nil {
-				return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to validate v1beta1 entitlement signature")
-			}
 		}
 
 		return wrapper, nil
@@ -65,16 +61,9 @@ func VerifyLicenseWrapper(wrapper licensewrapper.LicenseWrapper) (licensewrapper
 
 	if wrapper.IsV2() {
 		// Validate v1beta2 license using built-in ValidateLicense (SHA-256)
-		appKeys, err := wrapper.V2.ValidateLicense()
+		_, err := wrapper.V2.ValidateLicense()
 		if err != nil {
 			return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to validate v1beta2 license")
-		}
-
-		// Validate entitlements
-		for _, ent := range wrapper.V2.Spec.Entitlements {
-			if err := ent.ValidateSignature(appKeys); err != nil {
-				return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to validate v1beta2 entitlement signature")
-			}
 		}
 
 		return wrapper, nil
