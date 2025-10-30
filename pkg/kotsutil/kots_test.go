@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/multitype"
@@ -982,7 +983,7 @@ func TestKotsKinds_Marshal(t *testing.T) {
 		Config                *kotsv1beta1.Config
 		ConfigValues          *kotsv1beta1.ConfigValues
 		Installation          kotsv1beta1.Installation
-		License               *kotsv1beta1.License
+		License               licensewrapper.LicenseWrapper
 		Identity              *kotsv1beta1.Identity
 		IdentityConfig        *kotsv1beta1.IdentityConfig
 		Backup                *velerov1.Backup
