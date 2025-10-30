@@ -27,6 +27,7 @@ import (
 	updatecheckertypes "github.com/replicatedhq/kots/pkg/updatechecker/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -145,7 +146,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != latestLicense.Spec.ChannelID {
+	if !foundApp.IsAirgap && currentLicense.GetChannelID() != latestLicense.GetChannelID() {
 		// channel changed and this is an online installation, fetch the latest release for the new channel
 		// skip auto-check in EC environments to allow manual upgrade through the upgrade service flow
 		if !util.IsEmbeddedCluster() {
@@ -213,30 +214,31 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, getLicenseResponse)
 }
 
-func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse, time.Time, error) {
+func getLicenseEntitlements(license licensewrapper.LicenseWrapper) ([]EntitlementResponse, time.Time, error) {
 	var expiresAt time.Time
 	entitlements := []EntitlementResponse{}
 
-	for key, entititlement := range license.Spec.Entitlements {
+	// Use wrapper method to get entitlements (works for both v1beta1 and v1beta2)
+	for key, entitlement := range license.GetEntitlements() {
 		if key == "expires_at" {
-			if entititlement.Value.StrVal == "" {
+			if entitlement.GetValue().StrVal == "" {
 				continue
 			}
 
-			expiration, err := time.Parse(time.RFC3339, entititlement.Value.StrVal)
+			expiration, err := time.Parse(time.RFC3339, entitlement.GetValue().StrVal)
 			if err != nil {
 				return nil, time.Time{}, errors.Wrap(err, "failed to parse expiration date")
 			}
 			expiresAt = expiration
 		} else if key == "gitops_enabled" {
 			/* do nothing */
-		} else if !entititlement.IsHidden {
+		} else if !entitlement.IsHidden() {
 			entitlements = append(entitlements,
 				EntitlementResponse{
-					Title:     entititlement.Title,
+					Title:     entitlement.GetTitle(),
 					Label:     key,
-					Value:     entititlement.Value.Value(),
-					ValueType: entititlement.ValueType,
+					Value:     entitlement.GetValue().Value(),
+					ValueType: entitlement.GetValueType(),
 				})
 		}
 	}
@@ -254,8 +256,8 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 
 	licenseString := uploadLicenseRequest.LicenseData
 
-	// validate the license
-	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(licenseString))
+	// validate the license using wrapper (supports both v1beta1 and v1beta2)
+	unverifiedLicense, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseString))
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to load license from bytes"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -266,7 +268,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	verifiedLicense, err := kotslicense.VerifySignature(unverifiedLicense)
+	verifiedLicense, err := kotslicense.VerifyLicenseWrapper(unverifiedLicense)
 	if err != nil {
 		uploadLicenseResponse.Error = "License signature is not valid"
 		if _, ok := err.(kotslicense.LicenseDataError); ok {
@@ -284,11 +286,28 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
-	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
+	desiredAppName := strings.Replace(verifiedLicense.GetAppSlug(), "-", " ", 0)
+	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.GetAppSlug())
 
 	// verify that requested channel slug exists in the license
-	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
+	// Note: FindChannelIDInLicense still expects v1beta1.License (will be updated in Phase 4)
+	// We need to construct a temporary v1beta1 license for channel validation
+	var licenseForChannelCheck *kotsv1beta1.License
+	if verifiedLicense.IsV1() {
+		licenseForChannelCheck = verifiedLicense.V1
+	} else if verifiedLicense.IsV2() {
+		// Convert v1beta2 to v1beta1 temporarily for channel checking
+		// Channels have identical structure in both versions
+		v1Channels := verifiedLicense.GetChannels()
+		licenseForChannelCheck = &kotsv1beta1.License{
+			Spec: kotsv1beta1.LicenseSpec{
+				ChannelID:   verifiedLicense.GetChannelID(),
+				ChannelName: verifiedLicense.GetChannelName(),
+				Channels:    v1Channels,
+			},
+		}
+	}
+	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, licenseForChannelCheck)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = "Your current license does not grant access to the channel you requested. Please generate a support bundle and contact support for assistance."
@@ -347,7 +366,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, licenseString, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush, installationParams.RegistryIsReadOnly)
+	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, licenseString, verifiedLicense.IsAirgapSupported(), installationParams.SkipImagePush, installationParams.RegistryIsReadOnly)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
@@ -355,7 +374,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !verifiedLicense.Spec.IsAirgapSupported || util.IsEmbeddedCluster() {
+	if !verifiedLicense.IsAirgapSupported() || util.IsEmbeddedCluster() {
 		// complete the install online
 		createAppOpts := online.CreateOnlineAppOpts{
 			PendingApp: &installationtypes.PendingApp{
@@ -461,17 +480,27 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	// marshal it
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
-	if err := s.Encode(kotsLicense, &b); err != nil {
-		logger.Error(err)
-		resumeInstallOnlineResponse.Error = err.Error()
-		JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
-		return
+	// Encode the appropriate version
+	if kotsLicense.IsV1() {
+		if err := s.Encode(kotsLicense.V1, &b); err != nil {
+			logger.Error(err)
+			resumeInstallOnlineResponse.Error = err.Error()
+			JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
+			return
+		}
+	} else if kotsLicense.IsV2() {
+		if err := s.Encode(kotsLicense.V2, &b); err != nil {
+			logger.Error(err)
+			resumeInstallOnlineResponse.Error = err.Error()
+			JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
+			return
+		}
 	}
 	pendingApp.LicenseData = string(b.Bytes())
 
 	createAppOpts := online.CreateOnlineAppOpts{
 		PendingApp:  &pendingApp,
-		UpstreamURI: fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug),
+		UpstreamURI: fmt.Sprintf("replicated://%s", kotsLicense.GetAppSlug()),
 	}
 
 	kotsKinds, err := online.CreateAppFromOnline(createAppOpts)
@@ -564,28 +593,28 @@ func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http
 	}
 
 	platformLicense := licenseType{
-		LicenseID:      license.Spec.LicenseID,
+		LicenseID:      license.GetLicenseID(),
 		InstallationID: app.ID,
-		Assignee:       license.Spec.CustomerName,
-		ReleaseChannel: license.Spec.ChannelName,
-		LicenseType:    license.Spec.LicenseType,
+		Assignee:       license.GetCustomerName(),
+		ReleaseChannel: license.GetChannelName(),
+		LicenseType:    license.GetLicenseType(),
 		Fields:         make([]licenseFieldType, 0),
 	}
 
-	for k, e := range license.Spec.Entitlements {
+	for k, e := range license.GetEntitlements() {
 		if k == "expires_at" {
-			if e.Value.StrVal != "" {
-				platformLicense.ExpirationTime = e.Value.StrVal
+			if e.GetValue().StrVal != "" {
+				platformLicense.ExpirationTime = e.GetValue().StrVal
 			}
 			continue
 		}
 
 		field := licenseFieldType{
 			Field:            k,
-			Title:            e.Title,
-			Type:             e.ValueType,
-			Value:            e.Value.Value(),
-			HideFromCustomer: e.IsHidden,
+			Title:            e.GetTitle(),
+			Type:             e.GetValueType(),
+			Value:            e.GetValue().Value(),
+			HideFromCustomer: e.IsHidden(),
 		}
 
 		platformLicense.Fields = append(platformLicense.Fields, field)
@@ -646,7 +675,7 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != newLicense.Spec.ChannelID {
+	if !foundApp.IsAirgap && currentLicense.GetChannelID() != newLicense.GetChannelID() {
 		// channel changed and this is an online installation, fetch the latest release for the new channel
 		// skip auto-check in EC environments to allow manual upgrade through the upgrade service flow
 		if !util.IsEmbeddedCluster() {
@@ -677,7 +706,7 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, changeLicenseResponse)
 }
 
-func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App) (*LicenseResponse, error) {
+func licenseResponseFromLicense(license licensewrapper.LicenseWrapper, app *apptypes.App) (*LicenseResponse, error) {
 	entitlements, expiresAt, err := getLicenseEntitlements(license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license entitlements")
@@ -688,23 +717,23 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 	})
 
 	response := LicenseResponse{
-		ID:                                license.Spec.LicenseID,
-		Assignee:                          license.Spec.CustomerName,
-		ChannelName:                       license.Spec.ChannelName,
-		LicenseSequence:                   license.Spec.LicenseSequence,
-		LicenseType:                       license.Spec.LicenseType,
+		ID:                                license.GetLicenseID(),
+		Assignee:                          license.GetCustomerName(),
+		ChannelName:                       license.GetChannelName(),
+		LicenseSequence:                   license.GetLicenseSequence(),
+		LicenseType:                       license.GetLicenseType(),
 		Entitlements:                      entitlements,
 		ExpiresAt:                         expiresAt,
-		IsAirgapSupported:                 license.Spec.IsAirgapSupported,
-		IsGitOpsSupported:                 license.Spec.IsGitOpsSupported,
-		IsIdentityServiceSupported:        license.Spec.IsIdentityServiceSupported,
-		IsGeoaxisSupported:                license.Spec.IsGeoaxisSupported,
-		IsSemverRequired:                  license.Spec.IsSemverRequired,
-		IsSnapshotSupported:               license.Spec.IsSnapshotSupported,
-		IsDisasterRecoverySupported:       license.Spec.IsDisasterRecoverySupported,
+		IsAirgapSupported:                 license.IsAirgapSupported(),
+		IsGitOpsSupported:                 license.IsGitOpsSupported(),
+		IsIdentityServiceSupported:        license.IsIdentityServiceSupported(),
+		IsGeoaxisSupported:                license.IsGeoaxisSupported(),
+		IsSemverRequired:                  license.IsSemverRequired(),
+		IsSnapshotSupported:               license.IsSnapshotSupported(),
+		IsDisasterRecoverySupported:       license.IsDisasterRecoverySupported(),
 		LastSyncedAt:                      app.LastLicenseSync,
-		IsSupportBundleUploadSupported:    license.Spec.IsSupportBundleUploadSupported,
-		IsEmbeddedClusterMultiNodeEnabled: license.Spec.IsEmbeddedClusterMultiNodeEnabled,
+		IsSupportBundleUploadSupported:    license.IsSupportBundleUploadSupported(),
+		IsEmbeddedClusterMultiNodeEnabled: license.IsEmbeddedClusterMultiNodeEnabled(),
 	}
 
 	return &response, nil
