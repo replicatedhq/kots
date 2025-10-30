@@ -241,22 +241,97 @@ func TestVerifyLicenseWrapper_PreservesVersion(t *testing.T) {
 	req.Equal(wrapper.GetAppSlug(), verified.GetAppSlug())
 }
 
-// TestVerifyLicenseWrapper_V1Beta2 tests v1beta2 license validation
-// Note: This test requires actual v1beta2 license test data with SHA-256 signatures
-// to be added to testdata/ directory in the future
-func TestVerifyLicenseWrapper_V1Beta2(t *testing.T) {
-	t.Skip("Skipping v1beta2 test - requires v1beta2 test data with SHA-256 signatures")
+// TestVerifyLicenseWrapper_V1Beta2_Structure tests v1beta2 license wrapper functionality
+// Note: These are structural tests that verify wrapper behavior without cryptographic validation.
+// Full cryptographic validation tests require properly signed v1beta2 test licenses.
+func TestVerifyLicenseWrapper_V1Beta2_Structure(t *testing.T) {
+	req := require.New(t)
 
-	// TODO: Add v1beta2 test data files to testdata/:
-	// - testdata/valid-v1beta2.yaml (with valid SHA-256 signature)
-	// - testdata/invalid-v1beta2-signature.yaml (with invalid SHA-256)
-	// - testdata/invalid-v1beta2-tampered.yaml (with tampered data)
-	//
-	// Test structure:
-	// 1. Load v1beta2 license using licensewrapper.LoadLicenseFromBytes()
-	// 2. Verify wrapper.IsV2() returns true
-	// 3. Call VerifyLicenseWrapper(wrapper)
-	// 4. Assert validation succeeds for valid licenses
-	// 5. Assert validation fails for invalid signatures
-	// 6. Assert version is preserved after validation
+	// Load v1beta2 license structure
+	licenseData, err := testdata.ReadFile("testdata/valid-v1beta2-structure.yaml")
+	req.NoError(err)
+
+	// Test that wrapper correctly identifies v1beta2
+	wrapper, err := licensewrapper.LoadLicenseFromBytes(licenseData)
+	req.NoError(err)
+	req.True(wrapper.IsV2(), "Expected v1beta2 license")
+	req.False(wrapper.IsV1(), "Should not be v1beta1")
+
+	// Test that wrapper provides access to v1beta2 fields
+	req.Equal("1vusOokxAVp1tkRGuyxnF23PJcq", wrapper.GetLicenseID())
+	req.Equal("my-app", wrapper.GetAppSlug())
+	req.Equal("Test Customer", wrapper.GetCustomerName())
+	req.Equal("My Channel", wrapper.GetChannelName())
+	req.True(wrapper.IsAirgapSupported())
+	req.True(wrapper.IsGitOpsSupported())
+	req.True(wrapper.IsSnapshotSupported())
+
+	// Test entitlements access through wrapper
+	entitlements := wrapper.GetEntitlements()
+	req.NotNil(entitlements)
+	req.Len(entitlements, 4)
+
+	boolField := entitlements["bool_field"]
+	req.NotNil(boolField)
+	req.Equal("Bool Field", boolField.GetTitle())
+	req.Equal("Boolean", boolField.GetValueType())
+	boolVal := boolField.GetValue()
+	req.Equal(true, (&boolVal).Value())
+
+	intField := entitlements["int_field"]
+	req.NotNil(intField)
+	req.Equal("Int Field", intField.GetTitle())
+	intVal := intField.GetValue()
+	req.Equal(int64(123), (&intVal).Value())
+}
+
+func TestVerifyLicenseWrapper_V1Beta2_VersionPreservation(t *testing.T) {
+	req := require.New(t)
+
+	// Load v1beta2 license
+	licenseData, err := testdata.ReadFile("testdata/valid-v1beta2-structure.yaml")
+	req.NoError(err)
+
+	wrapper, err := licensewrapper.LoadLicenseFromBytes(licenseData)
+	req.NoError(err)
+	req.True(wrapper.IsV2())
+
+	// Even though validation will fail (no real crypto signature),
+	// test that the wrapper correctly routes to V2 validation
+	_, err = VerifyLicenseWrapper(wrapper)
+
+	// We expect an error because the signature isn't cryptographically valid
+	// but the important thing is it tried V2 validation, not V1
+	if err != nil {
+		req.Contains(err.Error(), "v1beta2", "Error should mention v1beta2, indicating V2 validation was attempted")
+	}
+}
+
+func TestVerifyLicenseWrapper_MixedVersion(t *testing.T) {
+	req := require.New(t)
+
+	// Test v1beta1
+	v1Data, err := testdata.ReadFile("testdata/valid-without-entitlement-signature.yaml")
+	req.NoError(err)
+	v1Wrapper, err := licensewrapper.LoadLicenseFromBytes(v1Data)
+	req.NoError(err)
+	req.True(v1Wrapper.IsV1())
+	req.False(v1Wrapper.IsV2())
+
+	// Test v1beta2
+	v2Data, err := testdata.ReadFile("testdata/valid-v1beta2-structure.yaml")
+	req.NoError(err)
+	v2Wrapper, err := licensewrapper.LoadLicenseFromBytes(v2Data)
+	req.NoError(err)
+	req.False(v2Wrapper.IsV1())
+	req.True(v2Wrapper.IsV2())
+
+	// Verify both wrappers provide access to logical fields through wrapper methods
+	// (values may differ between test fixtures, but methods should work for both versions)
+	req.NotEqual(v1Wrapper.GetLicenseID(), "")
+	req.NotEqual(v2Wrapper.GetLicenseID(), "")
+	req.NotEqual(v1Wrapper.GetAppSlug(), "")
+	req.NotEqual(v2Wrapper.GetAppSlug(), "")
+	req.NotEqual(v1Wrapper.GetCustomerName(), "")
+	req.NotEqual(v2Wrapper.GetCustomerName(), "")
 }

@@ -1,0 +1,43 @@
+apiVersion: kots.io/v1beta2
+kind: License
+metadata:
+  name: testcustomer
+spec:
+  appSlug: my-app
+  channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
+  channelName: My Channel
+  customerName: Test Customer
+  endpoint: https://replicated.app
+  entitlements:
+    bool_field:
+      signature:
+        v2: dGVzdC1zaWduYXR1cmU=
+      title: Bool Field
+      value: true
+      valueType: Boolean
+    expires_at:
+      description: License Expiration
+      signature:
+        v2: dGVzdC1zaWduYXR1cmU=
+      title: Expiration
+      value: "2030-07-27T00:00:00Z"
+      valueType: String
+    int_field:
+      signature:
+        v2: dGVzdC1zaWduYXR1cmU=
+      title: Int Field
+      value: 123
+      valueType: Integer
+    string_field:
+      signature:
+        v2: dGVzdC1zaWduYXR1cmU=
+      title: StringField
+      value: single line text
+      valueType: String
+  isAirgapSupported: true
+  isGitOpsSupported: true
+  isSnapshotSupported: true
+  licenseID: 1vusOokxAVp1tkRGuyxnF23PJcq
+  licenseSequence: 1
+  licenseType: dev
+  signature: dGVzdC12MWJldGEyLXNpZ25hdHVyZS1kYXRh
