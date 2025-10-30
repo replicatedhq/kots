@@ -23,6 +23,7 @@ import (
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kotskinds/pkg/helmchart"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"helm.sh/helm/v3/pkg/chart"
@@ -151,7 +152,7 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 	versionInfo := template.VersionInfoFromInstallationSpec(renderOptions.Sequence, renderOptions.IsAirgap, tkk.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: renderOptions.AppSlug}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(tkk.Config, itemValues, tkk.License, &tkk.KotsApplication, renderOptions.RegistrySettings, &versionInfo, &appInfo, tkk.IdentityConfig, util.PodNamespace, true)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(tkk.Config, itemValues, tkk.License.V1, &tkk.KotsApplication, renderOptions.RegistrySettings, &versionInfo, &appInfo, tkk.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to template config objects")
 	}
@@ -469,7 +470,7 @@ func getTemplatingKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, err
 			case "kots.io/v1beta1, Kind=Application":
 				kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
 			case "kots.io/v1beta1, Kind=License":
-				kotsKinds.License = decoded.(*kotsv1beta1.License)
+				kotsKinds.License = licensewrapper.LicenseWrapper{V1: decoded.(*kotsv1beta1.License)}
 			case "kots.io/v1beta1, Kind=IdentityConfig":
 				kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
 			case "kots.io/v1beta1, Kind=Installation":

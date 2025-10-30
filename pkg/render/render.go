@@ -82,7 +82,7 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 		ConfigGroups:    configGroups,
 		ExistingValues:  templateContextValues,
 		LocalRegistry:   registrySettings,
-		License:         kotsKinds.License,
+		License:         kotsKinds.License.V1,
 		Application:     &kotsKinds.KotsApplication,
 		ApplicationInfo: &appInfo,
 		VersionInfo:     &versionInfo,

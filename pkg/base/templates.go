@@ -54,7 +54,7 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 		ConfigGroups:    configGroups,
 		ExistingValues:  templateContext,
 		LocalRegistry:   renderOptions.RegistrySettings,
-		License:         kotsKinds.License,
+		License:         kotsKinds.License.V1,
 		Application:     &kotsKinds.KotsApplication,
 		VersionInfo:     &versionInfo,
 		ApplicationInfo: &appInfo,

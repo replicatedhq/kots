@@ -32,6 +32,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/rqlite/gorqlite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -341,7 +342,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 	if kotsApplication != nil {
 		kotsKinds.KotsApplication = *kotsApplication
 	}
-	kotsKinds.License = license
+	kotsKinds.License = licensewrapper.LicenseWrapper{V1: license}
 
 	var releasedAt *metav1.Time
 	if update.ReleasedAt != nil {
@@ -1066,7 +1067,7 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 			return nil, errors.Wrap(err, "failed to read license spec")
 		}
 		if license != nil {
-			v.KOTSKinds.License = license
+			v.KOTSKinds.License = licensewrapper.LicenseWrapper{V1: license}
 		}
 	}
 
