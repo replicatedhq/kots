@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -46,7 +47,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		updatedLicense = verifiedLicense
 	} else {
 		// get from the api
-		licenseData, err := replicatedapp.GetLatestLicense(currentLicense, a.SelectedChannelID)
+		licenseData, err := replicatedapp.GetLatestLicense(currentLicense.V1, a.SelectedChannelID)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to get latest license")
 		}
@@ -55,9 +56,9 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	}
 
 	// check to see if both licenses are of the 'serviceaccount token' type, and if so check if the account ID matches
-	_, serviceAccountUpdated, saMatchErr := ValidateServiceAccountToken(updatedLicense.Spec.LicenseID, currentLicense.Spec.LicenseID)
+	_, serviceAccountUpdated, saMatchErr := ValidateServiceAccountToken(updatedLicense.Spec.LicenseID, currentLicense.GetLicenseID())
 
-	if currentLicense.Spec.LicenseID != updatedLicense.Spec.LicenseID && saMatchErr != nil {
+	if currentLicense.GetLicenseID() != updatedLicense.Spec.LicenseID && saMatchErr != nil {
 		return nil, false, errors.New("license ids do not match")
 	}
 
@@ -80,16 +81,16 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	}
 
 	synced := false
-	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence ||
-		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence ||
+	if updatedLicense.Spec.LicenseSequence != currentLicense.GetLicenseSequence() ||
+		updatedLicense.Spec.LicenseSequence != kotsKinds.License.GetLicenseSequence() ||
 		serviceAccountUpdated {
 
 		channelChanged := false
-		if updatedLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
+		if updatedLicense.Spec.ChannelID != currentLicense.GetChannelID() {
 			channelChanged = true
 		}
 		reportingInfo := reporting.GetReportingInfo(a.ID)
-		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, updatedLicense, licenseString, channelChanged, failOnVersionCreate, &render.Renderer{}, reportingInfo)
+		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, licensewrapper.LicenseWrapper{V1: updatedLicense}, licenseString, channelChanged, failOnVersionCreate, &render.Renderer{}, reportingInfo)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to update license")
 		}
@@ -114,7 +115,7 @@ func SyncWithServiceAccountToken(a *apptypes.App, serviceAccountToken string, fa
 		return nil, false, errors.Wrap(err, "failed to get current license")
 	}
 
-	licenseWithToken := currentLicense.DeepCopy()
+	licenseWithToken := currentLicense.V1.DeepCopy()
 	licenseWithToken.Spec.LicenseID = serviceAccountToken
 
 	licenseData, err := replicatedapp.GetLatestLicense(licenseWithToken, a.SelectedChannelID)
@@ -167,13 +168,13 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 		return nil, errors.Wrap(err, "failed to get current license")
 	}
 
-	if currentLicense.Spec.LicenseType != "community" {
+	if currentLicense.GetLicenseType() != "community" {
 		return nil, errors.New("Changing from a non-community license is not supported")
 	}
-	if currentLicense.Spec.LicenseID == newLicense.Spec.LicenseID {
+	if currentLicense.GetLicenseID() == newLicense.Spec.LicenseID {
 		return nil, errors.New("New license is the same as the current license")
 	}
-	if currentLicense.Spec.AppSlug != newLicense.Spec.AppSlug {
+	if currentLicense.GetAppSlug() != newLicense.Spec.AppSlug {
 		return nil, errors.New("New license is for a different application")
 	}
 
@@ -209,11 +210,11 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 	}
 
 	channelChanged := false
-	if newLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
+	if newLicense.Spec.ChannelID != currentLicense.GetChannelID() {
 		channelChanged = true
 	}
 	reportingInfo := reporting.GetReportingInfo(a.ID)
-	newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, newLicense, newLicenseString, channelChanged, true, &render.Renderer{}, reportingInfo)
+	newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, licensewrapper.LicenseWrapper{V1: newLicense}, newLicenseString, channelChanged, true, &render.Renderer{}, reportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update license")
 	}
@@ -239,8 +240,8 @@ func CheckIfLicenseExists(license []byte) (*kotsv1beta1.License, error) {
 	}
 
 	for _, l := range allLicenses {
-		if l.Spec.LicenseID == decodedLicense.Spec.LicenseID {
-			return l, nil
+		if l.GetLicenseID() == decodedLicense.Spec.LicenseID {
+			return l.V1, nil
 		}
 	}
 
@@ -276,7 +277,7 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 		return false, errors.Wrap(err, "failed to get all app licenses")
 	}
 	for _, l := range allLicenses {
-		if l.Spec.LicenseID == newLicense.Spec.LicenseID {
+		if l.GetLicenseID() == newLicense.Spec.LicenseID {
 			return false, nil
 		}
 	}

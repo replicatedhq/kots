@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skipCompatibilityCheck bool) (finalSequence *int64, finalError error) {
@@ -100,7 +101,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}
 
 		// no version has been created for the update yet, create the version as pending download
-		newSequence, err := store.GetStore().CreatePendingDownloadAppVersion(appID, update, kotsApplication, license)
+		newSequence, err := store.GetStore().CreatePendingDownloadAppVersion(appID, update, kotsApplication, licensewrapper.LicenseWrapper{V1: license})
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to create pending download app version for update %s", update.VersionLabel))
 			if err := tasks.SetTaskStatus(taskID, errMsg, "failed"); err != nil {
@@ -210,7 +211,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	pullOptions := pull.PullOptions{
-		LicenseObj:             latestLicense,
+		LicenseObj:             latestLicense.V1,
 		Namespace:              appNamespace,
 		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:     identityConfigFile,
@@ -248,7 +249,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		pullOptions.NoProxyEnvValue = os.Getenv("no_proxy")
 	}
 
-	_, err = pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions)
+	_, err = pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.GetAppSlug()), pullOptions)
 	if err != nil {
 		if errors.Cause(err) != pull.ErrConfigNeeded {
 			finalError = errors.Wrap(err, "failed to pull")

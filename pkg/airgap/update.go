@@ -118,7 +118,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
 
-	if beforeKotsKinds.License == nil {
+	if !beforeKotsKinds.License.IsV1() && !beforeKotsKinds.License.IsV2() {
 		err := errors.New("no license found in application")
 		return err
 	}
@@ -208,7 +208,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		KotsKinds:              beforeKotsKinds,
 	}
 
-	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
+	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.GetAppSlug()), pullOptions); err != nil {
 		if errors.Cause(err) != pull.ErrConfigNeeded {
 			return errors.Wrap(err, "failed to pull")
 		}
@@ -219,10 +219,11 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to read after kotskinds")
 	}
 
-	license, err = store.GetStore().GetLatestLicenseForApp(a.ID)
+	licenseWrapper, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get latest license")
 	}
+	license = licenseWrapper.V1
 
 	if err := canInstall(beforeKotsKinds, afterKotsKinds, license); err != nil {
 		return errors.Wrap(err, "cannot install")
@@ -301,9 +302,9 @@ func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.Ko
 		}
 
 		installChannelID := beforeKotsKinds.Installation.Spec.ChannelID
-		licenseChannelID := beforeKotsKinds.License.Spec.ChannelID
+		licenseChannelID := beforeKotsKinds.License.GetChannelID()
 		installChannelName := beforeKotsKinds.Installation.Spec.ChannelName
-		licenseChannelName := beforeKotsKinds.License.Spec.ChannelName
+		licenseChannelName := beforeKotsKinds.License.GetChannelName()
 		if (installChannelID != "" && licenseChannelID != "" && installChannelID == licenseChannelID) || (installChannelName == licenseChannelName) {
 			if bc.Equal(ac) {
 				isSameVersion = true
