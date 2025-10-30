@@ -82,7 +82,7 @@ func getAppIdFromLicenseId(s store.Store, licenseID string) (string, error) {
 			return "", errors.Wrap(err, "failed to get latest license for app")
 		}
 
-		if l.Spec.LicenseID == licenseID {
+		if l.GetLicenseID() == licenseID {
 			return a.ID, nil
 		}
 	}

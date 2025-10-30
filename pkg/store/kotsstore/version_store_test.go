@@ -10,6 +10,7 @@ import (
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kots/pkg/store/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/multitype"
 	"github.com/stretchr/testify/require"
@@ -36,11 +37,11 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			isInstall:   true,
 			isAutomated: false,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: &kotsv1beta1.License{
+				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
-				},
+				}},
 			},
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
@@ -55,11 +56,11 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			isInstall:   true,
 			isAutomated: false,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: &kotsv1beta1.License{
+				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: false,
 					},
-				},
+				}},
 				Config: &kotsv1beta1.Config{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -92,11 +93,11 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			isInstall:   true,
 			isAutomated: true,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: &kotsv1beta1.License{
+				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
-				},
+				}},
 				Config: &kotsv1beta1.Config{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -129,11 +130,11 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			isInstall:   true,
 			isAutomated: true,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: &kotsv1beta1.License{
+				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: false,
 					},
-				},
+				}},
 			},
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
@@ -147,11 +148,11 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			},
 			isInstall: false,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: &kotsv1beta1.License{
+				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
-				},
+				}},
 			},
 			setup: func(t *testing.T, mockStore *mock_store.MockStore) {
 				t.Setenv("EMBEDDED_CLUSTER_ID", "1234")
@@ -499,11 +500,11 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			},
 			isInstall: true,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: &kotsv1beta1.License{
+				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
-				},
+				}},
 				Config: &kotsv1beta1.Config{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",

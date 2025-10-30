@@ -282,7 +282,7 @@ func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string)
 
 	// add to the top of the list and sort
 	appVersions.AllVersions = append([]*downstreamtypes.DownstreamVersion{mockVersion}, appVersions.AllVersions...)
-	downstreamtypes.SortDownstreamVersions(appVersions.AllVersions, license.Spec.IsSemverRequired)
+	downstreamtypes.SortDownstreamVersions(appVersions.AllVersions, license.IsSemverRequired())
 
 	var baseVersion *downstreamtypes.DownstreamVersion
 	for i, v := range appVersions.AllVersions {
@@ -329,7 +329,7 @@ func (s *KOTSStore) GetAppVersionBaseArchive(appID string, versionLabel string) 
 	return archiveDir, baseSequence, nil
 }
 
-func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error) {
+func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license licensewrapper.LicenseWrapper) (int64, error) {
 	db := persistence.MustGetDBSession()
 	statements := []gorqlite.ParameterizedStatement{}
 
@@ -342,7 +342,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 	if kotsApplication != nil {
 		kotsKinds.KotsApplication = *kotsApplication
 	}
-	kotsKinds.License = licensewrapper.LicenseWrapper{V1: license}
+	kotsKinds.License = license
 
 	var releasedAt *metav1.Time
 	if update.ReleasedAt != nil {

@@ -34,7 +34,7 @@ func (r *OnlineReporter) SubmitAppInfo(appID string) error {
 		return errors.Wrap(err, "failed to get license for app")
 	}
 
-	endpoint := util.ReplicatedAppEndpoint(license)
+	endpoint := util.ReplicatedAppEndpoint(license.V1)
 	if !canReport(endpoint) {
 		return nil
 	}
@@ -45,7 +45,8 @@ func (r *OnlineReporter) SubmitAppInfo(appID string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create http request")
 	}
-	postReq.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
+	licenseID := license.GetLicenseID()
+	postReq.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", licenseID, licenseID)))))
 	postReq.Header.Set("Content-Type", "application/json")
 
 	reportingInfo := GetReportingInfo(a.ID)

@@ -194,7 +194,7 @@ func createSupportBundleSpecConfigMap(app *apptypes.App, sequence int64, kotsKin
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License.V1, &kotsKinds.KotsApplication)
 	if err != nil {
 		return errors.Wrap(err, "failed to update collectors")
 	}
@@ -275,7 +275,7 @@ func createSupportBundleSpecSecret(app *apptypes.App, sequence int64, kotsKinds 
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License.V1, &kotsKinds.KotsApplication)
 	if err != nil {
 		return errors.Wrap(err, "failed to update collectors")
 	}
@@ -738,10 +738,10 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 		logger.Errorf("Failed to load license data from store: %v", err)
 	}
 
-	if license != nil {
+	if license.IsV1() || license.IsV2() {
 		s := serializer.NewSerializerWithOptions(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme, serializer.SerializerOptions{Yaml: true, Pretty: false, Strict: false})
 		var b bytes.Buffer
-		if err := s.Encode(license, &b); err != nil {
+		if err := s.Encode(license.V1, &b); err != nil {
 			logger.Errorf("Failed to marshal license: %v", err)
 		} else {
 			collectors = append(collectors, &troubleshootv1beta2.Collect{
@@ -855,7 +855,7 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 		})
 	}
 
-	if license != nil && license.Spec.IsSnapshotSupported {
+	if (license.IsV1() || license.IsV2()) && license.IsSnapshotSupported() {
 		fsMinioErrors := snapshot.GetFileSystemMinioErrors(context.TODO(), clientset)
 		if len(fsMinioErrors) > 0 {
 			data, _ := yaml.Marshal(fsMinioErrors)

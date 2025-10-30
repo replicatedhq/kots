@@ -81,7 +81,7 @@ func WaitAndReportPreflightChecks(appID string, sequence int64, isSkipPreflights
 			return
 		}
 
-		if err := GetReporter().SubmitPreflightData(license, appID, clusterID, sequence, isSkipPreflights, currentVersionStatus, isCLI, preflightState, string(appStatus)); err != nil {
+		if err := GetReporter().SubmitPreflightData(license.V1, appID, clusterID, sequence, isSkipPreflights, currentVersionStatus, isCLI, preflightState, string(appStatus)); err != nil {
 			logger.Debugf("failed to submit preflight data: %v", err)
 			return
 		}
