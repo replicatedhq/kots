@@ -14,15 +14,9 @@ import (
 //go:embed rego/kots-spec-opa-nonrendered.rego
 var nonRenderedRegoContent string
 
-//go:embed rego/kots-spec-opa-rendered.rego
-var renderedRegoContent string
-
 var (
 	// a prepared rego query for linting NON-rendered files
 	nonRenderedRegoQuery *rego.PreparedEvalQuery
-
-	// a prepared rego query for linting RENDERED files
-	renderedRegoQuery *rego.PreparedEvalQuery
 )
 
 // InitOPA initializes the OPA linting queries
@@ -40,18 +34,6 @@ func InitOPA() error {
 	}
 
 	nonRenderedRegoQuery = &nonRenderedQuery
-
-	// prepare rego query for linting rendered files
-	renderedQuery, err := rego.New(
-		rego.Query("data.kots.spec.rendered.lint"),
-		rego.Module("kots-spec-opa-rendered.rego", string(renderedRegoContent)),
-	).PrepareForEval(ctx)
-
-	if err != nil {
-		return errors.Wrap(err, "failed to prepare rendered query for eval")
-	}
-
-	renderedRegoQuery = &renderedQuery
 
 	return nil
 }
@@ -71,19 +53,6 @@ func ValidateOPANonRendered(specFiles types.SpecFiles) ([]types.LintExpression, 
 	}
 
 	return opaResultsToLintExpressions(results, specFiles)
-}
-
-// ValidateOPARendered validates files using OPA policies after rendering
-// InitOPA needs to be called first in order for this function to run successfully
-// renderedFiles are the rendered files to be linted (we don't render on the fly because it is an expensive process)
-// originalFiles are the non-rendered non-separated files, which are needed to find the actual line number
-func ValidateOPARendered(renderedFiles types.SpecFiles, originalFiles types.SpecFiles) ([]types.LintExpression, error) {
-	ctx := context.Background()
-	results, err := renderedRegoQuery.Eval(ctx, rego.EvalInput(renderedFiles))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to evaluate query")
-	}
-	return opaResultsToLintExpressions(results, originalFiles)
 }
 
 func opaResultsToLintExpressions(results rego.ResultSet, specFiles types.SpecFiles) ([]types.LintExpression, error) {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/lint/types"
 	"github.com/replicatedhq/kots/pkg/lint/validators"
 	log "github.com/sirupsen/logrus"
@@ -14,14 +13,6 @@ import (
 type LintOptions struct {
 	SkipNetworkChecks bool // Skip checks that require network (e.g., version validation)
 	Verbose           bool // Show detailed progress for each validator
-}
-
-var (
-	kurlLinter *validators.KurlLinter
-)
-
-func init() {
-	kurlLinter = validators.NewKurlLinter()
 }
 
 // InitOPA initializes the OPA linting engine
@@ -91,7 +82,7 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 
 	// Step 1: YAML Syntax Validation
 	if opts.Verbose {
-		log.Info("Running validator 1/11: YAML Syntax...")
+		log.Info("Running validator 1/5: YAML Syntax...")
 	}
 	yamlLintExpressions := validators.ValidateYAML(yamlFiles)
 	if opts.Verbose {
@@ -103,18 +94,18 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 	opaNonRenderedLintExpressions := []types.LintExpression{}
 	if !hasErrors(yamlLintExpressions) {
 		if opts.Verbose {
-			log.Info("Running validator 2/11: OPA Non-Rendered...")
+			log.Info("Running validator 2/5: OPA Policies...")
 		}
 		var err error
 		opaNonRenderedLintExpressions, err = validators.ValidateOPANonRendered(yamlFiles)
 		if err != nil {
-			log.Warnf("OPA Non-Rendered validator failed: %v", err)
+			log.Warnf("OPA validator failed: %v", err)
 		}
 		if opts.Verbose {
-			log.Infof("  ✓ OPA Non-Rendered: %d issue(s)", len(opaNonRenderedLintExpressions))
+			log.Infof("  ✓ OPA Policies: %d issue(s)", len(opaNonRenderedLintExpressions))
 		}
 	} else if opts.Verbose {
-		log.Info("Skipping validator 2/11: OPA Non-Rendered (invalid YAML)")
+		log.Info("Skipping validator 2/5: OPA Policies (invalid YAML)")
 	}
 
 	// Step 3: Template Rendering Validation
@@ -123,7 +114,7 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 	renderedFiles := yamlFiles // Default to original files
 	if !hasErrors(yamlLintExpressions) {
 		if opts.Verbose {
-			log.Info("Running validator 3/11: Template Rendering...")
+			log.Info("Running validator 3/5: Template Rendering...")
 		}
 		var err error
 		renderContentLintExpressions, renderedFiles, err = validators.ValidateRendering(yamlFiles)
@@ -134,52 +125,21 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 			log.Infof("  ✓ Template Rendering: %d issue(s)", len(renderContentLintExpressions))
 		}
 	} else if opts.Verbose {
-		log.Info("Skipping validator 3/11: Template Rendering (invalid YAML)")
+		log.Info("Skipping validator 3/5: Template Rendering (invalid YAML)")
 	}
 
 	// Step 4: Rendered YAML Validity
 	if opts.Verbose {
-		log.Info("Running validator 4/11: Rendered YAML Validity...")
+		log.Info("Running validator 4/5: Rendered YAML Validity...")
 	}
 	renderedYAMLLintExpressions := validators.ValidateRenderedYAML(renderedFiles)
 	if opts.Verbose {
 		log.Infof("  ✓ Rendered YAML Validity: %d issue(s)", len(renderedYAMLLintExpressions))
 	}
 
-	// Step 5: Helm Charts Validation
+	// Step 5: Resource Annotations Validation
 	if opts.Verbose {
-		log.Info("Running validator 5/11: Helm Charts...")
-	}
-	// Use rendered files since the HelmChart custom resource might not have the right schema before rendering
-	helmChartsLintExpressions, err := validators.ValidateHelmCharts(renderedFiles, tarGzFiles)
-	if err != nil {
-		log.Warnf("Helm Charts validator failed: %v", err)
-		helmChartsLintExpressions = []types.LintExpression{}
-	}
-	if opts.Verbose {
-		log.Infof("  ✓ Helm Charts: %d issue(s)", len(helmChartsLintExpressions))
-	}
-
-	// Step 6: KOTS Versions Validation (skip if offline mode)
-	targetMinLintExpressions := []types.LintExpression{}
-	if !opts.SkipNetworkChecks {
-		if opts.Verbose {
-			log.Info("Running validator 6/11: KOTS Versions...")
-		}
-		targetMinLintExpressions, err = validators.ValidateKOTSVersions(yamlFiles)
-		if err != nil {
-			log.Warn(errors.Wrap(err, "failed to lint target and min KOTS versions").Error())
-		}
-		if opts.Verbose {
-			log.Infof("  ✓ KOTS Versions: %d issue(s)", len(targetMinLintExpressions))
-		}
-	} else if opts.Verbose {
-		log.Info("Skipping validator 6/11: KOTS Versions (offline mode)")
-	}
-
-	// Step 7: Resource Annotations Validation
-	if opts.Verbose {
-		log.Info("Running validator 7/11: Resource Annotations...")
+		log.Info("Running validator 5/5: Resource Annotations...")
 	}
 	resourceAnnotationsLintExpressions, err := validators.ValidateAnnotations(renderedFiles)
 	if err != nil {
@@ -190,76 +150,13 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 		log.Infof("  ✓ Resource Annotations: %d issue(s)", len(resourceAnnotationsLintExpressions))
 	}
 
-	// Step 8: OPA Rendered Validation
-	if opts.Verbose {
-		log.Info("Running validator 8/11: OPA Rendered...")
-	}
-	opaRenderedLintExpressions, err := validators.ValidateOPARendered(renderedFiles, yamlFiles)
-	if err != nil {
-		log.Warnf("OPA Rendered validator failed: %v", err)
-		opaRenderedLintExpressions = []types.LintExpression{}
-	}
-	if opts.Verbose {
-		log.Infof("  ✓ OPA Rendered: %d issue(s)", len(opaRenderedLintExpressions))
-	}
-
-	// Step 9: Kubeval Validation
-	if opts.Verbose {
-		log.Info("Running validator 9/11: Kubeval (Kubernetes Schemas)...")
-	}
-	kubevalLintExpressions, err := validators.ValidateKubernetes(renderedFiles, yamlFiles)
-	if err != nil {
-		log.Warnf("Kubeval validator failed: %v", err)
-		kubevalLintExpressions = []types.LintExpression{}
-	}
-	if opts.Verbose {
-		log.Infof("  ✓ Kubeval: %d issue(s)", len(kubevalLintExpressions))
-	}
-
-	// Step 10: Kurl Installer Validation
-	if opts.Verbose {
-		log.Info("Running validator 10/11: Kurl Installer...")
-	}
-	installerLintExpressions, err := kurlLinter.ValidateKurlInstaller(yamlFiles)
-	if err != nil {
-		log.Warnf("Kurl Installer validator failed: %v", err)
-		installerLintExpressions = []types.LintExpression{}
-	}
-	if opts.Verbose {
-		log.Infof("  ✓ Kurl Installer: %d issue(s)", len(installerLintExpressions))
-	}
-
-	// Step 11: Embedded Cluster Validation (skip if offline mode)
-	embeddedClusterLintExpressions := []types.LintExpression{}
-	if !opts.SkipNetworkChecks {
-		if opts.Verbose {
-			log.Info("Running validator 11/11: Embedded Cluster...")
-		}
-		embeddedClusterLintExpressions, err = validators.ValidateEmbeddedCluster(yamlFiles)
-		if err != nil {
-			log.Warnf("Embedded Cluster validator failed: %v", err)
-			embeddedClusterLintExpressions = []types.LintExpression{}
-		}
-		if opts.Verbose {
-			log.Infof("  ✓ Embedded Cluster: %d issue(s)", len(embeddedClusterLintExpressions))
-		}
-	} else if opts.Verbose {
-		log.Info("Skipping validator 11/11: Embedded Cluster (offline mode)")
-	}
-
 	// Collect all lint expressions
 	allLintExpressions := []types.LintExpression{}
 	allLintExpressions = append(allLintExpressions, yamlLintExpressions...)
 	allLintExpressions = append(allLintExpressions, opaNonRenderedLintExpressions...)
-	allLintExpressions = append(allLintExpressions, opaRenderedLintExpressions...)
 	allLintExpressions = append(allLintExpressions, renderContentLintExpressions...)
 	allLintExpressions = append(allLintExpressions, renderedYAMLLintExpressions...)
-	allLintExpressions = append(allLintExpressions, helmChartsLintExpressions...)
-	allLintExpressions = append(allLintExpressions, targetMinLintExpressions...)
 	allLintExpressions = append(allLintExpressions, resourceAnnotationsLintExpressions...)
-	allLintExpressions = append(allLintExpressions, kubevalLintExpressions...)
-	allLintExpressions = append(allLintExpressions, installerLintExpressions...)
-	allLintExpressions = append(allLintExpressions, embeddedClusterLintExpressions...)
 
 	result.LintExpressions = allLintExpressions
 	result.IsComplete = true
