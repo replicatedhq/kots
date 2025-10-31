@@ -27,6 +27,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -232,7 +233,23 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	licenseChan, err := kotsutil.FindChannelInLicense(a.SelectedChannelID, latestLicense)
+	// FindChannelInLicense still expects v1beta1.License, so create temporary v1beta1 license for lookup
+	// Channels have identical structure in both v1beta1 and v1beta2
+	var tempLicense *kotsv1beta1.License
+	if latestLicense.IsV1() {
+		tempLicense = latestLicense.V1
+	} else if latestLicense.IsV2() {
+		v1Channels := latestLicense.GetChannels()
+		tempLicense = &kotsv1beta1.License{
+			Spec: kotsv1beta1.LicenseSpec{
+				ChannelID:   latestLicense.GetChannelID(),
+				ChannelName: latestLicense.GetChannelName(),
+				Channels:    v1Channels,
+			},
+		}
+	}
+
+	licenseChan, err := kotsutil.FindChannelInLicense(a.SelectedChannelID, tempLicense)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find channel in license after sync")
 	}
@@ -243,7 +260,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	}
 
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
-		License:            latestLicense,
+		License:            tempLicense,
 		LastUpdateCheckAt:  a.LastUpdateCheckAt,
 		CurrentCursor:      updateCursor,
 		CurrentChannelID:   licenseChan.ChannelID,
@@ -253,8 +270,8 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		ReportingInfo:      reporting.GetReportingInfo(a.ID),
 	}
 
-	// get updates
-	updates, err := getUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
+	// get updates - use wrapper method to get AppSlug (works for both v1beta1 and v1beta2)
+	updates, err := getUpdates(fmt.Sprintf("replicated://%s", latestLicense.GetAppSlug()), getUpdatesOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get updates")
 	}
