@@ -184,7 +184,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			continue
 		}
 
-		if err := image.CopyOnlineImages(opts.ProcessImageOptions, chartImages, opts.KotsKinds, opts.KotsKinds.License.V1, dockerHubRegistryCreds, opts.RenderOptions.Log); err != nil {
+		if err := image.CopyOnlineImages(opts.ProcessImageOptions, chartImages, opts.KotsKinds, opts.KotsKinds.License, dockerHubRegistryCreds, opts.RenderOptions.Log); err != nil {
 			return errors.Wrap(err, "failed to copy online images")
 		}
 	}
