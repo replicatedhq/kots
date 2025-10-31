@@ -1699,30 +1699,32 @@ func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) 
 	return matchedChannelID, nil
 }
 
-func FindChannelInLicense(channelID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
+func FindChannelInLicense(channelID string, license licensewrapper.LicenseWrapper) (*kotsv1beta1.Channel, error) {
 	if channelID == "" {
 		return nil, errors.New("channelID is required")
 	}
-	if len(license.Spec.Channels) == 0 {
-		if license.Spec.ChannelID != channelID {
+
+	channels := license.GetChannels()
+	if len(channels) == 0 {
+		if license.GetChannelID() != channelID {
 			return nil, errors.New("channel not found in non-multi channel license")
 		}
 		// this is an install from before multi channel support, so emulate it using the top level info
 		return &kotsv1beta1.Channel{
-			ChannelID:        license.Spec.ChannelID,
-			ChannelName:      license.Spec.ChannelName,
+			ChannelID:        license.GetChannelID(),
+			ChannelName:      license.GetChannelName(),
 			IsDefault:        true,
-			IsSemverRequired: license.Spec.IsSemverRequired,
+			IsSemverRequired: license.IsSemverRequired(),
 		}, nil
 	}
 
-	for _, channel := range license.Spec.Channels {
+	for _, channel := range channels {
 		if channel.ChannelID == channelID {
 			return &channel, nil
 		}
 	}
 
-	logger.Warnf("channel id '%s' not found in multi channel license with sequence %d", channelID, license.Spec.LicenseSequence)
+	logger.Warnf("channel id '%s' not found in multi channel license with sequence %d", channelID, license.GetLicenseSequence())
 	return nil, errors.New("channel not found in multi channel format license")
 }
 

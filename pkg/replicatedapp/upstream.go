@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type ReplicatedUpstream struct {
@@ -42,13 +42,13 @@ func ParseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 	return &replicatedUpstream, nil
 }
 
-func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.License, cursor string, selectedChannelID string) (*retryablehttp.Request, error) {
+func (r *ReplicatedUpstream) GetRequest(method string, license licensewrapper.LicenseWrapper, cursor string, selectedChannelID string) (*retryablehttp.Request, error) {
 	endpoint, err := getReplicatedAppEndpoint(license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get replicated app endpoint")
 	}
 
-	urlPath := path.Join("release", license.Spec.AppSlug)
+	urlPath := path.Join("release", license.GetAppSlug())
 	if r.Channel != nil {
 		urlPath = path.Join(urlPath, *r.Channel)
 	}
@@ -58,7 +58,7 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 	if r.VersionLabel != nil {
 		urlValues.Set("versionLabel", *r.VersionLabel)
 	}
-	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.GetLicenseSequence()))
 	urlValues.Add("isSemverSupported", "true")
 	urlValues.Add("isEmbeddedCluster", fmt.Sprintf("%t", util.IsEmbeddedCluster()))
 	urlValues.Add("selectedChannelId", selectedChannelID)
@@ -70,13 +70,17 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
+	licenseID := license.GetLicenseID()
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", licenseID, licenseID)))))
 
 	return req, nil
 }
 
-func getReplicatedAppEndpoint(license *kotsv1beta1.License) (string, error) {
-	endpoint := util.ReplicatedAppEndpoint(license)
+func getReplicatedAppEndpoint(license licensewrapper.LicenseWrapper) (string, error) {
+	endpoint := license.GetEndpoint()
+	if endpoint == "" {
+		endpoint = "https://replicated.app"
+	}
 
 	u, err := url.Parse(endpoint)
 	if err != nil {
