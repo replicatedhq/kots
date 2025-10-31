@@ -12,6 +12,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kotskinds/multitype"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -363,7 +364,8 @@ spec:
 			configObj, _, _ := decode([]byte(tt.configSpecData), nil, nil)
 
 			localRegistry := registrytypes.RegistrySettings{}
-			got, err := templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, license, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, MarshalConfig)
+			licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+			got, err := templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, licenseWrapper, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, MarshalConfig)
 			req.NoError(err)
 
 			gotObj, _, err := decode([]byte(got), nil, nil)
@@ -372,7 +374,7 @@ spec:
 			req.Equal(wantObj, gotObj)
 
 			// compare with oldMarshalConfig results
-			got, err = templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, license, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, oldMarshalConfig)
+			got, err = templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, licenseWrapper, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 

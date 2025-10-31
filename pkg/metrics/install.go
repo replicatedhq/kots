@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/segmentio/ksuid"
 )
 
@@ -29,7 +29,7 @@ type InstallMetrics struct {
 	Cause                      string    `json:"cause"`
 }
 
-func InitInstallMetrics(license *kotsv1beta1.License, disableOutboundConnections bool) (InstallMetrics, error) {
+func InitInstallMetrics(license licensewrapper.LicenseWrapper, disableOutboundConnections bool) (InstallMetrics, error) {
 	endpoint, err := getEndpoint(license)
 	if err != nil {
 		return InstallMetrics{}, errors.Wrap(err, "failed to get endpoint")
@@ -101,8 +101,8 @@ func (m InstallMetrics) Post(url string) error {
 	return nil
 }
 
-func getEndpoint(license *kotsv1beta1.License) (string, error) {
-	endpoint := util.ReplicatedAppEndpoint(license)
+func getEndpoint(license licensewrapper.LicenseWrapper) (string, error) {
+	endpoint := license.GetEndpoint()
 
 	if isDevEndpoint(endpoint) {
 		// cluster ip services are not resolvable from the cli ...

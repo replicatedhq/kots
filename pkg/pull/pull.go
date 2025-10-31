@@ -87,7 +87,7 @@ var (
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
-func PullApplicationMetadata(upstreamURI string, license *kotsv1beta1.License, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
+func PullApplicationMetadata(upstreamURI string, license licensewrapper.LicenseWrapper, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
 	host := util.ReplicatedAppEndpoint(license)
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -150,7 +150,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.LicenseObj != nil {
-		fetchOptions.License = pullOptions.LicenseObj
+		fetchOptions.License = licensewrapper.LicenseWrapper{V1: pullOptions.LicenseObj}
 	} else if pullOptions.LicenseFile != "" {
 		license, err := kotsutil.LoadLicenseFromPath(pullOptions.LicenseFile)
 		if err != nil {
@@ -162,20 +162,23 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			}
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
-		fetchOptions.License = license
+		fetchOptions.License = licensewrapper.LicenseWrapper{V1: license}
 	} else {
-		fetchOptions.License = localLicense
+		fetchOptions.License = licensewrapper.LicenseWrapper{V1: localLicense}
 	}
 
-	if fetchOptions.License != nil {
-		verifiedLicense, err := kotslicense.VerifySignature(fetchOptions.License)
+	if fetchOptions.License.IsV1() || fetchOptions.License.IsV2() {
+		verifiedLicense, err := kotslicense.VerifyLicenseWrapper(fetchOptions.License)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to verify signature")
 		}
 		fetchOptions.License = verifiedLicense
 
 		if pullOptions.LicenseEndpointOverride != "" {
-			fetchOptions.License.Spec.Endpoint = pullOptions.LicenseEndpointOverride
+			// Apply endpoint override to V1 license if applicable
+			if fetchOptions.License.IsV1() {
+				fetchOptions.License.V1.Spec.Endpoint = pullOptions.LicenseEndpointOverride
+			}
 		}
 	}
 
@@ -227,9 +230,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.AirgapRoot != "" {
-		// LicenseIsExpired now accepts LicenseWrapper, wrap the v1beta1 license
-		licenseWrapper := licensewrapper.LicenseWrapper{V1: fetchOptions.License}
-		if expired, err := kotslicense.LicenseIsExpired(licenseWrapper); err != nil {
+		// fetchOptions.License is already a LicenseWrapper
+		if expired, err := kotslicense.LicenseIsExpired(fetchOptions.License); err != nil {
 			return "", errors.Wrap(err, "failed to check license expiration")
 		} else if expired {
 			return "", util.ActionableError{Message: "License is expired"}
@@ -850,28 +852,34 @@ func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, erro
 	return installation, nil
 }
 
-func publicKeysMatch(log *logger.CLILogger, license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) error {
-	if license == nil || airgap == nil {
+func publicKeysMatch(log *logger.CLILogger, license licensewrapper.LicenseWrapper, airgap *kotsv1beta1.Airgap) error {
+	if (!license.IsV1() && !license.IsV2()) || airgap == nil {
 		// not sure when this would happen, but earlier logic allows this combination
 		return nil
 	}
 
-	publicKey, err := kotslicense.GetAppPublicKey(license)
+	// GetAppPublicKey currently only supports v1beta1 licenses
+	if !license.IsV1() {
+		return nil // Skip validation for non-v1 licenses for now
+	}
+
+	publicKey, err := kotslicense.GetAppPublicKey(license.V1)
 	if err != nil {
 		return errors.Wrap(err, "failed to get public key from license")
 	}
 
-	if err := kotslicense.Verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
+	appSlug := license.GetAppSlug()
+	if err := kotslicense.Verify([]byte(appSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
 		log.Info("got error validating airgap bundle: %s", err.Error())
 		if airgap.Spec.AppSlug != "" {
 			return util.ActionableError{
 				NoRetry: true,
-				Message: fmt.Sprintf("Failed to verify bundle signature - license is for app %q, airgap package for app %q", license.Spec.AppSlug, airgap.Spec.AppSlug),
+				Message: fmt.Sprintf("Failed to verify bundle signature - license is for app %q, airgap package for app %q", appSlug, airgap.Spec.AppSlug),
 			}
 		} else {
 			return util.ActionableError{
 				NoRetry: true,
-				Message: fmt.Sprintf("Failed to verify bundle signature - airgap package does not match license app %q", license.Spec.AppSlug),
+				Message: fmt.Sprintf("Failed to verify bundle signature - airgap package does not match license app %q", appSlug),
 			}
 		}
 	}

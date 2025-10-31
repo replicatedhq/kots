@@ -292,23 +292,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 
 	// verify that requested channel slug exists in the license
 	// Note: FindChannelIDInLicense still expects v1beta1.License (will be updated in Phase 4)
-	// We need to construct a temporary v1beta1 license for channel validation
-	var licenseForChannelCheck *kotsv1beta1.License
-	if verifiedLicense.IsV1() {
-		licenseForChannelCheck = verifiedLicense.V1
-	} else if verifiedLicense.IsV2() {
-		// Convert v1beta2 to v1beta1 temporarily for channel checking
-		// Channels have identical structure in both versions
-		v1Channels := verifiedLicense.GetChannels()
-		licenseForChannelCheck = &kotsv1beta1.License{
-			Spec: kotsv1beta1.LicenseSpec{
-				ChannelID:   verifiedLicense.GetChannelID(),
-				ChannelName: verifiedLicense.GetChannelName(),
-				Channels:    v1Channels,
-			},
-		}
-	}
-	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, licenseForChannelCheck)
+	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = "Your current license does not grant access to the channel you requested. Please generate a support bundle and contact support for assistance."
@@ -336,15 +320,17 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if v1License != nil {
-			licenseData, err := replicatedapp.GetLatestLicense(v1License, matchedChannelID)
+			// Wrap the v1License before passing to GetLatestLicense
+			wrappedLicense := licensewrapper.LicenseWrapper{V1: v1License}
+			licenseData, err := replicatedapp.GetLatestLicense(wrappedLicense, matchedChannelID)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to get latest license"))
 				uploadLicenseResponse.Error = err.Error()
 				JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
 				return
 			}
-			// Wrap the returned v1beta1 license
-			verifiedLicense = licensewrapper.LicenseWrapper{V1: licenseData.License}
+			// licenseData.License is already a wrapper
+			verifiedLicense = licenseData.License
 			licenseString = string(licenseData.LicenseBytes)
 		}
 	}

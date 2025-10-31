@@ -10,10 +10,12 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 func (r *OnlineReporter) SubmitPreflightData(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
-	endpoint := util.ReplicatedAppEndpoint(license)
+	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	endpoint := util.ReplicatedAppEndpoint(licenseWrapper)
 	if !canReport(endpoint) {
 		return nil
 	}

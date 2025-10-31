@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -78,6 +79,7 @@ func Test_getRequest(t *testing.T) {
 				ChannelID:       "channel",
 			},
 		}
+		licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
 		r := &ReplicatedUpstream{
 			Channel:      test.channel,
 			VersionLabel: test.versionLabel,
@@ -92,7 +94,7 @@ func Test_getRequest(t *testing.T) {
 			t.Setenv("EMBEDDED_CLUSTER_ID", "123")
 			t.Setenv("REPLICATED_APP_ENDPOINT", "https://replicated-app")
 		}
-		request, err := r.GetRequest("GET", license, cursor.Cursor, channel)
+		request, err := r.GetRequest("GET", licenseWrapper, cursor.Cursor, channel)
 		req.NoError(err)
 		assert.Equal(t, test.expectedURL, request.URL.String())
 	}
@@ -133,7 +135,8 @@ func Test_makeLicenseURL(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			url, err := makeLicenseURL(test.license, test.selectedChannelID)
+			licenseWrapper := licensewrapper.LicenseWrapper{V1: test.license}
+			url, err := makeLicenseURL(licenseWrapper, test.selectedChannelID)
 			require.NoError(t, err)
 			assert.Equal(t, test.expectedURL, url)
 		})

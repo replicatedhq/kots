@@ -35,6 +35,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -247,7 +248,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	var kotsKinds *kotsutil.KotsKinds
 	var nonRenderedConfig *kotsv1beta1.Config
-	var appLicense *kotsv1beta1.License
+	var appLicense licensewrapper.LicenseWrapper
 	var localRegistry registrytypes.RegistrySettings
 
 	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
@@ -260,16 +261,13 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO(Phase 4): Update this function to use LicenseWrapper throughout
-	// Temporary workaround: Get wrapper then extract .V1 for downstream functions
-	appLicenseWrapper, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+	appLicense, err = store.GetStore().GetLatestLicenseForApp(foundApp.ID)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to get license for app"
 		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 		return
 	}
-	appLicense = appLicenseWrapper.V1 // Temporary: use .V1 until Phase 4
 
 	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
@@ -422,7 +420,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	var kotsKinds *kotsutil.KotsKinds
 	var nonRenderedConfig *kotsv1beta1.Config
-	var license *kotsv1beta1.License
+	var license licensewrapper.LicenseWrapper
 	var localRegistry registrytypes.RegistrySettings
 	var downstreamVersion *downstreamtypes.DownstreamVersion
 
@@ -449,16 +447,13 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO(Phase 4): Update this function to use LicenseWrapper throughout
-	// Temporary workaround: Get wrapper then extract .V1 for downstream functions
-	licenseWrapper, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+	license, err = store.GetStore().GetLatestLicenseForApp(foundApp.ID)
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to get license for app"
 		logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	license = licenseWrapper.V1 // Temporary: use .V1 until Phase 4
 
 	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
@@ -1007,9 +1002,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallationSpec(nextAppSequence, foundApp.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: foundApp.GetSlug()}
-	// TODO(Phase 4): Update kotsconfig.TemplateConfigObjects to accept LicenseWrapper
-	// Temporary workaround: Use .V1 for template rendering
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License.V1, &kotsKinds.KotsApplication, registryInfo, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, registryInfo, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))

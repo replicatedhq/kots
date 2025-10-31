@@ -33,6 +33,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type AppUpdateCheckRequest struct {
@@ -171,12 +172,13 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if kotsadm.IsAirgap() {
-		license, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
+		licenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to parse app license"))
 			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
 			return
 		}
+		license := licensewrapper.LicenseWrapper{V1: licenseV1}
 		updates, err := update.GetAvailableAirgapUpdates(app, license)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get available airgap updates"))
@@ -196,9 +198,7 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO(Phase 4): Update update.GetAvailableUpdates to accept LicenseWrapper
-	// Temporary workaround: Use .V1 for getting updates
-	updates, err := update.GetAvailableUpdates(store, app, latestLicense.V1)
+	updates, err := update.GetAvailableUpdates(store, app, latestLicense)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get available app updates"))
 		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
@@ -307,7 +307,8 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 }
 
 func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, error) {
-	url := fmt.Sprintf("%s/admin-console/version/latest", util.ReplicatedAppEndpoint(license))
+	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	url := fmt.Sprintf("%s/admin-console/version/latest", util.ReplicatedAppEndpoint(licenseWrapper))
 
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {

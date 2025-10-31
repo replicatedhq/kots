@@ -20,6 +20,7 @@ import (
 	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type StartUpgradeServiceRequest struct {
@@ -104,10 +105,11 @@ func (h *Handler) GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request
 }
 
 func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool, string, error) {
-	currLicense, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+	currLicenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to parse app license")
 	}
+	currLicense := licensewrapper.LicenseWrapper{V1: currLicenseV1}
 
 	if a.IsAirgap {
 		updateBundle, err := update.GetAirgapUpdate(a.Slug, r.ChannelID, r.UpdateCursor)
@@ -139,7 +141,7 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get latest license")
 	}
-	if currLicense.Spec.ChannelID != ll.License.Spec.ChannelID || r.ChannelID != ll.License.Spec.ChannelID {
+	if currLicense.GetChannelID() != ll.License.GetChannelID() || r.ChannelID != ll.License.GetChannelID() {
 		return false, "license channel has changed, please sync the license", nil
 	}
 	updates, err := update.GetAvailableUpdates(store.GetStore(), a, currLicense)

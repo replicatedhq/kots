@@ -20,7 +20,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -179,20 +178,7 @@ func notifyClusterUpgradeFailed(ctx context.Context, kbClient kbclient.Client, o
 		return errors.New("previous installation not found")
 	}
 
-	// ReplicatedAppEndpoint needs v1beta1.License format
-	// If we have v1beta2, create a temporary v1beta1 license with the endpoint field
-	var tempLicense *kotsv1beta1.License
-	if opts.KotsKinds.License.IsV1() {
-		tempLicense = opts.KotsKinds.License.V1
-	} else if opts.KotsKinds.License.IsV2() {
-		tempLicense = &kotsv1beta1.License{
-			Spec: kotsv1beta1.LicenseSpec{
-				Endpoint: opts.KotsKinds.License.GetEndpoint(),
-			},
-		}
-	}
-
-	err = embeddedcluster.NotifyUpgradeFailed(ctx, util.ReplicatedAppEndpoint(tempLicense), ins, prev, reason)
+	err = embeddedcluster.NotifyUpgradeFailed(ctx, util.ReplicatedAppEndpoint(opts.KotsKinds.License), ins, prev, reason)
 	if err != nil {
 		return errors.Wrap(err, "failed to send event")
 	}

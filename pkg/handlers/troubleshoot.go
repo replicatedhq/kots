@@ -368,9 +368,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO(Phase 4): Update util.ReplicatedAppEndpoint to accept LicenseWrapper
-	// Temporary workaround: Use .V1 for endpoint lookup
-	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", util.ReplicatedAppEndpoint(license.V1), license.GetAppSlug())
+	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", util.ReplicatedAppEndpoint(license), license.GetAppSlug())
 
 	req, err := util.NewRetryableRequest("POST", endpoint, f)
 	if err != nil {

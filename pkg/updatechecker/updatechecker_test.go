@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/updatechecker/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -69,9 +70,11 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: &kotsv1beta1.License{
-					Spec: kotsv1beta1.LicenseSpec{
-						AppSlug: "test-app-slug",
+				License: licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
 					},
 				},
 			},
@@ -105,9 +108,11 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: &kotsv1beta1.License{
-					Spec: kotsv1beta1.LicenseSpec{
-						AppSlug: "test-app-slug",
+				License: licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
 					},
 				},
 			},
@@ -147,9 +152,11 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: &kotsv1beta1.License{
-					Spec: kotsv1beta1.LicenseSpec{
-						AppSlug: "test-app-slug",
+				License: licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
 					},
 				},
 			},
@@ -187,9 +194,11 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: &kotsv1beta1.License{
-					Spec: kotsv1beta1.LicenseSpec{
-						AppSlug: "test-app-slug",
+				License: licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
 					},
 				},
 			},
@@ -219,9 +228,11 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: &kotsv1beta1.License{
-					Spec: kotsv1beta1.LicenseSpec{
-						AppSlug: "test-app-slug",
+				License: licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
 					},
 				},
 			},
@@ -244,9 +255,11 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: &kotsv1beta1.License{
-					Spec: kotsv1beta1.LicenseSpec{
-						AppSlug: "test-app-slug",
+				License: licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
 					},
 				},
 			},
@@ -277,9 +290,11 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 			},
 			pendingVersions: []*downstreamtypes.DownstreamVersion{}, // empty - all were demoted
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: &kotsv1beta1.License{
-					Spec: kotsv1beta1.LicenseSpec{
-						AppSlug: "test-app-slug",
+				License: licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
 					},
 				},
 			},

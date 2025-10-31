@@ -15,10 +15,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (string, error) {
-	url := fmt.Sprintf("%s/clusterconfig/version/Installer?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
+	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	url := fmt.Sprintf("%s/clusterconfig/version/Installer?versionLabel=%s", util.ReplicatedAppEndpoint(licenseWrapper), url.QueryEscape(versionLabel))
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
@@ -52,7 +54,8 @@ func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (
 }
 
 func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (string, error) {
-	url := fmt.Sprintf("%s/clusterconfig/artifact/kots?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
+	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	url := fmt.Sprintf("%s/clusterconfig/artifact/kots?versionLabel=%s", util.ReplicatedAppEndpoint(licenseWrapper), url.QueryEscape(versionLabel))
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")

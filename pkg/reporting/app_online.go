@@ -34,7 +34,7 @@ func (r *OnlineReporter) SubmitAppInfo(appID string) error {
 		return errors.Wrap(err, "failed to get license for app")
 	}
 
-	endpoint := util.ReplicatedAppEndpoint(license.V1)
+	endpoint := util.ReplicatedAppEndpoint(license)
 	if !canReport(endpoint) {
 		return nil
 	}

@@ -80,7 +80,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}
 
 		var kotsApplication *kotsv1beta1.Application
-		var license *kotsv1beta1.License
+		var license licensewrapper.LicenseWrapper
 		if cause, ok := errors.Cause(finalError).(upstream.IncompatibleAppError); ok {
 			errMsg = cause.Error()
 			kotsApplication = cause.KotsApplication
@@ -101,7 +101,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}
 
 		// no version has been created for the update yet, create the version as pending download
-		newSequence, err := store.GetStore().CreatePendingDownloadAppVersion(appID, update, kotsApplication, licensewrapper.LicenseWrapper{V1: license})
+		newSequence, err := store.GetStore().CreatePendingDownloadAppVersion(appID, update, kotsApplication, license)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to create pending download app version for update %s", update.VersionLabel))
 			if err := tasks.SetTaskStatus(taskID, errMsg, "failed"); err != nil {

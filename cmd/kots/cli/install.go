@@ -42,6 +42,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -119,8 +120,8 @@ func InstallCmd() *cobra.Command {
 			}
 
 			appSlug := ""
-			if license != nil {
-				appSlug = license.Spec.AppSlug
+			if license.IsV1() || license.IsV2() {
+				appSlug = license.GetAppSlug()
 			}
 
 			registryConfig, err := getRegistryConfig(v, clientset, appSlug)
@@ -372,7 +373,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if airgapArchive := v.GetString("airgap-bundle"); airgapArchive != "" {
-				if deployOptions.License == nil {
+				if !deployOptions.License.IsV1() && !deployOptions.License.IsV2() {
 					return errors.New("license is required when airgap bundle is specified")
 				}
 
@@ -481,7 +482,7 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
-			if deployOptions.License != nil {
+			if deployOptions.License.IsV1() || deployOptions.License.IsV2() {
 				log.ActionWithSpinner("Waiting for installation to complete")
 				status, err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint)
 				if err != nil {
@@ -698,7 +699,7 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, authSlug stri
 	if err != nil {
 		return false, errors.Wrap(err, "failed to add metadata")
 	}
-	if _, err := io.Copy(metadataPart, bytes.NewReader([]byte(deployOptions.License.Spec.AppSlug))); err != nil {
+	if _, err := io.Copy(metadataPart, bytes.NewReader([]byte(deployOptions.License.GetAppSlug()))); err != nil {
 		return false, errors.Wrap(err, "failed to copy metadata")
 	}
 
@@ -844,19 +845,19 @@ func getRegistryConfig(v *viper.Viper, clientset kubernetes.Interface, appSlug s
 	}, nil
 }
 
-func getLicense(v *viper.Viper) (*kotsv1beta1.License, string, error) {
+func getLicense(v *viper.Viper) (licensewrapper.LicenseWrapper, string, error) {
 	if v.GetString("license-file") == "" {
-		return nil, "", nil
+		return licensewrapper.LicenseWrapper{}, "", nil
 	}
 
 	licenseData, err := os.ReadFile(ExpandDir(v.GetString("license-file")))
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to read license file")
+		return licensewrapper.LicenseWrapper{}, "", errors.Wrap(err, "failed to read license file")
 	}
 
-	license, err := kotsutil.LoadLicenseFromBytes(licenseData)
+	license, err := licensewrapper.LoadLicenseFromBytes(licenseData)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to parse license file")
+		return licensewrapper.LicenseWrapper{}, "", errors.Wrap(err, "failed to parse license file")
 	}
 
 	return license, string(licenseData), nil
@@ -924,7 +925,7 @@ func CheckRBAC() error {
 }
 
 func ValidateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) (storetypes.DownstreamVersionStatus, error) {
-	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, deployOptions.License.Spec.AppSlug)
+	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, deployOptions.License.GetAppSlug())
 
 	startTime := time.Now()
 
@@ -983,7 +984,7 @@ func getAutomatedInstallStatus(url string, authSlug string) (*tasks.TaskStatus, 
 }
 
 func ValidatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) error {
-	url := fmt.Sprintf("%s/app/%s/preflight/result", apiEndpoint, deployOptions.License.Spec.AppSlug)
+	url := fmt.Sprintf("%s/app/%s/preflight/result", apiEndpoint, deployOptions.License.GetAppSlug())
 
 	startTime := time.Now()
 

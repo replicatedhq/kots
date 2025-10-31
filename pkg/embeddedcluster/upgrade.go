@@ -27,6 +27,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
@@ -79,13 +80,14 @@ func startClusterUpgrade(
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 
 	// We cannot notify the upgrade started until the new install is available
-	if err := NotifyUpgradeStarted(ctx, util.ReplicatedAppEndpoint(license), newInstall, current, versionLabel); err != nil {
+	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	if err := NotifyUpgradeStarted(ctx, util.ReplicatedAppEndpoint(licenseWrapper), newInstall, current, versionLabel); err != nil {
 		logger.Errorf("Failed to notify upgrade started: %v", err)
 	}
 
 	err = runClusterUpgrade(ctx, newInstall, registrySettings, license, versionLabel)
 	if err != nil {
-		if err := NotifyUpgradeFailed(ctx, util.ReplicatedAppEndpoint(license), newInstall, current, err.Error()); err != nil {
+		if err := NotifyUpgradeFailed(ctx, util.ReplicatedAppEndpoint(licenseWrapper), newInstall, current, err.Error()); err != nil {
 			logger.Errorf("Failed to notify upgrade failed: %v", err)
 		}
 		return fmt.Errorf("run cluster upgrade: %w", err)
@@ -254,7 +256,8 @@ func downloadUpgradeBinary(ctx context.Context, license *kotsv1beta1.License, ve
 }
 
 func newDownloadUpgradeBinaryRequest(ctx context.Context, license *kotsv1beta1.License, versionLabel string) (*retryablehttp.Request, error) {
-	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
+	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", util.ReplicatedAppEndpoint(licenseWrapper), url.QueryEscape(versionLabel))
 	req, err := util.NewRetryableRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
@@ -348,9 +351,10 @@ func getEmbeddedClusterMetadataFromReplicatedApp(
 	if in.Spec.Config.MetadataOverrideURL != "" {
 		metadataURL = in.Spec.Config.MetadataOverrideURL
 	} else {
+		licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
 		metadataURL = fmt.Sprintf(
 			"%s/embedded-cluster-public-files/metadata/v%s.json",
-			util.ReplicatedAppEndpoint(license),
+			util.ReplicatedAppEndpoint(licenseWrapper),
 			// trim the leading 'v' from the version as this allows both v1.0.0 and 1.0.0 to work
 			strings.TrimPrefix(in.Spec.Config.Version, "v"),
 		)

@@ -1674,15 +1674,16 @@ func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
 	return ecVersion, nil
 }
 
-func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) (string, error) {
+func FindChannelIDInLicense(requestedSlug string, license licensewrapper.LicenseWrapper) (string, error) {
 	matchedChannelID := ""
 	if requestedSlug != "" {
+		channels := license.GetChannels()
 		// if we do not have a Channels array or its empty, default to using the top level fields for backwards compatibility
-		if len(license.Spec.Channels) == 0 {
+		if len(channels) == 0 {
 			logger.Debug("not a multi-channel license, using top level license channel id")
-			matchedChannelID = license.Spec.ChannelID
+			matchedChannelID = license.GetChannelID()
 		} else {
-			for _, channel := range license.Spec.Channels {
+			for _, channel := range channels {
 				if channel.ChannelSlug == requestedSlug {
 					matchedChannelID = channel.ChannelID
 					break
@@ -1694,7 +1695,7 @@ func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) 
 		}
 	} else { // this is an install from before the channel slug was added to the configmap
 		logger.Debug("requested channel slug not found in configmap, using top level channel id from license")
-		matchedChannelID = license.Spec.ChannelID
+		matchedChannelID = license.GetChannelID()
 	}
 	return matchedChannelID, nil
 }

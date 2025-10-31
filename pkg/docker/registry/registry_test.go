@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -149,7 +150,8 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				t.Setenv(k, v)
 			}
 
-			got, err := GetRegistryProxyInfo(tt.args.license, tt.args.installation, tt.args.app)
+			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.args.license}
+			got, err := GetRegistryProxyInfo(licenseWrapper, tt.args.installation, tt.args.app)
 			if err != nil {
 				t.Errorf("GetRegistryProxyInfo() error = %v", err)
 			} else if !reflect.DeepEqual(got, tt.want) {
@@ -303,7 +305,8 @@ func Test_getRegistryProxyInfoFromLicense(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res := getRegistryProxyInfoFromLicense(tt.license)
+			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.license}
+			res := getRegistryProxyInfoFromLicense(licenseWrapper)
 			if res.Registry != tt.want.Registry || res.Proxy != tt.want.Proxy {
 				t.Errorf("ProxyEndpointFromLicense() = %v, want %v", res, tt.want)
 			}

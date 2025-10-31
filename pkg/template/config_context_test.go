@@ -9,6 +9,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -478,15 +479,16 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			req := require.New(t)
 
 			// expect license to be the one passed as an arg unless the test overrides this
-			if tt.want.license == nil && tt.args.license != nil {
-				tt.want.license = tt.args.license
+			if !tt.want.license.IsV1() && !tt.want.license.IsV2() && (tt.args.license != nil) {
+				tt.want.license = licensewrapper.LicenseWrapper{V1: tt.args.license}
 			}
 
 			builder := Builder{}
 			builder.AddCtx(StaticCtx{})
 
 			localRegistry := registrytypes.RegistrySettings{}
-			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.license, nil, nil, dockerregistrytypes.RegistryOptions{}, "app-slug", tt.args.decryptValues)
+			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.args.license}
+			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, licenseWrapper, nil, nil, dockerregistrytypes.RegistryOptions{}, "app-slug", tt.args.decryptValues)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})
@@ -502,9 +504,11 @@ func Test_localImageName(t *testing.T) {
 			Password:  "my_password",
 		},
 
-		license: &kotsv1beta1.License{
-			Spec: kotsv1beta1.LicenseSpec{
-				Endpoint: "replicated.registry.com",
+		license: licensewrapper.LicenseWrapper{
+			V1: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint: "replicated.registry.com",
+				},
 			},
 		},
 		app: &kotsv1beta1.Application{
@@ -517,10 +521,12 @@ func Test_localImageName(t *testing.T) {
 	ctxWithoutRegistry := ConfigCtx{
 		LocalRegistry: registrytypes.RegistrySettings{},
 
-		license: &kotsv1beta1.License{
-			Spec: kotsv1beta1.LicenseSpec{
-				AppSlug:  "myslug",
-				Endpoint: "replicated.registry.com",
+		license: licensewrapper.LicenseWrapper{
+			V1: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					AppSlug:  "myslug",
+					Endpoint: "replicated.registry.com",
+				},
 			},
 		},
 		app: &kotsv1beta1.Application{
@@ -533,10 +539,12 @@ func Test_localImageName(t *testing.T) {
 	ctxWithoutRegistryProxyAll := ConfigCtx{
 		LocalRegistry: registrytypes.RegistrySettings{},
 
-		license: &kotsv1beta1.License{
-			Spec: kotsv1beta1.LicenseSpec{
-				AppSlug:  "myslug",
-				Endpoint: "replicated.registry.com",
+		license: licensewrapper.LicenseWrapper{
+			V1: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					AppSlug:  "myslug",
+					Endpoint: "replicated.registry.com",
+				},
 			},
 		},
 		app: &kotsv1beta1.Application{
@@ -549,10 +557,12 @@ func Test_localImageName(t *testing.T) {
 	ctxWithCustomDomains := ConfigCtx{
 		LocalRegistry: registrytypes.RegistrySettings{},
 
-		license: &kotsv1beta1.License{
-			Spec: kotsv1beta1.LicenseSpec{
-				AppSlug:  "myslug",
-				Endpoint: "replicated.registry.com",
+		license: licensewrapper.LicenseWrapper{
+			V1: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					AppSlug:  "myslug",
+					Endpoint: "replicated.registry.com",
+				},
 			},
 		},
 		app: &kotsv1beta1.Application{
@@ -648,7 +658,7 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 		name          string
 		LocalRegistry registrytypes.RegistrySettings
 		VersionInfo   *VersionInfo
-		license       *kotsv1beta1.License
+		license       licensewrapper.LicenseWrapper
 		want          string
 	}{
 		{
@@ -659,7 +669,7 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 				Username:  "",
 				Password:  "",
 			},
-			license: nil,
+			license: licensewrapper.LicenseWrapper{},
 			want:    `{"auths":{"proxy.replicated.com":{"auth":"TElDRU5TRV9JRDo="},"registry.replicated.com":{"auth":"TElDRU5TRV9JRDo="}}}`,
 		},
 		{
@@ -670,13 +680,15 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 				Username:  "",
 				Password:  "",
 			},
-			license: &kotsv1beta1.License{
-				TypeMeta:   metav1.TypeMeta{},
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "abc",
+			license: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "abc",
+					},
+					Status: kotsv1beta1.LicenseStatus{},
 				},
-				Status: kotsv1beta1.LicenseStatus{},
 			},
 			want: `{"auths":{"proxy.replicated.com":{"auth":"TElDRU5TRV9JRDphYmM="},"registry.replicated.com":{"auth":"TElDRU5TRV9JRDphYmM="}}}`,
 		},
@@ -692,13 +704,15 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 				ReplicatedRegistryDomain: "custom.registry.com",
 				ReplicatedProxyDomain:    "custom.proxy.com",
 			},
-			license: &kotsv1beta1.License{
-				TypeMeta:   metav1.TypeMeta{},
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "abc",
+			license: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "abc",
+					},
+					Status: kotsv1beta1.LicenseStatus{},
 				},
-				Status: kotsv1beta1.LicenseStatus{},
 			},
 			want: `{"auths":{"custom.proxy.com":{"auth":"TElDRU5TRV9JRDphYmM="},"custom.registry.com":{"auth":"TElDRU5TRV9JRDphYmM="}}}`,
 		},

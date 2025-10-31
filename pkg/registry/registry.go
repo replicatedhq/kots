@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 // RewriteImages will use the app (a) and send the images to the registry specified. It will create patches for these
@@ -115,10 +116,11 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return "", errors.Wrap(err, "failed to load installation from path")
 	}
 
-	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(appDir, "upstream", "userdata", "license.yaml"))
+	licenseV1, err := kotsutil.LoadLicenseFromPath(filepath.Join(appDir, "upstream", "userdata", "license.yaml"))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load license from path")
 	}
+	license := licensewrapper.LicenseWrapper{V1: licenseV1}
 
 	configValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(appDir, "upstream", "userdata", "config.yaml"))
 	if err != nil && !os.IsNotExist(errors.Cause(err)) {
@@ -127,7 +129,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 
 	options := rewrite.RewriteOptions{
 		RootDir:          appDir,
-		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamURI:      fmt.Sprintf("replicated://%s", license.GetAppSlug()),
 		UpstreamPath:     filepath.Join(appDir, "upstream"),
 		Installation:     installation,
 		Downstreams:      downstreamNames,

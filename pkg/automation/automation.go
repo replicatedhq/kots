@@ -213,23 +213,24 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	desiredAppName := strings.Replace(appSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", appSlug)
 
-	matchedChannelID, err := kotsutil.FindChannelIDInLicense(instParams.RequestedChannelSlug, verifiedLicense)
+	// Wrap the verified license
+	licenseWrapper := licensewrapper.LicenseWrapper{V1: verifiedLicense}
+
+	matchedChannelID, err := kotsutil.FindChannelIDInLicense(instParams.RequestedChannelSlug, licenseWrapper)
 	if err != nil {
 		return errors.Wrap(err, "failed to find requested channel in license")
 	}
 
 	if !kotsadm.IsAirgap() {
-		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense, matchedChannelID)
+		licenseData, err := replicatedapp.GetLatestLicense(licenseWrapper, matchedChannelID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get latest license")
 		}
-		verifiedLicense = licenseData.License
+		licenseWrapper = licenseData.License
 		license = licenseData.LicenseBytes
 	}
 
 	// check license expiration
-	// LicenseIsExpired now accepts LicenseWrapper, wrap the v1beta1 license
-	licenseWrapper := licensewrapper.LicenseWrapper{V1: verifiedLicense}
 	expired, err := kotslicense.LicenseIsExpired(licenseWrapper)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if license is expired for app %s", appSlug)

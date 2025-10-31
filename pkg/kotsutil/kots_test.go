@@ -1202,7 +1202,8 @@ func TestFindChannelIDInLicense(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			channelID, err := kotsutil.FindChannelIDInLicense(tt.requestedSlug, tt.license)
+			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.license}
+			channelID, err := kotsutil.FindChannelIDInLicense(tt.requestedSlug, licenseWrapper)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -1300,7 +1301,8 @@ func TestFindChannelInLicense(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			channel, err := kotsutil.FindChannelInLicense(tt.requestedID, tt.license)
+			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.license}
+			channel, err := kotsutil.FindChannelInLicense(tt.requestedID, licenseWrapper)
 
 			if tt.expectError {
 				require.Error(t, err)

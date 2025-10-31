@@ -46,12 +46,11 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (lice
 		updatedLicense = verifiedLicense
 	} else {
 		// get from the api
-		// Note: GetLatestLicense still expects v1beta1.License (will be updated in Phase 4)
-		licenseData, err := replicatedapp.GetLatestLicense(currentLicense.V1, a.SelectedChannelID)
+		licenseData, err := replicatedapp.GetLatestLicense(currentLicense, a.SelectedChannelID)
 		if err != nil {
 			return licensewrapper.LicenseWrapper{}, false, errors.Wrap(err, "failed to get latest license")
 		}
-		updatedLicense = licensewrapper.LicenseWrapper{V1: licenseData.License}
+		updatedLicense = licenseData.License
 		licenseString = string(licenseData.LicenseBytes)
 	}
 
@@ -117,8 +116,9 @@ func SyncWithServiceAccountToken(a *apptypes.App, serviceAccountToken string, fa
 
 	licenseWithToken := currentLicense.V1.DeepCopy()
 	licenseWithToken.Spec.LicenseID = serviceAccountToken
+	wrappedLicenseWithToken := licensewrapper.LicenseWrapper{V1: licenseWithToken}
 
-	licenseData, err := replicatedapp.GetLatestLicense(licenseWithToken, a.SelectedChannelID)
+	licenseData, err := replicatedapp.GetLatestLicense(wrappedLicenseWithToken, a.SelectedChannelID)
 	if err != nil {
 		return licensewrapper.LicenseWrapper{}, false, errors.Wrap(err, "failed to get latest license with service account token")
 	}
@@ -143,12 +143,11 @@ func Change(a *apptypes.App, newLicenseString string) (licensewrapper.LicenseWra
 	}
 
 	if !a.IsAirgap {
-		// Note: GetLatestLicense still expects v1beta1.License (will be updated in Phase 4)
-		licenseData, err := replicatedapp.GetLatestLicense(newLicense.V1, a.SelectedChannelID)
+		licenseData, err := replicatedapp.GetLatestLicense(newLicense, a.SelectedChannelID)
 		if err != nil {
 			return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to get latest license")
 		}
-		newLicense = licensewrapper.LicenseWrapper{V1: licenseData.License}
+		newLicense = licenseData.License
 		newLicenseString = string(licenseData.LicenseBytes)
 	} else {
 		// check if new license supports airgap mode

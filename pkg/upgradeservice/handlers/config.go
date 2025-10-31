@@ -28,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type CurrentConfigResponse struct {
@@ -71,13 +72,14 @@ func (h *Handler) CurrentConfig(w http.ResponseWriter, r *http.Request) {
 
 	params := GetContextParams(r)
 
-	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
+	appLicenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
 		response.Error = "failed to load license from bytes"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
+	appLicense := licensewrapper.LicenseWrapper{V1: appLicenseV1}
 
 	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
@@ -145,13 +147,14 @@ func (h *Handler) LiveConfig(w http.ResponseWriter, r *http.Request) {
 
 	params := GetContextParams(r)
 
-	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
+	appLicenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
 		response.Error = "failed to load license from bytes"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
+	appLicense := licensewrapper.LicenseWrapper{V1: appLicenseV1}
 
 	request := LiveConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
