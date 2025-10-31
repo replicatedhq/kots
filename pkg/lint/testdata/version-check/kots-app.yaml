@@ -1,9 +1,0 @@
-apiVersion: kots.io/v1beta1
-kind: Application
-metadata:
-  name: version-check-test
-spec:
-  title: Version Check Test
-  targetKotsVersion: v999.999.999
-  minKotsVersion: v888.888.888
-

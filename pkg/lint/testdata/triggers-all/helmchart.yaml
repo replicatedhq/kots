@@ -1,9 +1,0 @@
-apiVersion: kots.io/v1beta1
-kind: HelmChart
-metadata:
-  name: missing-chart
-spec:
-  chart:
-    name: my-chart
-    chartVersion: 1.0.0
-

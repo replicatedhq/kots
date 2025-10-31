@@ -1,7 +1,7 @@
 apiVersion: troubleshoot.sh/v1beta2
 kind: Preflight
 metadata:
-  name: perfect-app-preflight
+  name: app-preflight
 spec:
   analyzers:
     - clusterVersion:

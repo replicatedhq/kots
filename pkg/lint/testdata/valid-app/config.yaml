@@ -1,11 +1,11 @@
 apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
-  name: my-config
+  name: app-config
 spec:
   groups:
-    - name: example_settings
-      title: My Example Settings
+    - name: settings
+      title: Application Settings
       items:
         - name: hostname
           title: Hostname
