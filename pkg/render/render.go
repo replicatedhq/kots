@@ -107,11 +107,10 @@ func RenderDir(opts types.RenderDirOptions) error {
 		return errors.Wrap(err, "failed to load installation from path")
 	}
 
-	licenseV1, err := kotsutil.LoadLicenseFromPath(filepath.Join(opts.ArchiveDir, "upstream", "userdata", "license.yaml"))
+	license, err := licensewrapper.LoadLicenseFromPath(filepath.Join(opts.ArchiveDir, "upstream", "userdata", "license.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load license from path")
 	}
-	license := licensewrapper.LicenseWrapper{V1: licenseV1}
 
 	configValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(opts.ArchiveDir, "upstream", "userdata", "config.yaml"))
 	if err != nil && !os.IsNotExist(errors.Cause(err)) {

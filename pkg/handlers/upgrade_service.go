@@ -20,6 +20,7 @@ import (
 	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
@@ -105,11 +106,10 @@ func (h *Handler) GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request
 }
 
 func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool, string, error) {
-	currLicenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+	currLicense, err := licensewrapper.LoadLicenseFromBytes([]byte(a.License))
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to parse app license")
 	}
-	currLicense := licensewrapper.LicenseWrapper{V1: currLicenseV1}
 
 	if a.IsAirgap {
 		updateBundle, err := update.GetAirgapUpdate(a.Slug, r.ChannelID, r.UpdateCursor)
@@ -212,7 +212,7 @@ func GetUpgradeServiceParams(s store.Store, a *apptypes.App, r StartUpgradeServi
 		source = "Airgap Update"
 	}
 
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+	licenseWrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(a.License))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse app license")
 	}
@@ -238,12 +238,17 @@ func GetUpgradeServiceParams(s store.Store, a *apptypes.App, r StartUpgradeServi
 		}
 		updateECVersion = ecv
 	} else {
-		kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
+		// For online, we need V1 license
+		var licenseV1 *kotsv1beta1.License
+		if licenseWrapper.IsV1() {
+			licenseV1 = licenseWrapper.V1
+		}
+		kb, err := replicatedapp.DownloadKOTSBinary(licenseV1, r.VersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to download kots binary")
 		}
 		updateKOTSBin = kb
-		ecv, err := replicatedapp.GetECVersionForRelease(license, r.VersionLabel)
+		ecv, err := replicatedapp.GetECVersionForRelease(licenseV1, r.VersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get kots version for release")
 		}

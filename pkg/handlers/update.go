@@ -20,7 +20,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -172,13 +171,12 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if kotsadm.IsAirgap() {
-		licenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
+		license, err := licensewrapper.LoadLicenseFromBytes([]byte(app.License))
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to parse app license"))
 			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
 			return
 		}
-		license := licensewrapper.LicenseWrapper{V1: licenseV1}
 		updates, err := update.GetAvailableAirgapUpdates(app, license)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get available airgap updates"))

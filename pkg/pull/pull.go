@@ -152,7 +152,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if pullOptions.LicenseObj != nil {
 		fetchOptions.License = licensewrapper.LicenseWrapper{V1: pullOptions.LicenseObj}
 	} else if pullOptions.LicenseFile != "" {
-		license, err := kotsutil.LoadLicenseFromPath(pullOptions.LicenseFile)
+		license, err := licensewrapper.LoadLicenseFromPath(pullOptions.LicenseFile)
 		if err != nil {
 			if errors.Cause(err) == kotslicense.ErrSignatureInvalid {
 				return "", kotslicense.ErrSignatureInvalid
@@ -162,7 +162,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			}
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
-		fetchOptions.License = licensewrapper.LicenseWrapper{V1: license}
+		fetchOptions.License = license
 	} else {
 		fetchOptions.License = licensewrapper.LicenseWrapper{V1: localLicense}
 	}

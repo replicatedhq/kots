@@ -116,11 +116,10 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return "", errors.Wrap(err, "failed to load installation from path")
 	}
 
-	licenseV1, err := kotsutil.LoadLicenseFromPath(filepath.Join(appDir, "upstream", "userdata", "license.yaml"))
+	license, err := licensewrapper.LoadLicenseFromPath(filepath.Join(appDir, "upstream", "userdata", "license.yaml"))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load license from path")
 	}
-	license := licensewrapper.LicenseWrapper{V1: licenseV1}
 
 	configValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(appDir, "upstream", "userdata", "config.yaml"))
 	if err != nil && !os.IsNotExist(errors.Cause(err)) {

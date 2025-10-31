@@ -102,13 +102,13 @@ func AutomateInstall(opts AutomateInstallOptions) error {
 			logger.Error(fmt.Errorf("license secret %q does not contain a license field", licenseSecret.Name))
 		}
 
-		decodedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+		decodedLicense, err := licensewrapper.LoadLicenseFromBytes(license)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to unmarshal license data"))
 		}
 
-		if decodedLicense != nil {
-			err = deleteAirgapData(clientset, decodedLicense.Spec.AppSlug)
+		if decodedLicense.IsV1() || decodedLicense.IsV2() {
+			err = deleteAirgapData(clientset, decodedLicense.GetAppSlug())
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to delete airgap data"))
 			}
@@ -132,7 +132,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return fmt.Errorf("license secret %q does not contain a license field", licenseSecret.Name)
 	}
 
-	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+	unverifiedLicense, err := licensewrapper.LoadLicenseFromBytes(license)
 	appSlug := ""
 	if err != nil {
 		if licenseSecret.Labels != nil {
@@ -140,7 +140,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 		return errors.Wrap(err, "failed to unmarshal license data")
 	}
-	appSlug = unverifiedLicense.Spec.AppSlug
+	appSlug = unverifiedLicense.GetAppSlug()
 
 	logger.Debug("automated license install found",
 		zap.String("appSlug", appSlug))
@@ -200,7 +200,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 	}()
 
-	verifiedLicense, err := kotslicense.VerifySignature(unverifiedLicense)
+	verifiedLicenseV1, err := kotslicense.VerifySignature(unverifiedLicense.V1)
 	if err != nil {
 		return errors.Wrap(err, "failed to verify license signature")
 	}
@@ -214,7 +214,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	upstreamURI := fmt.Sprintf("replicated://%s", appSlug)
 
 	// Wrap the verified license
-	licenseWrapper := licensewrapper.LicenseWrapper{V1: verifiedLicense}
+	licenseWrapper := licensewrapper.LicenseWrapper{V1: verifiedLicenseV1}
 
 	matchedChannelID, err := kotsutil.FindChannelIDInLicense(instParams.RequestedChannelSlug, licenseWrapper)
 	if err != nil {
@@ -245,7 +245,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return errors.Wrapf(err, "failed to check if license already exists for app %s", appSlug)
 	}
 	if existingLicense != nil {
-		resolved, err := kotsadmlicense.ResolveExistingLicense(verifiedLicense)
+		resolved, err := kotsadmlicense.ResolveExistingLicense(verifiedLicenseV1)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
 		}
@@ -254,7 +254,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 	}
 
-	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
+	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, string(license), verifiedLicenseV1.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
 	if err != nil {
 		return errors.Wrap(err, "failed to create app record")
 	}
@@ -272,7 +272,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	}
 
 	// airgap data is the airgap manifest + app specs + image list loaded from configmaps
-	airgapData, err := getAirgapData(clientset, verifiedLicense)
+	airgapData, err := getAirgapData(clientset, verifiedLicenseV1)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load airgap data for %s", appSlug)
 	}
@@ -378,16 +378,20 @@ func NeedToWaitForAirgapApp() (bool, error) {
 			continue
 		}
 
-		unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+		unverifiedLicense, err := licensewrapper.LoadLicenseFromBytes(license)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to unmarshal license data"))
 			continue
 		}
 
 		// airgap data is the airgap manifest + app specs + image list laoded from configmaps
-		needToWait, err := needToWaitForAirgapApp(clientset, unverifiedLicense)
+		var licenseV1 *kotsv1beta1.License
+		if unverifiedLicense.IsV1() {
+			licenseV1 = unverifiedLicense.V1
+		}
+		needToWait, err := needToWaitForAirgapApp(clientset, licenseV1)
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to load airgap data for %s", unverifiedLicense.Spec.AppSlug))
+			logger.Error(errors.Wrapf(err, "failed to load airgap data for %s", unverifiedLicense.GetAppSlug()))
 			continue
 		}
 

@@ -1062,12 +1062,12 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 	}
 
 	if licenseSpec.Valid && licenseSpec.String != "" {
-		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
+		license, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseSpec.String))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read license spec")
 		}
-		if license != nil {
-			v.KOTSKinds.License = licensewrapper.LicenseWrapper{V1: license}
+		if license.IsV1() || license.IsV2() {
+			v.KOTSKinds.License = license
 		}
 	}
 

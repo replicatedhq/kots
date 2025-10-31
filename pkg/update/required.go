@@ -67,11 +67,10 @@ func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap, cur
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get downstream versions")
 	}
-	licenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
+	license, err := licensewrapper.LoadLicenseFromBytes([]byte(app.License))
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to load license")
 	}
-	license := licensewrapper.LicenseWrapper{V1: licenseV1}
 	requiredUpdates, err := getRequiredAirgapUpdates(airgap, license, appVersions.AllVersions, app.ChannelChanged, app.SelectedChannelID)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get missing required versions")

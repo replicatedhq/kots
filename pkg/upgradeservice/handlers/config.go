@@ -72,14 +72,13 @@ func (h *Handler) CurrentConfig(w http.ResponseWriter, r *http.Request) {
 
 	params := GetContextParams(r)
 
-	appLicenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
+	appLicense, err := licensewrapper.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
 		response.Error = "failed to load license from bytes"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
-	appLicense := licensewrapper.LicenseWrapper{V1: appLicenseV1}
 
 	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
@@ -147,14 +146,13 @@ func (h *Handler) LiveConfig(w http.ResponseWriter, r *http.Request) {
 
 	params := GetContextParams(r)
 
-	appLicenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
+	appLicense, err := licensewrapper.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
 		response.Error = "failed to load license from bytes"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
-	appLicense := licensewrapper.LicenseWrapper{V1: appLicenseV1}
 
 	request := LiveConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {

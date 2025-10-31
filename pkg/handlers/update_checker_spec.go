@@ -49,14 +49,13 @@ func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	licenseV1, err := kotsutil.LoadLicenseFromBytes([]byte(foundApp.License))
+	license, err := licensewrapper.LoadLicenseFromBytes([]byte(foundApp.License))
 	if err != nil {
 		updateCheckerSpecResponse.Error = "failed to get license from app"
 		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
 		JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 		return
 	}
-	license := licensewrapper.LicenseWrapper{V1: licenseV1}
 
 	licenseChan, err := kotsutil.FindChannelInLicense(foundApp.SelectedChannelID, license)
 	if err != nil {

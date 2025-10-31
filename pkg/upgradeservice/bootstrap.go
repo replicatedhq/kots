@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 func bootstrap(params types.UpgradeServiceParams) (finalError error) {
@@ -75,7 +76,7 @@ func pullArchiveFromOnline(params types.UpgradeServiceParams) (finalError error)
 }
 
 func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions) (finalError error) {
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
+	licenseWrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
 		return errors.Wrap(err, "failed to load license from bytes")
 	}
@@ -84,7 +85,10 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	// the container, as we are running in a previous release of the helm chart. If this is the
 	// case, we fall back to the previous behavior and get the endpoint from the license.
 	if val := os.Getenv("REPLICATED_APP_ENDPOINT"); val == "" {
-		os.Setenv("REPLICATED_APP_ENDPOINT", license.Spec.Endpoint)
+		endpoint := licenseWrapper.GetEndpoint()
+		if endpoint != "" {
+			os.Setenv("REPLICATED_APP_ENDPOINT", endpoint)
+		}
 	}
 
 	identityConfigFile, err := getIdentityConfigFile(params)
@@ -124,7 +128,9 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	}()
 
 	// common options
-	pullOptions.LicenseObj = license
+	if licenseWrapper.IsV1() {
+		pullOptions.LicenseObj = licenseWrapper.V1
+	}
 	pullOptions.Namespace = util.AppNamespace()
 	pullOptions.ConfigFile = filepath.Join(params.AppArchive, "upstream", "userdata", "config.yaml")
 	pullOptions.InstallationFile = filepath.Join(params.AppArchive, "upstream", "userdata", "installation.yaml")
@@ -143,7 +149,7 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	pullOptions.RewriteImageOptions = registrySettings
 	pullOptions.KotsKinds = beforeKotsKinds
 
-	_, err = pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions)
+	_, err = pull.Pull(fmt.Sprintf("replicated://%s", licenseWrapper.GetAppSlug()), pullOptions)
 	if err != nil && errors.Cause(err) != pull.ErrConfigNeeded {
 		return errors.Wrap(err, "failed to pull")
 	}
