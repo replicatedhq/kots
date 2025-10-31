@@ -11,7 +11,7 @@ import (
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -46,7 +46,7 @@ func RewriteImages(images []string, destRegistry dockerregistrytypes.RegistryOpt
 
 // RewritePrivateImages rewrites private images to be proxied through proxy.replicated.com,
 // and rewrites replicated registry images to use the custom registry domain if configured
-func RewritePrivateImages(images []string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License) ([]kustomizetypes.Image, error) {
+func RewritePrivateImages(images []string, kotsKinds *kotsutil.KotsKinds, license licensewrapper.LicenseWrapper) ([]kustomizetypes.Image, error) {
 	replicatedRegistryInfo, err := registry.GetRegistryProxyInfo(license, &kotsKinds.Installation, &kotsKinds.KotsApplication)
 	if err != nil {
 		return nil, errors.Wrap(err, "get registry proxy info")
@@ -96,7 +96,7 @@ func RewritePrivateImages(images []string, kotsKinds *kotsutil.KotsKinds, licens
 			// all other private images are rewritten to use the replicated proxy
 			image = kustomizetypes.Image{
 				Name:    dockerRef.Name(),
-				NewName: registry.MakeProxiedImageURL(replicatedRegistry.ProxyEndpoint, license.Spec.AppSlug, privateImage),
+				NewName: registry.MakeProxiedImageURL(replicatedRegistry.ProxyEndpoint, license.GetAppSlug(), privateImage),
 			}
 		}
 

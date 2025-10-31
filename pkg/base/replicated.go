@@ -152,7 +152,7 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 	versionInfo := template.VersionInfoFromInstallationSpec(renderOptions.Sequence, renderOptions.IsAirgap, tkk.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: renderOptions.AppSlug}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(tkk.Config, itemValues, tkk.License.V1, &tkk.KotsApplication, renderOptions.RegistrySettings, &versionInfo, &appInfo, tkk.IdentityConfig, util.PodNamespace, true)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(tkk.Config, itemValues, tkk.License, &tkk.KotsApplication, renderOptions.RegistrySettings, &versionInfo, &appInfo, tkk.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to template config objects")
 	}
