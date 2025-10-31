@@ -157,15 +157,8 @@ func Change(a *apptypes.App, newLicenseString string) (licensewrapper.LicenseWra
 		}
 	}
 
-	// Note: LicenseIsExpired still expects v1beta1.License (will be updated in Phase 4)
-	var licenseForExpiryCheck *kotsv1beta1.License
-	if newLicense.IsV1() {
-		licenseForExpiryCheck = newLicense.V1
-	} else {
-		// Temporary conversion for expiry check
-		licenseForExpiryCheck = newLicense.V1
-	}
-	expired, err := kotslicense.LicenseIsExpired(licenseForExpiryCheck)
+	// Check if license is expired (works for both v1beta1 and v1beta2)
+	expired, err := kotslicense.LicenseIsExpired(newLicense)
 	if err != nil {
 		return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to check if license is expired")
 	}

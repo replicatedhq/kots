@@ -28,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -227,7 +228,9 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	}
 
 	// check license expiration
-	expired, err := kotslicense.LicenseIsExpired(verifiedLicense)
+	// LicenseIsExpired now accepts LicenseWrapper, wrap the v1beta1 license
+	licenseWrapper := licensewrapper.LicenseWrapper{V1: verifiedLicense}
+	expired, err := kotslicense.LicenseIsExpired(licenseWrapper)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if license is expired for app %s", appSlug)
 	}

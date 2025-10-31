@@ -196,7 +196,9 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updates, err := update.GetAvailableUpdates(store, app, latestLicense)
+	// TODO(Phase 4): Update update.GetAvailableUpdates to accept LicenseWrapper
+	// Temporary workaround: Use .V1 for getting updates
+	updates, err := update.GetAvailableUpdates(store, app, latestLicense.V1)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get available app updates"))
 		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
@@ -279,7 +281,9 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestVersion, _ := findLatestKotsVersion(a.ID, version.KOTSKinds.License)
+	// TODO(Phase 4): Update findLatestKotsVersion to accept LicenseWrapper
+	// Temporary workaround: Use .V1 for version checking
+	latestVersion, _ := findLatestKotsVersion(a.ID, version.KOTSKinds.License.V1)
 
 	targetVersion, err := getKotsUpgradeVersion(version.KOTSKinds, latestVersion)
 	if err != nil {

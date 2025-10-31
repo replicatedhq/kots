@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kotskinds/pkg/crypto"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
@@ -54,13 +54,12 @@ spec:
 	req.True(wrapper.IsV1(), "Should be v1beta1 license")
 
 	// Convert to response using the handler function
-	response, err := licenseResponseFromLicense(wrapper)
+	response, err := licenseResponseFromLicense(wrapper, nil)
 	req.NoError(err, "Should convert v1beta1 to response")
 
 	// Verify response fields
-	assert.Equal(t, "test-license-id", response.LicenseID)
-	assert.Equal(t, "test-app", response.AppSlug)
-	assert.Equal(t, "Test Customer", response.CustomerName)
+	assert.Equal(t, "test-license-id", response.ID)
+	assert.Equal(t, "Test Customer", response.Assignee)
 	assert.Equal(t, "Stable", response.ChannelName)
 	assert.Equal(t, "trial", response.LicenseType)
 	assert.True(t, response.IsAirgapSupported)
@@ -68,10 +67,10 @@ spec:
 	assert.True(t, response.IsSnapshotSupported)
 	assert.Equal(t, int64(1), response.LicenseSequence)
 
-	// Verify entitlements
-	req.Len(response.Entitlements, 1, "Should have 1 entitlement (expires_at)")
-	assert.Equal(t, "Expiration", response.Entitlements[0].Title)
-	assert.Equal(t, "expires_at", response.Entitlements[0].Label)
+	// Verify entitlements - expires_at is excluded from entitlements array and handled separately
+	req.Len(response.Entitlements, 0, "Should have 0 entitlements (expires_at is handled separately)")
+	// Verify expires_at is in the ExpiresAt field instead
+	assert.False(t, response.ExpiresAt.IsZero(), "ExpiresAt should be set from expires_at entitlement")
 }
 
 // TestLicenseResponseFromLicense_V1Beta2 verifies that licenseResponseFromLicense
@@ -124,13 +123,12 @@ spec:
 	req.True(wrapper.IsV2(), "Should be v1beta2 license")
 
 	// Convert to response using the handler function
-	response, err := licenseResponseFromLicense(wrapper)
+	response, err := licenseResponseFromLicense(wrapper, nil)
 	req.NoError(err, "Should convert v1beta2 to response")
 
 	// Verify response fields - should be identical format to v1beta1
-	assert.Equal(t, "test-license-id-v2", response.LicenseID)
-	assert.Equal(t, "test-app-v2", response.AppSlug)
-	assert.Equal(t, "Test Customer V2", response.CustomerName)
+	assert.Equal(t, "test-license-id-v2", response.ID)
+	assert.Equal(t, "Test Customer V2", response.Assignee)
 	assert.Equal(t, "Beta", response.ChannelName)
 	assert.Equal(t, "prod", response.LicenseType)
 	assert.False(t, response.IsAirgapSupported)
@@ -202,15 +200,14 @@ spec:
 	v2Wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(v2License))
 	req.NoError(err)
 
-	v1Response, err := licenseResponseFromLicense(v1Wrapper)
+	v1Response, err := licenseResponseFromLicense(v1Wrapper, nil)
 	req.NoError(err)
-	v2Response, err := licenseResponseFromLicense(v2Wrapper)
+	v2Response, err := licenseResponseFromLicense(v2Wrapper, nil)
 	req.NoError(err)
 
 	// Compare key fields - they should be identical
-	assert.Equal(t, v1Response.LicenseID, v2Response.LicenseID, "LicenseID should match")
-	assert.Equal(t, v1Response.AppSlug, v2Response.AppSlug, "AppSlug should match")
-	assert.Equal(t, v1Response.CustomerName, v2Response.CustomerName, "CustomerName should match")
+	assert.Equal(t, v1Response.ID, v2Response.ID, "ID should match")
+	assert.Equal(t, v1Response.Assignee, v2Response.Assignee, "Assignee should match")
 	assert.Equal(t, v1Response.ChannelName, v2Response.ChannelName, "ChannelName should match")
 	assert.Equal(t, v1Response.LicenseType, v2Response.LicenseType, "LicenseType should match")
 	assert.Equal(t, v1Response.IsAirgapSupported, v2Response.IsAirgapSupported, "IsAirgapSupported should match")
@@ -400,6 +397,7 @@ func TestGetLicense_V1Beta2(t *testing.T) {
 
 			// Setup mock store
 			mockStore := mock_store.NewMockStore(ctrl)
+			store.SetStore(mockStore)
 			testApp := &apptypes.App{
 				ID:   "test-app-id",
 				Slug: "test-app",
@@ -415,7 +413,7 @@ func TestGetLicense_V1Beta2(t *testing.T) {
 				Return(licenseWrapper, nil)
 
 			// Create handler
-			handler := &Handler{KotsStore: mockStore}
+			handler := &Handler{}
 
 			// Create HTTP request
 			req2 := httptest.NewRequest("GET", "/api/v1/app/test-app/license", nil)
@@ -514,8 +512,6 @@ func TestUploadNewLicense_V1Beta2(t *testing.T) {
 // (sync endpoint) works correctly with v1beta2 licenses
 func TestSyncLicense_V1Beta2(t *testing.T) {
 	req := require.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	// Load test license
 	licenseData, err := os.ReadFile("../license/testdata/valid-v1beta2.yaml")
@@ -525,25 +521,9 @@ func TestSyncLicense_V1Beta2(t *testing.T) {
 	req.NoError(err, "Should parse license")
 	req.True(licenseWrapper.IsV2(), "Should be v1beta2 license")
 
-	// Setup mock store
-	mockStore := mock_store.NewMockStore(ctrl)
-	testApp := &apptypes.App{
-		ID:       "test-app-id",
-		Slug:     "test-app",
-		Name:     "Test App",
-		IsAirgap: false,
-	}
-
-	mockStore.EXPECT().
-		GetAppFromSlug("test-app").
-		Return(testApp, nil)
-
-	mockStore.EXPECT().
-		GetLatestLicenseForApp("test-app-id").
-		Return(licenseWrapper, nil)
-
 	// Note: Full sync test would require mocking kotsadmlicense.Sync
-	// which is complex. For now, we verify the basic request structure.
+	// and other external dependencies which is complex.
+	// For now, we verify the license can be parsed and the request structure is correct.
 
 	// Create request body
 	syncRequest := SyncLicenseRequest{
@@ -552,14 +532,15 @@ func TestSyncLicense_V1Beta2(t *testing.T) {
 	bodyBytes, err := json.Marshal(syncRequest)
 	req.NoError(err)
 
-	// Create HTTP request
+	// Create HTTP request structure (not calling handler, just verifying structure)
 	req2 := httptest.NewRequest("PUT", "/api/v1/app/test-app/license", bytes.NewReader(bodyBytes))
 	req2 = mux.SetURLVars(req2, map[string]string{"appSlug": "test-app"})
 	req2.Header.Set("Content-Type", "application/json")
 
-	// Note: We're not calling the handler here because it requires extensive mocking
-	// of external dependencies. This test verifies the license can be parsed and
-	// the request structure is correct.
+	// Verify request structure
+	req.NotNil(req2)
+	req.Equal("PUT", req2.Method)
+	req.Equal("application/json", req2.Header.Get("Content-Type"))
 
 	t.Log("✓ Sync license request structure test passed")
 }

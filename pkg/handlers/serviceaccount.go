@@ -60,7 +60,9 @@ func (h *Handler) UploadServiceAccountToken(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	saToken, _, err := kotsadmlicense.ValidateServiceAccountToken(request.ServiceAccountToken, currentLicense.Spec.LicenseID)
+	// TODO(Phase 4): Update ValidateServiceAccountToken to accept LicenseWrapper or extract licenseID differently
+	// Temporary workaround: Use wrapper method to get LicenseID
+	saToken, _, err := kotsadmlicense.ValidateServiceAccountToken(request.ServiceAccountToken, currentLicense.GetLicenseID())
 	if err != nil {
 		response.Error = err.Error()
 		logger.Error(errors.Wrap(err, "failed to validate service account token"))

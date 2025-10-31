@@ -364,7 +364,9 @@ func (h *Handler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
 	clusterID := downstreams[0].ClusterID
 
 	go func() {
-		if err := reporting.GetReporter().SubmitPreflightData(license, foundApp.ID, clusterID, 0, true, "", false, "", ""); err != nil {
+		// TODO(Phase 4): Update reporting.SubmitPreflightData to accept LicenseWrapper
+		// Temporary workaround: Use .V1 for reporting
+		if err := reporting.GetReporter().SubmitPreflightData(license.V1, foundApp.ID, clusterID, 0, true, "", false, "", ""); err != nil {
 			logger.Debugf("failed to submit preflight data: %v", err)
 			return
 		}

@@ -33,6 +33,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -226,7 +227,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.AirgapRoot != "" {
-		if expired, err := kotslicense.LicenseIsExpired(fetchOptions.License); err != nil {
+		// LicenseIsExpired now accepts LicenseWrapper, wrap the v1beta1 license
+		licenseWrapper := licensewrapper.LicenseWrapper{V1: fetchOptions.License}
+		if expired, err := kotslicense.LicenseIsExpired(licenseWrapper); err != nil {
 			return "", errors.Wrap(err, "failed to check license expiration")
 		} else if expired {
 			return "", util.ActionableError{Message: "License is expired"}
