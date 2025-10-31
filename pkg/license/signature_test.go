@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kotskinds/pkg/crypto"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/require"
 )
@@ -241,69 +242,87 @@ func TestVerifyLicenseWrapper_PreservesVersion(t *testing.T) {
 	req.Equal(wrapper.GetAppSlug(), verified.GetAppSlug())
 }
 
-// TestVerifyLicenseWrapper_V1Beta2_Structure tests v1beta2 license wrapper functionality
-// Note: These are structural tests that verify wrapper behavior without cryptographic validation.
-// Full cryptographic validation tests require properly signed v1beta2 test licenses.
-func TestVerifyLicenseWrapper_V1Beta2_Structure(t *testing.T) {
-	req := require.New(t)
+func TestVerifyLicenseWrapper_V1Beta2(t *testing.T) {
+	// Set up custom global key for v1beta2 test licenses
+	// This key was used to sign the test licenses in testdata/
+	globalKey := `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxHh2OXzDqlQ7kZJ1d4zr
+wbpXsSFHcYzr+k6pe+QXLUelAMvlik9NXauIt+YFtEAxNypV+xPCr8ClH5L2qPPb
+QBeG0ExxzvRshDMGxm7TXVHzTXQCrD7azS8Va6RsAB4tJMlvymn2uHsQDbShQiOY
+RKaRY/KKBmaIcYmysaSvfU8E5Ve9f4478X3u1cPzKUG6dk5j1Nt3nSv3BWINM5ec
+IXJQCB+gQVkOjzvA9aRVtLJtFqAoX7A6BfTNqrx35eyBEmzQOo0Mx1JkZDDW4+qC
+bhC0kq14IRpwKFIALBhSojfbJelM+gCv3wjF4hrWxAZQzWSPexP1Msof2KbrniEe
+LQIDAQAB
+-----END PUBLIC KEY-----
+`
+	err := crypto.SetCustomPublicKeyRSA(globalKey)
+	require.NoError(t, err, "failed to set custom global key for v1beta2 tests")
 
-	// Load v1beta2 license structure
-	licenseData, err := testdata.ReadFile("testdata/valid-v1beta2-structure.yaml")
-	req.NoError(err)
+	tests := []struct {
+		name       string
+		license    string
+		wantErr    bool
+		wantErrMsg string
+	}{
+		{
+			name: "valid v1beta2 license with SHA-256 signature",
+			license: func() string {
+				b, err := testdata.ReadFile("testdata/valid-v1beta2.yaml")
+				if err != nil {
+					t.Fatal(err)
+				}
+				return string(b)
+			}(),
+			wantErr:    false,
+			wantErrMsg: "",
+		},
+		{
+			name: "invalid v1beta2 signature should fail",
+			license: func() string {
+				b, err := testdata.ReadFile("testdata/invalid-v1beta2-signature.yaml")
+				if err != nil {
+					t.Fatal(err)
+				}
+				return string(b)
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "v1beta2 license with tampered licenseID should fail",
+			license: func() string {
+				b, err := testdata.ReadFile("testdata/invalid-v1beta2-changed-licenseID.yaml")
+				if err != nil {
+					t.Fatal(err)
+				}
+				return string(b)
+			}(),
+			wantErr: true,
+		},
+	}
 
-	// Test that wrapper correctly identifies v1beta2
-	wrapper, err := licensewrapper.LoadLicenseFromBytes(licenseData)
-	req.NoError(err)
-	req.True(wrapper.IsV2(), "Expected v1beta2 license")
-	req.False(wrapper.IsV1(), "Should not be v1beta1")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
 
-	// Test that wrapper provides access to v1beta2 fields
-	req.Equal("1vusOokxAVp1tkRGuyxnF23PJcq", wrapper.GetLicenseID())
-	req.Equal("my-app", wrapper.GetAppSlug())
-	req.Equal("Test Customer", wrapper.GetCustomerName())
-	req.Equal("My Channel", wrapper.GetChannelName())
-	req.True(wrapper.IsAirgapSupported())
-	req.True(wrapper.IsGitOpsSupported())
-	req.True(wrapper.IsSnapshotSupported())
+			// Load license using wrapper (auto-detects v1beta2)
+			wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(tt.license))
+			req.NoError(err)
+			req.True(wrapper.IsV2(), "Expected v1beta2 license")
 
-	// Test entitlements access through wrapper
-	entitlements := wrapper.GetEntitlements()
-	req.NotNil(entitlements)
-	req.Len(entitlements, 4)
+			// Verify using wrapper function
+			verified, err := VerifyLicenseWrapper(wrapper)
+			if tt.wantErr {
+				req.Error(err)
+				if tt.wantErrMsg != "" {
+					req.Contains(err.Error(), tt.wantErrMsg)
+				}
+				return
+			}
 
-	boolField := entitlements["bool_field"]
-	req.NotNil(boolField)
-	req.Equal("Bool Field", boolField.GetTitle())
-	req.Equal("Boolean", boolField.GetValueType())
-	boolVal := boolField.GetValue()
-	req.Equal(true, (&boolVal).Value())
-
-	intField := entitlements["int_field"]
-	req.NotNil(intField)
-	req.Equal("Int Field", intField.GetTitle())
-	intVal := intField.GetValue()
-	req.Equal(int64(123), (&intVal).Value())
-}
-
-func TestVerifyLicenseWrapper_V1Beta2_VersionPreservation(t *testing.T) {
-	req := require.New(t)
-
-	// Load v1beta2 license
-	licenseData, err := testdata.ReadFile("testdata/valid-v1beta2-structure.yaml")
-	req.NoError(err)
-
-	wrapper, err := licensewrapper.LoadLicenseFromBytes(licenseData)
-	req.NoError(err)
-	req.True(wrapper.IsV2())
-
-	// Even though validation will fail (no real crypto signature),
-	// test that the wrapper correctly routes to V2 validation
-	_, err = VerifyLicenseWrapper(wrapper)
-
-	// We expect an error because the signature isn't cryptographically valid
-	// but the important thing is it tried V2 validation, not V1
-	if err != nil {
-		req.Contains(err.Error(), "v1beta2", "Error should mention v1beta2, indicating V2 validation was attempted")
+			req.NoError(err)
+			req.True(verified.IsV2(), "Expected verified license to be v1beta2")
+			req.Equal(wrapper.GetLicenseID(), verified.GetLicenseID())
+		})
 	}
 }
 
@@ -319,7 +338,7 @@ func TestVerifyLicenseWrapper_MixedVersion(t *testing.T) {
 	req.False(v1Wrapper.IsV2())
 
 	// Test v1beta2
-	v2Data, err := testdata.ReadFile("testdata/valid-v1beta2-structure.yaml")
+	v2Data, err := testdata.ReadFile("testdata/valid-v1beta2.yaml")
 	req.NoError(err)
 	v2Wrapper, err := licensewrapper.LoadLicenseFromBytes(v2Data)
 	req.NoError(err)
