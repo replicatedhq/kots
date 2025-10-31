@@ -1728,13 +1728,14 @@ func FindChannelInLicense(channelID string, license licensewrapper.LicenseWrappe
 	return nil, errors.New("channel not found in multi channel format license")
 }
 
-func GetDefaultChannelIDFromLicense(license *kotsv1beta1.License) string {
-	for _, channel := range license.Spec.Channels {
+func GetDefaultChannelIDFromLicense(license licensewrapper.LicenseWrapper) string {
+	channels := license.GetChannels()
+	for _, channel := range channels {
 		if channel.IsDefault {
 			return channel.ChannelID
 		}
 	}
 	// either this isn't a multi channel license or the default channel is not set
 	// either way we should fall back to the top level channel id for backwards compatibility
-	return license.Spec.ChannelID
+	return license.GetChannelID()
 }

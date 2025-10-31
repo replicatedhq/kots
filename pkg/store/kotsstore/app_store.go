@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"github.com/rqlite/gorqlite"
 	"github.com/segmentio/ksuid"
@@ -278,7 +279,8 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 			return nil, errors.Wrap(err, "failed to decode license yaml")
 		}
 		license := obj.(*kotsv1beta1.License)
-		licenseChan, err := s.backfillChannelIDFromLicense(app.ID, license)
+		wrappedLicense := licensewrapper.LicenseWrapper{V1: license}
+		licenseChan, err := s.backfillChannelIDFromLicense(app.ID, wrappedLicense)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to backfill channel id")
 		}
@@ -654,7 +656,7 @@ func (s *KOTSStore) SetAppSelectedChannelID(appID string, channelID string) erro
 	return nil
 }
 
-func (s *KOTSStore) backfillChannelIDFromLicense(appID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
+func (s *KOTSStore) backfillChannelIDFromLicense(appID string, license licensewrapper.LicenseWrapper) (*kotsv1beta1.Channel, error) {
 	backfillID := kotsutil.GetDefaultChannelIDFromLicense(license)
 	if err := s.SetAppSelectedChannelID(appID, backfillID); err != nil {
 		return nil, errors.Wrap(err, "failed to backfill app channel id from license")
