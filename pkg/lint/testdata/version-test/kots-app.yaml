@@ -1,0 +1,9 @@
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: version-test
+spec:
+  title: Version Test
+  targetKotsVersion: v99.99.99
+  minKotsVersion: v1.50.0
+

@@ -1,0 +1,11 @@
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: trigger-all-validators
+spec:
+  title: Test App
+  targetKotsVersion: v99.99.99
+  minKotsVersion: v1.100.0
+  statusInformers:
+    - nonexistent/resource
+

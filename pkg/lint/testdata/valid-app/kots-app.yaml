@@ -1,0 +1,12 @@
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-test-app
+spec:
+  title: My Test Application
+  icon: https://example.com/icon.png
+  releaseNotes: Test release
+  allowRollback: false
+  statusInformers:
+    - deployment/my-deployment
+
