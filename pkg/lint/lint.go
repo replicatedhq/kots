@@ -99,27 +99,42 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 	}
 
 	// Step 2: OPA Non-Rendered Validation
-	if opts.Verbose {
-		log.Info("Running validator 2/11: OPA Non-Rendered...")
-	}
-	opaNonRenderedLintExpressions, err := validators.ValidateOPANonRendered(yamlFiles)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to lint with OPA non-rendered")
-	}
-	if opts.Verbose {
-		log.Infof("  ✓ OPA Non-Rendered: %d issue(s)", len(opaNonRenderedLintExpressions))
+	// Skip if YAML is invalid (can't parse)
+	opaNonRenderedLintExpressions := []types.LintExpression{}
+	if !hasErrors(yamlLintExpressions) {
+		if opts.Verbose {
+			log.Info("Running validator 2/11: OPA Non-Rendered...")
+		}
+		var err error
+		opaNonRenderedLintExpressions, err = validators.ValidateOPANonRendered(yamlFiles)
+		if err != nil {
+			log.Warnf("OPA Non-Rendered validator failed: %v", err)
+		}
+		if opts.Verbose {
+			log.Infof("  ✓ OPA Non-Rendered: %d issue(s)", len(opaNonRenderedLintExpressions))
+		}
+	} else if opts.Verbose {
+		log.Info("Skipping validator 2/11: OPA Non-Rendered (invalid YAML)")
 	}
 
 	// Step 3: Template Rendering Validation
-	if opts.Verbose {
-		log.Info("Running validator 3/11: Template Rendering...")
-	}
-	renderContentLintExpressions, renderedFiles, err := validators.ValidateRendering(yamlFiles)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to lint render content")
-	}
-	if opts.Verbose {
-		log.Infof("  ✓ Template Rendering: %d issue(s)", len(renderContentLintExpressions))
+	// Skip if YAML is invalid (can't render)
+	renderContentLintExpressions := []types.LintExpression{}
+	renderedFiles := yamlFiles // Default to original files
+	if !hasErrors(yamlLintExpressions) {
+		if opts.Verbose {
+			log.Info("Running validator 3/11: Template Rendering...")
+		}
+		var err error
+		renderContentLintExpressions, renderedFiles, err = validators.ValidateRendering(yamlFiles)
+		if err != nil {
+			log.Warnf("Template Rendering validator failed: %v", err)
+		}
+		if opts.Verbose {
+			log.Infof("  ✓ Template Rendering: %d issue(s)", len(renderContentLintExpressions))
+		}
+	} else if opts.Verbose {
+		log.Info("Skipping validator 3/11: Template Rendering (invalid YAML)")
 	}
 
 	// Step 4: Rendered YAML Validity
@@ -138,7 +153,8 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 	// Use rendered files since the HelmChart custom resource might not have the right schema before rendering
 	helmChartsLintExpressions, err := validators.ValidateHelmCharts(renderedFiles, tarGzFiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to lint helm charts")
+		log.Warnf("Helm Charts validator failed: %v", err)
+		helmChartsLintExpressions = []types.LintExpression{}
 	}
 	if opts.Verbose {
 		log.Infof("  ✓ Helm Charts: %d issue(s)", len(helmChartsLintExpressions))
@@ -167,7 +183,8 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 	}
 	resourceAnnotationsLintExpressions, err := validators.ValidateAnnotations(renderedFiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to lint resource annotations")
+		log.Warnf("Resource Annotations validator failed: %v", err)
+		resourceAnnotationsLintExpressions = []types.LintExpression{}
 	}
 	if opts.Verbose {
 		log.Infof("  ✓ Resource Annotations: %d issue(s)", len(resourceAnnotationsLintExpressions))
@@ -179,31 +196,34 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 	}
 	opaRenderedLintExpressions, err := validators.ValidateOPARendered(renderedFiles, yamlFiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to lint with OPA rendered")
+		log.Warnf("OPA Rendered validator failed: %v", err)
+		opaRenderedLintExpressions = []types.LintExpression{}
 	}
 	if opts.Verbose {
 		log.Infof("  ✓ OPA Rendered: %d issue(s)", len(opaRenderedLintExpressions))
 	}
 
-	// Step 9: Kubeval Validation (warnings only, don't fail-fast)
+	// Step 9: Kubeval Validation
 	if opts.Verbose {
 		log.Info("Running validator 9/11: Kubeval (Kubernetes Schemas)...")
 	}
 	kubevalLintExpressions, err := validators.ValidateKubernetes(renderedFiles, yamlFiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to lint with Kubeval")
+		log.Warnf("Kubeval validator failed: %v", err)
+		kubevalLintExpressions = []types.LintExpression{}
 	}
 	if opts.Verbose {
 		log.Infof("  ✓ Kubeval: %d issue(s)", len(kubevalLintExpressions))
 	}
 
-	// Step 10: Kurl Installer Validation (don't fail-fast)
+	// Step 10: Kurl Installer Validation
 	if opts.Verbose {
 		log.Info("Running validator 10/11: Kurl Installer...")
 	}
 	installerLintExpressions, err := kurlLinter.ValidateKurlInstaller(yamlFiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to lint kurl installer")
+		log.Warnf("Kurl Installer validator failed: %v", err)
+		installerLintExpressions = []types.LintExpression{}
 	}
 	if opts.Verbose {
 		log.Infof("  ✓ Kurl Installer: %d issue(s)", len(installerLintExpressions))
@@ -217,7 +237,8 @@ func LintSpecFiles(ctx context.Context, specFiles types.SpecFiles, opts LintOpti
 		}
 		embeddedClusterLintExpressions, err = validators.ValidateEmbeddedCluster(yamlFiles)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to lint ec installer version")
+			log.Warnf("Embedded Cluster validator failed: %v", err)
+			embeddedClusterLintExpressions = []types.LintExpression{}
 		}
 		if opts.Verbose {
 			log.Infof("  ✓ Embedded Cluster: %d issue(s)", len(embeddedClusterLintExpressions))

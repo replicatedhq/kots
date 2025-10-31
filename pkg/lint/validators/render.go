@@ -222,7 +222,9 @@ func renderContent(file types.SpecFile, builder *template.Builder) ([]byte, erro
 func shouldBeRendered(file types.SpecFile) (bool, error) {
 	document := &types.GVKDoc{}
 	if err := yaml.Unmarshal([]byte(file.Content), document); err != nil {
-		return false, errors.Wrap(err, "failed to unmarshal file content")
+		// If YAML is invalid, assume it should be rendered (will fail in rendering step)
+		// This prevents crashes when YAML syntax validator already caught the error
+		return true, nil
 	}
 
 	if document.APIVersion == "kots.io/v1beta1" && document.Kind == "Config" {

@@ -1,0 +1,12 @@
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: perfect-app
+spec:
+  title: Perfect KOTS Application
+  icon: https://example.com/icon.png
+  releaseNotes: This application passes all lint checks
+  allowRollback: true
+  statusInformers:
+    - deployment/nginx-deployment
+
