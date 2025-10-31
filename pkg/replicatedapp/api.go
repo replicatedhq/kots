@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type ApplicationMetadata struct {
@@ -36,18 +37,19 @@ spec:
 
 type LicenseData struct {
 	LicenseBytes []byte
-	License      *kotsv1beta1.License
+	License      licensewrapper.LicenseWrapper
 }
 
 // GetLatestLicense will return the latest license from the replicated api, if selectedChannelID is provided
 // it will be passed along to the api.
-func GetLatestLicense(license *kotsv1beta1.License, selectedChannelID string) (*LicenseData, error) {
+// Note: The Replicated API currently returns v1beta1 licenses, which are wrapped in a LicenseWrapper.
+func GetLatestLicense(license licensewrapper.LicenseWrapper, selectedChannelID string) (*LicenseData, error) {
 	fullURL, err := makeLicenseURL(license, selectedChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make license url")
 	}
 
-	licenseData, err := getLicenseFromAPI(fullURL, license.Spec.LicenseID)
+	licenseData, err := getLicenseFromAPI(fullURL, license.GetLicenseID())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license from api")
 	}
@@ -55,14 +57,20 @@ func GetLatestLicense(license *kotsv1beta1.License, selectedChannelID string) (*
 	return licenseData, nil
 }
 
-func makeLicenseURL(license *kotsv1beta1.License, selectedChannelID string) (string, error) {
-	u, err := url.Parse(fmt.Sprintf("%s/license/%s", util.ReplicatedAppEndpoint(license), license.Spec.AppSlug))
+func makeLicenseURL(license licensewrapper.LicenseWrapper, selectedChannelID string) (string, error) {
+	// Use wrapper methods to access license fields
+	endpoint := license.GetEndpoint()
+	if endpoint == "" {
+		endpoint = "https://replicated.app"
+	}
+
+	u, err := url.Parse(fmt.Sprintf("%s/license/%s", endpoint, license.GetAppSlug()))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse url")
 	}
 
 	params := url.Values{}
-	params.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	params.Add("licenseSequence", fmt.Sprintf("%d", license.GetLicenseSequence()))
 	if selectedChannelID != "" {
 		params.Add("selectedChannelId", selectedChannelID)
 	}
@@ -126,14 +134,26 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(body, nil, nil)
+	obj, gvk, err := decode(body, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode latest license data")
 	}
 
+	// Wrap the license based on its version
+	var wrapper licensewrapper.LicenseWrapper
+	if gvk.Version == "v1beta1" {
+		wrapper = licensewrapper.LicenseWrapper{
+			V1: obj.(*kotsv1beta1.License),
+		}
+	} else {
+		// Currently the Replicated API only returns v1beta1 licenses,
+		// but this prepares for future v1beta2 support
+		return nil, errors.Errorf("unsupported license version: %s", gvk.Version)
+	}
+
 	data := &LicenseData{
 		LicenseBytes: body,
-		License:      obj.(*kotsv1beta1.License),
+		License:      wrapper,
 	}
 	return data, nil
 }
@@ -214,8 +234,14 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 	return respBody, nil
 }
 
-func SendCustomAppMetricsData(license *kotsv1beta1.License, app *apptypes.App, data map[string]interface{}) error {
-	url := fmt.Sprintf("%s/application/custom-metrics", util.ReplicatedAppEndpoint(license))
+func SendCustomAppMetricsData(license licensewrapper.LicenseWrapper, app *apptypes.App, data map[string]interface{}) error {
+	// Use wrapper method to get endpoint
+	endpoint := license.GetEndpoint()
+	if endpoint == "" {
+		endpoint = "https://replicated.app"
+	}
+
+	url := fmt.Sprintf("%s/application/custom-metrics", endpoint)
 
 	payload := struct {
 		Data map[string]interface{} `json:"data"`
@@ -237,7 +263,9 @@ func SendCustomAppMetricsData(license *kotsv1beta1.License, app *apptypes.App, d
 	reportingInfo := reporting.GetReportingInfo(app.ID)
 	reporting.InjectReportingInfoHeaders(req.Header, reportingInfo)
 
-	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
+	// Use wrapper method to get license ID
+	licenseID := license.GetLicenseID()
+	req.SetBasicAuth(licenseID, licenseID)
 
 	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {

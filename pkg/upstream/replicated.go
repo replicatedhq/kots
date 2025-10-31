@@ -27,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -35,7 +36,7 @@ import (
 
 type IncompatibleAppError struct {
 	KotsApplication *kotsv1beta1.Application
-	License         *kotsv1beta1.License
+	License         licensewrapper.LicenseWrapper
 	Message         string
 }
 
