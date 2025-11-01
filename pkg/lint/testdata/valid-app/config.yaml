@@ -1,0 +1,14 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: app-config
+spec:
+  groups:
+    - name: settings
+      title: Application Settings
+      items:
+        - name: hostname
+          title: Hostname
+          type: text
+          default: example.com
+

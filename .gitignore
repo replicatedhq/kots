@@ -53,3 +53,4 @@ packages/*
 dev/.gocache
 dev/.gomodcache
 dev/.yarncache
+pkg/lint/schema/schema/

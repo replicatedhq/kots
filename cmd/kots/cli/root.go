@@ -58,6 +58,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(UpgradeServiceCmd())
 	cmd.AddCommand(AirgapUpdateCmd())
 	cmd.AddCommand(DeployCmd()) // Hidden command
+	cmd.AddCommand(LintCmd())   // Development/testing CLI
 
 	viper.BindPFlags(cmd.Flags())
 
