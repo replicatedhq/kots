@@ -8,6 +8,7 @@ import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
@@ -28,6 +29,22 @@ func WaitAndReportPreflightChecks(appID string, sequence int64, isSkipPreflights
 	clusterID := downstreams[0].ClusterID
 
 	go func() {
+		// Skip reporting if no license available
+		if license == nil || (!license.IsV1() && !license.IsV2()) {
+			logger.Debugf("skipping preflight data submission: no license available")
+			return
+		}
+
+		var v1License *kotsv1beta1.License
+		if license.IsV1() {
+			v1License = license.V1
+		} else {
+			// TODO(Phase 4): Update reporting API to accept V2 licenses
+			// For now, V2 licenses cannot be reported with current API
+			logger.Debugf("skipping preflight data submission: V2 license not yet supported")
+			return
+		}
+
 		appStatus := appstatetypes.StateMissing
 		for start := time.Now(); time.Since(start) < 20*time.Minute; {
 			s, err := store.GetStore().GetAppStatus(appID)
@@ -81,7 +98,7 @@ func WaitAndReportPreflightChecks(appID string, sequence int64, isSkipPreflights
 			return
 		}
 
-		if err := GetReporter().SubmitPreflightData(license.V1, appID, clusterID, sequence, isSkipPreflights, currentVersionStatus, isCLI, preflightState, string(appStatus)); err != nil {
+		if err := GetReporter().SubmitPreflightData(v1License, appID, clusterID, sequence, isSkipPreflights, currentVersionStatus, isCLI, preflightState, string(appStatus)); err != nil {
 			logger.Debugf("failed to submit preflight data: %v", err)
 			return
 		}

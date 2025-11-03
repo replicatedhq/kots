@@ -738,11 +738,19 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 		logger.Errorf("Failed to load license data from store: %v", err)
 	}
 
-	if license.IsV1() || license.IsV2() {
+	if license != nil && (license.IsV1() || license.IsV2()) {
 		s := serializer.NewSerializerWithOptions(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme, serializer.SerializerOptions{Yaml: true, Pretty: false, Strict: false})
 		var b bytes.Buffer
-		if err := s.Encode(license.V1, &b); err != nil {
-			logger.Errorf("Failed to marshal license: %v", err)
+		var encodeErr error
+
+		if license.IsV1() {
+			encodeErr = s.Encode(license.V1, &b)
+		} else {
+			encodeErr = s.Encode(license.V2, &b)
+		}
+
+		if encodeErr != nil {
+			logger.Errorf("Failed to marshal license: %v", encodeErr)
 		} else {
 			collectors = append(collectors, &troubleshootv1beta2.Collect{
 				Data: &troubleshootv1beta2.Data{
@@ -855,7 +863,7 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 		})
 	}
 
-	if (license.IsV1() || license.IsV2()) && license.IsSnapshotSupported() {
+	if license != nil && (license.IsV1() || license.IsV2()) && license.IsSnapshotSupported() {
 		fsMinioErrors := snapshot.GetFileSystemMinioErrors(context.TODO(), clientset)
 		if len(fsMinioErrors) > 0 {
 			data, _ := yaml.Marshal(fsMinioErrors)

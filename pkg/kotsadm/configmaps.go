@@ -81,7 +81,7 @@ func ensureWaitForAirgapConfig(deployOptions types.DeployOptions, clientset *kub
 	additionalLabels := map[string]string{
 		"kots.io/automation": "airgap",
 	}
-	if deployOptions.License.IsV1() || deployOptions.License.IsV2() {
+	if deployOptions.License != nil && (deployOptions.License.IsV1() || deployOptions.License.IsV2()) {
 		additionalLabels["kots.io/app"] = deployOptions.License.GetAppSlug()
 	}
 
@@ -144,7 +144,7 @@ func configMapWithData(deployOptions types.DeployOptions, configMapName string, 
 	additionalLabels := map[string]string{
 		"kots.io/automation": "airgap",
 	}
-	if deployOptions.License.IsV1() || deployOptions.License.IsV2() {
+	if deployOptions.License != nil && (deployOptions.License.IsV1() || deployOptions.License.IsV2()) {
 		additionalLabels["kots.io/app"] = deployOptions.License.GetAppSlug()
 	}
 

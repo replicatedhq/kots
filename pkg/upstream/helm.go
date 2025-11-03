@@ -275,7 +275,7 @@ func buildReplicatedValues(u *types.Upstream, options types.WriteOptions) (map[s
 
 	// only add the license if this is an airgap install
 	// because the airgap builder doesn't have the license context
-	if (u.License.IsV1() || u.License.IsV2()) && options.IsAirgap {
+	if u.License != nil && (u.License.IsV1() || u.License.IsV2()) && options.IsAirgap {
 		licenseBytes, err := MustMarshalLicenseWrapper(u.License)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to marshal license")
@@ -378,7 +378,7 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 
 	// only add license related info if this is an airgap install
 	// because the airgap builder doesn't have the license context
-	if (u.License.IsV1() || u.License.IsV2()) && options.IsAirgap {
+	if u.License != nil && (u.License.IsV1() || u.License.IsV2()) && options.IsAirgap {
 		globalReplicatedValues["channelName"] = u.License.GetChannelName()
 		globalReplicatedValues["customerName"] = u.License.GetCustomerName()
 		globalReplicatedValues["customerEmail"] = u.License.GetCustomerEmail()

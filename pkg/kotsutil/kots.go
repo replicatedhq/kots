@@ -119,6 +119,9 @@ type KotsKinds struct {
 // GetLicenseVersion returns "v1beta1" or "v1beta2" depending on which license is present.
 // Returns empty string if no license is present.
 func (k *KotsKinds) GetLicenseVersion() string {
+	if k.License == nil {
+		return ""
+	}
 	if k.License.IsV2() {
 		return "v1beta2"
 	}
@@ -1730,6 +1733,10 @@ func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
 }
 
 func FindChannelIDInLicense(requestedSlug string, license *licensewrapper.LicenseWrapper) (string, error) {
+	if license == nil {
+		return "", errors.New("license is nil")
+	}
+
 	matchedChannelID := ""
 	if requestedSlug != "" {
 		channels := license.GetChannels()
@@ -1760,6 +1767,10 @@ func FindChannelInLicense(channelID string, license *licensewrapper.LicenseWrapp
 		return nil, errors.New("channelID is required")
 	}
 
+	if license == nil {
+		return nil, errors.New("license is nil")
+	}
+
 	channels := license.GetChannels()
 	if len(channels) == 0 {
 		if license.GetChannelID() != channelID {
@@ -1785,6 +1796,10 @@ func FindChannelInLicense(channelID string, license *licensewrapper.LicenseWrapp
 }
 
 func GetDefaultChannelIDFromLicense(license *licensewrapper.LicenseWrapper) string {
+	if license == nil {
+		return ""
+	}
+
 	channels := license.GetChannels()
 	for _, channel := range channels {
 		if channel.IsDefault {

@@ -200,7 +200,7 @@ func ReplicatedAppEndpoint(license *licensewrapper.LicenseWrapper) string {
 		return ep
 	}
 
-	if license.IsV1() || license.IsV2() {
+	if license != nil && (license.IsV1() || license.IsV2()) {
 		return license.GetEndpoint()
 	}
 

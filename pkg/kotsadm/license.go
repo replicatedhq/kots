@@ -16,6 +16,14 @@ import (
 )
 
 func getLicenseSecretYAML(deployOptions *types.DeployOptions) (map[string][]byte, error) {
+	if deployOptions.License == nil {
+		return nil, errors.New("deploy options license is nil")
+	}
+
+	if !deployOptions.License.IsV1() && !deployOptions.License.IsV2() {
+		return nil, errors.New("no license to encode")
+	}
+
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -29,8 +37,6 @@ func getLicenseSecretYAML(deployOptions *types.DeployOptions) (map[string][]byte
 		if err := s.Encode(deployOptions.License.V2, &b); err != nil {
 			return nil, errors.Wrap(err, "failed to encode v1beta2 license")
 		}
-	} else {
-		return nil, errors.New("no license to encode")
 	}
 
 	var license bytes.Buffer

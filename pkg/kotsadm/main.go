@@ -482,7 +482,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		}
 	}
 
-	if deployOptions.License.IsV1() || deployOptions.License.IsV2() {
+	if deployOptions.License != nil && (deployOptions.License.IsV1() || deployOptions.License.IsV2()) {
 		// if there's a license, we write it as a secret and kotsadm will
 		// find it on startup and handle installation
 		updated, err := ensureLicenseSecret(&deployOptions, clientset)

@@ -215,6 +215,10 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func getLicenseEntitlements(license *licensewrapper.LicenseWrapper) ([]EntitlementResponse, time.Time, error) {
+	if license == nil || (!license.IsV1() && !license.IsV2()) {
+		return []EntitlementResponse{}, time.Time{}, nil
+	}
+
 	var expiresAt time.Time
 	entitlements := []EntitlementResponse{}
 
@@ -582,7 +586,13 @@ func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http
 		return
 	}
 
-	type licenseFieldType struct {
+	if license == nil || (!license.IsV1() && !license.IsV2()) {
+		logger.Error(errors.New("license wrapper contains no license"))
+		JSON(w, http.StatusInternalServerError, struct{}{})
+		return
+	}
+
+	type licenseFieldType struct{
 		Field            string      `json:"field"`
 		Title            string      `json:"title"`
 		Type             string      `json:"type"`
@@ -716,6 +726,10 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func licenseResponseFromLicense(license *licensewrapper.LicenseWrapper, app *apptypes.App) (*LicenseResponse, error) {
+	if license == nil || (!license.IsV1() && !license.IsV2()) {
+		return nil, errors.New("license wrapper contains no license")
+	}
+
 	entitlements, expiresAt, err := getLicenseEntitlements(license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license entitlements")

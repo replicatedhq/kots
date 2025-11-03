@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 type GetPreflightResultResponse struct {
@@ -364,9 +365,23 @@ func (h *Handler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
 	clusterID := downstreams[0].ClusterID
 
 	go func() {
-		// TODO(Phase 4): Update reporting.SubmitPreflightData to accept LicenseWrapper
-		// Temporary workaround: Use .V1 for reporting
-		if err := reporting.GetReporter().SubmitPreflightData(license.V1, foundApp.ID, clusterID, 0, true, "", false, "", ""); err != nil {
+		// Skip reporting if no license available
+		if license == nil || (!license.IsV1() && !license.IsV2()) {
+			logger.Debugf("skipping preflight data submission: no license available")
+			return
+		}
+
+		var v1License *kotsv1beta1.License
+		if license.IsV1() {
+			v1License = license.V1
+		} else {
+			// TODO(Phase 4): Update reporting.SubmitPreflightData to accept LicenseWrapper
+			// V2 licenses cannot be reported with current API
+			logger.Debugf("skipping preflight data submission: V2 license not yet supported")
+			return
+		}
+
+		if err := reporting.GetReporter().SubmitPreflightData(v1License, foundApp.ID, clusterID, 0, true, "", false, "", ""); err != nil {
 			logger.Debugf("failed to submit preflight data: %v", err)
 			return
 		}
