@@ -326,25 +326,10 @@ function AppDetailPage(props: Props) {
     }
 
     // find if any app needs configuration and redirect to its configuration flow
-    const appNeedsConfiguration = appsList?.find((app) => {
-      return app?.downstream?.pendingVersions?.length > 0;
-    });
-    if (appNeedsConfiguration) {
-      const downstream = appNeedsConfiguration.downstream;
-      const firstVersion = downstream.pendingVersions.find(
-        (version: Version) => version?.sequence === 0
-      );
-      if (
-        firstVersion?.status === "pending_cluster_management" &&
-        props.isEmbeddedCluster
-      ) {
-        navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
-        return;
-      }
-      if (firstVersion?.status === "pending_config") {
-        navigate(`/${appNeedsConfiguration.slug}/config`);
-        return;
-      }
+    const redirectPath = Utilities.getAppRedirectPath(appsList, props.isEmbeddedCluster);
+    if (redirectPath) {
+      navigate(redirectPath);
+      return;
     }
   }, [selectedApp]);
 
