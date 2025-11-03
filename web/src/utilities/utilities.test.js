@@ -195,4 +195,78 @@ describe("Utilities", () => {
       ).toBe("troubleshoot");
     });
   });
+
+  describe("getAppRedirectPath", () => {
+    const createApp = (status) => ({
+      slug: "test-app",
+      downstream: {
+        pendingVersions: [
+          { sequence: 0, status: status },
+        ],
+      },
+    });
+
+    it("returns cluster management path for pending_cluster_management when embedded cluster", () => {
+      const apps = [createApp("pending_cluster_management")];
+      const result = Utilities.getAppRedirectPath(apps, true);
+      expect(result).toBe("/test-app/cluster/manage");
+    });
+
+    it("returns null for pending_cluster_management when NOT embedded cluster", () => {
+      const apps = [createApp("pending_cluster_management")];
+      const result = Utilities.getAppRedirectPath(apps, false);
+      expect(result).toBeNull();
+    });
+
+    it("returns config path for pending_config", () => {
+      const apps = [createApp("pending_config")];
+      const result = Utilities.getAppRedirectPath(apps, true);
+      expect(result).toBe("/test-app/config");
+    });
+
+    it("returns config path for pending_config regardless of embedded cluster flag", () => {
+      const apps = [createApp("pending_config")];
+      const result = Utilities.getAppRedirectPath(apps, false);
+      expect(result).toBe("/test-app/config");
+    });
+
+    it("returns null when no pending versions", () => {
+      const app = createApp("pending_config");
+      app.downstream.pendingVersions = [];
+      const result = Utilities.getAppRedirectPath([app], true);
+      expect(result).toBeNull();
+    });
+
+    it("returns null when appsList is null", () => {
+      expect(Utilities.getAppRedirectPath(null, true)).toBeNull();
+    });
+
+    it("returns null when appsList is undefined", () => {
+      expect(Utilities.getAppRedirectPath(undefined, true)).toBeNull();
+    });
+
+    it("returns null when appsList is empty", () => {
+      expect(Utilities.getAppRedirectPath([], true)).toBeNull();
+    });
+
+    it("returns null for other statuses", () => {
+      const statuses = ["deployed", "deploying", "pending", "pending_preflight", "waiting"];
+      statuses.forEach((status) => {
+        const apps = [createApp(status)];
+        expect(Utilities.getAppRedirectPath(apps, true)).toBeNull();
+        expect(Utilities.getAppRedirectPath(apps, false)).toBeNull();
+      });
+    });
+
+    it("ignores non-zero pending config/cluster management versions", () => {
+      const app = createApp("deployed");
+      app.downstream.pendingVersions = [
+        { sequence: 0, status: "deployed" },
+        { sequence: 1, status: "pending_config" },
+        { sequence: 2, status: "pending_cluster_management" },
+      ];
+      const result = Utilities.getAppRedirectPath([app], true);
+      expect(result).toBeNull();
+    });
+  });
 });
