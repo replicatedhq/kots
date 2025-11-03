@@ -1,18 +1,15 @@
 package cli
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/lint"
-	"github.com/replicatedhq/kots/pkg/lint/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/print"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 )
 
 func LintCmd() *cobra.Command {
@@ -27,7 +24,8 @@ The path can be:
   - If omitted, uses current directory
 
 This is a development/test CLI. Production usage will be via 'replicated kots lint'.`,
-		Args: cobra.MaximumNArgs(1),
+		Hidden: true, // Hidden during migration to replicated CLI
+		Args:   cobra.MaximumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
@@ -46,6 +44,13 @@ This is a development/test CLI. Production usage will be via 'replicated kots li
 			failOnWarn := v.GetBool("fail-on-warn")
 			offline := v.GetBool("offline")
 			verbose := v.GetBool("verbose")
+
+			// Silence loggers for structured output formats to prevent pollution
+			if outputFormat == "json" || outputFormat == "yaml" {
+				logrus.SetLevel(logrus.PanicLevel) // Silence logrus (used by lint package)
+				logger.SetSilent()                 // Silence zap logger
+				log.Silence()                      // Silence CLI logger
+			}
 
 			// Initialize OPA
 			log.Info("Initializing linter...")
@@ -77,7 +82,7 @@ This is a development/test CLI. Production usage will be via 'replicated kots li
 			log.FinishSpinner()
 
 			// Format output
-			if err := printLintResult(result, outputFormat, verbose); err != nil {
+			if err := print.LintResult(result, outputFormat, verbose); err != nil {
 				return errors.Wrap(err, "failed to print result")
 			}
 
@@ -107,110 +112,4 @@ This is a development/test CLI. Production usage will be via 'replicated kots li
 	cmd.Flags().BoolP("verbose", "v", false, "Show info-level messages (default: only show warnings and errors)")
 
 	return cmd
-}
-
-func printLintResult(result *types.LintResult, format string, verbose bool) error {
-	// Filter out info messages unless verbose
-	filteredResult := result
-	if !verbose {
-		filteredResult = &types.LintResult{
-			LintExpressions: filterInfoMessages(result.LintExpressions),
-			IsComplete:      result.IsComplete,
-		}
-	}
-
-	switch format {
-	case "json":
-		return printJSON(filteredResult)
-	case "yaml":
-		return printYAML(filteredResult)
-	case "table", "":
-		return printTable(filteredResult)
-	default:
-		return errors.Errorf("unsupported output format: %s (supported: table, json, yaml)", format)
-	}
-}
-
-func filterInfoMessages(expressions []types.LintExpression) []types.LintExpression {
-	filtered := []types.LintExpression{}
-	for _, expr := range expressions {
-		if expr.Type != "info" {
-			filtered = append(filtered, expr)
-		}
-	}
-	return filtered
-}
-
-func printJSON(result *types.LintResult) error {
-	output, err := json.MarshalIndent(result, "", "  ")
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal JSON")
-	}
-	fmt.Println(string(output))
-	return nil
-}
-
-func printYAML(result *types.LintResult) error {
-	output, err := yaml.Marshal(result)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal YAML")
-	}
-	fmt.Println(string(output))
-	return nil
-}
-
-func printTable(result *types.LintResult) error {
-	if len(result.LintExpressions) == 0 {
-		fmt.Println("No issues found")
-		return nil
-	}
-
-	// Print header
-	fmt.Printf("%-30s %-8s %-40s %s\n", "RULE", "TYPE", "PATH", "MESSAGE")
-	fmt.Println(strings.Repeat("-", 120))
-
-	// Print each expression
-	for _, expr := range result.LintExpressions {
-		path := expr.Path
-		if len(path) > 40 {
-			path = "..." + path[len(path)-37:]
-		}
-
-		message := expr.Message
-		if len(message) > 50 {
-			message = message[:47] + "..."
-		}
-
-		lineInfo := ""
-		if len(expr.Positions) > 0 && expr.Positions[0].Start.Line > 0 {
-			lineInfo = fmt.Sprintf(":%d", expr.Positions[0].Start.Line)
-		}
-
-		fmt.Printf("%-30s %-8s %-40s %s%s\n",
-			expr.Rule,
-			expr.Type,
-			path+lineInfo,
-			message,
-			"",
-		)
-	}
-
-	fmt.Println()
-
-	// Count info messages
-	infoCount := 0
-	for _, expr := range result.LintExpressions {
-		if expr.Type == "info" {
-			infoCount++
-		}
-	}
-
-	// Show summary based on what's present
-	if infoCount > 0 {
-		fmt.Printf("Summary: %d error(s), %d warning(s), %d info\n", result.ErrorCount(), result.WarningCount(), infoCount)
-	} else {
-		fmt.Printf("Summary: %d error(s), %d warning(s)\n", result.ErrorCount(), result.WarningCount())
-	}
-
-	return nil
 }
