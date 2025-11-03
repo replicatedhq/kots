@@ -16,6 +16,7 @@ import (
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
@@ -43,7 +44,7 @@ var _ = Describe("Install", func() {
 				Namespace:         "test-namespace",
 				Timeout:           time.Second,
 				PreflightsTimeout: time.Second,
-				License:           validLicense,
+				License:           licensewrapper.LicenseWrapper{V1: validLicense},
 			}
 
 			server = ghttp.NewServer()
@@ -54,7 +55,7 @@ var _ = Describe("Install", func() {
 				Namespace:         "test-namespace",
 				Timeout:           time.Nanosecond,
 				PreflightsTimeout: time.Nanosecond,
-				License:           validLicense,
+				License:           licensewrapper.LicenseWrapper{V1: validLicense},
 			}
 
 			inProgressPreflightResponse, err := createPreflightResponse(false, false, false, true, false)
@@ -151,7 +152,7 @@ var _ = Describe("Install", func() {
 				Namespace:         "test-namespace",
 				Timeout:           2 * time.Second,
 				PreflightsTimeout: 2 * time.Second,
-				License:           validLicense,
+				License:           licensewrapper.LicenseWrapper{V1: validLicense},
 			}
 			server.AllowUnhandledRequests = false
 
@@ -189,7 +190,7 @@ var _ = Describe("Install", func() {
 				Namespace:         "test-namespace",
 				Timeout:           2 * time.Second,
 				PreflightsTimeout: 2 * time.Second,
-				License:           validLicense,
+				License:           licensewrapper.LicenseWrapper{V1: validLicense},
 			}
 			server.AllowUnhandledRequests = false
 
@@ -355,7 +356,7 @@ var _ = Describe("Install", func() {
 			validDeployOptions = kotsadmtypes.DeployOptions{
 				Namespace: "test-namespace",
 				Timeout:   time.Second,
-				License:   validLicense,
+				License:   licensewrapper.LicenseWrapper{V1: validLicense},
 			}
 
 			server = ghttp.NewServer()
@@ -365,7 +366,7 @@ var _ = Describe("Install", func() {
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace: "test-namespace",
 				Timeout:   time.Nanosecond,
-				License:   validLicense,
+				License:   licensewrapper.LicenseWrapper{V1: validLicense},
 			}
 
 			runningResponse, err := createTaskStatus(automation.AutomatedInstallRunning, `{"message":"Installing app...","versionStatus":"","error":""}`)
@@ -461,7 +462,7 @@ var _ = Describe("Install", func() {
 			longerTimeoutDeployOptions := kotsadmtypes.DeployOptions{
 				Namespace: "test-namespace",
 				Timeout:   2 * time.Second,
-				License:   validLicense,
+				License:   licensewrapper.LicenseWrapper{V1: validLicense},
 			}
 			server.AllowUnhandledRequests = false
 

@@ -387,8 +387,19 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 
 		// we marshal and then unmarshal entitlements into an interface to evaluate entitlement values
 		// and end up with a single value instead of (intVal, boolVal, strVal, and type)
-		entitlements := u.License.GetEntitlements()
-		marshalledEntitlements, err := json.Marshal(entitlements)
+		// Note: GetEntitlements() returns wrapped entitlements, so we need to unwrap them first
+		wrappedEntitlements := u.License.GetEntitlements()
+		unwrappedEntitlements := make(map[string]interface{})
+		for key, wrapper := range wrappedEntitlements {
+			// Get the underlying entitlement (V1 or V2) from the wrapper
+			if wrapper.V1 != nil {
+				unwrappedEntitlements[key] = wrapper.V1
+			} else if wrapper.V2 != nil {
+				unwrappedEntitlements[key] = wrapper.V2
+			}
+		}
+
+		marshalledEntitlements, err := json.Marshal(unwrappedEntitlements)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to marshal entitlements")
 		}
