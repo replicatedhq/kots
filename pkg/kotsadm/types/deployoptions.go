@@ -25,7 +25,7 @@ type DeployOptions struct {
 	ApplicationMetadata    []byte
 	LimitRange             *corev1.LimitRange
 	IsOpenShift            bool
-	License                licensewrapper.LicenseWrapper
+	License                *licensewrapper.LicenseWrapper
 	LicenseData            string
 	ConfigValues           *kotsv1beta1.ConfigValues
 	AppVersionLabel        string

@@ -29,7 +29,7 @@ type InstallMetrics struct {
 	Cause                      string    `json:"cause"`
 }
 
-func InitInstallMetrics(license licensewrapper.LicenseWrapper, disableOutboundConnections bool) (InstallMetrics, error) {
+func InitInstallMetrics(license *licensewrapper.LicenseWrapper, disableOutboundConnections bool) (InstallMetrics, error) {
 	endpoint, err := getEndpoint(license)
 	if err != nil {
 		return InstallMetrics{}, errors.Wrap(err, "failed to get endpoint")
@@ -101,7 +101,7 @@ func (m InstallMetrics) Post(url string) error {
 	return nil
 }
 
-func getEndpoint(license licensewrapper.LicenseWrapper) (string, error) {
+func getEndpoint(license *licensewrapper.LicenseWrapper) (string, error) {
 	endpoint := license.GetEndpoint()
 
 	if isDevEndpoint(endpoint) {

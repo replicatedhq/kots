@@ -143,7 +143,7 @@ func RenderDir(opts types.RenderDirOptions) error {
 		Silent:               true,
 		CreateAppDir:         false,
 		ExcludeKotsKinds:     true,
-		License:              license,
+		License:              &license,
 		ConfigValues:         configValues,
 		K8sNamespace:         appNamespace,
 		CopyImages:           false,

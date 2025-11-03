@@ -479,16 +479,20 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			req := require.New(t)
 
 			// expect license to be the one passed as an arg unless the test overrides this
-			if !tt.want.license.IsV1() && !tt.want.license.IsV2() && (tt.args.license != nil) {
-				tt.want.license = licensewrapper.LicenseWrapper{V1: tt.args.license}
+			if (tt.want.license == nil || (!tt.want.license.IsV1() && !tt.want.license.IsV2())) && (tt.args.license != nil) {
+				tt.want.license = &licensewrapper.LicenseWrapper{V1: tt.args.license}
 			}
 
 			builder := Builder{}
 			builder.AddCtx(StaticCtx{})
 
 			localRegistry := registrytypes.RegistrySettings{}
-			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.args.license}
-			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, licenseWrapper, nil, nil, dockerregistrytypes.RegistryOptions{}, "app-slug", tt.args.decryptValues)
+			var licenseWrapperPtr *licensewrapper.LicenseWrapper
+			if tt.args.license != nil {
+				licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.args.license}
+				licenseWrapperPtr = &licenseWrapper
+			}
+			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, licenseWrapperPtr, nil, nil, dockerregistrytypes.RegistryOptions{}, "app-slug", tt.args.decryptValues)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})
@@ -504,7 +508,7 @@ func Test_localImageName(t *testing.T) {
 			Password:  "my_password",
 		},
 
-		license: licensewrapper.LicenseWrapper{
+		license: &licensewrapper.LicenseWrapper{
 			V1: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					Endpoint: "replicated.registry.com",
@@ -521,7 +525,7 @@ func Test_localImageName(t *testing.T) {
 	ctxWithoutRegistry := ConfigCtx{
 		LocalRegistry: registrytypes.RegistrySettings{},
 
-		license: licensewrapper.LicenseWrapper{
+		license: &licensewrapper.LicenseWrapper{
 			V1: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					AppSlug:  "myslug",
@@ -539,7 +543,7 @@ func Test_localImageName(t *testing.T) {
 	ctxWithoutRegistryProxyAll := ConfigCtx{
 		LocalRegistry: registrytypes.RegistrySettings{},
 
-		license: licensewrapper.LicenseWrapper{
+		license: &licensewrapper.LicenseWrapper{
 			V1: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					AppSlug:  "myslug",
@@ -557,7 +561,7 @@ func Test_localImageName(t *testing.T) {
 	ctxWithCustomDomains := ConfigCtx{
 		LocalRegistry: registrytypes.RegistrySettings{},
 
-		license: licensewrapper.LicenseWrapper{
+		license: &licensewrapper.LicenseWrapper{
 			V1: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					AppSlug:  "myslug",
@@ -734,7 +738,7 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 			ctx := ConfigCtx{
 				LocalRegistry: tt.LocalRegistry,
 				VersionInfo:   tt.VersionInfo,
-				license:       tt.license,
+				license:       &tt.license,
 				AppSlug:       "myapp",
 			}
 			want := base64.StdEncoding.EncodeToString([]byte(tt.want))

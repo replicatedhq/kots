@@ -28,7 +28,7 @@ type Upstream struct {
 	Type                     string
 	Files                    []UpstreamFile
 	UpdateCursor             string
-	License                  licensewrapper.LicenseWrapper
+	License                  *licensewrapper.LicenseWrapper
 	ChannelID                string
 	ChannelName              string
 	VersionLabel             string
@@ -95,7 +95,7 @@ type FetchOptions struct {
 	UseAppDir                       bool
 	HelmRepoURI                     string
 	LocalPath                       string
-	License                         licensewrapper.LicenseWrapper
+	License                         *licensewrapper.LicenseWrapper
 	ConfigValues                    *kotsv1beta1.ConfigValues
 	IdentityConfig                  *kotsv1beta1.IdentityConfig
 	Airgap                          *kotsv1beta1.Airgap

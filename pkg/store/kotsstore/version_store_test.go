@@ -37,7 +37,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			isInstall:   true,
 			isAutomated: false,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
+				License: &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
@@ -56,7 +56,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			isInstall:   true,
 			isAutomated: false,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
+				License: &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: false,
 					},
@@ -93,7 +93,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			isInstall:   true,
 			isAutomated: true,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
+				License: &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
@@ -130,7 +130,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			isInstall:   true,
 			isAutomated: true,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
+				License: &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: false,
 					},
@@ -148,7 +148,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			},
 			isInstall: false,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
+				License: &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: true,
 					},
@@ -500,7 +500,7 @@ func Test_determineDownstreamVersionStatus(t *testing.T) {
 			},
 			isInstall: true,
 			kotsKinds: &kotsutil.KotsKinds{
-				License: licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
+				License: &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						IsEmbeddedClusterMultiNodeEnabled: true,
 					},

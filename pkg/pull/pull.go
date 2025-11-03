@@ -87,7 +87,7 @@ var (
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
-func PullApplicationMetadata(upstreamURI string, license licensewrapper.LicenseWrapper, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
+func PullApplicationMetadata(upstreamURI string, license *licensewrapper.LicenseWrapper, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
 	host := util.ReplicatedAppEndpoint(license)
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -150,7 +150,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.LicenseObj != nil {
-		fetchOptions.License = licensewrapper.LicenseWrapper{V1: pullOptions.LicenseObj}
+		fetchOptions.License = &licensewrapper.LicenseWrapper{V1: pullOptions.LicenseObj}
 	} else if pullOptions.LicenseFile != "" {
 		license, err := licensewrapper.LoadLicenseFromPath(pullOptions.LicenseFile)
 		if err != nil {
@@ -162,9 +162,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			}
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
-		fetchOptions.License = license
+		fetchOptions.License = &license
 	} else {
-		fetchOptions.License = licensewrapper.LicenseWrapper{V1: localLicense}
+		fetchOptions.License = &licensewrapper.LicenseWrapper{V1: localLicense}
 	}
 
 	if fetchOptions.License.IsV1() || fetchOptions.License.IsV2() {
@@ -854,7 +854,7 @@ func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, erro
 	return installation, nil
 }
 
-func publicKeysMatch(log *logger.CLILogger, license licensewrapper.LicenseWrapper, airgap *kotsv1beta1.Airgap) error {
+func publicKeysMatch(log *logger.CLILogger, license *licensewrapper.LicenseWrapper, airgap *kotsv1beta1.Airgap) error {
 	if (!license.IsV1() && !license.IsV2()) || airgap == nil {
 		// not sure when this would happen, but earlier logic allows this combination
 		return nil

@@ -169,7 +169,7 @@ func PullCmd() *cobra.Command {
 	return cmd
 }
 
-func getAppSlugForPull(uri string, license licensewrapper.LicenseWrapper) string {
+func getAppSlugForPull(uri string, license *licensewrapper.LicenseWrapper) string {
 	appSlug := strings.Split(uri, "/")[0]
 	if !license.IsV1() && !license.IsV2() {
 		return appSlug

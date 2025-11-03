@@ -39,7 +39,7 @@ type RewriteOptions struct {
 	CreateAppDir         bool
 	ExcludeKotsKinds     bool
 	Installation         *kotsv1beta1.Installation
-	License              licensewrapper.LicenseWrapper
+	License              *licensewrapper.LicenseWrapper
 	ConfigValues         *kotsv1beta1.ConfigValues
 	ReportWriter         io.Writer
 	CopyImages           bool // can be false even if registry is not read-only

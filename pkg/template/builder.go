@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 var (
@@ -27,7 +28,7 @@ type BuilderOptions struct {
 	ConfigGroups    []kotsv1beta1.ConfigGroup
 	ExistingValues  map[string]ItemValue
 	LocalRegistry   registrytypes.RegistrySettings
-	License         *kotsv1beta1.License
+	License         *licensewrapper.LicenseWrapper
 	Application     *kotsv1beta1.Application
 	ApplicationInfo *ApplicationInfo
 	VersionInfo     *VersionInfo

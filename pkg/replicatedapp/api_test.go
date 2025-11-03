@@ -94,7 +94,7 @@ func Test_getRequest(t *testing.T) {
 			t.Setenv("EMBEDDED_CLUSTER_ID", "123")
 			t.Setenv("REPLICATED_APP_ENDPOINT", "https://replicated-app")
 		}
-		request, err := r.GetRequest("GET", licenseWrapper, cursor.Cursor, channel)
+		request, err := r.GetRequest("GET", &licenseWrapper, cursor.Cursor, channel)
 		req.NoError(err)
 		assert.Equal(t, test.expectedURL, request.URL.String())
 	}
@@ -136,7 +136,7 @@ func Test_makeLicenseURL(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 			licenseWrapper := licensewrapper.LicenseWrapper{V1: test.license}
-			url, err := makeLicenseURL(licenseWrapper, test.selectedChannelID)
+			url, err := makeLicenseURL(&licenseWrapper, test.selectedChannelID)
 			require.NoError(t, err)
 			assert.Equal(t, test.expectedURL, url)
 		})

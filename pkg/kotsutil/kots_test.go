@@ -1095,7 +1095,7 @@ status: {}
 				Config:                tt.fields.Config,
 				ConfigValues:          tt.fields.ConfigValues,
 				Installation:          tt.fields.Installation,
-				License:               tt.fields.License,
+				License:               &tt.fields.License,
 				Identity:              tt.fields.Identity,
 				IdentityConfig:        tt.fields.IdentityConfig,
 				Backup:                tt.fields.Backup,
@@ -1203,7 +1203,7 @@ func TestFindChannelIDInLicense(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.license}
-			channelID, err := kotsutil.FindChannelIDInLicense(tt.requestedSlug, licenseWrapper)
+			channelID, err := kotsutil.FindChannelIDInLicense(tt.requestedSlug, &licenseWrapper)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -1302,7 +1302,7 @@ func TestFindChannelInLicense(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.license}
-			channel, err := kotsutil.FindChannelInLicense(tt.requestedID, licenseWrapper)
+			channel, err := kotsutil.FindChannelInLicense(tt.requestedID, &licenseWrapper)
 
 			if tt.expectError {
 				require.Error(t, err)

@@ -233,13 +233,13 @@ func Test_createConfigValues(t *testing.T) {
 			RepeatableItem: "5_repeatable_item",
 		},
 	}
-	values1, err := createConfigValues(applicationName, config, nil, licensewrapper.LicenseWrapper{}, nil, appInfo, nil, registrytypes.RegistrySettings{}, nil)
+	values1, err := createConfigValues(applicationName, config, nil, nil, nil, appInfo, nil, registrytypes.RegistrySettings{}, nil)
 	req.NoError(err)
 	require.Equal(t, expected1, values1.Spec.Values)
 
 	// Like an app without a config, should have exact same values
 	expected2 := configValues.Spec.Values
-	values2, err := createConfigValues(applicationName, nil, configValues, licensewrapper.LicenseWrapper{}, nil, appInfo, nil, registrytypes.RegistrySettings{}, nil)
+	values2, err := createConfigValues(applicationName, nil, configValues, nil, nil, appInfo, nil, registrytypes.RegistrySettings{}, nil)
 	req.NoError(err)
 	require.Equal(t, expected2, values2.Spec.Values)
 
@@ -270,7 +270,7 @@ func Test_createConfigValues(t *testing.T) {
 			RepeatableItem: "5_repeatable_item",
 		},
 	}
-	values3, err := createConfigValues(applicationName, config, configValues, licensewrapper.LicenseWrapper{}, nil, appInfo, nil, registrytypes.RegistrySettings{}, nil)
+	values3, err := createConfigValues(applicationName, config, configValues, nil, nil, appInfo, nil, registrytypes.RegistrySettings{}, nil)
 	req.NoError(err)
 	require.Equal(t, expected3, values3.Spec.Values)
 }
@@ -588,7 +588,7 @@ spec:
 
 func Test_downloadReplicatedApp(t *testing.T) {
 	// Create a test license
-	license := licensewrapper.LicenseWrapper{
+	license := &licensewrapper.LicenseWrapper{
 		V1: &kotsv1beta1.License{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "kots.io/v1beta1",

@@ -36,7 +36,7 @@ import (
 
 type IncompatibleAppError struct {
 	KotsApplication *kotsv1beta1.Application
-	License         licensewrapper.LicenseWrapper
+	License         *licensewrapper.LicenseWrapper
 	Message         string
 }
 
@@ -117,7 +117,7 @@ func downloadReplicated(
 	localPath string,
 	rootDir string,
 	useAppDir bool,
-	license licensewrapper.LicenseWrapper,
+	license *licensewrapper.LicenseWrapper,
 	existingConfigValues *kotsv1beta1.ConfigValues,
 	existingIdentityConfig *kotsv1beta1.IdentityConfig,
 	updateCursor replicatedapp.ReplicatedCursor,
@@ -361,7 +361,7 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.
 	return &release, nil
 }
 
-func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream, license licensewrapper.LicenseWrapper, cursor replicatedapp.ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo, selectedAppChannel string) (*Release, error) {
+func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream, license *licensewrapper.LicenseWrapper, cursor replicatedapp.ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo, selectedAppChannel string) (*Release, error) {
 	getReq, err := replicatedUpstream.GetRequest("GET", license, cursor.Cursor, selectedAppChannel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create http request")
@@ -474,7 +474,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	return &release, nil
 }
 
-func listPendingChannelReleases(license licensewrapper.LicenseWrapper, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]ChannelRelease, *time.Time, error) {
+func listPendingChannelReleases(license *licensewrapper.LicenseWrapper, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]ChannelRelease, *time.Time, error) {
 	// Use wrapper method to get endpoint
 	endpoint := license.GetEndpoint()
 	if endpoint == "" {
@@ -558,7 +558,7 @@ func listPendingChannelReleases(license licensewrapper.LicenseWrapper, lastUpdat
 
 // MustMarshalLicenseWrapper marshals a LicenseWrapper to YAML bytes.
 // It marshals the appropriate version (v1beta1 or v1beta2) based on what's present in the wrapper.
-func MustMarshalLicenseWrapper(license licensewrapper.LicenseWrapper) ([]byte, error) {
+func MustMarshalLicenseWrapper(license *licensewrapper.LicenseWrapper) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
@@ -588,7 +588,7 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, license licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry registrytypes.RegistrySettings, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, license *licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry registrytypes.RegistrySettings, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
 	templateContextValues := make(map[string]template.ItemValue)
 
 	var newValues kotsv1beta1.ConfigValuesSpec

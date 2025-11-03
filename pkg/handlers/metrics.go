@@ -61,7 +61,7 @@ func (h *Handler) GetSendCustomAppMetricsHandler(kotsStore store.Store) http.Han
 			return
 		}
 
-		err = replicatedapp.SendCustomAppMetricsData(license, app, request.Data)
+		err = replicatedapp.SendCustomAppMetricsData(&license, app, request.Data)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "set application data"))
 			w.WriteHeader(http.StatusBadRequest)

@@ -46,7 +46,7 @@ func RewriteImages(images []string, destRegistry dockerregistrytypes.RegistryOpt
 
 // RewritePrivateImages rewrites private images to be proxied through proxy.replicated.com,
 // and rewrites replicated registry images to use the custom registry domain if configured
-func RewritePrivateImages(images []string, kotsKinds *kotsutil.KotsKinds, license licensewrapper.LicenseWrapper) ([]kustomizetypes.Image, error) {
+func RewritePrivateImages(images []string, kotsKinds *kotsutil.KotsKinds, license *licensewrapper.LicenseWrapper) ([]kustomizetypes.Image, error) {
 	replicatedRegistryInfo, err := registry.GetRegistryProxyInfo(license, &kotsKinds.Installation, &kotsKinds.KotsApplication)
 	if err != nil {
 		return nil, errors.Wrap(err, "get registry proxy info")

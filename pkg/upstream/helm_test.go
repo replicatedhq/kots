@@ -1273,7 +1273,7 @@ some: value
 			require.NoError(t, err)
 
 			upstream := &types.Upstream{
-				License: licensewrapper.LicenseWrapper{
+				License: &licensewrapper.LicenseWrapper{
 					V1: &kotsv1beta1.License{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "kots.io/v1beta1",

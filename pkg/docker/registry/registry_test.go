@@ -151,7 +151,7 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 			}
 
 			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.args.license}
-			got, err := GetRegistryProxyInfo(licenseWrapper, tt.args.installation, tt.args.app)
+			got, err := GetRegistryProxyInfo(&licenseWrapper, tt.args.installation, tt.args.app)
 			if err != nil {
 				t.Errorf("GetRegistryProxyInfo() error = %v", err)
 			} else if !reflect.DeepEqual(got, tt.want) {
@@ -306,7 +306,7 @@ func Test_getRegistryProxyInfoFromLicense(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.license}
-			res := getRegistryProxyInfoFromLicense(licenseWrapper)
+			res := getRegistryProxyInfoFromLicense(&licenseWrapper)
 			if res.Registry != tt.want.Registry || res.Proxy != tt.want.Proxy {
 				t.Errorf("ProxyEndpointFromLicense() = %v, want %v", res, tt.want)
 			}

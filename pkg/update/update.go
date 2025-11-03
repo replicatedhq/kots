@@ -31,7 +31,7 @@ func InitAvailableUpdatesDir() error {
 	return nil
 }
 
-func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license licensewrapper.LicenseWrapper) ([]types.AvailableUpdate, error) {
+func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *licensewrapper.LicenseWrapper) ([]types.AvailableUpdate, error) {
 	licenseChan, err := kotsutil.FindChannelInLicense(app.SelectedChannelID, license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find channel in license")
@@ -65,7 +65,7 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license li
 	return availableUpdates, nil
 }
 
-func GetAvailableAirgapUpdates(app *apptypes.App, license licensewrapper.LicenseWrapper) ([]types.AvailableUpdate, error) {
+func GetAvailableAirgapUpdates(app *apptypes.App, license *licensewrapper.LicenseWrapper) ([]types.AvailableUpdate, error) {
 	updates := []types.AvailableUpdate{}
 	if err := filepath.Walk(availableUpdatesDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

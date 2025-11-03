@@ -193,7 +193,7 @@ func TestVerifyLicenseWrapper_V1Beta1(t *testing.T) {
 			req.True(wrapper.IsV1(), "Expected v1beta1 license")
 
 			// Verify using wrapper function
-			verified, err := VerifyLicenseWrapper(wrapper)
+			verified, err := VerifyLicenseWrapper(&wrapper)
 			if tt.wantErr {
 				req.Error(err)
 				if tt.wantErrMsg != "" {
@@ -213,8 +213,7 @@ func TestVerifyLicenseWrapper_EmptyWrapper(t *testing.T) {
 	req := require.New(t)
 
 	// Test empty wrapper (neither V1 nor V2)
-	emptyWrapper := licensewrapper.LicenseWrapper{}
-
+	var emptyWrapper *licensewrapper.LicenseWrapper = nil
 	_, err := VerifyLicenseWrapper(emptyWrapper)
 	req.Error(err)
 	req.Contains(err.Error(), "license wrapper contains no license")
@@ -232,7 +231,7 @@ func TestVerifyLicenseWrapper_PreservesVersion(t *testing.T) {
 	req.True(wrapper.IsV1())
 
 	// Verify it
-	verified, err := VerifyLicenseWrapper(wrapper)
+	verified, err := VerifyLicenseWrapper(&wrapper)
 	req.NoError(err)
 
 	// Ensure version is preserved
@@ -310,7 +309,7 @@ LQIDAQAB
 			req.True(wrapper.IsV2(), "Expected v1beta2 license")
 
 			// Verify using wrapper function
-			verified, err := VerifyLicenseWrapper(wrapper)
+			verified, err := VerifyLicenseWrapper(&wrapper)
 			if tt.wantErr {
 				req.Error(err)
 				if tt.wantErrMsg != "" {

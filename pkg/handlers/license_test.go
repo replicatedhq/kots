@@ -54,7 +54,7 @@ spec:
 	req.True(wrapper.IsV1(), "Should be v1beta1 license")
 
 	// Convert to response using the handler function
-	response, err := licenseResponseFromLicense(wrapper, nil)
+	response, err := licenseResponseFromLicense(&wrapper, nil)
 	req.NoError(err, "Should convert v1beta1 to response")
 
 	// Verify response fields
@@ -123,7 +123,7 @@ spec:
 	req.True(wrapper.IsV2(), "Should be v1beta2 license")
 
 	// Convert to response using the handler function
-	response, err := licenseResponseFromLicense(wrapper, nil)
+	response, err := licenseResponseFromLicense(&wrapper, nil)
 	req.NoError(err, "Should convert v1beta2 to response")
 
 	// Verify response fields - should be identical format to v1beta1
@@ -200,9 +200,9 @@ spec:
 	v2Wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(v2License))
 	req.NoError(err)
 
-	v1Response, err := licenseResponseFromLicense(v1Wrapper, nil)
+	v1Response, err := licenseResponseFromLicense(&v1Wrapper, nil)
 	req.NoError(err)
-	v2Response, err := licenseResponseFromLicense(v2Wrapper, nil)
+	v2Response, err := licenseResponseFromLicense(&v2Wrapper, nil)
 	req.NoError(err)
 
 	// Compare key fields - they should be identical
@@ -247,7 +247,7 @@ spec:
 	wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseYAML))
 	req.NoError(err)
 
-	entitlements, expiresAt, err := getLicenseEntitlements(wrapper)
+	entitlements, expiresAt, err := getLicenseEntitlements(&wrapper)
 	req.NoError(err)
 
 	// Should have 2 entitlements (user_limit and feature_x, but not expires_at or gitops_enabled)
@@ -326,7 +326,7 @@ spec:
 	req.NoError(err)
 	req.True(wrapper.IsV2(), "Should be v1beta2")
 
-	entitlements, expiresAt, err := getLicenseEntitlements(wrapper)
+	entitlements, expiresAt, err := getLicenseEntitlements(&wrapper)
 	req.NoError(err)
 
 	// Should have 2 entitlements (max_nodes and premium_support, not expires_at)
@@ -567,11 +567,11 @@ func TestChangeLicense_V1Beta1ToV1Beta2(t *testing.T) {
 	req.True(v2License.IsV2(), "Should be v1beta2 license")
 
 	// Verify both licenses can be converted to API responses
-	v1Response, err := licenseResponseFromLicense(v1License, nil)
+	v1Response, err := licenseResponseFromLicense(&v1License, nil)
 	req.NoError(err, "Should convert v1beta1 to response")
 	req.NotNil(v1Response)
 
-	v2Response, err := licenseResponseFromLicense(v2License, nil)
+	v2Response, err := licenseResponseFromLicense(&v2License, nil)
 	req.NoError(err, "Should convert v1beta2 to response")
 	req.NotNil(v2Response)
 

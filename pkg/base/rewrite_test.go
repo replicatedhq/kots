@@ -171,7 +171,7 @@ func Test_RewritePrivateImages(t *testing.T) {
 					"redis:7@sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
 				},
 				kotsKinds: &kotsutil.KotsKinds{
-					License: licensewrapper.LicenseWrapper{
+					License: &licensewrapper.LicenseWrapper{
 						V1: &kotsv1beta1.License{
 							Spec: kotsv1beta1.LicenseSpec{
 								AppSlug: "test-app-slug",
@@ -220,7 +220,7 @@ func Test_RewritePrivateImages(t *testing.T) {
 					"quay.io/replicatedcom/someimage:1",
 				},
 				kotsKinds: &kotsutil.KotsKinds{
-					License: licensewrapper.LicenseWrapper{
+					License: &licensewrapper.LicenseWrapper{
 						V1: &kotsv1beta1.License{
 							Spec: kotsv1beta1.LicenseSpec{
 								AppSlug: "test-app-slug",
@@ -271,7 +271,7 @@ func Test_RewritePrivateImages(t *testing.T) {
 					"quay.io/replicatedcom/someimage:1",
 				},
 				kotsKinds: &kotsutil.KotsKinds{
-					License: licensewrapper.LicenseWrapper{
+					License: &licensewrapper.LicenseWrapper{
 						V1: &kotsv1beta1.License{
 							Spec: kotsv1beta1.LicenseSpec{
 								AppSlug: "test-app-slug",

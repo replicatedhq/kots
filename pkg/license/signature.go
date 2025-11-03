@@ -48,12 +48,16 @@ func (e LicenseDataError) Error() string {
 //
 // Note: This function validates the license signature only. Entitlement signature validation
 // is handled separately where needed, matching the behavior of the deprecated VerifySignature function.
-func VerifyLicenseWrapper(wrapper licensewrapper.LicenseWrapper) (licensewrapper.LicenseWrapper, error) {
+func VerifyLicenseWrapper(wrapper *licensewrapper.LicenseWrapper) (*licensewrapper.LicenseWrapper, error) {
+	if wrapper == nil || (!wrapper.IsV1() && !wrapper.IsV2()) {
+		return nil, errors.New("license wrapper contains no license")
+	}
+
 	if wrapper.IsV1() {
 		// Validate v1beta1 license using built-in ValidateLicense (MD5)
 		_, err := wrapper.V1.ValidateLicense()
 		if err != nil {
-			return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to validate v1beta1 license")
+			return nil, errors.Wrap(err, "failed to validate v1beta1 license")
 		}
 
 		return wrapper, nil
@@ -63,13 +67,13 @@ func VerifyLicenseWrapper(wrapper licensewrapper.LicenseWrapper) (licensewrapper
 		// Validate v1beta2 license using built-in ValidateLicense (SHA-256)
 		_, err := wrapper.V2.ValidateLicense()
 		if err != nil {
-			return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to validate v1beta2 license")
+			return nil, errors.Wrap(err, "failed to validate v1beta2 license")
 		}
 
 		return wrapper, nil
 	}
 
-	return licensewrapper.LicenseWrapper{}, errors.New("license wrapper contains no license")
+	return nil, errors.New("license wrapper contains no license")
 }
 
 // VerifySignature validates a v1beta1 license signature using MD5.

@@ -14,6 +14,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,7 +59,7 @@ var secretAnnotations = map[string]string{
 	"helm.sh/hook-weight":    "-9999",
 }
 
-func GetRegistryProxyInfo(license *kotsv1beta1.License, installation *kotsv1beta1.Installation, app *kotsv1beta1.Application) (*RegistryProxyInfo, error) {
+func GetRegistryProxyInfo(license *licensewrapper.LicenseWrapper, installation *kotsv1beta1.Installation, app *kotsv1beta1.Application) (*RegistryProxyInfo, error) {
 	if util.IsEmbeddedCluster() {
 		registryProxyInfo, err := getECRegistryProxyInfo()
 		if err != nil {
@@ -142,14 +143,19 @@ func getECRegistryProxyInfo() (*RegistryProxyInfo, error) {
 	return info, nil
 }
 
-func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
+func getRegistryProxyInfoFromLicense(license *licensewrapper.LicenseWrapper) *RegistryProxyInfo {
 	defaultInfo := getDefaultRegistryProxyInfo()
 
-	if license == nil {
+	if license == nil || (!license.IsV1() && !license.IsV2()) {
 		return defaultInfo
 	}
 
-	u, err := url.Parse(license.Spec.Endpoint)
+	endpoint := license.GetEndpoint()
+	if endpoint == "" {
+		endpoint = "https://replicated.app"
+	}
+
+	u, err := url.Parse(endpoint)
 	if err != nil {
 		return defaultInfo
 	}

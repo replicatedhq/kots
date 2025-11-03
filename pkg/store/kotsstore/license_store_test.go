@@ -181,8 +181,7 @@ func TestLicenseWrapper_GetterMethods(t *testing.T) {
 
 // TestLicenseWrapper_EmptyWrapper tests behavior with empty wrapper
 func TestLicenseWrapper_EmptyWrapper(t *testing.T) {
-	wrapper := licensewrapper.LicenseWrapper{}
-
+	wrapper := &licensewrapper.LicenseWrapper{}
 	assert.False(t, wrapper.IsV1(), "empty wrapper should not be V1")
 	assert.False(t, wrapper.IsV2(), "empty wrapper should not be V2")
 	assert.Empty(t, wrapper.GetAppSlug(), "empty wrapper should return empty app slug")

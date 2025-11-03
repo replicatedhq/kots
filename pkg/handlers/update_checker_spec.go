@@ -57,7 +57,7 @@ func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	licenseChan, err := kotsutil.FindChannelInLicense(foundApp.SelectedChannelID, license)
+	licenseChan, err := kotsutil.FindChannelInLicense(foundApp.SelectedChannelID, &license)
 	if err != nil {
 		updateCheckerSpecResponse.Error = "failed to find app channel id from license"
 		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))

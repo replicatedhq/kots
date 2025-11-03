@@ -253,7 +253,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	return nil
 }
 
-func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds, license licensewrapper.LicenseWrapper) error {
+func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds, license *licensewrapper.LicenseWrapper) error {
 	if util.IsV3EmbeddedCluster() {
 		// Update version checks in V3 EC are handled separately
 		return nil

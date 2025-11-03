@@ -10,7 +10,7 @@ import (
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
-func isSlugInLicenseChannels(slug string, license licensewrapper.LicenseWrapper) bool {
+func isSlugInLicenseChannels(slug string, license *licensewrapper.LicenseWrapper) bool {
 	channels := license.GetChannels()
 	for _, channel := range channels {
 		if channel.ChannelSlug == slug {
@@ -20,7 +20,7 @@ func isSlugInLicenseChannels(slug string, license licensewrapper.LicenseWrapper)
 	return false
 }
 
-func isMultiChannelLicense(license licensewrapper.LicenseWrapper) bool {
+func isMultiChannelLicense(license *licensewrapper.LicenseWrapper) bool {
 	if !license.IsV1() && !license.IsV2() {
 		return false
 	}
@@ -31,7 +31,7 @@ func isMultiChannelLicense(license licensewrapper.LicenseWrapper) bool {
 	return len(channels) > 0
 }
 
-func canInstallFromChannel(slug string, license licensewrapper.LicenseWrapper) bool {
+func canInstallFromChannel(slug string, license *licensewrapper.LicenseWrapper) bool {
 	if !isMultiChannelLicense(license) {
 		return true
 	}
@@ -40,9 +40,9 @@ func canInstallFromChannel(slug string, license licensewrapper.LicenseWrapper) b
 
 // VerifyAndUpdateLicense will update (if not airgapped), verify that the request channel slug is present, and return the possibly updated license.
 // Note that this is a noop if the license passed in is nil.
-func VerifyAndUpdateLicense(log *logger.CLILogger, license licensewrapper.LicenseWrapper, preferredChannelSlug string, isAirgap bool) (licensewrapper.LicenseWrapper, error) {
+func VerifyAndUpdateLicense(log *logger.CLILogger, license *licensewrapper.LicenseWrapper, preferredChannelSlug string, isAirgap bool) (*licensewrapper.LicenseWrapper, error) {
 	if !license.IsV1() && !license.IsV2() {
-		return licensewrapper.LicenseWrapper{}, nil
+		return nil, nil
 	}
 	if isAirgap {
 		if canInstallFromChannel(preferredChannelSlug, license) {
@@ -63,7 +63,7 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license licensewrapper.Licens
 	updatedLicense, err := replicatedapp.GetLatestLicense(license, "")
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to get latest license")
+		return nil, errors.Wrap(err, "failed to get latest license")
 	}
 	log.FinishSpinner()
 

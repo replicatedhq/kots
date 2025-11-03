@@ -10,7 +10,7 @@ import (
 
 // LicenseIsExpired checks if a license has expired based on the expires_at entitlement.
 // Works with both v1beta1 and v1beta2 licenses via the wrapper.
-func LicenseIsExpired(license licensewrapper.LicenseWrapper) (bool, error) {
+func LicenseIsExpired(license *licensewrapper.LicenseWrapper) (bool, error) {
 	// Use wrapper method to get entitlements (works for both v1beta1 and v1beta2)
 	entitlements := license.GetEntitlements()
 
@@ -35,6 +35,6 @@ func LicenseIsExpired(license licensewrapper.LicenseWrapper) (bool, error) {
 // Deprecated: Use LicenseIsExpired with LicenseWrapper instead.
 // This function is maintained for backward compatibility but will be removed in a future version.
 func LicenseIsExpiredV1(license *kotsv1beta1.License) (bool, error) {
-	wrapper := licensewrapper.LicenseWrapper{V1: license}
+	wrapper := &licensewrapper.LicenseWrapper{V1: license}
 	return LicenseIsExpired(wrapper)
 }

@@ -18,7 +18,7 @@ import (
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
-func (s *KOTSStore) GetLatestLicenseForApp(appID string) (licensewrapper.LicenseWrapper, error) {
+func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*licensewrapper.LicenseWrapper, error) {
 	db := persistence.MustGetDBSession()
 	query := `select license from app where id = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
@@ -26,26 +26,26 @@ func (s *KOTSStore) GetLatestLicenseForApp(appID string) (licensewrapper.License
 		Arguments: []interface{}{appID},
 	})
 	if err != nil {
-		return licensewrapper.LicenseWrapper{}, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
 	if !rows.Next() {
-		return licensewrapper.LicenseWrapper{}, ErrNotFound
+		return nil, ErrNotFound
 	}
 
 	var licenseStr gorqlite.NullString
 	if err := rows.Scan(&licenseStr); err != nil {
-		return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to scan")
+		return nil, errors.Wrap(err, "failed to scan")
 	}
 
 	// Use licensewrapper to auto-detect version (v1beta1 or v1beta2)
 	wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseStr.String))
 	if err != nil {
-		return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to load license from bytes")
+		return nil, errors.Wrap(err, "failed to load license from bytes")
 	}
-	return wrapper, nil
+	return &wrapper, nil
 }
 
-func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (licensewrapper.LicenseWrapper, error) {
+func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*licensewrapper.LicenseWrapper, error) {
 	db := persistence.MustGetDBSession()
 	query := `select kots_license from app_version where app_id = ? and sequence = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
@@ -53,31 +53,31 @@ func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (licen
 		Arguments: []interface{}{appID, sequence},
 	})
 	if err != nil {
-		return licensewrapper.LicenseWrapper{}, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
 	if !rows.Next() {
-		return licensewrapper.LicenseWrapper{}, ErrNotFound
+		return nil, ErrNotFound
 	}
 
 	var licenseStr gorqlite.NullString
 	if err := rows.Scan(&licenseStr); err != nil {
-		return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to scan")
+		return nil, errors.Wrap(err, "failed to scan")
 	}
 
 	if licenseStr.Valid {
 		// Use licensewrapper to auto-detect version (v1beta1 or v1beta2)
 		wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseStr.String))
 		if err != nil {
-			return licensewrapper.LicenseWrapper{}, errors.Wrap(err, "failed to load license from bytes")
+			return nil, errors.Wrap(err, "failed to load license from bytes")
 		}
-		return wrapper, nil
+		return &wrapper, nil
 	}
 
-	// Return empty wrapper (no license for this version)
-	return licensewrapper.LicenseWrapper{}, nil
+	// Return nil (no license for this version)
+	return nil, nil
 }
 
-func (s *KOTSStore) GetAllAppLicenses() ([]licensewrapper.LicenseWrapper, error) {
+func (s *KOTSStore) GetAllAppLicenses() ([]*licensewrapper.LicenseWrapper, error) {
 	db := persistence.MustGetDBSession()
 	query := `select license from app`
 	rows, err := db.QueryOne(query)
@@ -86,7 +86,7 @@ func (s *KOTSStore) GetAllAppLicenses() ([]licensewrapper.LicenseWrapper, error)
 	}
 
 	var licenseStr gorqlite.NullString
-	licenses := []licensewrapper.LicenseWrapper{}
+	licenses := []*licensewrapper.LicenseWrapper{}
 	for rows.Next() {
 		if err := rows.Scan(&licenseStr); err != nil {
 			return nil, errors.Wrap(err, "failed to scan")
@@ -97,14 +97,14 @@ func (s *KOTSStore) GetAllAppLicenses() ([]licensewrapper.LicenseWrapper, error)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load license from bytes")
 			}
-			licenses = append(licenses, wrapper)
+			licenses = append(licenses, &wrapper)
 		}
 	}
 
 	return licenses, nil
 }
 
-func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense licensewrapper.LicenseWrapper, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error) {
+func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *licensewrapper.LicenseWrapper, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error) {
 	db := persistence.MustGetDBSession()
 
 	statements := []gorqlite.ParameterizedStatement{}

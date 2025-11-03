@@ -122,7 +122,7 @@ func (h *Handler) CurrentConfig(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallationSpec(params.NextSequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, &appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
 		logger.Error(err)
 		response.Error = "failed to render templates"
@@ -192,7 +192,7 @@ func (h *Handler) LiveConfig(w http.ResponseWriter, r *http.Request) {
 	versionInfo := template.VersionInfoFromInstallationSpec(params.NextSequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, &appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
 		response.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, response.Error))

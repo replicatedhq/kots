@@ -38,13 +38,13 @@ spec:
 
 type LicenseData struct {
 	LicenseBytes []byte
-	License      licensewrapper.LicenseWrapper
+	License      *licensewrapper.LicenseWrapper
 }
 
 // GetLatestLicense will return the latest license from the replicated api, if selectedChannelID is provided
 // it will be passed along to the api.
 // Note: The Replicated API can return v1beta1 or v1beta2 licenses, which are wrapped in a LicenseWrapper.
-func GetLatestLicense(license licensewrapper.LicenseWrapper, selectedChannelID string) (*LicenseData, error) {
+func GetLatestLicense(license *licensewrapper.LicenseWrapper, selectedChannelID string) (*LicenseData, error) {
 	fullURL, err := makeLicenseURL(license, selectedChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make license url")
@@ -58,7 +58,7 @@ func GetLatestLicense(license licensewrapper.LicenseWrapper, selectedChannelID s
 	return licenseData, nil
 }
 
-func makeLicenseURL(license licensewrapper.LicenseWrapper, selectedChannelID string) (string, error) {
+func makeLicenseURL(license *licensewrapper.LicenseWrapper, selectedChannelID string) (string, error) {
 	// Use wrapper methods to access license fields
 	endpoint := license.GetEndpoint()
 	if endpoint == "" {
@@ -141,13 +141,13 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 	}
 
 	// Wrap the license based on its version
-	var wrapper licensewrapper.LicenseWrapper
+	var wrapper *licensewrapper.LicenseWrapper
 	if gvk.Version == "v1beta1" {
-		wrapper = licensewrapper.LicenseWrapper{
+		wrapper = &licensewrapper.LicenseWrapper{
 			V1: obj.(*kotsv1beta1.License),
 		}
 	} else if gvk.Version == "v1beta2" {
-		wrapper = licensewrapper.LicenseWrapper{
+		wrapper = &licensewrapper.LicenseWrapper{
 			V2: obj.(*kotsv1beta2.License),
 		}
 	} else {
@@ -237,7 +237,7 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 	return respBody, nil
 }
 
-func SendCustomAppMetricsData(license licensewrapper.LicenseWrapper, app *apptypes.App, data map[string]interface{}) error {
+func SendCustomAppMetricsData(license *licensewrapper.LicenseWrapper, app *apptypes.App, data map[string]interface{}) error {
 	// Use wrapper method to get endpoint
 	endpoint := license.GetEndpoint()
 	if endpoint == "" {

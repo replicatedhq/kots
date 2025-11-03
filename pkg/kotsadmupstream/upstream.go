@@ -80,7 +80,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}
 
 		var kotsApplication *kotsv1beta1.Application
-		var license licensewrapper.LicenseWrapper
+		var license *licensewrapper.LicenseWrapper
 		if cause, ok := errors.Cause(finalError).(upstream.IncompatibleAppError); ok {
 			errMsg = cause.Error()
 			kotsApplication = cause.KotsApplication

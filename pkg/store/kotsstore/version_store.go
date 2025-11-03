@@ -329,7 +329,7 @@ func (s *KOTSStore) GetAppVersionBaseArchive(appID string, versionLabel string) 
 	return archiveDir, baseSequence, nil
 }
 
-func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license licensewrapper.LicenseWrapper) (int64, error) {
+func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *licensewrapper.LicenseWrapper) (int64, error) {
 	db := persistence.MustGetDBSession()
 	statements := []gorqlite.ParameterizedStatement{}
 
@@ -1067,7 +1067,7 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 			return nil, errors.Wrap(err, "failed to read license spec")
 		}
 		if license.IsV1() || license.IsV2() {
-			v.KOTSKinds.License = license
+			v.KOTSKinds.License = &license
 		}
 	}
 

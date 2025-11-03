@@ -845,22 +845,22 @@ func getRegistryConfig(v *viper.Viper, clientset kubernetes.Interface, appSlug s
 	}, nil
 }
 
-func getLicense(v *viper.Viper) (licensewrapper.LicenseWrapper, string, error) {
+func getLicense(v *viper.Viper) (*licensewrapper.LicenseWrapper, string, error) {
 	if v.GetString("license-file") == "" {
-		return licensewrapper.LicenseWrapper{}, "", nil
+		return nil, "", nil
 	}
 
 	licenseData, err := os.ReadFile(ExpandDir(v.GetString("license-file")))
 	if err != nil {
-		return licensewrapper.LicenseWrapper{}, "", errors.Wrap(err, "failed to read license file")
+		return nil, "", errors.Wrap(err, "failed to read license file")
 	}
 
 	license, err := licensewrapper.LoadLicenseFromBytes(licenseData)
 	if err != nil {
-		return licensewrapper.LicenseWrapper{}, "", errors.Wrap(err, "failed to parse license file")
+		return nil, "", errors.Wrap(err, "failed to parse license file")
 	}
 
-	return license, string(licenseData), nil
+	return &license, string(licenseData), nil
 }
 
 func getHttpProxyEnv(v *viper.Viper) map[string]string {

@@ -281,14 +281,14 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 			// cursor based
 			tt.license.Spec.IsSemverRequired = false
 			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.license}
-			got, err := getRequiredAirgapUpdates(tt.airgap, licenseWrapper, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
+			got, err := getRequiredAirgapUpdates(tt.airgap, &licenseWrapper, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
 			req.NoError(err)
 			req.Equal(tt.wantNoSemver, got)
 
 			// semver based
 			tt.license.Spec.IsSemverRequired = true
 			licenseWrapper = licensewrapper.LicenseWrapper{V1: tt.license}
-			got, err = getRequiredAirgapUpdates(tt.airgap, licenseWrapper, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
+			got, err = getRequiredAirgapUpdates(tt.airgap, &licenseWrapper, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
 			req.NoError(err)
 			req.Equal(tt.wantSemver, got)
 		})

@@ -177,7 +177,7 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
 			return
 		}
-		updates, err := update.GetAvailableAirgapUpdates(app, license)
+		updates, err := update.GetAvailableAirgapUpdates(app, &license)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get available airgap updates"))
 			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
@@ -305,7 +305,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 }
 
 func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, error) {
-	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
 	url := fmt.Sprintf("%s/admin-console/version/latest", util.ReplicatedAppEndpoint(licenseWrapper))
 
 	req, err := util.NewRetryableRequest("GET", url, nil)

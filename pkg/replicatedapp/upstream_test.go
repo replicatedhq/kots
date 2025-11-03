@@ -136,12 +136,12 @@ func Test_getReplicatedAppEndpoint(t *testing.T) {
 
 			if tt.wantPanic {
 				req.Panics(func() {
-					_, _ = getReplicatedAppEndpoint(licensewrapper.LicenseWrapper{V1: tt.license})
+					_, _ = getReplicatedAppEndpoint(&licensewrapper.LicenseWrapper{V1: tt.license})
 				})
 				return
 			}
 
-			result, err := getReplicatedAppEndpoint(licensewrapper.LicenseWrapper{V1: tt.license})
+			result, err := getReplicatedAppEndpoint(&licensewrapper.LicenseWrapper{V1: tt.license})
 			req.NoError(err)
 			assert.Equal(t, tt.want, result)
 		})

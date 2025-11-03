@@ -149,7 +149,7 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
-			ctx := licenseCtx{License: test.License, App: test.App, VersionInfo: test.VersionInfo}
+			ctx := licenseCtx{License: &test.License, App: test.App, VersionInfo: test.VersionInfo}
 
 			expectJson, err := json.Marshal(test.expectDecoded)
 			req.NoError(err)
@@ -457,7 +457,7 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			req := require.New(t)
 
 			ctx := licenseCtx{
-				License: tt.License,
+				License: &tt.License,
 			}
 			req.Equal(tt.want, ctx.licenseFieldValue(tt.fieldName))
 		})

@@ -19,7 +19,7 @@ import (
 )
 
 func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (string, error) {
-	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
 	url := fmt.Sprintf("%s/clusterconfig/version/Installer?versionLabel=%s", util.ReplicatedAppEndpoint(licenseWrapper), url.QueryEscape(versionLabel))
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
@@ -54,7 +54,7 @@ func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (
 }
 
 func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (string, error) {
-	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
 	url := fmt.Sprintf("%s/clusterconfig/artifact/kots?versionLabel=%s", util.ReplicatedAppEndpoint(licenseWrapper), url.QueryEscape(versionLabel))
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {

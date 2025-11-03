@@ -70,7 +70,7 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: licensewrapper.LicenseWrapper{
+				License: &licensewrapper.LicenseWrapper{
 					V1: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
 							AppSlug: "test-app-slug",
@@ -108,7 +108,7 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: licensewrapper.LicenseWrapper{
+				License: &licensewrapper.LicenseWrapper{
 					V1: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
 							AppSlug: "test-app-slug",
@@ -152,7 +152,7 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: licensewrapper.LicenseWrapper{
+				License: &licensewrapper.LicenseWrapper{
 					V1: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
 							AppSlug: "test-app-slug",
@@ -194,7 +194,7 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: licensewrapper.LicenseWrapper{
+				License: &licensewrapper.LicenseWrapper{
 					V1: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
 							AppSlug: "test-app-slug",
@@ -228,7 +228,7 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: licensewrapper.LicenseWrapper{
+				License: &licensewrapper.LicenseWrapper{
 					V1: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
 							AppSlug: "test-app-slug",
@@ -255,7 +255,7 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				},
 			},
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: licensewrapper.LicenseWrapper{
+				License: &licensewrapper.LicenseWrapper{
 					V1: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
 							AppSlug: "test-app-slug",
@@ -290,7 +290,7 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 			},
 			pendingVersions: []*downstreamtypes.DownstreamVersion{}, // empty - all were demoted
 			getUpdatesOptions: kotspull.GetUpdatesOptions{
-				License: licensewrapper.LicenseWrapper{
+				License: &licensewrapper.LicenseWrapper{
 					V1: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
 							AppSlug: "test-app-slug",

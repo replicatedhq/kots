@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, localRegistry registrytypes.RegistrySettings, versionInfo *template.VersionInfo, appInfo *template.ApplicationInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, decryptValues bool) (*kotsv1beta1.Config, error) {
+func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, localRegistry registrytypes.RegistrySettings, versionInfo *template.VersionInfo, appInfo *template.ApplicationInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, decryptValues bool) (*kotsv1beta1.Config, error) {
 	templatedString, err := templateConfigObjects(configSpec, configValues, license, app, localRegistry, versionInfo, appInfo, identityconfig, namespace, decryptValues, MarshalConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to template config")
@@ -39,7 +39,7 @@ func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 	return config, nil
 }
 
-func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, localRegistry registrytypes.RegistrySettings, versionInfo *template.VersionInfo, appInfo *template.ApplicationInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, decryptValues bool, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, localRegistry registrytypes.RegistrySettings, versionInfo *template.VersionInfo, appInfo *template.ApplicationInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, decryptValues bool, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	if configSpec == nil {
 		return "", nil
 	}

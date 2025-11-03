@@ -365,7 +365,7 @@ spec:
 
 			localRegistry := registrytypes.RegistrySettings{}
 			licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
-			got, err := templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, licenseWrapper, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, MarshalConfig)
+			got, err := templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, &licenseWrapper, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, MarshalConfig)
 			req.NoError(err)
 
 			gotObj, _, err := decode([]byte(got), nil, nil)
@@ -374,7 +374,7 @@ spec:
 			req.Equal(wantObj, gotObj)
 
 			// compare with oldMarshalConfig results
-			got, err = templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, licenseWrapper, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, oldMarshalConfig)
+			got, err = templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, &licenseWrapper, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 

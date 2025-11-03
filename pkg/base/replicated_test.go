@@ -2073,7 +2073,7 @@ spec:
 						Icon:  "https://example.com/icon.png",
 					},
 				},
-				License: licensewrapper.LicenseWrapper{
+				License: &licensewrapper.LicenseWrapper{
 					V1: &v1beta1.License{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "kots.io/v1beta1",

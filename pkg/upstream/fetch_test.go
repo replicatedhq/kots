@@ -62,7 +62,7 @@ ACgAAA==`,
 			RootDir:             workDir,
 			LocalPath:           srcDir,
 			CurrentVersionLabel: test.currentVersionLabel,
-			License: licensewrapper.LicenseWrapper{
+			License: &licensewrapper.LicenseWrapper{
 				V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						Endpoint: "http://localhost",

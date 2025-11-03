@@ -214,7 +214,7 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, getLicenseResponse)
 }
 
-func getLicenseEntitlements(license licensewrapper.LicenseWrapper) ([]EntitlementResponse, time.Time, error) {
+func getLicenseEntitlements(license *licensewrapper.LicenseWrapper) ([]EntitlementResponse, time.Time, error) {
 	var expiresAt time.Time
 	entitlements := []EntitlementResponse{}
 
@@ -269,7 +269,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	verifiedLicense, err := kotslicense.VerifyLicenseWrapper(unverifiedLicense)
+	verifiedLicense, err := kotslicense.VerifyLicenseWrapper(&unverifiedLicense)
 	if err != nil {
 		uploadLicenseResponse.Error = "License signature is not valid"
 		if _, ok := err.(kotslicense.LicenseDataError); ok {
@@ -321,7 +321,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 
 		if v1License != nil {
 			// Wrap the v1License before passing to GetLatestLicense
-			wrappedLicense := licensewrapper.LicenseWrapper{V1: v1License}
+			wrappedLicense := &licensewrapper.LicenseWrapper{V1: v1License}
 			licenseData, err := replicatedapp.GetLatestLicense(wrappedLicense, matchedChannelID)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to get latest license"))
@@ -715,7 +715,7 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, changeLicenseResponse)
 }
 
-func licenseResponseFromLicense(license licensewrapper.LicenseWrapper, app *apptypes.App) (*LicenseResponse, error) {
+func licenseResponseFromLicense(license *licensewrapper.LicenseWrapper, app *apptypes.App) (*LicenseResponse, error) {
 	entitlements, expiresAt, err := getLicenseEntitlements(license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license entitlements")

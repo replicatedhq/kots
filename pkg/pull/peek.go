@@ -15,7 +15,7 @@ import (
 type GetUpdatesOptions struct {
 	HelmRepoURI        string
 	Namespace          string
-	License            licensewrapper.LicenseWrapper
+	License            *licensewrapper.LicenseWrapper
 	LastUpdateCheckAt  *time.Time
 	CurrentCursor      string
 	CurrentChannelID   string

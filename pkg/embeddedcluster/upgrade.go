@@ -80,7 +80,7 @@ func startClusterUpgrade(
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
 
 	// We cannot notify the upgrade started until the new install is available
-	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
 	if err := NotifyUpgradeStarted(ctx, util.ReplicatedAppEndpoint(licenseWrapper), newInstall, current, versionLabel); err != nil {
 		logger.Errorf("Failed to notify upgrade started: %v", err)
 	}
@@ -256,7 +256,7 @@ func downloadUpgradeBinary(ctx context.Context, license *kotsv1beta1.License, ve
 }
 
 func newDownloadUpgradeBinaryRequest(ctx context.Context, license *kotsv1beta1.License, versionLabel string) (*retryablehttp.Request, error) {
-	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
 	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", util.ReplicatedAppEndpoint(licenseWrapper), url.QueryEscape(versionLabel))
 	req, err := util.NewRetryableRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -351,7 +351,7 @@ func getEmbeddedClusterMetadataFromReplicatedApp(
 	if in.Spec.Config.MetadataOverrideURL != "" {
 		metadataURL = in.Spec.Config.MetadataOverrideURL
 	} else {
-		licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+		licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
 		metadataURL = fmt.Sprintf(
 			"%s/embedded-cluster-public-files/metadata/v%s.json",
 			util.ReplicatedAppEndpoint(licenseWrapper),

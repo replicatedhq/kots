@@ -214,7 +214,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	upstreamURI := fmt.Sprintf("replicated://%s", appSlug)
 
 	// Wrap the verified license
-	licenseWrapper := licensewrapper.LicenseWrapper{V1: verifiedLicenseV1}
+	licenseWrapper := &licensewrapper.LicenseWrapper{V1: verifiedLicenseV1}
 
 	matchedChannelID, err := kotsutil.FindChannelIDInLicense(instParams.RequestedChannelSlug, licenseWrapper)
 	if err != nil {

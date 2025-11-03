@@ -14,7 +14,7 @@ import (
 )
 
 func (r *OnlineReporter) SubmitPreflightData(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
-	licenseWrapper := licensewrapper.LicenseWrapper{V1: license}
+	licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
 	endpoint := util.ReplicatedAppEndpoint(licenseWrapper)
 	if !canReport(endpoint) {
 		return nil

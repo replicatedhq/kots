@@ -134,7 +134,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		Downstreams:      downstreamNames,
 		CreateAppDir:     false,
 		ExcludeKotsKinds: true,
-		License:          license,
+		License:          &license,
 		ConfigValues:     configValues,
 		K8sNamespace:     appNamespace,
 		ReportWriter:     pipeWriter,

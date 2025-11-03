@@ -42,7 +42,7 @@ func ParseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 	return &replicatedUpstream, nil
 }
 
-func (r *ReplicatedUpstream) GetRequest(method string, license licensewrapper.LicenseWrapper, cursor string, selectedChannelID string) (*retryablehttp.Request, error) {
+func (r *ReplicatedUpstream) GetRequest(method string, license *licensewrapper.LicenseWrapper, cursor string, selectedChannelID string) (*retryablehttp.Request, error) {
 	endpoint, err := getReplicatedAppEndpoint(license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get replicated app endpoint")
@@ -76,7 +76,7 @@ func (r *ReplicatedUpstream) GetRequest(method string, license licensewrapper.Li
 	return req, nil
 }
 
-func getReplicatedAppEndpoint(license licensewrapper.LicenseWrapper) (string, error) {
+func getReplicatedAppEndpoint(license *licensewrapper.LicenseWrapper) (string, error) {
 	endpoint := util.ReplicatedAppEndpoint(license)
 
 	u, err := url.Parse(endpoint)

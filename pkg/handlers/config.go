@@ -248,7 +248,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	var kotsKinds *kotsutil.KotsKinds
 	var nonRenderedConfig *kotsv1beta1.Config
-	var appLicense licensewrapper.LicenseWrapper
+	var appLicense *licensewrapper.LicenseWrapper
 	var localRegistry registrytypes.RegistrySettings
 
 	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
@@ -420,7 +420,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	var kotsKinds *kotsutil.KotsKinds
 	var nonRenderedConfig *kotsv1beta1.Config
-	var license licensewrapper.LicenseWrapper
+	var license *licensewrapper.LicenseWrapper
 	var localRegistry registrytypes.RegistrySettings
 	var downstreamVersion *downstreamtypes.DownstreamVersion
 

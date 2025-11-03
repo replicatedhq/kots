@@ -25,7 +25,7 @@ import (
 // proxy registry only overwrites private images
 func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	// Wrap the license for internal functions
-	wrappedLicense := licensewrapper.LicenseWrapper{V1: license}
+	wrappedLicense := &licensewrapper.LicenseWrapper{V1: license}
 
 	if localRegistryInfo.IsValid() {
 		updatedCollectors, err := updateCollectorsWithLocalRegistryData(collectors, localRegistryInfo, installation, license)
@@ -111,7 +111,7 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 	return updatedCollectors, nil
 }
 
-func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license licensewrapper.LicenseWrapper, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
+func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *licensewrapper.LicenseWrapper, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	updatedCollectors := []*troubleshootv1beta2.Collect{}
 
 	registryProxyInfo, err := kotsregistry.GetRegistryProxyInfo(license, &installation, kotsApplication)

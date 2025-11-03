@@ -182,7 +182,7 @@ func IsV3EmbeddedClusterInitialInstall(sequence int64) bool {
 }
 
 // ReplicatedAPIEndpoint returns the endpoint for the replicated.app API.
-func ReplicatedAppEndpoint(license licensewrapper.LicenseWrapper) string {
+func ReplicatedAppEndpoint(license *licensewrapper.LicenseWrapper) string {
 	if ep := os.Getenv("REPLICATED_APP_ENDPOINT"); ep != "" {
 		return ep
 	}
