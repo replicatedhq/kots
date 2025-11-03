@@ -688,6 +688,42 @@ export const Utilities = {
     return false;
   },
 
+  getAppRedirectPath(appsList, isEmbeddedCluster) {
+    if (!appsList) {
+      return null;
+    }
+
+    const foundApp = appsList.find((app) => {
+      return app?.downstream?.pendingVersions?.length > 0;
+    });
+
+    if (!foundApp) {
+      return null;
+    }
+
+    const downstream = foundApp.downstream;
+    const firstVersion = downstream.pendingVersions.find(
+      (version) => version?.sequence === 0
+    );
+
+    if (!firstVersion) {
+      return null;
+    }
+
+    if (
+      firstVersion.status === "pending_cluster_management" &&
+      isEmbeddedCluster
+    ) {
+      return `/${foundApp.slug}/cluster/manage`;
+    }
+
+    if (firstVersion.status === "pending_config") {
+      return `/${foundApp.slug}/config`;
+    }
+
+    return null;
+  },
+
   humanReadableClusterState(state) {
     switch (state) {
       case "Waiting":
