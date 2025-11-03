@@ -77,10 +77,7 @@ func (r *ReplicatedUpstream) GetRequest(method string, license licensewrapper.Li
 }
 
 func getReplicatedAppEndpoint(license licensewrapper.LicenseWrapper) (string, error) {
-	endpoint := license.GetEndpoint()
-	if endpoint == "" {
-		endpoint = "https://replicated.app"
-	}
+	endpoint := util.ReplicatedAppEndpoint(license)
 
 	u, err := url.Parse(endpoint)
 	if err != nil {

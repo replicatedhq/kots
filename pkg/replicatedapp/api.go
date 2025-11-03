@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
@@ -42,7 +43,7 @@ type LicenseData struct {
 
 // GetLatestLicense will return the latest license from the replicated api, if selectedChannelID is provided
 // it will be passed along to the api.
-// Note: The Replicated API currently returns v1beta1 licenses, which are wrapped in a LicenseWrapper.
+// Note: The Replicated API can return v1beta1 or v1beta2 licenses, which are wrapped in a LicenseWrapper.
 func GetLatestLicense(license licensewrapper.LicenseWrapper, selectedChannelID string) (*LicenseData, error) {
 	fullURL, err := makeLicenseURL(license, selectedChannelID)
 	if err != nil {
@@ -145,9 +146,11 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 		wrapper = licensewrapper.LicenseWrapper{
 			V1: obj.(*kotsv1beta1.License),
 		}
+	} else if gvk.Version == "v1beta2" {
+		wrapper = licensewrapper.LicenseWrapper{
+			V2: obj.(*kotsv1beta2.License),
+		}
 	} else {
-		// Currently the Replicated API only returns v1beta1 licenses,
-		// but this prepares for future v1beta2 support
 		return nil, errors.Errorf("unsupported license version: %s", gvk.Version)
 	}
 

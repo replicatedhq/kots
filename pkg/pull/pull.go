@@ -175,9 +175,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.License = verifiedLicense
 
 		if pullOptions.LicenseEndpointOverride != "" {
-			// Apply endpoint override to V1 license if applicable
+			// Apply endpoint override to V1 or V2 license if applicable
 			if fetchOptions.License.IsV1() {
 				fetchOptions.License.V1.Spec.Endpoint = pullOptions.LicenseEndpointOverride
+			} else if fetchOptions.License.IsV2() {
+				fetchOptions.License.V2.Spec.Endpoint = pullOptions.LicenseEndpointOverride
 			}
 		}
 	}

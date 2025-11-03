@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
+	"github.com/replicatedhq/kotskinds/pkg/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,6 +43,25 @@ func Test_PullReplicated(t *testing.T) {
 		t.Run(testDir.Name(), func(t *testing.T) {
 			req := require.New(t)
 
+			// Set up custom global key for v1beta2 test licenses only
+			// This key was used to sign the v1beta2 test licenses in testdata/
+			if testDir.Name() == "kitchen-sink-v1beta2" {
+				globalKey := `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxHh2OXzDqlQ7kZJ1d4zr
+wbpXsSFHcYzr+k6pe+QXLUelAMvlik9NXauIt+YFtEAxNypV+xPCr8ClH5L2qPPb
+QBeG0ExxzvRshDMGxm7TXVHzTXQCrD7azS8Va6RsAB4tJMlvymn2uHsQDbShQiOY
+RKaRY/KKBmaIcYmysaSvfU8E5Ve9f4478X3u1cPzKUG6dk5j1Nt3nSv3BWINM5ec
+IXJQCB+gQVkOjzvA9aRVtLJtFqAoX7A6BfTNqrx35eyBEmzQOo0Mx1JkZDDW4+qC
+bhC0kq14IRpwKFIALBhSojfbJelM+gCv3wjF4hrWxAZQzWSPexP1Msof2KbrniEe
+LQIDAQAB
+-----END PUBLIC KEY-----
+`
+				if err := crypto.SetCustomPublicKeyRSA(globalKey); err != nil {
+					t.Fatalf("failed to set custom global key for v1beta2 tests: %v", err)
+				}
+				defer crypto.ResetCustomPublicKeyRSA() // Clean up after test
+			}
+
 			archiveData, err := os.ReadFile(path.Join(testResourcePath, "archive.tar.gz"))
 			req.NoError(err)
 
@@ -55,6 +75,12 @@ func Test_PullReplicated(t *testing.T) {
 
 			actualDir := t.TempDir()
 
+			// Use different channel ID for v1beta2 test to match its license
+			selectedChannelID := "1vusIYZLAVxMG6q760OJmRKj5i5"
+			if testDir.Name() == "kitchen-sink-v1beta2" {
+				selectedChannelID = "1"
+			}
+
 			pullOptions := pull.PullOptions{
 				RootDir:                 actualDir,
 				LicenseFile:             licenseFilepath,
@@ -63,7 +89,7 @@ func Test_PullReplicated(t *testing.T) {
 				ExcludeAdminConsole:     true,
 				ExcludeKotsKinds:        true,
 				Silent:                  true,
-				AppSelectedChannelID:    "1vusIYZLAVxMG6q760OJmRKj5i5",
+				AppSelectedChannelID:    selectedChannelID,
 			}
 			_, err = pull.Pull("replicated://integration", pullOptions)
 			req.NoError(err)
