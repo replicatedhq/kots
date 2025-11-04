@@ -128,9 +128,7 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	}()
 
 	// common options
-	if licenseWrapper.IsV1() {
-		pullOptions.LicenseObj = licenseWrapper.V1
-	}
+	pullOptions.LicenseObj = licenseWrapper
 	pullOptions.Namespace = util.AppNamespace()
 	pullOptions.ConfigFile = filepath.Join(params.AppArchive, "upstream", "userdata", "config.yaml")
 	pullOptions.InstallationFile = filepath.Join(params.AppArchive, "upstream", "userdata", "installation.yaml")

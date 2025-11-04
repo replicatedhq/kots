@@ -45,7 +45,7 @@ type PullOptions struct {
 	Namespace               string
 	Downstreams             []string
 	LocalPath               string
-	LicenseObj              *kotsv1beta1.License
+	LicenseObj              *kotsutil.LicenseWrapper
 	LicenseFile             string
 	LicenseEndpointOverride string // only used for testing
 	InstallationFile        string
@@ -150,7 +150,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.LicenseObj != nil {
-		fetchOptions.License = &licensewrapper.LicenseWrapper{V1: pullOptions.LicenseObj}
+		fetchOptions.License = pullOptions.LicenseObj
 	} else if pullOptions.LicenseFile != "" {
 		license, err := licensewrapper.LoadLicenseFromPath(pullOptions.LicenseFile)
 		if err != nil {

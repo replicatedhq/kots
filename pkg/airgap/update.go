@@ -182,16 +182,9 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to clean base archive")
 	}
 
-	// Extract v1beta1 license for pull.PullOptions (which still expects *kotsv1beta1.License)
-	// For v1beta2 licenses, V1 will be nil but this is handled by the pull package
-	var licenseV1 *kotsv1beta1.License
-	if license.IsV1() {
-		licenseV1 = license.V1
-	}
-
 	pullOptions := pull.PullOptions{
 		Downstreams:            downstreamNames,
-		LicenseObj:             licenseV1,
+		LicenseObj:             &license,
 		Namespace:              appNamespace,
 		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:     identityConfigFile,

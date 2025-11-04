@@ -211,7 +211,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	pullOptions := pull.PullOptions{
-		LicenseObj:             latestLicense.V1,
+		LicenseObj:             latestLicense,
 		Namespace:              appNamespace,
 		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:     identityConfigFile,
