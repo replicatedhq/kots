@@ -14,19 +14,18 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
-func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (string, error) {
-	licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
-	url := fmt.Sprintf("%s/clusterconfig/version/Installer?versionLabel=%s", util.ReplicatedAppEndpoint(licenseWrapper), url.QueryEscape(versionLabel))
+func GetECVersionForRelease(license *licensewrapper.LicenseWrapper, versionLabel string) (string, error) {
+	url := fmt.Sprintf("%s/clusterconfig/version/Installer?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
 	}
 
-	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
+	licenseID := license.GetLicenseID()
+	req.SetBasicAuth(licenseID, licenseID)
 
 	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
@@ -53,16 +52,16 @@ func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (
 	return response.Version, nil
 }
 
-func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (string, error) {
-	licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
-	url := fmt.Sprintf("%s/clusterconfig/artifact/kots?versionLabel=%s", util.ReplicatedAppEndpoint(licenseWrapper), url.QueryEscape(versionLabel))
+func DownloadKOTSBinary(license *licensewrapper.LicenseWrapper, versionLabel string) (string, error) {
+	url := fmt.Sprintf("%s/clusterconfig/artifact/kots?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
 	}
 	logger.Infof("downloading kots binary from %s", url)
 
-	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
+	licenseID := license.GetLicenseID()
+	req.SetBasicAuth(licenseID, licenseID)
 
 	client := retryablehttp.NewClient()
 	client.Logger = nil
