@@ -26,7 +26,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	updatecheckertypes "github.com/replicatedhq/kots/pkg/updatechecker/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -306,36 +305,16 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	if !kotsadm.IsAirgap() {
 		// sync license
 		logger.Info("syncing license with server to retrieve latest version")
-		// TODO(Phase 4): Update replicatedapp.GetLatestLicense to accept/return LicenseWrapper
-		// Temporary workaround: Use .V1 to get v1beta1 license for API call
-		var v1License *kotsv1beta1.License
-		if verifiedLicense.IsV1() {
-			v1License = verifiedLicense.V1
-		} else if verifiedLicense.IsV2() {
-			// For v1beta2, we need to convert to v1beta1 for the API call
-			// The API will return a v1beta1 license which we'll use going forward
-			// This is temporary until Phase 4 updates the API to support v1beta2
-			v1License = verifiedLicense.V1 // Will be nil for v1beta2, handled below
-			if v1License == nil {
-				// Cannot sync v1beta2 licenses yet - this will be fixed in Phase 4
-				logger.Info("Skipping license sync for v1beta2 license (not yet supported)")
-			}
+		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense, matchedChannelID)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get latest license"))
+			uploadLicenseResponse.Error = err.Error()
+			JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
+			return
 		}
-
-		if v1License != nil {
-			// Wrap the v1License before passing to GetLatestLicense
-			wrappedLicense := &licensewrapper.LicenseWrapper{V1: v1License}
-			licenseData, err := replicatedapp.GetLatestLicense(wrappedLicense, matchedChannelID)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to get latest license"))
-				uploadLicenseResponse.Error = err.Error()
-				JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
-				return
-			}
-			// licenseData.License is already a wrapper
-			verifiedLicense = licenseData.License
-			licenseString = string(licenseData.LicenseBytes)
-		}
+		// licenseData.License is already a wrapper
+		verifiedLicense = licenseData.License
+		licenseString = string(licenseData.LicenseBytes)
 	}
 
 	// check license expiration
