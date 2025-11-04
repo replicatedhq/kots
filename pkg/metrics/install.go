@@ -102,7 +102,7 @@ func (m InstallMetrics) Post(url string) error {
 }
 
 func getEndpoint(license *licensewrapper.LicenseWrapper) (string, error) {
-	endpoint := license.GetEndpoint()
+	endpoint := util.ReplicatedAppEndpoint(license)
 
 	if isDevEndpoint(endpoint) {
 		// cluster ip services are not resolvable from the cli ...
