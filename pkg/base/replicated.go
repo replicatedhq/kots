@@ -471,6 +471,8 @@ func getTemplatingKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, err
 				kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
 			case "kots.io/v1beta1, Kind=License":
 				kotsKinds.License = &licensewrapper.LicenseWrapper{V1: decoded.(*kotsv1beta1.License)}
+			case "kots.io/v1beta2, Kind=License":
+				kotsKinds.License = &licensewrapper.LicenseWrapper{V2: decoded.(*kotsv1beta2.License)}
 			case "kots.io/v1beta1, Kind=IdentityConfig":
 				kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
 			case "kots.io/v1beta1, Kind=Installation":
