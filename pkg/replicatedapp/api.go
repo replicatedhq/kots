@@ -246,12 +246,7 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 }
 
 func SendCustomAppMetricsData(license *licensewrapper.LicenseWrapper, app *apptypes.App, data map[string]interface{}) error {
-	// Use wrapper method to get endpoint
-	endpoint := license.GetEndpoint()
-	if endpoint == "" {
-		endpoint = "https://replicated.app"
-	}
-
+	endpoint := util.ReplicatedAppEndpoint(license)
 	url := fmt.Sprintf("%s/application/custom-metrics", endpoint)
 
 	payload := struct {
