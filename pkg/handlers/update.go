@@ -31,7 +31,6 @@ import (
 	updatecheckertypes "github.com/replicatedhq/kots/pkg/updatechecker/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
@@ -279,9 +278,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO(Phase 4): Update findLatestKotsVersion to accept LicenseWrapper
-	// Temporary workaround: Use .V1 for version checking
-	latestVersion, _ := findLatestKotsVersion(a.ID, version.KOTSKinds.License.V1)
+	latestVersion, _ := findLatestKotsVersion(a.ID, version.KOTSKinds.License)
 
 	targetVersion, err := getKotsUpgradeVersion(version.KOTSKinds, latestVersion)
 	if err != nil {
@@ -304,9 +301,8 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, updateAdminConsoleResponse)
 }
 
-func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, error) {
-	licenseWrapper := &licensewrapper.LicenseWrapper{V1: license}
-	url := fmt.Sprintf("%s/admin-console/version/latest", util.ReplicatedAppEndpoint(licenseWrapper))
+func findLatestKotsVersion(appID string, license *licensewrapper.LicenseWrapper) (string, error) {
+	url := fmt.Sprintf("%s/admin-console/version/latest", util.ReplicatedAppEndpoint(license))
 
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
@@ -316,7 +312,7 @@ func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, 
 	reportingInfo := reporting.GetReportingInfo(appID)
 	reporting.InjectReportingInfoHeaders(req.Header, reportingInfo)
 
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.GetLicenseID(), license.GetLicenseID())))))
 
 	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {
