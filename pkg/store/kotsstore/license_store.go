@@ -40,7 +40,7 @@ func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*licensewrapper.Licens
 	// Use licensewrapper to auto-detect version (v1beta1 or v1beta2)
 	wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseStr.String))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load license from bytes")
+		return nil, errors.Wrap(err, "failed to decode license yaml")
 	}
 	return &wrapper, nil
 }
