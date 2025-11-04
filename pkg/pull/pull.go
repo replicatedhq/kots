@@ -88,6 +88,10 @@ var (
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
 func PullApplicationMetadata(upstreamURI string, license *licensewrapper.LicenseWrapper, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
+	if license == nil {
+		return nil, errors.New("license is required for pulling application metadata")
+	}
+
 	host := util.ReplicatedAppEndpoint(license)
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -163,11 +167,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
 		fetchOptions.License = &license
-	} else {
+	} else if localLicense != nil {
 		fetchOptions.License = &licensewrapper.LicenseWrapper{V1: localLicense}
 	}
 
-	if fetchOptions.License.IsV1() || fetchOptions.License.IsV2() {
+	if fetchOptions.License != nil && (fetchOptions.License.IsV1() || fetchOptions.License.IsV2()) {
 		verifiedLicense, err := kotslicense.VerifyLicenseWrapper(fetchOptions.License)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to verify signature")
@@ -232,7 +236,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.AirgapRoot != "" {
-		// fetchOptions.License is already a LicenseWrapper
+		if fetchOptions.License == nil {
+			return "", errors.New("license is required for airgap installations")
+		}
+
 		if expired, err := kotslicense.LicenseIsExpired(fetchOptions.License); err != nil {
 			return "", errors.Wrap(err, "failed to check license expiration")
 		} else if expired {
