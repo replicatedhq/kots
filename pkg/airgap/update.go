@@ -24,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
@@ -118,7 +119,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
 
-	if !beforeKotsKinds.License.IsV1() && !beforeKotsKinds.License.IsV2() {
+	if !beforeKotsKinds.HasLicense() {
 		err := errors.New("no license found in application")
 		return err
 	}
@@ -181,9 +182,16 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to clean base archive")
 	}
 
+	// Extract v1beta1 license for pull.PullOptions (which still expects *kotsv1beta1.License)
+	// For v1beta2 licenses, V1 will be nil but this is handled by the pull package
+	var licenseV1 *kotsv1beta1.License
+	if license.IsV1() {
+		licenseV1 = license.V1
+	}
+
 	pullOptions := pull.PullOptions{
 		Downstreams:            downstreamNames,
-		LicenseObj:             license.V1,
+		LicenseObj:             licenseV1,
 		Namespace:              appNamespace,
 		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:     identityConfigFile,
@@ -209,7 +217,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 
 	appSlug := ""
-	if beforeKotsKinds.License.IsV1() || beforeKotsKinds.License.IsV2() {
+	if beforeKotsKinds.HasLicense() {
 		appSlug = beforeKotsKinds.License.GetAppSlug()
 	}
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", appSlug), pullOptions); err != nil {
@@ -307,12 +315,12 @@ func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.Ko
 
 		installChannelID := beforeKotsKinds.Installation.Spec.ChannelID
 		licenseChannelID := ""
-		if beforeKotsKinds.License.IsV1() || beforeKotsKinds.License.IsV2() {
+		if beforeKotsKinds.HasLicense() {
 			licenseChannelID = beforeKotsKinds.License.GetChannelID()
 		}
 		installChannelName := beforeKotsKinds.Installation.Spec.ChannelName
 		licenseChannelName := ""
-		if beforeKotsKinds.License.IsV1() || beforeKotsKinds.License.IsV2() {
+		if beforeKotsKinds.HasLicense() {
 			licenseChannelName = beforeKotsKinds.License.GetChannelName()
 		}
 		if (installChannelID != "" && licenseChannelID != "" && installChannelID == licenseChannelID) || (installChannelName == licenseChannelName) {
