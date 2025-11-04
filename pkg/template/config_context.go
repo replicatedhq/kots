@@ -367,7 +367,7 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() (string, error) {
 		secret = secrets.AppSecret
 	} else {
 		licenseIDString := ""
-		if ctx.license.IsV1() || ctx.license.IsV2() {
+		if ctx.license != nil && ( ctx.license.IsV1() || ctx.license.IsV2()) {
 			licenseIDString = ctx.license.GetLicenseID()
 		}
 
