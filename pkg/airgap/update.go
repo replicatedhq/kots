@@ -159,6 +159,12 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
+	// Using license from db instead of upstream bundle because the one in db has not been re-marshalled
+	license, err := licensewrapper.LoadLicenseFromBytes([]byte(a.License))
+	if err != nil {
+		return errors.Wrap(err, "failed to parse license")
+	}
+
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
 		file, err := identity.InitAppIdentityConfig(a.Slug)
@@ -177,7 +183,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 	pullOptions := pull.PullOptions{
 		Downstreams:            downstreamNames,
-		LicenseObj:             nil, // License is already in the airgap bundle
+		LicenseObj:             license,
 		Namespace:              appNamespace,
 		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:     identityConfigFile,
