@@ -1,0 +1,9 @@
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: bad-app
+spec:
+  title: Bad Application
+  # Missing: icon (OPA will warn)
+  # Missing: statusInformers (OPA will warn)
+

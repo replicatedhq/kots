@@ -31,6 +31,11 @@ func SetDebug() {
 	atom.SetLevel(zapcore.DebugLevel)
 }
 
+func SetSilent() {
+	// Set to a very high level to suppress all logs
+	atom.SetLevel(zapcore.FatalLevel)
+}
+
 func Error(err error) {
 	defer log.Sync()
 	sugar := log.Sugar()

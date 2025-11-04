@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  annotations:
+    kots.io/creation-phase: "not-a-number"  # Invalid annotation
+    kots.io/wait-for-properties: "invalid jsonpath"  # Invalid JSONPath
+spec:
+  replicas: 1  # Will trigger OPA warning
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.19
+        # Missing: resources (will trigger OPA warning)
+
