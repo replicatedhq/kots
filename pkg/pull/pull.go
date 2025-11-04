@@ -862,7 +862,7 @@ func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, erro
 }
 
 func publicKeysMatch(log *logger.CLILogger, license *licensewrapper.LicenseWrapper, airgap *kotsv1beta1.Airgap) error {
-	if (!license.IsV1() && !license.IsV2()) || airgap == nil {
+	if license == nil || (!license.IsV1() && !license.IsV2()) || airgap == nil {
 		// not sure when this would happen, but earlier logic allows this combination
 		return nil
 	}
