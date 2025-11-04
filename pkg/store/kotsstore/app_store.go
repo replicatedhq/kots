@@ -657,7 +657,7 @@ func (s *KOTSStore) SetAppSelectedChannelID(appID string, channelID string) erro
 }
 
 func (s *KOTSStore) backfillChannelIDFromLicense(appID string, license *licensewrapper.LicenseWrapper) (*kotsv1beta1.Channel, error) {
-	backfillID := kotsutil.GetDefaultChannelIDFromLicense(license.V1)
+	backfillID := kotsutil.GetDefaultChannelIDFromLicense(license)
 	if err := s.SetAppSelectedChannelID(appID, backfillID); err != nil {
 		return nil, errors.Wrap(err, "failed to backfill app channel id from license")
 	}

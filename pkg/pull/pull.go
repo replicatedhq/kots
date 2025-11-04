@@ -872,7 +872,7 @@ func publicKeysMatch(log *logger.CLILogger, license *licensewrapper.LicenseWrapp
 		return nil // Skip validation for non-v1 licenses for now
 	}
 
-	publicKey, err := kotslicense.GetAppPublicKey(license.V1)
+	publicKey, err := kotslicense.GetAppPublicKey(license)
 	if err != nil {
 		return errors.Wrap(err, "failed to get public key from license")
 	}

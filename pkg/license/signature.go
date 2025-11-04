@@ -316,22 +316,23 @@ func getMessageFromLicense(license *kotsv1beta1.License) ([]byte, error) {
 	return message, err
 }
 
-func GetAppPublicKey(license *kotsv1beta1.License) ([]byte, error) {
+func GetAppPublicKey(license *licensewrapper.LicenseWrapper) ([]byte, error) {
+	signature := license.GetSignature()
 	// old licenses's signature is a single space character
-	if len(license.Spec.Signature) == 0 || len(license.Spec.Signature) == 1 {
+	if len(signature) == 0 || len(signature) == 1 {
 		return nil, ErrSignatureMissing
 	}
 
 	innerSignature := &InnerSignature{}
 
 	outerSignature := &OuterSignature{}
-	if err := json.Unmarshal(license.Spec.Signature, outerSignature); err != nil {
+	if err := json.Unmarshal(signature, outerSignature); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal license outer signature")
 	}
 
 	isOldFormat := len(outerSignature.InnerSignature) == 0
 	if isOldFormat {
-		if err := json.Unmarshal(license.Spec.Signature, innerSignature); err != nil {
+		if err := json.Unmarshal(signature, innerSignature); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal license signature")
 		}
 	} else {
