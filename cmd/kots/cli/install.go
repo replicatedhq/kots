@@ -120,7 +120,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			appSlug := ""
-			if license.IsV1() || license.IsV2() {
+			if license != nil && (license.IsV1() || license.IsV2()) {
 				appSlug = license.GetAppSlug()
 			}
 
@@ -373,7 +373,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if airgapArchive := v.GetString("airgap-bundle"); airgapArchive != "" {
-				if !deployOptions.License.IsV1() && !deployOptions.License.IsV2() {
+				if deployOptions.License == nil || (!deployOptions.License.IsV1() && !deployOptions.License.IsV2()) {
 					return errors.New("license is required when airgap bundle is specified")
 				}
 
@@ -482,7 +482,7 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
-			if deployOptions.License.IsV1() || deployOptions.License.IsV2() {
+			if deployOptions.License != nil && (deployOptions.License.IsV1() || deployOptions.License.IsV2()) {
 				log.ActionWithSpinner("Waiting for installation to complete")
 				status, err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint)
 				if err != nil {
@@ -699,7 +699,11 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, authSlug stri
 	if err != nil {
 		return false, errors.Wrap(err, "failed to add metadata")
 	}
-	if _, err := io.Copy(metadataPart, bytes.NewReader([]byte(deployOptions.License.GetAppSlug()))); err != nil {
+	appSlug := ""
+	if deployOptions.License != nil {
+		appSlug = deployOptions.License.GetAppSlug()
+	}
+	if _, err := io.Copy(metadataPart, bytes.NewReader([]byte(appSlug))); err != nil {
 		return false, errors.Wrap(err, "failed to copy metadata")
 	}
 
@@ -925,7 +929,11 @@ func CheckRBAC() error {
 }
 
 func ValidateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) (storetypes.DownstreamVersionStatus, error) {
-	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, deployOptions.License.GetAppSlug())
+	appSlug := ""
+	if deployOptions.License != nil {
+		appSlug = deployOptions.License.GetAppSlug()
+	}
+	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, appSlug)
 
 	startTime := time.Now()
 
@@ -984,7 +992,11 @@ func getAutomatedInstallStatus(url string, authSlug string) (*tasks.TaskStatus, 
 }
 
 func ValidatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) error {
-	url := fmt.Sprintf("%s/app/%s/preflight/result", apiEndpoint, deployOptions.License.GetAppSlug())
+	appSlug := ""
+	if deployOptions.License != nil {
+		appSlug = deployOptions.License.GetAppSlug()
+	}
+	url := fmt.Sprintf("%s/app/%s/preflight/result", apiEndpoint, appSlug)
 
 	startTime := time.Now()
 
