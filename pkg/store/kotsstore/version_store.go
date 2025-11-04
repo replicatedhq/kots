@@ -342,7 +342,9 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 	if kotsApplication != nil {
 		kotsKinds.KotsApplication = *kotsApplication
 	}
-	kotsKinds.License = license
+	if license != nil {
+		kotsKinds.License = license
+	}
 
 	var releasedAt *metav1.Time
 	if update.ReleasedAt != nil {
@@ -1066,7 +1068,7 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read license spec")
 		}
-		if license.IsV1() || license.IsV2() {
+		if license != nil && (license.IsV1() || license.IsV2()) {
 			v.KOTSKinds.License = &license
 		}
 	}
