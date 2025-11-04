@@ -45,7 +45,7 @@ type PullOptions struct {
 	Namespace               string
 	Downstreams             []string
 	LocalPath               string
-	LicenseObj              *kotsutil.LicenseWrapper
+	LicenseObj              *licensewrapper.LicenseWrapper
 	LicenseFile             string
 	LicenseEndpointOverride string // only used for testing
 	InstallationFile        string

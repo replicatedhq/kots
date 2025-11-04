@@ -24,7 +24,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 

@@ -1002,7 +1002,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallationSpec(nextAppSequence, foundApp.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: foundApp.GetSlug()}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, &kotsKinds.License, &kotsKinds.KotsApplication, registryInfo, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, registryInfo, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
