@@ -118,7 +118,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
 
-	if !beforeKotsKinds.License.IsV1() && !beforeKotsKinds.License.IsV2() {
+	if beforeKotsKinds.License == nil || (!beforeKotsKinds.License.IsV1() && !beforeKotsKinds.License.IsV2()) {
 		err := errors.New("no license found in application")
 		return err
 	}
@@ -202,7 +202,11 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		KotsKinds:              beforeKotsKinds,
 	}
 
-	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.GetAppSlug()), pullOptions); err != nil {
+	appSlug := ""
+	if beforeKotsKinds.License != nil {
+		appSlug = beforeKotsKinds.License.GetAppSlug()
+	}
+	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", appSlug), pullOptions); err != nil {
 		if errors.Cause(err) != pull.ErrConfigNeeded {
 			return errors.Wrap(err, "failed to pull")
 		}
@@ -260,7 +264,7 @@ func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.Ko
 	}
 
 	var beforeSemver, afterSemver *semver.Version
-	if license.IsSemverRequired() {
+	if license != nil && license.IsSemverRequired() {
 		if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
 			beforeSemver = &v
 		}
@@ -296,9 +300,15 @@ func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.Ko
 		}
 
 		installChannelID := beforeKotsKinds.Installation.Spec.ChannelID
-		licenseChannelID := beforeKotsKinds.License.GetChannelID()
+		licenseChannelID := ""
+		if beforeKotsKinds.License != nil {
+			licenseChannelID = beforeKotsKinds.License.GetChannelID()
+		}
 		installChannelName := beforeKotsKinds.Installation.Spec.ChannelName
-		licenseChannelName := beforeKotsKinds.License.GetChannelName()
+		licenseChannelName := ""
+		if beforeKotsKinds.License != nil {
+			licenseChannelName = beforeKotsKinds.License.GetChannelName()
+		}
 		if (installChannelID != "" && licenseChannelID != "" && installChannelID == licenseChannelID) || (installChannelName == licenseChannelName) {
 			if bc.Equal(ac) {
 				isSameVersion = true
