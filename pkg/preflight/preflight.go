@@ -102,7 +102,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonS
 		}
 	}
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(kotsKinds.Preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License.V1, &kotsKinds.KotsApplication)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(kotsKinds.Preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		preflightErr = errors.Wrap(err, "failed to rewrite images in preflight")
 		return preflightErr
@@ -315,7 +315,7 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 
 	InjectDefaultPreflights(builtPreflight, kotsKinds, registrySettings)
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(builtPreflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License.V1, &kotsKinds.KotsApplication)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(builtPreflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		return errors.Wrap(err, "failed to rewrite images in preflight")
 	}

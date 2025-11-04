@@ -6,6 +6,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/registry/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		name               string
 		installation       kotsv1beta1.Installation
 		localRegistryInfo  registrytypes.RegistrySettings
-		license            *kotsv1beta1.License
+		license            *licensewrapper.LicenseWrapper
 		collectors         []*troubleshootv1beta2.Collect
 		expectedCollectors []*troubleshootv1beta2.Collect
 	}{
@@ -120,10 +121,12 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 				},
 			},
 			localRegistryInfo: registrytypes.RegistrySettings{},
-			license: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "licenseid",
-					AppSlug:   "app-slug",
+			license: &licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "licenseid",
+						AppSlug:   "app-slug",
+					},
 				},
 			},
 			collectors: []*troubleshootv1beta2.Collect{
@@ -160,10 +163,12 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 				},
 			},
 			localRegistryInfo: types.RegistrySettings{},
-			license: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "licenseid",
-					AppSlug:   "app-slug",
+			license: &licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "licenseid",
+						AppSlug:   "app-slug",
+					},
 				},
 			},
 			collectors: []*troubleshootv1beta2.Collect{

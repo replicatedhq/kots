@@ -194,7 +194,7 @@ func createSupportBundleSpecConfigMap(app *apptypes.App, sequence int64, kotsKin
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License.V1, &kotsKinds.KotsApplication)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		return errors.Wrap(err, "failed to update collectors")
 	}
@@ -275,7 +275,7 @@ func createSupportBundleSpecSecret(app *apptypes.App, sequence int64, kotsKinds 
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License.V1, &kotsKinds.KotsApplication)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		return errors.Wrap(err, "failed to update collectors")
 	}

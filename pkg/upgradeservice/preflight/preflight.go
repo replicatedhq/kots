@@ -72,7 +72,7 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 		}
 	}()
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(kotsKinds.Preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License.V1, &kotsKinds.KotsApplication)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(kotsKinds.Preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		preflightErr = errors.Wrap(err, "failed to rewrite images in preflight")
 		return preflightErr

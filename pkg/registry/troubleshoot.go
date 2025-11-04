@@ -23,10 +23,7 @@ import (
 //
 // local registry always overwrites images
 // proxy registry only overwrites private images
-func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
-	// Wrap the license for internal functions
-	wrappedLicense := &licensewrapper.LicenseWrapper{V1: license}
-
+func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *licensewrapper.LicenseWrapper, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	if localRegistryInfo.IsValid() {
 		updatedCollectors, err := updateCollectorsWithLocalRegistryData(collectors, localRegistryInfo, installation, license)
 		if err != nil {
@@ -36,7 +33,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 		return updatedCollectors, nil
 	}
 
-	updatedCollectors, err := updateCollectorsWithProxyRegistryData(collectors, localRegistryInfo, installation, wrappedLicense, kotsApplication)
+	updatedCollectors, err := updateCollectorsWithProxyRegistryData(collectors, localRegistryInfo, installation, license, kotsApplication)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update collectors with replicated registry info")
 	}
@@ -44,7 +41,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 	return updatedCollectors, nil
 }
 
-func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License) ([]*troubleshootv1beta2.Collect, error) {
+func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *licensewrapper.LicenseWrapper) ([]*troubleshootv1beta2.Collect, error) {
 	updatedCollectors := []*troubleshootv1beta2.Collect{}
 
 	makeImagePullSecret := func(namespace string) (*troubleshootv1beta2.ImagePullSecrets, error) {
