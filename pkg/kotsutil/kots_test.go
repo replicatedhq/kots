@@ -1096,7 +1096,7 @@ status: {}
 				Config:                tt.fields.Config,
 				ConfigValues:          tt.fields.ConfigValues,
 				Installation:          tt.fields.Installation,
-				License:               &tt.fields.License,
+				License:               tt.fields.License,
 				Identity:              tt.fields.Identity,
 				IdentityConfig:        tt.fields.IdentityConfig,
 				Backup:                tt.fields.Backup,

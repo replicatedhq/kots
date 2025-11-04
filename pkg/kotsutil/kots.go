@@ -1729,15 +1729,21 @@ func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
 	return ecVersion, nil
 }
 
-func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) (string, error) {
+func FindChannelIDInLicense(requestedSlug string, license *licensewrapper.LicenseWrapper) (string, error) {
+	// Add validation at start
+	if license == nil || (!license.IsV1() && !license.IsV2()) {
+		return "", errors.New("invalid license: must be v1beta1 or v1beta2")
+	}
+
 	matchedChannelID := ""
 	if requestedSlug != "" {
 		// if we do not have a Channels array or its empty, default to using the top level fields for backwards compatibility
-		if len(license.Spec.Channels) == 0 {
+		channels := license.GetChannels()
+		if len(channels) == 0 {
 			logger.Debug("not a multi-channel license, using top level license channel id")
-			matchedChannelID = license.Spec.ChannelID
+			matchedChannelID = license.GetChannelID()
 		} else {
-			for _, channel := range license.Spec.Channels {
+			for _, channel := range channels {
 				if channel.ChannelSlug == requestedSlug {
 					matchedChannelID = channel.ChannelID
 					break
@@ -1749,35 +1755,40 @@ func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) 
 		}
 	} else { // this is an install from before the channel slug was added to the configmap
 		logger.Debug("requested channel slug not found in configmap, using top level channel id from license")
-		matchedChannelID = license.Spec.ChannelID
+		matchedChannelID = license.GetChannelID()
 	}
 	return matchedChannelID, nil
 }
 
-func FindChannelInLicense(channelID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
+func FindChannelInLicense(channelID string, license *licensewrapper.LicenseWrapper) (*kotsv1beta1.Channel, error) {
 	if channelID == "" {
 		return nil, errors.New("channelID is required")
 	}
-	if len(license.Spec.Channels) == 0 {
-		if license.Spec.ChannelID != channelID {
+	if license == nil || (!license.IsV1() && !license.IsV2()) {
+		return nil, errors.New("invalid license: must be v1beta1 or v1beta2")
+	}
+
+	channels := license.GetChannels()
+	if len(channels) == 0 {
+		if license.GetChannelID() != channelID {
 			return nil, errors.New("channel not found in non-multi channel license")
 		}
 		// this is an install from before multi channel support, so emulate it using the top level info
 		return &kotsv1beta1.Channel{
-			ChannelID:        license.Spec.ChannelID,
-			ChannelName:      license.Spec.ChannelName,
+			ChannelID:        license.GetChannelID(),
+			ChannelName:      license.GetChannelName(),
 			IsDefault:        true,
-			IsSemverRequired: license.Spec.IsSemverRequired,
+			IsSemverRequired: license.IsSemverRequired(),
 		}, nil
 	}
 
-	for _, channel := range license.Spec.Channels {
+	for _, channel := range channels {
 		if channel.ChannelID == channelID {
 			return &channel, nil
 		}
 	}
 
-	logger.Warnf("channel id '%s' not found in multi channel license with sequence %d", channelID, license.Spec.LicenseSequence)
+	logger.Warnf("channel id '%s' not found in multi channel license with sequence %d", channelID, license.GetLicenseSequence())
 	return nil, errors.New("channel not found in multi channel format license")
 }
 

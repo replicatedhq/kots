@@ -295,7 +295,6 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.GetAppSlug())
 
 	// verify that requested channel slug exists in the license
-	// Note: FindChannelIDInLicense still expects v1beta1.License (will be updated in Phase 4)
 	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
 	if err != nil {
 		logger.Error(err)
