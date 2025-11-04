@@ -3,7 +3,7 @@ package reporting
 import (
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -31,7 +31,7 @@ const (
 
 type Reporter interface {
 	SubmitAppInfo(appID string) error
-	SubmitPreflightData(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error
+	SubmitPreflightData(license *licensewrapper.LicenseWrapper, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error
 }
 
 var reporter Reporter
