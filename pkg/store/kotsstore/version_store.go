@@ -342,9 +342,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 	if kotsApplication != nil {
 		kotsKinds.KotsApplication = *kotsApplication
 	}
-	if license != nil {
-		kotsKinds.License = license
-	}
+  kotsKinds.License = license
 
 	var releasedAt *metav1.Time
 	if update.ReleasedAt != nil {
