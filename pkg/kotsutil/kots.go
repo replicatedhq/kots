@@ -102,7 +102,7 @@ type KotsKinds struct {
 	ConfigValues *kotsv1beta1.ConfigValues
 
 	Installation kotsv1beta1.Installation
-	License      licensewrapper.LicenseWrapper // CHANGED: Supports both v1beta1 and v1beta2
+	License      *licensewrapper.LicenseWrapper // CHANGED: Supports both v1beta1 and v1beta2
 
 	Identity       *kotsv1beta1.Identity
 	IdentityConfig *kotsv1beta1.IdentityConfig
@@ -130,7 +130,7 @@ func (k *KotsKinds) GetLicenseVersion() string {
 
 // HasLicense returns true if a license exists (either v1beta1 or v1beta2).
 func (k *KotsKinds) HasLicense() bool {
-	return k.License.IsV1() || k.License.IsV2()
+	return k.License != nil && (k.License.IsV1() || k.License.IsV2())
 }
 
 func IsKotsKind(apiVersion string, kind string) bool {
@@ -569,9 +569,9 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 		case "kots.io/v1beta1, Kind=Application":
 			k.KotsApplication = *decoded.(*kotsv1beta1.Application)
 		case "kots.io/v1beta1, Kind=License":
-			k.License = licensewrapper.LicenseWrapper{V1: decoded.(*kotsv1beta1.License)}
+			k.License = &licensewrapper.LicenseWrapper{V1: decoded.(*kotsv1beta1.License)}
 		case "kots.io/v1beta2, Kind=License":
-			k.License = licensewrapper.LicenseWrapper{V2: decoded.(*kotsv1beta2.License)}
+			k.License = &licensewrapper.LicenseWrapper{V2: decoded.(*kotsv1beta2.License)}
 		case "kots.io/v1beta1, Kind=Identity":
 			k.Identity = decoded.(*kotsv1beta1.Identity)
 		case "kots.io/v1beta1, Kind=IdentityConfig":

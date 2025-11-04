@@ -983,7 +983,7 @@ func TestKotsKinds_Marshal(t *testing.T) {
 		Config                *kotsv1beta1.Config
 		ConfigValues          *kotsv1beta1.ConfigValues
 		Installation          kotsv1beta1.Installation
-		License               licensewrapper.LicenseWrapper
+		License               *licensewrapper.LicenseWrapper
 		Identity              *kotsv1beta1.Identity
 		IdentityConfig        *kotsv1beta1.IdentityConfig
 		Backup                *velerov1.Backup

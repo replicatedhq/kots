@@ -15,22 +15,22 @@ import (
 func TestKotsKinds_GetLicenseVersion(t *testing.T) {
 	tests := []struct {
 		name     string
-		license  licensewrapper.LicenseWrapper
+		license  *licensewrapper.LicenseWrapper
 		expected string
 	}{
 		{
 			name:     "v1beta1 license",
-			license:  licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{}},
+			license:  &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{}},
 			expected: "v1beta1",
 		},
 		{
 			name:     "v1beta2 license",
-			license:  licensewrapper.LicenseWrapper{V2: &kotsv1beta2.License{}},
+			license:  &licensewrapper.LicenseWrapper{V2: &kotsv1beta2.License{}},
 			expected: "v1beta2",
 		},
 		{
 			name:     "no license",
-			license:  licensewrapper.LicenseWrapper{},
+			license:  &licensewrapper.LicenseWrapper{},
 			expected: "",
 		},
 	}
@@ -49,22 +49,22 @@ func TestKotsKinds_GetLicenseVersion(t *testing.T) {
 func TestKotsKinds_HasLicense(t *testing.T) {
 	tests := []struct {
 		name     string
-		license  licensewrapper.LicenseWrapper
+		license  *licensewrapper.LicenseWrapper
 		expected bool
 	}{
 		{
 			name:     "has v1beta1 license",
-			license:  licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{}},
+			license:  &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{}},
 			expected: true,
 		},
 		{
 			name:     "has v1beta2 license",
-			license:  licensewrapper.LicenseWrapper{V2: &kotsv1beta2.License{}},
+			license:  &licensewrapper.LicenseWrapper{V2: &kotsv1beta2.License{}},
 			expected: true,
 		},
 		{
 			name:     "no license",
-			license:  licensewrapper.LicenseWrapper{},
+			license:  &licensewrapper.LicenseWrapper{},
 			expected: false,
 		},
 	}
@@ -83,7 +83,7 @@ func TestKotsKinds_HasLicense(t *testing.T) {
 func TestKotsKinds_Marshal_V1Beta2License(t *testing.T) {
 	// Test that Marshal correctly handles v1beta2 licenses
 	k := kotsutil.KotsKinds{
-		License: licensewrapper.LicenseWrapper{
+		License: &licensewrapper.LicenseWrapper{
 			V2: &kotsv1beta2.License{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "kots.io/v1beta2",
@@ -109,7 +109,7 @@ func TestKotsKinds_Marshal_V1Beta2License(t *testing.T) {
 func TestKotsKinds_Marshal_V1Beta1License(t *testing.T) {
 	// Test that Marshal correctly handles v1beta1 licenses
 	k := kotsutil.KotsKinds{
-		License: licensewrapper.LicenseWrapper{
+		License: &licensewrapper.LicenseWrapper{
 			V1: &kotsv1beta1.License{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "kots.io/v1beta1",
