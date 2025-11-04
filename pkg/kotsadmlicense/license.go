@@ -14,9 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*licensewrapper.LicenseWrapper, bool, error) {
@@ -186,14 +184,7 @@ func Change(a *apptypes.App, newLicenseString string) (*licensewrapper.LicenseWr
 		return nil, errors.Wrap(err, "failed to check if license exists")
 	}
 	if existingLicense != nil {
-		// Note: ResolveExistingLicense expects v1beta1.License (temporary)
-		var licenseForResolve *kotsv1beta1.License
-		if newLicense.IsV1() {
-			licenseForResolve = newLicense.V1
-		} else {
-			licenseForResolve = newLicense.V1
-		}
-		resolved, err := ResolveExistingLicense(licenseForResolve)
+		resolved, err := ResolveExistingLicense(newLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
 		}
@@ -235,13 +226,11 @@ func Change(a *apptypes.App, newLicenseString string) (*licensewrapper.LicenseWr
 	return newLicense, nil
 }
 
-func CheckIfLicenseExists(license []byte) (*kotsv1beta1.License, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(license, nil, nil)
+func CheckIfLicenseExists(license []byte) (*licensewrapper.LicenseWrapper, error) {
+	decodedLicense, err := licensewrapper.LoadLicenseFromBytes(license)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode license yaml")
+		return nil, errors.Wrap(err, "failed to unmarshal license data")
 	}
-	decodedLicense := obj.(*kotsv1beta1.License)
 
 	allLicenses, err := store.GetStore().GetAllAppLicenses()
 	if err != nil {
@@ -249,15 +238,19 @@ func CheckIfLicenseExists(license []byte) (*kotsv1beta1.License, error) {
 	}
 
 	for _, l := range allLicenses {
-		if l.GetLicenseID() == decodedLicense.Spec.LicenseID {
-			return l.V1, nil
+		if l.GetLicenseID() == decodedLicense.GetLicenseID() {
+			return l, nil
 		}
 	}
 
 	return nil, nil
 }
 
-func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
+func ResolveExistingLicense(newLicense *licensewrapper.LicenseWrapper) (bool, error) {
+	if newLicense == nil || (!newLicense.IsV1() && !newLicense.IsV2()) {
+		return false, errors.New("invalid license: must be v1beta1 or v1beta2")
+	}
+
 	notInstalledApps, err := store.GetStore().ListFailedApps()
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to list failed apps"))
@@ -265,13 +258,12 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 	}
 
 	for _, app := range notInstalledApps {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(app.License), nil, nil)
+		appLicense, err := licensewrapper.LoadLicenseFromBytes([]byte(app.License))
 		if err != nil {
 			continue
 		}
-		license := obj.(*kotsv1beta1.License)
-		if license.Spec.LicenseID != newLicense.Spec.LicenseID {
+
+		if appLicense.GetLicenseID() != newLicense.GetLicenseID() {
 			continue
 		}
 
@@ -286,7 +278,7 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 		return false, errors.Wrap(err, "failed to get all app licenses")
 	}
 	for _, l := range allLicenses {
-		if l.GetLicenseID() == newLicense.Spec.LicenseID {
+		if l.GetLicenseID() == newLicense.GetLicenseID() {
 			return false, nil
 		}
 	}

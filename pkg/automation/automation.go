@@ -30,7 +30,6 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -242,15 +241,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return errors.Wrapf(err, "failed to check if license already exists for app %s", appSlug)
 	}
 	if existingLicense != nil {
-		// ResolveExistingLicense still expects v1beta1.License (will be updated in future)
-		var licenseForResolve *kotsv1beta1.License
-		if verifiedLicense.IsV1() {
-			licenseForResolve = verifiedLicense.V1
-		} else {
-			// For v2, we use V1 field which may be nil - ResolveExistingLicense needs updating
-			licenseForResolve = verifiedLicense.V1
-		}
-		resolved, err := kotsadmlicense.ResolveExistingLicense(licenseForResolve)
+		resolved, err := kotsadmlicense.ResolveExistingLicense(verifiedLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
 		}

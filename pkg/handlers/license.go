@@ -362,16 +362,14 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if existingLicense != nil {
-		// TODO(Phase 4): Update kotsadmlicense.ResolveExistingLicense to accept LicenseWrapper
-		// Temporary workaround: Use .V1 for existing license resolution
-		resolved, err := kotsadmlicense.ResolveExistingLicense(verifiedLicense.V1)
+		resolved, err := kotsadmlicense.ResolveExistingLicense(existingLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
 		}
 
 		if !resolved {
 			uploadLicenseResponse.Error = "License already exists"
-			uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, util.PodNamespace)
+			uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.GetAppSlug(), util.PodNamespace)
 			JSON(w, http.StatusBadRequest, uploadLicenseResponse)
 			return
 		}
