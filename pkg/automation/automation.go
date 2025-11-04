@@ -107,7 +107,7 @@ func AutomateInstall(opts AutomateInstallOptions) error {
 			logger.Error(errors.Wrap(err, "failed to unmarshal license data"))
 		}
 
-		if decodedLicense != nil && (decodedLicense.IsV1() || decodedLicense.IsV2()) {
+		if decodedLicense.IsV1() || decodedLicense.IsV2() {
 			err = deleteAirgapData(clientset, decodedLicense.GetAppSlug())
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to delete airgap data"))
