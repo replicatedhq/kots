@@ -229,7 +229,7 @@ func Change(a *apptypes.App, newLicenseString string) (*licensewrapper.LicenseWr
 func CheckIfLicenseExists(license []byte) (*licensewrapper.LicenseWrapper, error) {
 	decodedLicense, err := licensewrapper.LoadLicenseFromBytes(license)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal license data")
+		return nil, errors.Wrap(err, "failed to decode license yaml")
 	}
 
 	allLicenses, err := store.GetStore().GetAllAppLicenses()
