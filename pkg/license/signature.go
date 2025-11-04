@@ -129,8 +129,51 @@ func VerifySignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error)
 	return verifiedLicense, nil
 }
 
+// VerifyWithLicense validates a signature using the appropriate hash algorithm based on the license version.
+// V1 licenses use MD5, V2 licenses use SHA-256. This extracts the public key from the license and verifies
+// the signature using RSA-PSS.
+func VerifyWithLicense(message, signature []byte, license *licensewrapper.LicenseWrapper) error {
+	if license == nil || (!license.IsV1() && !license.IsV2()) {
+		return errors.New("license wrapper contains no license")
+	}
+
+	publicKeyPEM, err := GetAppPublicKey(license)
+	if err != nil {
+		return errors.Wrap(err, "failed to get public key from license")
+	}
+
+	pubBlock, _ := pem.Decode(publicKeyPEM)
+	publicKey, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
+	if err != nil {
+		return errors.Wrap(err, "failed to load public key from PEM")
+	}
+
+	var opts rsa.PSSOptions
+	opts.SaltLength = rsa.PSSSaltLengthAuto
+
+	// Choose hash algorithm based on license version
+	var hashFunc crypto.Hash
+	if license.IsV1() {
+		hashFunc = crypto.MD5
+	} else {
+		hashFunc = crypto.SHA256
+	}
+
+	hasher := hashFunc.New()
+	hasher.Write(message)
+	hashed := hasher.Sum(nil)
+
+	err = rsa.VerifyPSS(publicKey.(*rsa.PublicKey), hashFunc, hashed, signature, &opts)
+	if err != nil {
+		// this ordering makes errors.Cause a little more useful
+		return errors.Wrap(ErrSignatureInvalid, err.Error())
+	}
+
+	return nil
+}
+
 // Verify validates a signature using MD5 and RSA-PSS.
-// Deprecated: Only supports v1beta1 MD5 signatures. Use VerifyLicenseWrapper instead.
+// Deprecated: Only supports v1beta1 MD5 signatures. Use VerifyWithLicense instead.
 func Verify(message, signature, publicKeyPEM []byte) error {
 	pubBlock, _ := pem.Decode(publicKeyPEM)
 	publicKey, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)

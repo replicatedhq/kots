@@ -867,18 +867,8 @@ func publicKeysMatch(log *logger.CLILogger, license *licensewrapper.LicenseWrapp
 		return nil
 	}
 
-	// GetAppPublicKey currently only supports v1beta1 licenses
-	if !license.IsV1() {
-		return nil // Skip validation for non-v1 licenses for now
-	}
-
-	publicKey, err := kotslicense.GetAppPublicKey(license)
-	if err != nil {
-		return errors.Wrap(err, "failed to get public key from license")
-	}
-
 	appSlug := license.GetAppSlug()
-	if err := kotslicense.Verify([]byte(appSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
+	if err := kotslicense.VerifyWithLicense([]byte(appSlug), []byte(airgap.Spec.Signature), license); err != nil {
 		log.Info("got error validating airgap bundle: %s", err.Error())
 		if airgap.Spec.AppSlug != "" {
 			return util.ActionableError{
