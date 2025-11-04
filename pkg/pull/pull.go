@@ -168,7 +168,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 		fetchOptions.License = &license
 	} else if localLicense != nil {
-		fetchOptions.License = &licensewrapper.LicenseWrapper{V1: localLicense}
+		fetchOptions.License = localLicense
 	}
 
 	if fetchOptions.License != nil && (fetchOptions.License.IsV1() || fetchOptions.License.IsV2()) {
@@ -896,14 +896,14 @@ func publicKeysMatch(log *logger.CLILogger, license *licensewrapper.LicenseWrapp
 	return nil
 }
 
-func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
+func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *licensewrapper.LicenseWrapper, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
 	if localPath == "" {
 		return nil, nil, nil, nil, nil, nil
 	}
 
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
-	var license *kotsv1beta1.License
+	var license *licensewrapper.LicenseWrapper
 	var installation *kotsv1beta1.Installation
 	var identityConfig *kotsv1beta1.IdentityConfig
 
@@ -933,7 +933,9 @@ func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValue
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
 				values = obj.(*kotsv1beta1.ConfigValues)
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
-				license = obj.(*kotsv1beta1.License)
+				license = &licensewrapper.LicenseWrapper{V1: obj.(*kotsv1beta1.License)}
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta2" && gvk.Kind == "License" {
+				license = &licensewrapper.LicenseWrapper{V2: obj.(*kotsv1beta2.License)}
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Installation" {
 				installation = obj.(*kotsv1beta1.Installation)
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {
