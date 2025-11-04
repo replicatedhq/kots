@@ -67,11 +67,7 @@ func makeLicenseURL(license *licensewrapper.LicenseWrapper, selectedChannelID st
 		return "", errors.New("license wrapper contains no license")
 	}
 
-	// Use wrapper methods to access license fields
-	endpoint := license.GetEndpoint()
-	if endpoint == "" {
-		endpoint = "https://replicated.app"
-	}
+	endpoint := util.ReplicatedAppEndpoint(license)
 
 	u, err := url.Parse(fmt.Sprintf("%s/license/%s", endpoint, license.GetAppSlug()))
 	if err != nil {
