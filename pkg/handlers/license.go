@@ -592,7 +592,7 @@ func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http
 		return
 	}
 
-	type licenseFieldType struct{
+	type licenseFieldType struct {
 		Field            string      `json:"field"`
 		Title            string      `json:"title"`
 		Type             string      `json:"type"`
