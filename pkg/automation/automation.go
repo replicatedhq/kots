@@ -268,7 +268,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	}
 
 	// airgap data is the airgap manifest + app specs + image list loaded from configmaps
-	airgapData, err := getAirgapData(clientset, appSlug)
+	airgapData, err := getAirgapData(clientset, verifiedLicense)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load airgap data for %s", appSlug)
 	}
@@ -381,7 +381,7 @@ func NeedToWaitForAirgapApp() (bool, error) {
 		}
 
 		appSlug := unverifiedLicense.GetAppSlug()
-		needToWait, err := needToWaitForAirgapApp(clientset, appSlug)
+		needToWait, err := needToWaitForAirgapApp(clientset, &unverifiedLicense)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to load airgap data for %s", appSlug))
 			continue
@@ -395,11 +395,12 @@ func NeedToWaitForAirgapApp() (bool, error) {
 	return false, nil
 }
 
-func getAirgapData(clientset kubernetes.Interface, appSlug string) (map[string][]byte, error) {
-	if appSlug == "" {
-		return nil, errors.New("appSlug cannot be empty")
+func getAirgapData(clientset kubernetes.Interface, license *licensewrapper.LicenseWrapper) (map[string][]byte, error) {
+	if license == nil {
+		return nil, errors.New("license cannot be nil")
 	}
 
+	appSlug := license.GetAppSlug()
 	selectorLabels := map[string]string{
 		"kots.io/automation": "airgap",
 		"kots.io/app":        appSlug,
@@ -429,11 +430,12 @@ func getAirgapData(clientset kubernetes.Interface, appSlug string) (map[string][
 	return result, nil
 }
 
-func needToWaitForAirgapApp(clientset kubernetes.Interface, appSlug string) (bool, error) {
-	if appSlug == "" {
-		return false, errors.New("appSlug cannot be empty")
+func needToWaitForAirgapApp(clientset kubernetes.Interface, license *licensewrapper.LicenseWrapper) (bool, error) {
+	if license == nil {
+		return false, errors.New("license cannot be nil")
 	}
 
+	appSlug := license.GetAppSlug()
 	selectorLabels := map[string]string{
 		"kots.io/automation": "airgap",
 		"kots.io/app":        appSlug,
