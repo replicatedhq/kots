@@ -1066,7 +1066,7 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read license spec")
 		}
-		if license != nil && (license.IsV1() || license.IsV2()) {
+		if (license.IsV1() || license.IsV2()) {
 			v.KOTSKinds.License = &license
 		}
 	}
