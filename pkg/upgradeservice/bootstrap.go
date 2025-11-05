@@ -86,9 +86,7 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	// case, we fall back to the previous behavior and get the endpoint from the license.
 	if val := os.Getenv("REPLICATED_APP_ENDPOINT"); val == "" {
 		endpoint := util.ReplicatedAppEndpoint(&licenseWrapper)
-		if endpoint != "" {
-			os.Setenv("REPLICATED_APP_ENDPOINT", endpoint)
-		}
+		os.Setenv("REPLICATED_APP_ENDPOINT", endpoint)
 	}
 
 	identityConfigFile, err := getIdentityConfigFile(params)
