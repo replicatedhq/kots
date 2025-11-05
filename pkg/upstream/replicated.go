@@ -79,7 +79,7 @@ func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckR
 	}
 
 	// A license file is required to be set for this to succeed
-	if !fetchOptions.License.IsV1() && !fetchOptions.License.IsV2() {
+	if fetchOptions.License == nil || (!fetchOptions.License.IsV1() && !fetchOptions.License.IsV2()) {
 		return nil, errors.New("No license was provided")
 	}
 
@@ -152,7 +152,7 @@ func downloadReplicated(
 		release = parsedLocalRelease
 	} else {
 		// A license file is required to be set for this to succeed
-		if !license.IsV1() && !license.IsV2() {
+		if license == nil || (!license.IsV1() && !license.IsV2()) {
 			return nil, errors.New("No license was provided")
 		}
 
