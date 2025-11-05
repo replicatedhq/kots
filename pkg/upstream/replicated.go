@@ -479,11 +479,7 @@ func listPendingChannelReleases(license *licensewrapper.LicenseWrapper, lastUpda
 		return nil, nil, errors.New("license wrapper contains no license")
 	}
 
-	// Use wrapper method to get endpoint
-	endpoint := license.GetEndpoint()
-	if endpoint == "" {
-		endpoint = "https://replicated.app"
-	}
+	endpoint := util.ReplicatedAppEndpoint(license)
 
 	u, err := url.Parse(endpoint)
 	if err != nil {
