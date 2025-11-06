@@ -738,7 +738,7 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 		logger.Errorf("Failed to load license data from store: %v", err)
 	}
 
-	if license != nil && (license.IsV1() || license.IsV2()) {
+	if !license.IsEmpty() {
 		s := serializer.NewSerializerWithOptions(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme, serializer.SerializerOptions{Yaml: true, Pretty: false, Strict: false})
 		var b bytes.Buffer
 		var encodeErr error
@@ -863,7 +863,7 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 		})
 	}
 
-	if license != nil && (license.IsV1() || license.IsV2()) && license.IsSnapshotSupported() {
+	if !license.IsEmpty() && license.IsSnapshotSupported() {
 		fsMinioErrors := snapshot.GetFileSystemMinioErrors(context.TODO(), clientset)
 		if len(fsMinioErrors) > 0 {
 			data, _ := yaml.Marshal(fsMinioErrors)

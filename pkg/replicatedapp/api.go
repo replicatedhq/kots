@@ -45,7 +45,7 @@ type LicenseData struct {
 // it will be passed along to the api.
 // Note: The Replicated API can return v1beta1 or v1beta2 licenses, which are wrapped in a LicenseWrapper.
 func GetLatestLicense(license *licensewrapper.LicenseWrapper, selectedChannelID string) (*LicenseData, error) {
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		return nil, errors.New("license wrapper contains no license")
 	}
 
@@ -63,7 +63,7 @@ func GetLatestLicense(license *licensewrapper.LicenseWrapper, selectedChannelID 
 }
 
 func makeLicenseURL(license *licensewrapper.LicenseWrapper, selectedChannelID string) (string, error) {
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		return "", errors.New("license wrapper contains no license")
 	}
 

@@ -152,7 +152,7 @@ func downloadReplicated(
 		release = parsedLocalRelease
 	} else {
 		// A license file is required to be set for this to succeed
-		if license == nil || (!license.IsV1() && !license.IsV2()) {
+		if license.IsEmpty() {
 			return nil, errors.New("No license was provided")
 		}
 
@@ -207,7 +207,7 @@ func downloadReplicated(
 
 	// get channel name from license, if one was provided
 	channelID, channelName := "", ""
-	if license != nil && (license.IsV1() || license.IsV2()) {
+	if !license.IsEmpty() {
 		if appSelectedChannelID != "" {
 			channel, err := kotsutil.FindChannelInLicense(appSelectedChannelID, license)
 			if err != nil {
@@ -284,7 +284,7 @@ func downloadReplicated(
 	}
 
 	// Add the license to the upstream, if one was provided
-	if license != nil && (license.IsV1() || license.IsV2()) {
+	if !license.IsEmpty() {
 		licenseBytes, err := MustMarshalLicenseWrapper(license)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to marshal license")
@@ -475,7 +475,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 }
 
 func listPendingChannelReleases(license *licensewrapper.LicenseWrapper, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]ChannelRelease, *time.Time, error) {
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		return nil, nil, errors.New("license wrapper contains no license")
 	}
 

@@ -49,7 +49,7 @@ func (e LicenseDataError) Error() string {
 // Note: This function validates the license signature only. Entitlement signature validation
 // is handled separately where needed, matching the behavior of the deprecated VerifySignature function.
 func VerifyLicenseWrapper(wrapper *licensewrapper.LicenseWrapper) (*licensewrapper.LicenseWrapper, error) {
-	if wrapper == nil || (!wrapper.IsV1() && !wrapper.IsV2()) {
+	if wrapper.IsEmpty() {
 		return nil, errors.New("license wrapper contains no license")
 	}
 
@@ -133,7 +133,7 @@ func VerifySignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error)
 // V1 licenses use MD5, V2 licenses use SHA-256. This extracts the public key from the license and verifies
 // the signature using RSA-PSS.
 func VerifyWithLicense(message, signature []byte, license *licensewrapper.LicenseWrapper) error {
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		return errors.New("license wrapper contains no license")
 	}
 

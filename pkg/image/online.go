@@ -157,7 +157,7 @@ func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kots
 		ProxyEndpoint:    replicatedRegistryInfo.Proxy,
 		UpstreamEndpoint: replicatedRegistryInfo.Upstream,
 	}
-	if license != nil && (license.IsV1() || license.IsV2()) {
+	if !license.IsEmpty() {
 		licenseID := license.GetLicenseID()
 		sourceRegistry.Username = licenseID
 		sourceRegistry.Password = licenseID

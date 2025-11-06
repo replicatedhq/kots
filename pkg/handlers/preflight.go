@@ -365,7 +365,7 @@ func (h *Handler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		// Skip reporting if no license available
-		if license == nil || (!license.IsV1() && !license.IsV2()) {
+		if license.IsEmpty() {
 			logger.Debugf("skipping preflight data submission: no license available")
 			return
 		}

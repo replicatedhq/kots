@@ -214,7 +214,7 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func getLicenseEntitlements(license *licensewrapper.LicenseWrapper) ([]EntitlementResponse, time.Time, error) {
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		return []EntitlementResponse{}, time.Time{}, nil
 	}
 
@@ -562,7 +562,7 @@ func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http
 		return
 	}
 
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		logger.Error(errors.New("license wrapper contains no license"))
 		JSON(w, http.StatusInternalServerError, struct{}{})
 		return
@@ -702,7 +702,7 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func licenseResponseFromLicense(license *licensewrapper.LicenseWrapper, app *apptypes.App) (*LicenseResponse, error) {
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		return nil, errors.New("license wrapper contains no license")
 	}
 

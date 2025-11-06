@@ -52,7 +52,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250729184643-f055e67a064d
-	github.com/replicatedhq/kotskinds v0.0.0-20251029124314-174e89c93554
+	github.com/replicatedhq/kotskinds v0.0.0-20251106194120-8ae701787e22
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.122.0
 	github.com/robfig/cron v1.2.0

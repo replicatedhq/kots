@@ -1731,7 +1731,7 @@ func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
 
 func FindChannelIDInLicense(requestedSlug string, license *licensewrapper.LicenseWrapper) (string, error) {
 	// Add validation at start
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		return "", errors.New("invalid license: must be v1beta1 or v1beta2")
 	}
 
@@ -1764,7 +1764,7 @@ func FindChannelInLicense(channelID string, license *licensewrapper.LicenseWrapp
 	if channelID == "" {
 		return nil, errors.New("channelID is required")
 	}
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		return nil, errors.New("invalid license: must be v1beta1 or v1beta2")
 	}
 

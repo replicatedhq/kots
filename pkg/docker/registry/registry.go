@@ -146,7 +146,7 @@ func getECRegistryProxyInfo() (*RegistryProxyInfo, error) {
 func getRegistryProxyInfoFromLicense(license *licensewrapper.LicenseWrapper) *RegistryProxyInfo {
 	defaultInfo := getDefaultRegistryProxyInfo()
 
-	if license == nil || (!license.IsV1() && !license.IsV2()) {
+	if license.IsEmpty() {
 		return defaultInfo
 	}
 

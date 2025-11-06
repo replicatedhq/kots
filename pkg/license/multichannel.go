@@ -41,7 +41,7 @@ func canInstallFromChannel(slug string, license *licensewrapper.LicenseWrapper) 
 // VerifyAndUpdateLicense will update (if not airgapped), verify that the request channel slug is present, and return the possibly updated license.
 // Note that this is a noop if the license passed in is nil.
 func VerifyAndUpdateLicense(log *logger.CLILogger, license *licensewrapper.LicenseWrapper, preferredChannelSlug string, isAirgap bool) (*licensewrapper.LicenseWrapper, error) {
-	if license == nil || ( !license.IsV1() && !license.IsV2() ) {
+	if license.IsEmpty() {
 		return nil, nil
 	}
 	if isAirgap {

@@ -120,7 +120,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			appSlug := ""
-			if license != nil && (license.IsV1() || license.IsV2()) {
+			if !license.IsEmpty() {
 				appSlug = license.GetAppSlug()
 			}
 
