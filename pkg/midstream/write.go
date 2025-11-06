@@ -145,7 +145,7 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 				return nil, errors.Wrapf(err, "failed to load registry auth for %q", opts.ProcessImageOptions.RegistrySettings.Hostname)
 			}
 		}
-	} else if opts.License != nil && (opts.License.IsV1() || opts.License.IsV2()) {
+	} else if !opts.License.IsEmpty() {
 		// A target registry is NOT configured. Rewrite private images to be proxied through proxy.replicated.com
 		rewrittenImages, err := base.RewritePrivateImages(baseImages, opts.KotsKinds, opts.License)
 		if err != nil {

@@ -130,7 +130,7 @@ func (k *KotsKinds) GetLicenseVersion() string {
 
 // HasLicense returns true if a license exists (either v1beta1 or v1beta2).
 func (k *KotsKinds) HasLicense() bool {
-	return k.License != nil && (k.License.IsV1() || k.License.IsV2())
+	return !k.License.IsEmpty()
 }
 
 func IsKotsKind(apiVersion string, kind string) bool {

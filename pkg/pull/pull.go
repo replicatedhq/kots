@@ -171,7 +171,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.License = localLicense
 	}
 
-	if fetchOptions.License != nil && (fetchOptions.License.IsV1() || fetchOptions.License.IsV2()) {
+	if !fetchOptions.License.IsEmpty() {
 		verifiedLicense, err := kotslicense.VerifyLicenseWrapper(fetchOptions.License)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to verify signature")

@@ -333,7 +333,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) (string, error) {
 	}
 
 	licenseAppSlug := ""
-	if ctx.license != nil && (ctx.license.IsV1() || ctx.license.IsV2()) {
+	if !ctx.license.IsEmpty() {
 		licenseAppSlug = ctx.license.GetAppSlug()
 	}
 
@@ -367,7 +367,7 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() (string, error) {
 		secret = secrets.AppSecret
 	} else {
 		licenseIDString := ""
-		if ctx.license != nil && (ctx.license.IsV1() || ctx.license.IsV2()) {
+		if !ctx.license.IsEmpty() {
 			licenseIDString = ctx.license.GetLicenseID()
 		}
 

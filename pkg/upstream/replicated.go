@@ -79,7 +79,7 @@ func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckR
 	}
 
 	// A license file is required to be set for this to succeed
-	if fetchOptions.License == nil || (!fetchOptions.License.IsV1() && !fetchOptions.License.IsV2()) {
+	if fetchOptions.License.IsEmpty() {
 		return nil, errors.New("No license was provided")
 	}
 

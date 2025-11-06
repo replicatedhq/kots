@@ -373,7 +373,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if airgapArchive := v.GetString("airgap-bundle"); airgapArchive != "" {
-				if deployOptions.License == nil || (!deployOptions.License.IsV1() && !deployOptions.License.IsV2()) {
+				if deployOptions.License.IsEmpty() {
 					return errors.New("license is required when airgap bundle is specified")
 				}
 
@@ -482,7 +482,7 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
-			if deployOptions.License != nil && (deployOptions.License.IsV1() || deployOptions.License.IsV2()) {
+			if !deployOptions.License.IsEmpty() {
 				log.ActionWithSpinner("Waiting for installation to complete")
 				status, err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint)
 				if err != nil {

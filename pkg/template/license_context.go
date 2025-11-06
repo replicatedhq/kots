@@ -33,7 +33,7 @@ func (ctx licenseCtx) FuncMap() template.FuncMap {
 
 func (ctx licenseCtx) licenseFieldValue(name string) string {
 	// return "" for a nil/empty license - it's better than an error, which makes the template engine return "" for the full string
-	if ctx.License == nil || (!ctx.License.IsV1() && !ctx.License.IsV2()) {
+	if ctx.License.IsEmpty() {
 		return ""
 	}
 
@@ -93,7 +93,7 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 
 func (ctx licenseCtx) licenseDockercfg() (string, error) {
 	// return "" for a nil/empty license - it's better than an error, which makes the template engine return "" for the full string
-	if ctx.License == nil || (!ctx.License.IsV1() && !ctx.License.IsV2()) {
+	if ctx.License.IsEmpty() {
 		return "", nil
 	}
 

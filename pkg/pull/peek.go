@@ -45,7 +45,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) (*upstr
 	fetchOptions.ChannelChanged = getUpdatesOptions.ChannelChanged
 	fetchOptions.ReportingInfo = getUpdatesOptions.ReportingInfo
 
-	if getUpdatesOptions.License != nil && (getUpdatesOptions.License.IsV1() || getUpdatesOptions.License.IsV2()) {
+	if !getUpdatesOptions.License.IsEmpty() {
 		fetchOptions.License = getUpdatesOptions.License
 	}
 
