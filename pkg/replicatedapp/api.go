@@ -112,10 +112,9 @@ func getLicenseFromAPI(url string, license *licensewrapper.LicenseWrapper) (*Lic
 	licenseID := license.GetLicenseID()
 	req.SetBasicAuth(licenseID, licenseID)
 
-	// Set the license version header based on the current license we have
-	licenseVersion := license.GetVersion()
-	if licenseVersion != "" {
-		req.Header.Set("X-Replicated-License-Version", licenseVersion)
+	// Set the license version header only for v1beta2 licenses
+	if license.IsV2() {
+		req.Header.Set("X-Replicated-License-Version", "v1beta2")
 	}
 
 	if persistence.IsInitialized() && !util.IsUpgradeService() {

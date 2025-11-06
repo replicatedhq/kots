@@ -150,12 +150,12 @@ func Test_makeLicenseURL(t *testing.T) {
 
 func Test_getLicenseFromAPI_HeaderSet(t *testing.T) {
 	tests := []struct {
-		name            string
-		license         *licensewrapper.LicenseWrapper
-		expectedVersion string
+		name                  string
+		license               *licensewrapper.LicenseWrapper
+		expectedHeaderVersion string // empty string means header should not be set
 	}{
 		{
-			name: "v1beta1 license sets v1beta1 header",
+			name: "v1beta1 license does not set header",
 			license: &licensewrapper.LicenseWrapper{
 				V1: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -164,7 +164,7 @@ func Test_getLicenseFromAPI_HeaderSet(t *testing.T) {
 					},
 				},
 			},
-			expectedVersion: "v1beta1",
+			expectedHeaderVersion: "", // no header for v1beta1
 		},
 		{
 			name: "v1beta2 license sets v1beta2 header",
@@ -176,7 +176,7 @@ func Test_getLicenseFromAPI_HeaderSet(t *testing.T) {
 					},
 				},
 			},
-			expectedVersion: "v1beta2",
+			expectedHeaderVersion: "v1beta2",
 		},
 	}
 
@@ -193,9 +193,9 @@ func Test_getLicenseFromAPI_HeaderSet(t *testing.T) {
 					base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", licenseID, licenseID))))
 				assert.Equal(t, expectedAuth, r.Header.Get("Authorization"))
 
-				// Return a valid license response based on the version
+				// Return a valid license response based on the license type
 				var response string
-				if test.expectedVersion == "v1beta1" {
+				if test.license.IsV1() {
 					response = fmt.Sprintf(`apiVersion: kots.io/v1beta1
 kind: License
 metadata:
@@ -225,12 +225,19 @@ spec:
 			require.NoError(t, err)
 			require.NotNil(t, licenseData)
 
-			// Verify the X-Replicated-License-Version header was set
-			assert.Equal(t, test.expectedVersion, capturedHeaders.Get("X-Replicated-License-Version"),
-				"X-Replicated-License-Version header should be set to %s", test.expectedVersion)
+			// Verify the X-Replicated-License-Version header
+			if test.expectedHeaderVersion == "" {
+				// Header should NOT be set for v1beta1
+				assert.Empty(t, capturedHeaders.Get("X-Replicated-License-Version"),
+					"X-Replicated-License-Version header should not be set for v1beta1")
+			} else {
+				// Header should be set for v1beta2
+				assert.Equal(t, test.expectedHeaderVersion, capturedHeaders.Get("X-Replicated-License-Version"),
+					"X-Replicated-License-Version header should be set to %s", test.expectedHeaderVersion)
+			}
 
 			// Verify the returned license matches the expected version
-			if test.expectedVersion == "v1beta1" {
+			if test.license.IsV1() {
 				assert.True(t, licenseData.License.IsV1())
 				assert.False(t, licenseData.License.IsV2())
 			} else {
