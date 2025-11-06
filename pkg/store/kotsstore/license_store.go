@@ -42,7 +42,9 @@ func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*licensewrapper.Licens
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode license yaml")
 	}
-	return &wrapper, nil
+	// Create heap-allocated copy to avoid returning pointer to stack value
+	license := wrapper
+	return &license, nil
 }
 
 func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*licensewrapper.LicenseWrapper, error) {
@@ -70,7 +72,9 @@ func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*lice
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load license from bytes")
 		}
-		return &wrapper, nil
+		// Create heap-allocated copy to avoid returning pointer to stack value
+		license := wrapper
+		return &license, nil
 	}
 
 	// Return nil (no license for this version)
@@ -97,7 +101,9 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*licensewrapper.LicenseWrapper, error
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load license from bytes")
 			}
-			licenses = append(licenses, &wrapper)
+			// Create heap-allocated copy for each iteration to avoid pointer aliasing
+			licenseCopy := wrapper
+			licenses = append(licenses, &licenseCopy)
 		}
 	}
 
