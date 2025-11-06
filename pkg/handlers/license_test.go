@@ -410,7 +410,7 @@ func TestGetLicense_V1Beta2(t *testing.T) {
 
 			mockStore.EXPECT().
 				GetLatestLicenseForApp("test-app-id").
-				Return(licenseWrapper, nil)
+				Return(&licenseWrapper, nil)
 
 			// Create handler
 			handler := &Handler{}
