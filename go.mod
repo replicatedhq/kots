@@ -463,3 +463,5 @@ require (
 )
 
 replace go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.36.0
+
+replace github.com/replicatedhq/kotskinds => /Users/chuck/workspace/go/src/github.com/replicatedhq/kotskinds

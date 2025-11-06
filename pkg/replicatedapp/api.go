@@ -54,7 +54,7 @@ func GetLatestLicense(license *licensewrapper.LicenseWrapper, selectedChannelID 
 		return nil, errors.Wrap(err, "failed to make license url")
 	}
 
-	licenseData, err := getLicenseFromAPI(fullURL, license.GetLicenseID())
+	licenseData, err := getLicenseFromAPI(fullURL, license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license from api")
 	}
@@ -103,13 +103,20 @@ func getAppIdFromLicenseId(s store.Store, licenseID string) (string, error) {
 	return "", nil
 }
 
-func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
+func getLicenseFromAPI(url string, license *licensewrapper.LicenseWrapper) (*LicenseData, error) {
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
+	licenseID := license.GetLicenseID()
 	req.SetBasicAuth(licenseID, licenseID)
+
+	// Set the license version header based on the current license we have
+	licenseVersion := license.GetVersion()
+	if licenseVersion != "" {
+		req.Header.Set("X-Replicated-License-Version", licenseVersion)
+	}
 
 	if persistence.IsInitialized() && !util.IsUpgradeService() {
 		appId, err := getAppIdFromLicenseId(store.GetStore(), licenseID)

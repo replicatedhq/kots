@@ -1,9 +1,14 @@
 package replicatedapp
 
 import (
+	"encoding/base64"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -139,6 +144,99 @@ func Test_makeLicenseURL(t *testing.T) {
 			url, err := makeLicenseURL(&licenseWrapper, test.selectedChannelID)
 			require.NoError(t, err)
 			assert.Equal(t, test.expectedURL, url)
+		})
+	}
+}
+
+func Test_getLicenseFromAPI_HeaderSet(t *testing.T) {
+	tests := []struct {
+		name            string
+		license         *licensewrapper.LicenseWrapper
+		expectedVersion string
+	}{
+		{
+			name: "v1beta1 license sets v1beta1 header",
+			license: &licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "test-license-id",
+						AppSlug:   "test-app",
+					},
+				},
+			},
+			expectedVersion: "v1beta1",
+		},
+		{
+			name: "v1beta2 license sets v1beta2 header",
+			license: &licensewrapper.LicenseWrapper{
+				V2: &kotsv1beta2.License{
+					Spec: kotsv1beta2.LicenseSpec{
+						LicenseID: "test-license-id-v2",
+						AppSlug:   "test-app-v2",
+					},
+				},
+			},
+			expectedVersion: "v1beta2",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Create a test server that captures the request headers
+			var capturedHeaders http.Header
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				capturedHeaders = r.Header.Clone()
+
+				// Verify basic auth is set correctly
+				licenseID := test.license.GetLicenseID()
+				expectedAuth := fmt.Sprintf("Basic %s",
+					base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", licenseID, licenseID))))
+				assert.Equal(t, expectedAuth, r.Header.Get("Authorization"))
+
+				// Return a valid license response based on the version
+				var response string
+				if test.expectedVersion == "v1beta1" {
+					response = fmt.Sprintf(`apiVersion: kots.io/v1beta1
+kind: License
+metadata:
+  name: test-license
+spec:
+  licenseID: %s
+  appSlug: %s
+`, licenseID, test.license.GetAppSlug())
+				} else {
+					response = fmt.Sprintf(`apiVersion: kots.io/v1beta2
+kind: License
+metadata:
+  name: test-license
+spec:
+  licenseID: %s
+  appSlug: %s
+`, licenseID, test.license.GetAppSlug())
+				}
+
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(response))
+			}))
+			defer server.Close()
+
+			// Call the function
+			licenseData, err := getLicenseFromAPI(server.URL, test.license)
+			require.NoError(t, err)
+			require.NotNil(t, licenseData)
+
+			// Verify the X-Replicated-License-Version header was set
+			assert.Equal(t, test.expectedVersion, capturedHeaders.Get("X-Replicated-License-Version"),
+				"X-Replicated-License-Version header should be set to %s", test.expectedVersion)
+
+			// Verify the returned license matches the expected version
+			if test.expectedVersion == "v1beta1" {
+				assert.True(t, licenseData.License.IsV1())
+				assert.False(t, licenseData.License.IsV2())
+			} else {
+				assert.False(t, licenseData.License.IsV1())
+				assert.True(t, licenseData.License.IsV2())
+			}
 		})
 	}
 }
