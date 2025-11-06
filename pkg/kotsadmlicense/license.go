@@ -53,7 +53,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*lic
 	}
 
 	// check to see if both licenses are of the 'serviceaccount token' type, and if so check if the account ID matches
-	_, serviceAccountUpdated, saMatchErr := ValidateServiceAccountToken(updatedLicense.GetLicenseID(), currentLicense.GetLicenseID())
+	_, serviceAccountUpdated, saMatchErr := ValidateServiceAccountToken(updatedLicense.GetLicenseID(), currentLicense)
 
 	if currentLicense.GetLicenseID() != updatedLicense.GetLicenseID() && saMatchErr != nil {
 		return nil, false, errors.New("license ids do not match")
