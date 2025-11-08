@@ -88,10 +88,6 @@ var (
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
 func PullApplicationMetadata(upstreamURI string, license *licensewrapper.LicenseWrapper, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
-	if license == nil {
-		return nil, errors.New("license is required for pulling application metadata")
-	}
-
 	host := util.ReplicatedAppEndpoint(license)
 
 	uri, err := url.ParseRequestURI(upstreamURI)
