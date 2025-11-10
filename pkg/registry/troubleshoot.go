@@ -10,6 +10,7 @@ import (
 	kotsregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/collect"
 )
@@ -22,7 +23,7 @@ import (
 //
 // local registry always overwrites images
 // proxy registry only overwrites private images
-func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
+func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *licensewrapper.LicenseWrapper, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	if localRegistryInfo.IsValid() {
 		updatedCollectors, err := updateCollectorsWithLocalRegistryData(collectors, localRegistryInfo, installation, license)
 		if err != nil {
@@ -40,7 +41,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 	return updatedCollectors, nil
 }
 
-func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License) ([]*troubleshootv1beta2.Collect, error) {
+func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *licensewrapper.LicenseWrapper) ([]*troubleshootv1beta2.Collect, error) {
 	updatedCollectors := []*troubleshootv1beta2.Collect{}
 
 	makeImagePullSecret := func(namespace string) (*troubleshootv1beta2.ImagePullSecrets, error) {
@@ -107,7 +108,7 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 	return updatedCollectors, nil
 }
 
-func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
+func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *licensewrapper.LicenseWrapper, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	updatedCollectors := []*troubleshootv1beta2.Collect{}
 
 	registryProxyInfo, err := kotsregistry.GetRegistryProxyInfo(license, &installation, kotsApplication)
@@ -116,7 +117,7 @@ func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Col
 	}
 
 	makeImagePullSecret := func(namespace string) (*troubleshootv1beta2.ImagePullSecrets, error) {
-		pullSecrets, err := kotsregistry.PullSecretForRegistries(registryProxyInfo.ToSlice(), "LICENSE_ID", license.Spec.LicenseID, namespace, "")
+		pullSecrets, err := kotsregistry.PullSecretForRegistries(registryProxyInfo.ToSlice(), "LICENSE_ID", license.GetLicenseID(), namespace, "")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to generate pull secret for proxy registry")
 		}
@@ -137,7 +138,7 @@ func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Col
 			return image
 		}
 		tag := strings.Split(image, ":")
-		image = kotsregistry.MakeProxiedImageURL(registryProxyInfo.Proxy, license.Spec.AppSlug, image)
+		image = kotsregistry.MakeProxiedImageURL(registryProxyInfo.Proxy, license.GetAppSlug(), image)
 		if len(tag) > 1 {
 			image = fmt.Sprintf("%s:%s", image, tag[len(tag)-1])
 		}

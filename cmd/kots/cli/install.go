@@ -42,6 +42,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -119,8 +120,8 @@ func InstallCmd() *cobra.Command {
 			}
 
 			appSlug := ""
-			if license != nil {
-				appSlug = license.Spec.AppSlug
+			if !license.IsEmpty() {
+				appSlug = license.GetAppSlug()
 			}
 
 			registryConfig, err := getRegistryConfig(v, clientset, appSlug)
@@ -204,6 +205,7 @@ func InstallCmd() *cobra.Command {
 			} else if !v.GetBool("airgap") {
 				applicationMetadata, err = pull.PullApplicationMetadata(upstream, license, v.GetString("app-version-label"))
 				if err != nil {
+          log.Error(err)
 					// application metadata is required for embedded cluster installations
 					if util.IsEmbeddedCluster() {
 						return errors.Wrap(err, "failed to pull application metadata")
@@ -372,7 +374,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if airgapArchive := v.GetString("airgap-bundle"); airgapArchive != "" {
-				if deployOptions.License == nil {
+				if deployOptions.License.IsEmpty() {
 					return errors.New("license is required when airgap bundle is specified")
 				}
 
@@ -481,7 +483,7 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
-			if deployOptions.License != nil {
+			if !deployOptions.License.IsEmpty() {
 				log.ActionWithSpinner("Waiting for installation to complete")
 				status, err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint)
 				if err != nil {
@@ -698,7 +700,11 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, authSlug stri
 	if err != nil {
 		return false, errors.Wrap(err, "failed to add metadata")
 	}
-	if _, err := io.Copy(metadataPart, bytes.NewReader([]byte(deployOptions.License.Spec.AppSlug))); err != nil {
+	appSlug := ""
+	if deployOptions.License != nil {
+		appSlug = deployOptions.License.GetAppSlug()
+	}
+	if _, err := io.Copy(metadataPart, bytes.NewReader([]byte(appSlug))); err != nil {
 		return false, errors.Wrap(err, "failed to copy metadata")
 	}
 
@@ -844,7 +850,7 @@ func getRegistryConfig(v *viper.Viper, clientset kubernetes.Interface, appSlug s
 	}, nil
 }
 
-func getLicense(v *viper.Viper) (*kotsv1beta1.License, string, error) {
+func getLicense(v *viper.Viper) (*licensewrapper.LicenseWrapper, string, error) {
 	if v.GetString("license-file") == "" {
 		return nil, "", nil
 	}
@@ -854,12 +860,12 @@ func getLicense(v *viper.Viper) (*kotsv1beta1.License, string, error) {
 		return nil, "", errors.Wrap(err, "failed to read license file")
 	}
 
-	license, err := kotsutil.LoadLicenseFromBytes(licenseData)
+	license, err := licensewrapper.LoadLicenseFromBytes(licenseData)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "failed to parse license file")
 	}
 
-	return license, string(licenseData), nil
+	return &license, string(licenseData), nil
 }
 
 func getHttpProxyEnv(v *viper.Viper) map[string]string {
@@ -924,7 +930,11 @@ func CheckRBAC() error {
 }
 
 func ValidateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) (storetypes.DownstreamVersionStatus, error) {
-	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, deployOptions.License.Spec.AppSlug)
+	appSlug := ""
+	if deployOptions.License != nil {
+		appSlug = deployOptions.License.GetAppSlug()
+	}
+	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, appSlug)
 
 	startTime := time.Now()
 
@@ -983,7 +993,11 @@ func getAutomatedInstallStatus(url string, authSlug string) (*tasks.TaskStatus, 
 }
 
 func ValidatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) error {
-	url := fmt.Sprintf("%s/app/%s/preflight/result", apiEndpoint, deployOptions.License.Spec.AppSlug)
+	appSlug := ""
+	if deployOptions.License != nil {
+		appSlug = deployOptions.License.GetAppSlug()
+	}
+	url := fmt.Sprintf("%s/app/%s/preflight/result", apiEndpoint, appSlug)
 
 	startTime := time.Now()
 

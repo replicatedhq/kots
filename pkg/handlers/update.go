@@ -20,7 +20,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -32,7 +31,7 @@ import (
 	updatecheckertypes "github.com/replicatedhq/kots/pkg/updatechecker/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type AppUpdateCheckRequest struct {
@@ -171,13 +170,13 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if kotsadm.IsAirgap() {
-		license, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
+		license, err := licensewrapper.LoadLicenseFromBytes([]byte(app.License))
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to parse app license"))
 			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
 			return
 		}
-		updates, err := update.GetAvailableAirgapUpdates(app, license)
+		updates, err := update.GetAvailableAirgapUpdates(app, &license)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get available airgap updates"))
 			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
@@ -302,7 +301,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, updateAdminConsoleResponse)
 }
 
-func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, error) {
+func findLatestKotsVersion(appID string, license *licensewrapper.LicenseWrapper) (string, error) {
 	url := fmt.Sprintf("%s/admin-console/version/latest", util.ReplicatedAppEndpoint(license))
 
 	req, err := util.NewRetryableRequest("GET", url, nil)
@@ -313,7 +312,7 @@ func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, 
 	reportingInfo := reporting.GetReportingInfo(appID)
 	reporting.InjectReportingInfoHeaders(req.Header, reportingInfo)
 
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.GetLicenseID(), license.GetLicenseID())))))
 
 	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {

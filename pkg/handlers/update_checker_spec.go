@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	cron "github.com/robfig/cron/v3"
 )
 
@@ -48,7 +49,7 @@ func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(foundApp.License))
+	license, err := licensewrapper.LoadLicenseFromBytes([]byte(foundApp.License))
 	if err != nil {
 		updateCheckerSpecResponse.Error = "failed to get license from app"
 		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
@@ -56,7 +57,7 @@ func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	licenseChan, err := kotsutil.FindChannelInLicense(foundApp.SelectedChannelID, license)
+	licenseChan, err := kotsutil.FindChannelInLicense(foundApp.SelectedChannelID, &license)
 	if err != nil {
 		updateCheckerSpecResponse.Error = "failed to find app channel id from license"
 		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))

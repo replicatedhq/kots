@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type ServiceAccountToken struct {
@@ -13,13 +15,17 @@ type ServiceAccountToken struct {
 
 // ValidateServiceAccountToken checks if the service account token is valid and if it matches the current license identity.
 // It returns the service account token, a boolean indicating if the secret has been updated, and an error if any.
-func ValidateServiceAccountToken(token, currentLicenseID string) (*ServiceAccountToken, bool, error) {
+func ValidateServiceAccountToken(token string, currentLicense *licensewrapper.LicenseWrapper) (*ServiceAccountToken, bool, error) {
+	if currentLicense == nil || currentLicense.IsEmpty() {
+		return nil, false, fmt.Errorf("current license is required")
+	}
+
 	newToken, err := extractIdentityFromToken(token)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to extract new token identity: %w", err)
 	}
 
-	currentToken, err := extractIdentityFromToken(currentLicenseID)
+	currentToken, err := extractIdentityFromToken(currentLicense.GetLicenseID())
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to extract current license identity: %w", err)
 	}

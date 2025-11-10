@@ -7,10 +7,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
-func (r *AirgapReporter) SubmitPreflightData(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
+func (r *AirgapReporter) SubmitPreflightData(license *licensewrapper.LicenseWrapper, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
 	app, err := r.store.GetApp(appID)
 	if err != nil {
 		if r.store.IsNotFound(err) {
@@ -23,7 +23,7 @@ func (r *AirgapReporter) SubmitPreflightData(license *kotsv1beta1.License, appID
 		Events: []PreflightReportEvent{
 			{
 				ReportedAt:      time.Now().UTC().UnixMilli(),
-				LicenseID:       license.Spec.LicenseID,
+				LicenseID:       license.GetLicenseID(),
 				InstanceID:      appID,
 				ClusterID:       clusterID,
 				Sequence:        sequence,

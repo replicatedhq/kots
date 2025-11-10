@@ -33,6 +33,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -44,7 +45,7 @@ type PullOptions struct {
 	Namespace               string
 	Downstreams             []string
 	LocalPath               string
-	LicenseObj              *kotsv1beta1.License
+	LicenseObj              *licensewrapper.LicenseWrapper
 	LicenseFile             string
 	LicenseEndpointOverride string // only used for testing
 	InstallationFile        string
@@ -86,7 +87,7 @@ var (
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
-func PullApplicationMetadata(upstreamURI string, license *kotsv1beta1.License, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
+func PullApplicationMetadata(upstreamURI string, license *licensewrapper.LicenseWrapper, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
 	host := util.ReplicatedAppEndpoint(license)
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -151,7 +152,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if pullOptions.LicenseObj != nil {
 		fetchOptions.License = pullOptions.LicenseObj
 	} else if pullOptions.LicenseFile != "" {
-		license, err := kotsutil.LoadLicenseFromPath(pullOptions.LicenseFile)
+		license, err := licensewrapper.LoadLicenseFromPath(pullOptions.LicenseFile)
 		if err != nil {
 			if errors.Cause(err) == kotslicense.ErrSignatureInvalid {
 				return "", kotslicense.ErrSignatureInvalid
@@ -161,20 +162,25 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			}
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
-		fetchOptions.License = license
-	} else {
+		fetchOptions.License = &license
+	} else if localLicense != nil {
 		fetchOptions.License = localLicense
 	}
 
-	if fetchOptions.License != nil {
-		verifiedLicense, err := kotslicense.VerifySignature(fetchOptions.License)
+	if !fetchOptions.License.IsEmpty() {
+		verifiedLicense, err := kotslicense.VerifyLicenseWrapper(fetchOptions.License)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to verify signature")
 		}
 		fetchOptions.License = verifiedLicense
 
 		if pullOptions.LicenseEndpointOverride != "" {
-			fetchOptions.License.Spec.Endpoint = pullOptions.LicenseEndpointOverride
+			// Apply endpoint override to V1 or V2 license if applicable
+			if fetchOptions.License.IsV1() {
+				fetchOptions.License.V1.Spec.Endpoint = pullOptions.LicenseEndpointOverride
+			} else if fetchOptions.License.IsV2() {
+				fetchOptions.License.V2.Spec.Endpoint = pullOptions.LicenseEndpointOverride
+			}
 		}
 	}
 
@@ -226,6 +232,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.AirgapRoot != "" {
+		if fetchOptions.License == nil {
+			return "", errors.New("license is required for airgap installations")
+		}
+
 		if expired, err := kotslicense.LicenseIsExpired(fetchOptions.License); err != nil {
 			return "", errors.Wrap(err, "failed to check license expiration")
 		} else if expired {
@@ -847,28 +857,24 @@ func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, erro
 	return installation, nil
 }
 
-func publicKeysMatch(log *logger.CLILogger, license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) error {
-	if license == nil || airgap == nil {
+func publicKeysMatch(log *logger.CLILogger, license *licensewrapper.LicenseWrapper, airgap *kotsv1beta1.Airgap) error {
+	if license.IsEmpty() || airgap == nil {
 		// not sure when this would happen, but earlier logic allows this combination
 		return nil
 	}
 
-	publicKey, err := kotslicense.GetAppPublicKey(license)
-	if err != nil {
-		return errors.Wrap(err, "failed to get public key from license")
-	}
-
-	if err := kotslicense.Verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
+	appSlug := license.GetAppSlug()
+	if err := kotslicense.VerifyWithLicense([]byte(appSlug), []byte(airgap.Spec.Signature), license); err != nil {
 		log.Info("got error validating airgap bundle: %s", err.Error())
 		if airgap.Spec.AppSlug != "" {
 			return util.ActionableError{
 				NoRetry: true,
-				Message: fmt.Sprintf("Failed to verify bundle signature - license is for app %q, airgap package for app %q", license.Spec.AppSlug, airgap.Spec.AppSlug),
+				Message: fmt.Sprintf("Failed to verify bundle signature - license is for app %q, airgap package for app %q", appSlug, airgap.Spec.AppSlug),
 			}
 		} else {
 			return util.ActionableError{
 				NoRetry: true,
-				Message: fmt.Sprintf("Failed to verify bundle signature - airgap package does not match license app %q", license.Spec.AppSlug),
+				Message: fmt.Sprintf("Failed to verify bundle signature - airgap package does not match license app %q", appSlug),
 			}
 		}
 	}
@@ -876,14 +882,14 @@ func publicKeysMatch(log *logger.CLILogger, license *kotsv1beta1.License, airgap
 	return nil
 }
 
-func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
+func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *licensewrapper.LicenseWrapper, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
 	if localPath == "" {
 		return nil, nil, nil, nil, nil, nil
 	}
 
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
-	var license *kotsv1beta1.License
+	var license *licensewrapper.LicenseWrapper
 	var installation *kotsv1beta1.Installation
 	var identityConfig *kotsv1beta1.IdentityConfig
 
@@ -913,7 +919,9 @@ func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValue
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
 				values = obj.(*kotsv1beta1.ConfigValues)
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
-				license = obj.(*kotsv1beta1.License)
+				license = &licensewrapper.LicenseWrapper{V1: obj.(*kotsv1beta1.License)}
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta2" && gvk.Kind == "License" {
+				license = &licensewrapper.LicenseWrapper{V2: obj.(*kotsv1beta2.License)}
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Installation" {
 				installation = obj.(*kotsv1beta1.Installation)
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {

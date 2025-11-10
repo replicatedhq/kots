@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/require"
 )
 
@@ -279,13 +280,15 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 
 			// cursor based
 			tt.license.Spec.IsSemverRequired = false
-			got, err := getRequiredAirgapUpdates(tt.airgap, tt.license, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
+			licenseWrapper := licensewrapper.LicenseWrapper{V1: tt.license}
+			got, err := getRequiredAirgapUpdates(tt.airgap, &licenseWrapper, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
 			req.NoError(err)
 			req.Equal(tt.wantNoSemver, got)
 
 			// semver based
 			tt.license.Spec.IsSemverRequired = true
-			got, err = getRequiredAirgapUpdates(tt.airgap, tt.license, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
+			licenseWrapper = licensewrapper.LicenseWrapper{V1: tt.license}
+			got, err = getRequiredAirgapUpdates(tt.airgap, &licenseWrapper, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
 			req.NoError(err)
 			req.Equal(tt.wantSemver, got)
 		})

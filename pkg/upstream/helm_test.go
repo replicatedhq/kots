@@ -8,6 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -1272,37 +1273,39 @@ some: value
 			require.NoError(t, err)
 
 			upstream := &types.Upstream{
-				License: &kotsv1beta1.License{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kots.io/v1beta1",
-						Kind:       "License",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kots-license",
-					},
-					Spec: kotsv1beta1.LicenseSpec{
-						LicenseID:   "license-id",
-						AppSlug:     "app-slug",
-						ChannelName: "channel-name",
-						Endpoint:    "https://replicated.app",
-						Entitlements: map[string]kotsv1beta1.EntitlementField{
-							"license-field": {
-								Title:       "License Field",
-								Description: "This is a license field",
-								ValueType:   "string",
-								Value: kotsv1beta1.EntitlementValue{
-									Type:   kotsv1beta1.String,
-									StrVal: "license-field-value",
-								},
-								Signature: kotsv1beta1.EntitlementFieldSignature{
-									V1: []byte{},
+				License: &licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "kots.io/v1beta1",
+							Kind:       "License",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "kots-license",
+						},
+						Spec: kotsv1beta1.LicenseSpec{
+							LicenseID:   "license-id",
+							AppSlug:     "app-slug",
+							ChannelName: "channel-name",
+							Endpoint:    "https://replicated.app",
+							Entitlements: map[string]kotsv1beta1.EntitlementField{
+								"license-field": {
+									Title:       "License Field",
+									Description: "This is a license field",
+									ValueType:   "string",
+									Value: kotsv1beta1.EntitlementValue{
+										Type:   kotsv1beta1.String,
+										StrVal: "license-field-value",
+									},
+									Signature: kotsv1beta1.EntitlementFieldSignature{
+										V1: []byte{},
+									},
 								},
 							},
+							CustomerEmail: "customer@example.com",
+							CustomerName:  "Customer Name",
+							LicenseType:   "dev",
+							Signature:     []byte{},
 						},
-						CustomerEmail: "customer@example.com",
-						CustomerName:  "Customer Name",
-						LicenseType:   "dev",
-						Signature:     []byte{},
 					},
 				},
 				ReplicatedRegistryDomain: "custom.registry.com",

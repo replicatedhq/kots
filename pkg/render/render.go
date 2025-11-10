@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type Renderer struct {
@@ -106,7 +107,7 @@ func RenderDir(opts types.RenderDirOptions) error {
 		return errors.Wrap(err, "failed to load installation from path")
 	}
 
-	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(opts.ArchiveDir, "upstream", "userdata", "license.yaml"))
+	license, err := licensewrapper.LoadLicenseFromPath(filepath.Join(opts.ArchiveDir, "upstream", "userdata", "license.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load license from path")
 	}
@@ -135,14 +136,14 @@ func RenderDir(opts types.RenderDirOptions) error {
 	}
 	reOptions := rewrite.RewriteOptions{
 		RootDir:              opts.ArchiveDir,
-		UpstreamURI:          fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamURI:          fmt.Sprintf("replicated://%s", license.GetAppSlug()),
 		UpstreamPath:         filepath.Join(opts.ArchiveDir, "upstream"),
 		Installation:         installation,
 		Downstreams:          downstreamNames,
 		Silent:               true,
 		CreateAppDir:         false,
 		ExcludeKotsKinds:     true,
-		License:              license,
+		License:              &license,
 		ConfigValues:         configValues,
 		K8sNamespace:         appNamespace,
 		CopyImages:           false,

@@ -22,6 +22,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 
@@ -182,7 +183,7 @@ type VersionStore interface {
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error)
 	GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error)
-	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error)
+	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *licensewrapper.LicenseWrapper) (int64, error)
 	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool) error
 	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, isInstall bool, isAutomated bool, skipPreflights bool) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
@@ -197,12 +198,12 @@ type VersionStore interface {
 }
 
 type LicenseStore interface {
-	GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error)
-	GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error)
-	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
+	GetLatestLicenseForApp(appID string) (*licensewrapper.LicenseWrapper, error)
+	GetLicenseForAppVersion(appID string, sequence int64) (*licensewrapper.LicenseWrapper, error)
+	GetAllAppLicenses() ([]*licensewrapper.LicenseWrapper, error)
 
 	// originalLicenseData is the data received from the replicated API that was never marshalled locally so all fields are intact
-	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error)
+	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *licensewrapper.LicenseWrapper, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error)
 	UpdateAppLicenseSyncNow(appID string) error
 }
 

@@ -24,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
@@ -38,7 +39,7 @@ type RewriteOptions struct {
 	CreateAppDir         bool
 	ExcludeKotsKinds     bool
 	Installation         *kotsv1beta1.Installation
-	License              *kotsv1beta1.License
+	License              *licensewrapper.LicenseWrapper
 	ConfigValues         *kotsv1beta1.ConfigValues
 	ReportWriter         io.Writer
 	CopyImages           bool // can be false even if registry is not read-only

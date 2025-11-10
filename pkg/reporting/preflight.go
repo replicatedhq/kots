@@ -28,6 +28,12 @@ func WaitAndReportPreflightChecks(appID string, sequence int64, isSkipPreflights
 	clusterID := downstreams[0].ClusterID
 
 	go func() {
+		// Skip reporting if no license available
+		if license.IsEmpty() {
+			logger.Debugf("skipping preflight data submission: no license available")
+			return
+		}
+
 		appStatus := appstatetypes.StateMissing
 		for start := time.Now(); time.Since(start) < 20*time.Minute; {
 			s, err := store.GetStore().GetAppStatus(appID)

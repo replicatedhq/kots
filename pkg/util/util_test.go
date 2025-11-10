@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -408,12 +409,12 @@ func Test_ReplicatedAppEndpoint(t *testing.T) {
 
 			if tt.wantPanic {
 				req.Panics(func() {
-					_ = ReplicatedAppEndpoint(tt.license)
+					_ = ReplicatedAppEndpoint(&licensewrapper.LicenseWrapper{V1: tt.license})
 				})
 				return
 			}
 
-			result := ReplicatedAppEndpoint(tt.license)
+			result := ReplicatedAppEndpoint(&licensewrapper.LicenseWrapper{V1: tt.license})
 			assert.Equal(t, tt.want, result)
 		})
 	}

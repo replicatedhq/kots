@@ -32,6 +32,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/rqlite/gorqlite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -281,7 +282,7 @@ func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string)
 
 	// add to the top of the list and sort
 	appVersions.AllVersions = append([]*downstreamtypes.DownstreamVersion{mockVersion}, appVersions.AllVersions...)
-	downstreamtypes.SortDownstreamVersions(appVersions.AllVersions, license.Spec.IsSemverRequired)
+	downstreamtypes.SortDownstreamVersions(appVersions.AllVersions, license.IsSemverRequired())
 
 	var baseVersion *downstreamtypes.DownstreamVersion
 	for i, v := range appVersions.AllVersions {
@@ -328,7 +329,7 @@ func (s *KOTSStore) GetAppVersionBaseArchive(appID string, versionLabel string) 
 	return archiveDir, baseSequence, nil
 }
 
-func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error) {
+func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *licensewrapper.LicenseWrapper) (int64, error) {
 	db := persistence.MustGetDBSession()
 	statements := []gorqlite.ParameterizedStatement{}
 
@@ -1061,12 +1062,12 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 	}
 
 	if licenseSpec.Valid && licenseSpec.String != "" {
-		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
+		license, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseSpec.String))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read license spec")
 		}
-		if license != nil {
-			v.KOTSKinds.License = license
+		if license.IsV1() || license.IsV2() {
+			v.KOTSKinds.License = &license
 		}
 	}
 

@@ -7,10 +7,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type SendCustomAppMetricsRequest struct {
@@ -41,7 +41,7 @@ func (h *Handler) GetSendCustomAppMetricsHandler(kotsStore store.Store) http.Han
 		}
 
 		app := apps[0]
-		license, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
+		license, err := licensewrapper.LoadLicenseFromBytes([]byte(app.License))
 		if err != nil {
 			logger.Error(errors.Wrap(err, "load license from bytes"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -61,7 +61,7 @@ func (h *Handler) GetSendCustomAppMetricsHandler(kotsStore store.Store) http.Han
 			return
 		}
 
-		err = replicatedapp.SendCustomAppMetricsData(license, app, request.Data)
+		err = replicatedapp.SendCustomAppMetricsData(&license, app, request.Data)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "set application data"))
 			w.WriteHeader(http.StatusBadRequest)

@@ -13,6 +13,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -2072,22 +2073,24 @@ spec:
 						Icon:  "https://example.com/icon.png",
 					},
 				},
-				License: &v1beta1.License{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kots.io/v1beta1",
-						Kind:       "License",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "license-sample",
-					},
-					Spec: v1beta1.LicenseSpec{
-						AppSlug:       "my-app",
-						ChannelName:   "stable",
-						Endpoint:      "https://example.com",
-						CustomerName:  "My Customer",
-						CustomerEmail: "",
-						LicenseID:     "1234",
-						LicenseType:   "Single",
+				License: &licensewrapper.LicenseWrapper{
+					V1: &v1beta1.License{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "kots.io/v1beta1",
+							Kind:       "License",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "license-sample",
+						},
+						Spec: v1beta1.LicenseSpec{
+							AppSlug:       "my-app",
+							ChannelName:   "stable",
+							Endpoint:      "https://example.com",
+							CustomerName:  "My Customer",
+							CustomerEmail: "",
+							LicenseID:     "1234",
+							LicenseType:   "Single",
+						},
 					},
 				},
 			},

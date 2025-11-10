@@ -7,11 +7,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
-func isSlugInLicenseChannels(slug string, license *kotsv1beta1.License) bool {
-	for _, channel := range license.Spec.Channels {
+func isSlugInLicenseChannels(slug string, license *licensewrapper.LicenseWrapper) bool {
+	channels := license.GetChannels()
+	for _, channel := range channels {
 		if channel.ChannelSlug == slug {
 			return true
 		}
@@ -19,17 +20,18 @@ func isSlugInLicenseChannels(slug string, license *kotsv1beta1.License) bool {
 	return false
 }
 
-func isMultiChannelLicense(license *kotsv1beta1.License) bool {
-	if license == nil {
+func isMultiChannelLicense(license *licensewrapper.LicenseWrapper) bool {
+	if !license.IsV1() && !license.IsV2() {
 		return false
 	}
 	// whether a license is multi-channel is determined by the presence of channels in the license
 	// if there are no channels, it is not multi-channel - and was generated before channels
 	// were introduced.
-	return len(license.Spec.Channels) > 0
+	channels := license.GetChannels()
+	return len(channels) > 0
 }
 
-func canInstallFromChannel(slug string, license *kotsv1beta1.License) bool {
+func canInstallFromChannel(slug string, license *licensewrapper.LicenseWrapper) bool {
 	if !isMultiChannelLicense(license) {
 		return true
 	}
@@ -38,8 +40,8 @@ func canInstallFromChannel(slug string, license *kotsv1beta1.License) bool {
 
 // VerifyAndUpdateLicense will update (if not airgapped), verify that the request channel slug is present, and return the possibly updated license.
 // Note that this is a noop if the license passed in is nil.
-func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License, preferredChannelSlug string, isAirgap bool) (*kotsv1beta1.License, error) {
-	if license == nil {
+func VerifyAndUpdateLicense(log *logger.CLILogger, license *licensewrapper.LicenseWrapper, preferredChannelSlug string, isAirgap bool) (*licensewrapper.LicenseWrapper, error) {
+	if license.IsEmpty() {
 		return nil, nil
 	}
 	if isAirgap {
@@ -47,8 +49,10 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 			return license, nil
 		}
 		validChannels := []string{}
-		for _, channel := range license.Spec.Channels {
-			validChannels = append(validChannels, fmt.Sprintf("%s/%s", license.Spec.AppSlug, channel.ChannelSlug))
+		channels := license.GetChannels()
+		appSlug := license.GetAppSlug()
+		for _, channel := range channels {
+			validChannels = append(validChannels, fmt.Sprintf("%s/%s", appSlug, channel.ChannelSlug))
 		}
 		log.Errorf("Channel slug %q is not allowed by license. Please use one of the following: %s", preferredChannelSlug, strings.Join(validChannels, ", "))
 		return license, errors.New(fmt.Sprintf("channel slug %q is not allowed by license", preferredChannelSlug))
@@ -67,8 +71,10 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 		return updatedLicense.License, nil
 	}
 	validChannels := []string{}
-	for _, channel := range license.Spec.Channels {
-		validChannels = append(validChannels, fmt.Sprintf("%s/%s", license.Spec.AppSlug, channel.ChannelSlug))
+	channels := license.GetChannels()
+	appSlug := license.GetAppSlug()
+	for _, channel := range channels {
+		validChannels = append(validChannels, fmt.Sprintf("%s/%s", appSlug, channel.ChannelSlug))
 	}
 	log.Errorf("Channel slug %q is not allowed by license. Please use one of the following: %s", preferredChannelSlug, strings.Join(validChannels, ", "))
 	return updatedLicense.License, errors.New(fmt.Sprintf("channel slug %q is not allowed by latest license", preferredChannelSlug))
