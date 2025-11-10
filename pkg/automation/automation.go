@@ -30,7 +30,7 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,13 +101,13 @@ func AutomateInstall(opts AutomateInstallOptions) error {
 			logger.Error(fmt.Errorf("license secret %q does not contain a license field", licenseSecret.Name))
 		}
 
-		decodedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+		decodedLicense, err := licensewrapper.LoadLicenseFromBytes(license)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to unmarshal license data"))
 		}
 
-		if decodedLicense != nil {
-			err = deleteAirgapData(clientset, decodedLicense.Spec.AppSlug)
+		if decodedLicense.IsV1() || decodedLicense.IsV2() {
+			err = deleteAirgapData(clientset, decodedLicense.GetAppSlug())
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to delete airgap data"))
 			}
@@ -131,7 +131,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return fmt.Errorf("license secret %q does not contain a license field", licenseSecret.Name)
 	}
 
-	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+	unverifiedLicense, err := licensewrapper.LoadLicenseFromBytes(license)
 	appSlug := ""
 	if err != nil {
 		if licenseSecret.Labels != nil {
@@ -139,7 +139,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 		return errors.Wrap(err, "failed to unmarshal license data")
 	}
-	appSlug = unverifiedLicense.Spec.AppSlug
+	appSlug = unverifiedLicense.GetAppSlug()
 
 	logger.Debug("automated license install found",
 		zap.String("appSlug", appSlug))
@@ -199,7 +199,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 	}()
 
-	verifiedLicense, err := kotslicense.VerifySignature(unverifiedLicense)
+	verifiedLicense, err := kotslicense.VerifyLicenseWrapper(&unverifiedLicense)
 	if err != nil {
 		return errors.Wrap(err, "failed to verify license signature")
 	}
@@ -250,7 +250,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 	}
 
-	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
+	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, string(license), verifiedLicense.IsAirgapSupported(), instParams.SkipImagePush, instParams.RegistryIsReadOnly)
 	if err != nil {
 		return errors.Wrap(err, "failed to create app record")
 	}
@@ -374,16 +374,16 @@ func NeedToWaitForAirgapApp() (bool, error) {
 			continue
 		}
 
-		unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+		unverifiedLicense, err := licensewrapper.LoadLicenseFromBytes(license)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to unmarshal license data"))
 			continue
 		}
 
-		// airgap data is the airgap manifest + app specs + image list laoded from configmaps
-		needToWait, err := needToWaitForAirgapApp(clientset, unverifiedLicense)
+		appSlug := unverifiedLicense.GetAppSlug()
+		needToWait, err := needToWaitForAirgapApp(clientset, &unverifiedLicense)
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to load airgap data for %s", unverifiedLicense.Spec.AppSlug))
+			logger.Error(errors.Wrapf(err, "failed to load airgap data for %s", appSlug))
 			continue
 		}
 
@@ -395,10 +395,15 @@ func NeedToWaitForAirgapApp() (bool, error) {
 	return false, nil
 }
 
-func getAirgapData(clientset kubernetes.Interface, license *kotsv1beta1.License) (map[string][]byte, error) {
+func getAirgapData(clientset kubernetes.Interface, license *licensewrapper.LicenseWrapper) (map[string][]byte, error) {
+	if license == nil {
+		return nil, errors.New("license cannot be nil")
+	}
+
+	appSlug := license.GetAppSlug()
 	selectorLabels := map[string]string{
 		"kots.io/automation": "airgap",
-		"kots.io/app":        license.Spec.AppSlug,
+		"kots.io/app":        appSlug,
 	}
 
 	configMaps, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
@@ -425,10 +430,15 @@ func getAirgapData(clientset kubernetes.Interface, license *kotsv1beta1.License)
 	return result, nil
 }
 
-func needToWaitForAirgapApp(clientset kubernetes.Interface, license *kotsv1beta1.License) (bool, error) {
+func needToWaitForAirgapApp(clientset kubernetes.Interface, license *licensewrapper.LicenseWrapper) (bool, error) {
+	if license == nil {
+		return false, errors.New("license cannot be nil")
+	}
+
+	appSlug := license.GetAppSlug()
 	selectorLabels := map[string]string{
 		"kots.io/automation": "airgap",
-		"kots.io/app":        license.Spec.AppSlug,
+		"kots.io/app":        appSlug,
 	}
 
 	configMaps, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).List(context.TODO(), metav1.ListOptions{

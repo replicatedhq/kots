@@ -12,7 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -169,10 +169,10 @@ func PullCmd() *cobra.Command {
 	return cmd
 }
 
-func getAppSlugForPull(uri string, license *kotsv1beta1.License) string {
+func getAppSlugForPull(uri string, license *licensewrapper.LicenseWrapper) string {
 	appSlug := strings.Split(uri, "/")[0]
-	if license == nil {
+	if !license.IsV1() && !license.IsV2() {
 		return appSlug
 	}
-	return license.Spec.AppSlug
+	return license.GetAppSlug()
 }

@@ -9,13 +9,13 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type GetUpdatesOptions struct {
 	HelmRepoURI        string
 	Namespace          string
-	License            *kotsv1beta1.License
+	License            *licensewrapper.LicenseWrapper
 	LastUpdateCheckAt  *time.Time
 	CurrentCursor      string
 	CurrentChannelID   string
@@ -45,7 +45,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) (*upstr
 	fetchOptions.ChannelChanged = getUpdatesOptions.ChannelChanged
 	fetchOptions.ReportingInfo = getUpdatesOptions.ReportingInfo
 
-	if getUpdatesOptions.License != nil {
+	if !getUpdatesOptions.License.IsEmpty() {
 		fetchOptions.License = getUpdatesOptions.License
 	}
 

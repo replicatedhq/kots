@@ -28,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type CurrentConfigResponse struct {
@@ -71,7 +72,7 @@ func (h *Handler) CurrentConfig(w http.ResponseWriter, r *http.Request) {
 
 	params := GetContextParams(r)
 
-	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
+	appLicense, err := licensewrapper.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
 		response.Error = "failed to load license from bytes"
 		logger.Error(errors.Wrap(err, response.Error))
@@ -121,7 +122,7 @@ func (h *Handler) CurrentConfig(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallationSpec(params.NextSequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, &appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
 		logger.Error(err)
 		response.Error = "failed to render templates"
@@ -145,7 +146,7 @@ func (h *Handler) LiveConfig(w http.ResponseWriter, r *http.Request) {
 
 	params := GetContextParams(r)
 
-	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
+	appLicense, err := licensewrapper.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
 		response.Error = "failed to load license from bytes"
 		logger.Error(errors.Wrap(err, response.Error))
@@ -191,7 +192,7 @@ func (h *Handler) LiveConfig(w http.ResponseWriter, r *http.Request) {
 	versionInfo := template.VersionInfoFromInstallationSpec(params.NextSequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, &appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
 		response.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, response.Error))

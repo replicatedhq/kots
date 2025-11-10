@@ -15,6 +15,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 // getAvailableUpdates returns the slice of available updates given a list of upstream updates making sure to:
@@ -66,11 +67,11 @@ func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap, cur
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get downstream versions")
 	}
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
+	license, err := licensewrapper.LoadLicenseFromBytes([]byte(app.License))
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to load license")
 	}
-	requiredUpdates, err := getRequiredAirgapUpdates(airgap, license, appVersions.AllVersions, app.ChannelChanged, app.SelectedChannelID)
+	requiredUpdates, err := getRequiredAirgapUpdates(airgap, &license, appVersions.AllVersions, app.ChannelChanged, app.SelectedChannelID)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get missing required versions")
 	}
@@ -86,7 +87,7 @@ func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap, cur
 	return true, "", nil
 }
 
-func getRequiredAirgapUpdates(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*downstreamtypes.DownstreamVersion, channelChanged bool, selectedChannelID string) ([]string, error) {
+func getRequiredAirgapUpdates(airgap *kotsv1beta1.Airgap, license *licensewrapper.LicenseWrapper, installedVersions []*downstreamtypes.DownstreamVersion, channelChanged bool, selectedChannelID string) ([]string, error) {
 	requiredUpdates := make([]string, 0)
 	// If no versions are installed, we can consider this an initial install.
 	// If the channel changed, we can consider this an initial install.

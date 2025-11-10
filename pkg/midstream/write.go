@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	yaml "go.yaml.in/yaml/v2"
 	corev1 "k8s.io/api/core/v1"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -47,7 +48,7 @@ type WriteOptions struct {
 	NoProxyEnvValue     string
 	NewHelmCharts       []*kotsv1beta1.HelmChart
 	ProcessImageOptions imagetypes.ProcessImageOptions
-	License             *kotsv1beta1.License
+	License             *licensewrapper.LicenseWrapper
 	KotsKinds           *kotsutil.KotsKinds
 	IdentityConfig      *kotsv1beta1.IdentityConfig
 	UpstreamDir         string
@@ -144,7 +145,7 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 				return nil, errors.Wrapf(err, "failed to load registry auth for %q", opts.ProcessImageOptions.RegistrySettings.Hostname)
 			}
 		}
-	} else if opts.License != nil {
+	} else if !opts.License.IsEmpty() {
 		// A target registry is NOT configured. Rewrite private images to be proxied through proxy.replicated.com
 		rewrittenImages, err := base.RewritePrivateImages(baseImages, opts.KotsKinds, opts.License)
 		if err != nil {
@@ -159,7 +160,7 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 		}
 		pullSecretRegistries = registryProxyInfo.ToSlice()
 		pullSecretUsername = "LICENSE_ID"
-		pullSecretPassword = opts.License.Spec.LicenseID
+		pullSecretPassword = opts.License.GetLicenseID()
 	}
 
 	// For the newer style charts, create a new secret per chart as helm adds chart specific

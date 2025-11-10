@@ -13,7 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 func IsURL(str string) bool {
@@ -182,7 +182,7 @@ func IsV3EmbeddedClusterInitialInstall(sequence int64) bool {
 }
 
 // ReplicatedAPIEndpoint returns the endpoint for the replicated.app API.
-func ReplicatedAppEndpoint(license *kotsv1beta1.License) string {
+func ReplicatedAppEndpoint(license *licensewrapper.LicenseWrapper) string {
 	if ep := os.Getenv("REPLICATED_APP_ENDPOINT"); ep != "" {
 		return ep
 	}
@@ -200,8 +200,8 @@ func ReplicatedAppEndpoint(license *kotsv1beta1.License) string {
 		return ep
 	}
 
-	if license != nil {
-		return license.Spec.Endpoint
+	if !license.IsEmpty() {
+		return license.GetEndpoint()
 	}
 
 	return "https://replicated.app"

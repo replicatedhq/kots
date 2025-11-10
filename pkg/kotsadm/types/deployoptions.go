@@ -5,6 +5,7 @@ import (
 	"time"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -24,7 +25,7 @@ type DeployOptions struct {
 	ApplicationMetadata    []byte
 	LimitRange             *corev1.LimitRange
 	IsOpenShift            bool
-	License                *kotsv1beta1.License
+	License                *licensewrapper.LicenseWrapper
 	LicenseData            string
 	ConfigValues           *kotsv1beta1.ConfigValues
 	AppVersionLabel        string

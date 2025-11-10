@@ -332,7 +332,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !license.Spec.IsSupportBundleUploadSupported {
+	if !license.IsSupportBundleUploadSupported() {
 		logger.Errorf("License does not have support bundle sharing enabled")
 		JSON(w, http.StatusForbidden, nil)
 		return
@@ -368,7 +368,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", util.ReplicatedAppEndpoint(license), license.Spec.AppSlug)
+	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", util.ReplicatedAppEndpoint(license), license.GetAppSlug())
 
 	req, err := util.NewRetryableRequest("POST", endpoint, f)
 	if err != nil {
@@ -385,7 +385,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	req.ContentLength = fileStat.Size()
 
-	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
+	req.SetBasicAuth(license.GetLicenseID(), license.GetLicenseID())
 
 	resp, err := util.DefaultHTTPClient.Do(req)
 	if err != nil {

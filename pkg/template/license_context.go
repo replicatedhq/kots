@@ -9,12 +9,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
-	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type licenseCtx struct {
-	License *kotsv1beta1.License
+	License *licensewrapper.LicenseWrapper
 
 	// DEPRECATED: App is optional, but if provided, it will be used to determine the registry domains
 	App *kotsv1beta1.Application
@@ -32,8 +32,8 @@ func (ctx licenseCtx) FuncMap() template.FuncMap {
 }
 
 func (ctx licenseCtx) licenseFieldValue(name string) string {
-	// return "" for a nil license - it's better than an error, which makes the template engine return "" for the full string
-	if ctx.License == nil {
+	// return "" for a nil/empty license - it's better than an error, which makes the template engine return "" for the full string
+	if ctx.License.IsEmpty() {
 		return ""
 	}
 
@@ -41,57 +41,64 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 	// when adding new values
 	switch name {
 	case "isSnapshotSupported":
-		return strconv.FormatBool(ctx.License.Spec.IsSnapshotSupported)
+		return strconv.FormatBool(ctx.License.IsSnapshotSupported())
 	case "IsDisasterRecoverySupported":
-		return strconv.FormatBool(ctx.License.Spec.IsDisasterRecoverySupported)
+		return strconv.FormatBool(ctx.License.IsDisasterRecoverySupported())
 	case "isGitOpsSupported":
-		return strconv.FormatBool(ctx.License.Spec.IsGitOpsSupported)
+		return strconv.FormatBool(ctx.License.IsGitOpsSupported())
 	case "isSupportBundleUploadSupported":
-		return strconv.FormatBool(ctx.License.Spec.IsSupportBundleUploadSupported)
+		return strconv.FormatBool(ctx.License.IsSupportBundleUploadSupported())
 	case "isEmbeddedClusterMultiNodeEnabled":
-		return strconv.FormatBool(ctx.License.Spec.IsEmbeddedClusterMultiNodeEnabled)
+		return strconv.FormatBool(ctx.License.IsEmbeddedClusterMultiNodeEnabled())
 	case "isIdentityServiceSupported":
-		return strconv.FormatBool(ctx.License.Spec.IsIdentityServiceSupported)
+		return strconv.FormatBool(ctx.License.IsIdentityServiceSupported())
 	case "isGeoaxisSupported":
-		return strconv.FormatBool(ctx.License.Spec.IsGeoaxisSupported)
+		return strconv.FormatBool(ctx.License.IsGeoaxisSupported())
 	case "isAirgapSupported":
-		return strconv.FormatBool(ctx.License.Spec.IsAirgapSupported)
+		return strconv.FormatBool(ctx.License.IsAirgapSupported())
 	case "licenseType":
-		return ctx.License.Spec.LicenseType
+		return ctx.License.GetLicenseType()
 	case "licenseSequence":
-		return strconv.FormatInt(ctx.License.Spec.LicenseSequence, 10)
+		return strconv.FormatInt(ctx.License.GetLicenseSequence(), 10)
 	case "signature":
-		return string(ctx.License.Spec.Signature)
+		return string(ctx.License.GetSignature())
 	case "appSlug":
-		return ctx.License.Spec.AppSlug
+		return ctx.License.GetAppSlug()
 	case "channelID":
-		return ctx.License.Spec.ChannelID
+		return ctx.License.GetChannelID()
 	case "channelName":
-		return ctx.License.Spec.ChannelName
+		return ctx.License.GetChannelName()
 	case "isSemverRequired":
-		return strconv.FormatBool(ctx.License.Spec.IsSemverRequired)
+		return strconv.FormatBool(ctx.License.IsSemverRequired())
 	case "customerName":
-		return ctx.License.Spec.CustomerName
+		return ctx.License.GetCustomerName()
 	case "endpoint":
-		return util.ReplicatedAppEndpoint(ctx.License)
+		endpoint := ctx.License.GetEndpoint()
+		if endpoint == "" {
+			endpoint = "https://replicated.app"
+		}
+		return endpoint
 	case "licenseID", "licenseId":
-		return ctx.License.Spec.LicenseID
+		return ctx.License.GetLicenseID()
 	default:
-		entitlement, ok := ctx.License.Spec.Entitlements[name]
+		entitlements := ctx.License.GetEntitlements()
+		entitlement, ok := entitlements[name]
 		if ok {
-			return fmt.Sprintf("%v", entitlement.Value.Value())
+			value := entitlement.GetValue()
+			return fmt.Sprintf("%v", (&value).Value())
 		}
 		return ""
 	}
 }
 
 func (ctx licenseCtx) licenseDockercfg() (string, error) {
-	// return "" for a nil license - it's better than an error, which makes the template engine return "" for the full string
-	if ctx.License == nil {
+	// return "" for a nil/empty license - it's better than an error, which makes the template engine return "" for the full string
+	if ctx.License.IsEmpty() {
 		return "", nil
 	}
 
-	auth := fmt.Sprintf("%s:%s", "LICENSE_ID", ctx.License.Spec.LicenseID)
+	licenseID := ctx.License.GetLicenseID()
+	auth := fmt.Sprintf("%s:%s", "LICENSE_ID", licenseID)
 	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
 
 	installation := &kotsv1beta1.Installation{

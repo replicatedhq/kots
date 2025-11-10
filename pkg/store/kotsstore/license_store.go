@@ -12,13 +12,13 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/rqlite/gorqlite"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
-func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error) {
+func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*licensewrapper.LicenseWrapper, error) {
 	db := persistence.MustGetDBSession()
 	query := `select license from app where id = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
@@ -37,16 +37,17 @@ func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, 
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+	// Use licensewrapper to auto-detect version (v1beta1 or v1beta2)
+	wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseStr.String))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode license yaml")
 	}
-	license := obj.(*kotsv1beta1.License)
-	return license, nil
+	// Create heap-allocated copy to avoid returning pointer to stack value
+	license := wrapper
+	return &license, nil
 }
 
-func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
+func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*licensewrapper.LicenseWrapper, error) {
 	db := persistence.MustGetDBSession()
 	query := `select kots_license from app_version where app_id = ? and sequence = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
@@ -66,19 +67,21 @@ func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*kots
 	}
 
 	if licenseStr.Valid {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+		// Use licensewrapper to auto-detect version (v1beta1 or v1beta2)
+		wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseStr.String))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode license yaml")
+			return nil, errors.Wrap(err, "failed to load license from bytes")
 		}
-		license := obj.(*kotsv1beta1.License)
-		return license, nil
+		// Create heap-allocated copy to avoid returning pointer to stack value
+		license := wrapper
+		return &license, nil
 	}
 
+	// Return nil (no license for this version)
 	return nil, nil
 }
 
-func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
+func (s *KOTSStore) GetAllAppLicenses() ([]*licensewrapper.LicenseWrapper, error) {
 	db := persistence.MustGetDBSession()
 	query := `select license from app`
 	rows, err := db.QueryOne(query)
@@ -87,34 +90,42 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	}
 
 	var licenseStr gorqlite.NullString
-	licenses := []*kotsv1beta1.License{}
+	licenses := []*licensewrapper.LicenseWrapper{}
 	for rows.Next() {
 		if err := rows.Scan(&licenseStr); err != nil {
 			return nil, errors.Wrap(err, "failed to scan")
 		}
 		if licenseStr.Valid {
-			decode := scheme.Codecs.UniversalDeserializer().Decode
-			obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+			// Use licensewrapper to auto-detect version (v1beta1 or v1beta2)
+			wrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseStr.String))
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to decode license yaml")
+				return nil, errors.Wrap(err, "failed to load license from bytes")
 			}
-			license := obj.(*kotsv1beta1.License)
-			licenses = append(licenses, license)
+			// Create heap-allocated copy for each iteration to avoid pointer aliasing
+			licenseCopy := wrapper
+			licenses = append(licenses, &licenseCopy)
 		}
 	}
 
 	return licenses, nil
 }
 
-func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error) {
+func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *licensewrapper.LicenseWrapper, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error) {
 	db := persistence.MustGetDBSession()
 
 	statements := []gorqlite.ParameterizedStatement{}
 
+	// Marshal license to YAML (handle both v1beta1 and v1beta2)
 	ser := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
-	if err := ser.Encode(newLicense, &b); err != nil {
-		return int64(0), errors.Wrap(err, "failed to encode license")
+	if newLicense.IsV1() {
+		if err := ser.Encode(newLicense.V1, &b); err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal v1beta1 license")
+		}
+	} else if newLicense.IsV2() {
+		if err := ser.Encode(newLicense.V2, &b); err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal v1beta2 license")
+		}
 	}
 	encodedLicense := b.Bytes()
 	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), encodedLicense, 0644); err != nil {
@@ -130,7 +141,7 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 	// and we should skip updating selected_channel_id in the app table. If there's only a single entry,
 	// we should update the selected_channel_id in the app table to ensure it stays consistent across channel
 	// changes. This is a temporary solution until channel changes on true multi-channel licenses are supported.
-	if len(newLicense.Spec.Channels) > 1 {
+	if len(newLicense.GetChannels()) > 1 {
 		logger.Debug("Skipping selected_channel_id update for multi-channel license")
 		//  app has the original license data received from the server
 		statements = append(statements, gorqlite.ParameterizedStatement{
@@ -141,9 +152,9 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 		//  app has the original license data received from the server
 		statements = append(statements, gorqlite.ParameterizedStatement{
 			Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ?, selected_channel_id = ? where id = ?`,
-			Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, newLicense.Spec.ChannelID, appID},
+			Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, newLicense.GetChannelID(), appID},
 		})
-		selectedChannelId = newLicense.Spec.ChannelID
+		selectedChannelId = newLicense.GetChannelID()
 	}
 
 	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, renderer, reportingInfo, selectedChannelId)

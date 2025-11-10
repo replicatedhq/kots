@@ -232,6 +232,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
+	// FindChannelInLicense now accepts LicenseWrapper
 	licenseChan, err := kotsutil.FindChannelInLicense(a.SelectedChannelID, latestLicense)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find channel in license after sync")
@@ -253,8 +254,8 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		ReportingInfo:      reporting.GetReportingInfo(a.ID),
 	}
 
-	// get updates
-	updates, err := getUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
+	// get updates - use wrapper method to get AppSlug (works for both v1beta1 and v1beta2)
+	updates, err := getUpdates(fmt.Sprintf("replicated://%s", latestLicense.GetAppSlug()), getUpdatesOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get updates")
 	}
@@ -366,7 +367,7 @@ func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull
 		getUpdatesOptions.CurrentChannelName = ""
 	}
 
-	updates, err := getUpdates(fmt.Sprintf("replicated://%s", getUpdatesOptions.License.Spec.AppSlug), getUpdatesOptions)
+	updates, err := getUpdates(fmt.Sprintf("replicated://%s", getUpdatesOptions.License.GetAppSlug()), getUpdatesOptions)
 	if err != nil {
 		return errors.Wrap(err, "get updates for metadata refresh")
 	}

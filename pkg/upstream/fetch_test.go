@@ -8,6 +8,7 @@ import (
 
 	types "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,21 +62,23 @@ ACgAAA==`,
 			RootDir:             workDir,
 			LocalPath:           srcDir,
 			CurrentVersionLabel: test.currentVersionLabel,
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					Endpoint: "http://localhost",
-					AppSlug:  "app-slug",
-					Channels: []kotsv1beta1.Channel{
-						{
-							ChannelID:   "channel-1",
-							ChannelName: "ChannelOne",
-							ChannelSlug: "channel-one",
-							IsDefault:   true,
-						},
-						{
-							ChannelID:   "channel-2",
-							ChannelName: "ChannelTwo",
-							ChannelSlug: "channel-two",
+			License: &licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						Endpoint: "http://localhost",
+						AppSlug:  "app-slug",
+						Channels: []kotsv1beta1.Channel{
+							{
+								ChannelID:   "channel-1",
+								ChannelName: "ChannelOne",
+								ChannelSlug: "channel-one",
+								IsDefault:   true,
+							},
+							{
+								ChannelID:   "channel-2",
+								ChannelName: "ChannelTwo",
+								ChannelSlug: "channel-two",
+							},
 						},
 					},
 				},

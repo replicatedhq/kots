@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skipCompatibilityCheck bool) (finalSequence *int64, finalError error) {
@@ -79,7 +80,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}
 
 		var kotsApplication *kotsv1beta1.Application
-		var license *kotsv1beta1.License
+		var license *licensewrapper.LicenseWrapper
 		if cause, ok := errors.Cause(finalError).(upstream.IncompatibleAppError); ok {
 			errMsg = cause.Error()
 			kotsApplication = cause.KotsApplication
@@ -248,7 +249,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		pullOptions.NoProxyEnvValue = os.Getenv("no_proxy")
 	}
 
-	_, err = pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions)
+	_, err = pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.GetAppSlug()), pullOptions)
 	if err != nil {
 		if errors.Cause(err) != pull.ErrConfigNeeded {
 			finalError = errors.Wrap(err, "failed to pull")

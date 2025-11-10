@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -66,12 +67,12 @@ type ConfigCtx struct {
 	AppSlug           string
 	DecryptValues     bool
 
-	license *kotsv1beta1.License // Another agument for unifying all these contexts
+	license *licensewrapper.LicenseWrapper // Another agument for unifying all these contexts
 	app     *kotsv1beta1.Application
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry registrytypes.RegistrySettings, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions, appSlug string, decryptValues bool) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry registrytypes.RegistrySettings, license *licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions, appSlug string, decryptValues bool) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
@@ -332,8 +333,8 @@ func (ctx ConfigCtx) localImageName(imageRef string) (string, error) {
 	}
 
 	licenseAppSlug := ""
-	if ctx.license != nil {
-		licenseAppSlug = ctx.license.Spec.AppSlug
+	if !ctx.license.IsEmpty() {
+		licenseAppSlug = ctx.license.GetAppSlug()
 	}
 
 	newImage, err := image.RewritePrivateImage(registryOptions, imageRef, licenseAppSlug)
@@ -366,8 +367,8 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() (string, error) {
 		secret = secrets.AppSecret
 	} else {
 		licenseIDString := ""
-		if ctx.license != nil {
-			licenseIDString = ctx.license.Spec.LicenseID
+		if !ctx.license.IsEmpty() {
+			licenseIDString = ctx.license.GetLicenseID()
 		}
 
 		installation := &kotsv1beta1.Installation{

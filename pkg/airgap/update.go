@@ -24,7 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 func UpdateAppFromECBundle(appSlug string, airgapBundlePath string) (finalError error) {
@@ -118,7 +118,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
 
-	if beforeKotsKinds.License == nil {
+	if !beforeKotsKinds.HasLicense() {
 		err := errors.New("no license found in application")
 		return err
 	}
@@ -160,9 +160,9 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}()
 
 	// Using license from db instead of upstream bundle because the one in db has not been re-marshalled
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+	license, err := licensewrapper.LoadLicenseFromBytes([]byte(a.License))
 	if err != nil {
-		return errors.Wrap(err, "failed parse license")
+		return errors.Wrap(err, "failed to parse license")
 	}
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
@@ -183,7 +183,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 	pullOptions := pull.PullOptions{
 		Downstreams:            downstreamNames,
-		LicenseObj:             license,
+		LicenseObj:             &license,
 		Namespace:              appNamespace,
 		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:     identityConfigFile,
@@ -208,7 +208,11 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		KotsKinds:              beforeKotsKinds,
 	}
 
-	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
+	appSlug := ""
+	if beforeKotsKinds.HasLicense() {
+		appSlug = beforeKotsKinds.License.GetAppSlug()
+	}
+	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", appSlug), pullOptions); err != nil {
 		if errors.Cause(err) != pull.ErrConfigNeeded {
 			return errors.Wrap(err, "failed to pull")
 		}
@@ -219,12 +223,13 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to read after kotskinds")
 	}
 
-	license, err = store.GetStore().GetLatestLicenseForApp(a.ID)
+	// Get the latest license for version checking
+	latestLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get latest license")
 	}
 
-	if err := canInstall(beforeKotsKinds, afterKotsKinds, license); err != nil {
+	if err := canInstall(beforeKotsKinds, afterKotsKinds, latestLicense); err != nil {
 		return errors.Wrap(err, "cannot install")
 	}
 
@@ -258,14 +263,14 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	return nil
 }
 
-func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License) error {
+func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds, license *licensewrapper.LicenseWrapper) error {
 	if util.IsV3EmbeddedCluster() {
 		// Update version checks in V3 EC are handled separately
 		return nil
 	}
 
 	var beforeSemver, afterSemver *semver.Version
-	if license.Spec.IsSemverRequired {
+	if license != nil && license.IsSemverRequired() {
 		if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
 			beforeSemver = &v
 		}
@@ -301,9 +306,15 @@ func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.Ko
 		}
 
 		installChannelID := beforeKotsKinds.Installation.Spec.ChannelID
-		licenseChannelID := beforeKotsKinds.License.Spec.ChannelID
+		licenseChannelID := ""
+		if beforeKotsKinds.HasLicense() {
+			licenseChannelID = beforeKotsKinds.License.GetChannelID()
+		}
 		installChannelName := beforeKotsKinds.Installation.Spec.ChannelName
-		licenseChannelName := beforeKotsKinds.License.Spec.ChannelName
+		licenseChannelName := ""
+		if beforeKotsKinds.HasLicense() {
+			licenseChannelName = beforeKotsKinds.License.GetChannelName()
+		}
 		if (installChannelID != "" && licenseChannelID != "" && installChannelID == licenseChannelID) || (installChannelName == licenseChannelName) {
 			if bc.Equal(ac) {
 				isSameVersion = true

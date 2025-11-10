@@ -28,6 +28,7 @@ import (
 	types13 "github.com/replicatedhq/kots/pkg/upstream/types"
 	types14 "github.com/replicatedhq/kots/pkg/user/types"
 	v1beta10 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	licensewrapper "github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	redact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 
@@ -171,7 +172,7 @@ func (mr *MockStoreMockRecorder) CreateNewCluster(userID, isAllUsers, title, tok
 }
 
 // CreatePendingDownloadAppVersion mocks base method.
-func (m *MockStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta10.Application, license *v1beta10.License) (int64, error) {
+func (m *MockStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta10.Application, license *licensewrapper.LicenseWrapper) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update, kotsApplication, license)
 	ret0, _ := ret[0].(int64)
@@ -386,10 +387,10 @@ func (mr *MockStoreMockRecorder) GetAirgapInstallStatus(appID interface{}) *gomo
 }
 
 // GetAllAppLicenses mocks base method.
-func (m *MockStore) GetAllAppLicenses() ([]*v1beta10.License, error) {
+func (m *MockStore) GetAllAppLicenses() ([]*licensewrapper.LicenseWrapper, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllAppLicenses")
-	ret0, _ := ret[0].([]*v1beta10.License)
+	ret0, _ := ret[0].([]*licensewrapper.LicenseWrapper)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -853,10 +854,10 @@ func (mr *MockStoreMockRecorder) GetLatestDeployableDownstreamVersion(appID, clu
 }
 
 // GetLatestLicenseForApp mocks base method.
-func (m *MockStore) GetLatestLicenseForApp(appID string) (*v1beta10.License, error) {
+func (m *MockStore) GetLatestLicenseForApp(appID string) (*licensewrapper.LicenseWrapper, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestLicenseForApp", appID)
-	ret0, _ := ret[0].(*v1beta10.License)
+	ret0, _ := ret[0].(*licensewrapper.LicenseWrapper)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -868,10 +869,10 @@ func (mr *MockStoreMockRecorder) GetLatestLicenseForApp(appID interface{}) *gomo
 }
 
 // GetLicenseForAppVersion mocks base method.
-func (m *MockStore) GetLicenseForAppVersion(appID string, sequence int64) (*v1beta10.License, error) {
+func (m *MockStore) GetLicenseForAppVersion(appID string, sequence int64) (*licensewrapper.LicenseWrapper, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLicenseForAppVersion", appID, sequence)
-	ret0, _ := ret[0].(*v1beta10.License)
+	ret0, _ := ret[0].(*licensewrapper.LicenseWrapper)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1800,7 +1801,7 @@ func (mr *MockStoreMockRecorder) SetUpdateCheckerSpec(appID, updateCheckerSpec i
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta10.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, renderer types9.Renderer, reportingInfo *types1.ReportingInfo) (int64, error) {
+func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *licensewrapper.LicenseWrapper, originalLicenseData string, channelChanged, failOnVersionCreate bool, renderer types9.Renderer, reportingInfo *types1.ReportingInfo) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, renderer, reportingInfo)
 	ret0, _ := ret[0].(int64)
@@ -3524,7 +3525,7 @@ func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, baseSequence, fi
 }
 
 // CreatePendingDownloadAppVersion mocks base method.
-func (m *MockVersionStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta10.Application, license *v1beta10.License) (int64, error) {
+func (m *MockVersionStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta10.Application, license *licensewrapper.LicenseWrapper) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update, kotsApplication, license)
 	ret0, _ := ret[0].(int64)
@@ -3813,10 +3814,10 @@ func (m *MockLicenseStore) EXPECT() *MockLicenseStoreMockRecorder {
 }
 
 // GetAllAppLicenses mocks base method.
-func (m *MockLicenseStore) GetAllAppLicenses() ([]*v1beta10.License, error) {
+func (m *MockLicenseStore) GetAllAppLicenses() ([]*licensewrapper.LicenseWrapper, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllAppLicenses")
-	ret0, _ := ret[0].([]*v1beta10.License)
+	ret0, _ := ret[0].([]*licensewrapper.LicenseWrapper)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3828,10 +3829,10 @@ func (mr *MockLicenseStoreMockRecorder) GetAllAppLicenses() *gomock.Call {
 }
 
 // GetLatestLicenseForApp mocks base method.
-func (m *MockLicenseStore) GetLatestLicenseForApp(appID string) (*v1beta10.License, error) {
+func (m *MockLicenseStore) GetLatestLicenseForApp(appID string) (*licensewrapper.LicenseWrapper, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestLicenseForApp", appID)
-	ret0, _ := ret[0].(*v1beta10.License)
+	ret0, _ := ret[0].(*licensewrapper.LicenseWrapper)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3843,10 +3844,10 @@ func (mr *MockLicenseStoreMockRecorder) GetLatestLicenseForApp(appID interface{}
 }
 
 // GetLicenseForAppVersion mocks base method.
-func (m *MockLicenseStore) GetLicenseForAppVersion(appID string, sequence int64) (*v1beta10.License, error) {
+func (m *MockLicenseStore) GetLicenseForAppVersion(appID string, sequence int64) (*licensewrapper.LicenseWrapper, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLicenseForAppVersion", appID, sequence)
-	ret0, _ := ret[0].(*v1beta10.License)
+	ret0, _ := ret[0].(*licensewrapper.LicenseWrapper)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3858,7 +3859,7 @@ func (mr *MockLicenseStoreMockRecorder) GetLicenseForAppVersion(appID, sequence 
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta10.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, renderer types9.Renderer, reportingInfo *types1.ReportingInfo) (int64, error) {
+func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *licensewrapper.LicenseWrapper, originalLicenseData string, channelChanged, failOnVersionCreate bool, renderer types9.Renderer, reportingInfo *types1.ReportingInfo) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, renderer, reportingInfo)
 	ret0, _ := ret[0].(int64)

@@ -30,6 +30,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	kurlscheme "github.com/replicatedhq/kurlkinds/client/kurlclientset/scheme"
 	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
@@ -101,7 +102,7 @@ type KotsKinds struct {
 	ConfigValues *kotsv1beta1.ConfigValues
 
 	Installation kotsv1beta1.Installation
-	License      *kotsv1beta1.License
+	License      *licensewrapper.LicenseWrapper // CHANGED: Supports both v1beta1 and v1beta2
 
 	Identity       *kotsv1beta1.Identity
 	IdentityConfig *kotsv1beta1.IdentityConfig
@@ -113,6 +114,23 @@ type KotsKinds struct {
 	LintConfig *kotsv1beta1.LintConfig
 
 	EmbeddedClusterConfig *embeddedclusterv1beta1.Config
+}
+
+// GetLicenseVersion returns "v1beta1" or "v1beta2" depending on which license is present.
+// Returns empty string if no license is present.
+func (k *KotsKinds) GetLicenseVersion() string {
+	if k.License.IsV2() {
+		return "v1beta2"
+	}
+	if k.License.IsV1() {
+		return "v1beta1"
+	}
+	return ""
+}
+
+// HasLicense returns true if a license exists (either v1beta1 or v1beta2).
+func (k *KotsKinds) HasLicense() bool {
+	return !k.License.IsEmpty()
 }
 
 func IsKotsKind(apiVersion string, kind string) bool {
@@ -231,10 +249,10 @@ func (k *KotsKinds) DecryptConfigValues() error {
 }
 
 func (k *KotsKinds) IsMultiNodeEnabled() bool {
-	if k == nil || k.License == nil {
+	if k == nil || !k.HasLicense() {
 		return false
 	}
-	return k.License.Spec.IsEmbeddedClusterMultiNodeEnabled
+	return k.License.IsEmbeddedClusterMultiNodeEnabled() // Use wrapper method
 }
 
 func (k *KotsKinds) IsConfigurable() bool {
@@ -287,12 +305,19 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 				}
 				return string(b.Bytes()), nil
 			case "License":
-				if o.License == nil {
+				if !o.HasLicense() {
 					return "", nil
 				}
+				// Marshal whichever version is present
 				var b bytes.Buffer
-				if err := s.Encode(o.License, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode license")
+				if o.License.IsV1() {
+					if err := s.Encode(o.License.V1, &b); err != nil {
+						return "", errors.Wrap(err, "failed to encode v1beta1 license")
+					}
+				} else if o.License.IsV2() {
+					if err := s.Encode(o.License.V2, &b); err != nil {
+						return "", errors.Wrap(err, "failed to encode v1beta2 license")
+					}
 				}
 				return string(b.Bytes()), nil
 			case "Config":
@@ -343,6 +368,23 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 			}
 		} else if v == "v1beta2" {
 			switch k {
+			case "License":
+				if !o.HasLicense() {
+					return "", nil
+				}
+				// Marshal whichever version is present
+				var b bytes.Buffer
+				if o.License.IsV2() {
+					if err := s.Encode(o.License.V2, &b); err != nil {
+						return "", errors.Wrap(err, "failed to encode v1beta2 license")
+					}
+				} else if o.License.IsV1() {
+					// v1beta2 was requested but we have v1beta1 - marshal it anyway
+					if err := s.Encode(o.License.V1, &b); err != nil {
+						return "", errors.Wrap(err, "failed to encode v1beta1 license as v1beta2")
+					}
+				}
+				return string(b.Bytes()), nil
 			case "HelmChartList":
 				if o.V1Beta2HelmCharts == nil {
 					return "", nil
@@ -527,7 +569,9 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 		case "kots.io/v1beta1, Kind=Application":
 			k.KotsApplication = *decoded.(*kotsv1beta1.Application)
 		case "kots.io/v1beta1, Kind=License":
-			k.License = decoded.(*kotsv1beta1.License)
+			k.License = &licensewrapper.LicenseWrapper{V1: decoded.(*kotsv1beta1.License)}
+		case "kots.io/v1beta2, Kind=License":
+			k.License = &licensewrapper.LicenseWrapper{V2: decoded.(*kotsv1beta2.License)}
 		case "kots.io/v1beta1, Kind=Identity":
 			k.Identity = decoded.(*kotsv1beta1.Identity)
 		case "kots.io/v1beta1, Kind=IdentityConfig":
@@ -954,6 +998,9 @@ func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Install
 	return obj.(*kotsv1beta1.Installation), nil
 }
 
+// LoadLicenseFromPath deserializes a KOTS License file from a specified path.
+// Deprecated: Use github.com/replicatedhq/kotskinds/pkg/licensewrapper.LoadLicenseFromPath directly.
+// This function only returns v1beta1 licenses for backward compatibility. For v1beta2 support, use the wrapper.
 func LoadLicenseFromPath(licenseFilePath string) (*kotsv1beta1.License, error) {
 	licenseData, err := os.ReadFile(licenseFilePath)
 	if err != nil {
@@ -963,6 +1010,9 @@ func LoadLicenseFromPath(licenseFilePath string) (*kotsv1beta1.License, error) {
 	return LoadLicenseFromBytes(licenseData)
 }
 
+// LoadLicenseFromBytes deserializes a KOTS License from bytes.
+// Deprecated: Use github.com/replicatedhq/kotskinds/pkg/licensewrapper.LoadLicenseFromBytes directly.
+// This function only returns v1beta1 licenses for backward compatibility. For v1beta2 support, use the wrapper.
 func LoadLicenseFromBytes(data []byte) (*kotsv1beta1.License, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
@@ -970,8 +1020,13 @@ func LoadLicenseFromBytes(data []byte) (*kotsv1beta1.License, error) {
 		return nil, errors.Wrap(err, "failed to decode license data")
 	}
 
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
+	if gvk.Group != "kots.io" || gvk.Kind != "License" {
 		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	// Only return v1beta1 for backward compatibility
+	if gvk.Version != "v1beta1" {
+		return nil, errors.Errorf("expected v1beta1 license, got %s (use licensewrapper for multi-version support)", gvk.Version)
 	}
 
 	return obj.(*kotsv1beta1.License), nil
@@ -1674,15 +1729,21 @@ func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
 	return ecVersion, nil
 }
 
-func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) (string, error) {
+func FindChannelIDInLicense(requestedSlug string, license *licensewrapper.LicenseWrapper) (string, error) {
+	// Add validation at start
+	if license.IsEmpty() {
+		return "", errors.New("invalid license: must be v1beta1 or v1beta2")
+	}
+
 	matchedChannelID := ""
 	if requestedSlug != "" {
 		// if we do not have a Channels array or its empty, default to using the top level fields for backwards compatibility
-		if len(license.Spec.Channels) == 0 {
+		channels := license.GetChannels()
+		if len(channels) == 0 {
 			logger.Debug("not a multi-channel license, using top level license channel id")
-			matchedChannelID = license.Spec.ChannelID
+			matchedChannelID = license.GetChannelID()
 		} else {
-			for _, channel := range license.Spec.Channels {
+			for _, channel := range channels {
 				if channel.ChannelSlug == requestedSlug {
 					matchedChannelID = channel.ChannelID
 					break
@@ -1694,45 +1755,50 @@ func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) 
 		}
 	} else { // this is an install from before the channel slug was added to the configmap
 		logger.Debug("requested channel slug not found in configmap, using top level channel id from license")
-		matchedChannelID = license.Spec.ChannelID
+		matchedChannelID = license.GetChannelID()
 	}
 	return matchedChannelID, nil
 }
 
-func FindChannelInLicense(channelID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
+func FindChannelInLicense(channelID string, license *licensewrapper.LicenseWrapper) (*kotsv1beta1.Channel, error) {
 	if channelID == "" {
 		return nil, errors.New("channelID is required")
 	}
-	if len(license.Spec.Channels) == 0 {
-		if license.Spec.ChannelID != channelID {
+	if license.IsEmpty() {
+		return nil, errors.New("invalid license: must be v1beta1 or v1beta2")
+	}
+
+	channels := license.GetChannels()
+	if len(channels) == 0 {
+		if license.GetChannelID() != channelID {
 			return nil, errors.New("channel not found in non-multi channel license")
 		}
 		// this is an install from before multi channel support, so emulate it using the top level info
 		return &kotsv1beta1.Channel{
-			ChannelID:        license.Spec.ChannelID,
-			ChannelName:      license.Spec.ChannelName,
+			ChannelID:        license.GetChannelID(),
+			ChannelName:      license.GetChannelName(),
 			IsDefault:        true,
-			IsSemverRequired: license.Spec.IsSemverRequired,
+			IsSemverRequired: license.IsSemverRequired(),
 		}, nil
 	}
 
-	for _, channel := range license.Spec.Channels {
+	for _, channel := range channels {
 		if channel.ChannelID == channelID {
 			return &channel, nil
 		}
 	}
 
-	logger.Warnf("channel id '%s' not found in multi channel license with sequence %d", channelID, license.Spec.LicenseSequence)
+	logger.Warnf("channel id '%s' not found in multi channel license with sequence %d", channelID, license.GetLicenseSequence())
 	return nil, errors.New("channel not found in multi channel format license")
 }
 
-func GetDefaultChannelIDFromLicense(license *kotsv1beta1.License) string {
-	for _, channel := range license.Spec.Channels {
+func GetDefaultChannelIDFromLicense(license *licensewrapper.LicenseWrapper) string {
+	for _, channel := range license.GetChannels() {
 		if channel.IsDefault {
 			return channel.ChannelID
 		}
 	}
 	// either this isn't a multi channel license or the default channel is not set
 	// either way we should fall back to the top level channel id for backwards compatibility
-	return license.Spec.ChannelID
+	return license.GetChannelID()
 }

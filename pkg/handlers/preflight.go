@@ -364,6 +364,12 @@ func (h *Handler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
 	clusterID := downstreams[0].ClusterID
 
 	go func() {
+		// Skip reporting if no license available
+		if license.IsEmpty() {
+			logger.Debugf("skipping preflight data submission: no license available")
+			return
+		}
+
 		if err := reporting.GetReporter().SubmitPreflightData(license, foundApp.ID, clusterID, 0, true, "", false, "", ""); err != nil {
 			logger.Debugf("failed to submit preflight data: %v", err)
 			return

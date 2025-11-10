@@ -35,6 +35,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -247,7 +248,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	var kotsKinds *kotsutil.KotsKinds
 	var nonRenderedConfig *kotsv1beta1.Config
-	var appLicense *kotsv1beta1.License
+	var appLicense *licensewrapper.LicenseWrapper
 	var localRegistry registrytypes.RegistrySettings
 
 	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
@@ -419,7 +420,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	var kotsKinds *kotsutil.KotsKinds
 	var nonRenderedConfig *kotsv1beta1.Config
-	var license *kotsv1beta1.License
+	var license *licensewrapper.LicenseWrapper
 	var localRegistry registrytypes.RegistrySettings
 	var downstreamVersion *downstreamtypes.DownstreamVersion
 

@@ -7,13 +7,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 func TestValidateServiceAccountToken(t *testing.T) {
 	tests := []struct {
 		name                string
 		token               string
-		currentLicenseID    string
+		currentLicense      *licensewrapper.LicenseWrapper
 		expectError         bool
 		errorContains       string
 		expectSecretUpdated bool
@@ -21,63 +23,77 @@ func TestValidateServiceAccountToken(t *testing.T) {
 		{
 			name:                "same token matches itself",
 			token:               "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
-			currentLicenseID:    "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
+			currentLicense:      createTestLicenseWrapper("eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9"),
 			expectError:         false,
 			expectSecretUpdated: false,
 		},
 		{
 			name:                "same identity different secret matches",
 			token:               "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
-			currentLicenseID:    "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkZFVkd4YXp5UEhIU3BPYk5mTG53Y25COCJ9",
+			currentLicense:      createTestLicenseWrapper("eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkZFVkd4YXp5UEhIU3BPYk5mTG53Y25COCJ9"),
 			expectError:         false,
 			expectSecretUpdated: true,
 		},
 		{
-			name:             "different identity does not match",
-			token:            "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkZFVkd4YXp5UEhIU3BPYk5mTG53Y25BOCJ9",
-			currentLicenseID: "eyJpIjoiMno0NW5UQUVvMEtUYVlaZnZ0elg4VjdoVWtuIiwicyI6IjJ6NDVuVFpUR1hsNTBweXpQRHhsNzBNWmVNYiJ9",
-			expectError:      true,
-			errorContains:    "Identity mismatch",
+			name:           "different identity does not match",
+			token:          "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkZFVkd4YXp5UEhIU3BPYk5mTG53Y25BOCJ9",
+			currentLicense: createTestLicenseWrapper("eyJpIjoiMno0NW5UQUVvMEtUYVlaZnZ0elg4VjdoVWtuIiwicyI6IjJ6NDVuVFpUR1hsNTBweXpQRHhsNzBNWmVNYiJ9"),
+			expectError:    true,
+			errorContains:  "Identity mismatch",
 		},
 		{
-			name:             "invalid base64 token",
-			token:            "invalid-base64!",
-			currentLicenseID: "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
-			expectError:      true,
-			errorContains:    "failed to decode service account token",
+			name:           "invalid base64 token",
+			token:          "invalid-base64!",
+			currentLicense: createTestLicenseWrapper("eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9"),
+			expectError:    true,
+			errorContains:  "failed to decode service account token",
 		},
 		{
-			name:             "invalid json token",
-			token:            "aW52YWxpZC1qc29u", // base64 of "invalid-json"
-			currentLicenseID: "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
-			expectError:      true,
-			errorContains:    "failed to parse service account token",
+			name:           "invalid json token",
+			token:          "aW52YWxpZC1qc29u", // base64 of "invalid-json"
+			currentLicense: createTestLicenseWrapper("eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9"),
+			expectError:    true,
+			errorContains:  "failed to parse service account token",
 		},
 		{
-			name:             "empty identity in token",
-			token:            createTokenBase64("", "some-secret"),
-			currentLicenseID: "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
-			expectError:      true,
-			errorContains:    "service account token missing identity",
+			name:           "empty identity in token",
+			token:          createTokenBase64("", "some-secret"),
+			currentLicense: createTestLicenseWrapper("eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9"),
+			expectError:    true,
+			errorContains:  "service account token missing identity",
 		},
 		{
-			name:             "empty secret in token",
-			token:            createTokenBase64("some-identity", ""),
-			currentLicenseID: "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
-			expectError:      true,
-			errorContains:    "service account token missing secret",
+			name:           "empty secret in token",
+			token:          createTokenBase64("some-identity", ""),
+			currentLicense: createTestLicenseWrapper("eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9"),
+			expectError:    true,
+			errorContains:  "service account token missing secret",
 		},
 		{
-			name:             "plain text license ID does not match token identity",
-			token:            "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
-			currentLicenseID: "2z697ezZIGmZPUPtpgaDDWzX03X", // plain text identity
-			expectError:      true,
+			name:           "plain text license ID does not match token identity",
+			token:          "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
+			currentLicense: createTestLicenseWrapper("2z697ezZIGmZPUPtpgaDDWzX03X"), // plain text identity
+			expectError:    true,
+		},
+		{
+			name:           "nil license wrapper",
+			token:          "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
+			currentLicense: nil,
+			expectError:    true,
+			errorContains:  "current license is required",
+		},
+		{
+			name:           "empty license wrapper",
+			token:          "eyJpIjoiMno2OTdlelpJR21aUFVQdHBnYUREV3pYMDNYIiwicyI6IjJ6NkRXbzFTaDZNUlkxWEdOTmkyNEduODZSYyJ9",
+			currentLicense: &licensewrapper.LicenseWrapper{},
+			expectError:    true,
+			errorContains:  "current license is required",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, secretUpdated, err := ValidateServiceAccountToken(tt.token, tt.currentLicenseID)
+			result, secretUpdated, err := ValidateServiceAccountToken(tt.token, tt.currentLicense)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -104,6 +120,17 @@ func createTokenBase64(identity, secret string) string {
 	}
 	tokenBytes, _ := json.Marshal(token)
 	return base64.StdEncoding.EncodeToString(tokenBytes)
+}
+
+// Helper function to create a LicenseWrapper with the given license ID for testing
+func createTestLicenseWrapper(licenseID string) *licensewrapper.LicenseWrapper {
+	return &licensewrapper.LicenseWrapper{
+		V1: &kotsv1beta1.License{
+			Spec: kotsv1beta1.LicenseSpec{
+				LicenseID: licenseID,
+			},
+		},
+	}
 }
 
 func TestExtractIdentityFromToken(t *testing.T) {

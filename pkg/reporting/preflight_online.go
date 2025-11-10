@@ -9,10 +9,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
-func (r *OnlineReporter) SubmitPreflightData(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
+func (r *OnlineReporter) SubmitPreflightData(license *licensewrapper.LicenseWrapper, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
 	endpoint := util.ReplicatedAppEndpoint(license)
 	if !canReport(endpoint) {
 		return nil
@@ -33,7 +33,7 @@ func (r *OnlineReporter) SubmitPreflightData(license *kotsv1beta1.License, appID
 	if err != nil {
 		return errors.Wrap(err, "failed to call newrequest")
 	}
-	postReq.Header.Add("Authorization", license.Spec.LicenseID)
+	postReq.Header.Add("Authorization", license.GetLicenseID())
 	postReq.Header.Set("Content-Type", "application/json")
 
 	resp, err := util.DefaultHTTPClient.Do(postReq)

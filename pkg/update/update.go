@@ -15,7 +15,7 @@ import (
 	upstreampkg "github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +31,7 @@ func InitAvailableUpdatesDir() error {
 	return nil
 }
 
-func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
+func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *licensewrapper.LicenseWrapper) ([]types.AvailableUpdate, error) {
 	licenseChan, err := kotsutil.FindChannelInLicense(app.SelectedChannelID, license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find channel in license")
@@ -42,7 +42,7 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 		return nil, errors.Wrap(err, "failed to get current update cursor")
 	}
 
-	upstreamURI := fmt.Sprintf("replicated://%s", license.Spec.AppSlug)
+	upstreamURI := fmt.Sprintf("replicated://%s", license.GetAppSlug())
 	fetchOptions := &upstreamtypes.FetchOptions{
 		License:            license,
 		LastUpdateCheckAt:  app.LastUpdateCheckAt,
@@ -65,7 +65,7 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 	return availableUpdates, nil
 }
 
-func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
+func GetAvailableAirgapUpdates(app *apptypes.App, license *licensewrapper.LicenseWrapper) ([]types.AvailableUpdate, error) {
 	updates := []types.AvailableUpdate{}
 	if err := filepath.Walk(availableUpdatesDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -82,7 +82,7 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) 
 		if err != nil {
 			return errors.Wrap(err, "failed to find airgap metadata")
 		}
-		if airgap.Spec.AppSlug != license.Spec.AppSlug {
+		if airgap.Spec.AppSlug != license.GetAppSlug() {
 			return nil
 		}
 		if _, err = kotsutil.FindChannelInLicense(airgap.Spec.ChannelID, license); err != nil {

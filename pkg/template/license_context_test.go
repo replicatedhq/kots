@@ -6,22 +6,25 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLicenseContext_dockercfg(t *testing.T) {
 	tests := []struct {
 		name          string
-		License       *kotsv1beta1.License
+		License       licensewrapper.LicenseWrapper
 		App           *kotsv1beta1.Application
 		VersionInfo   *VersionInfo
 		expectDecoded map[string]interface{}
 	}{
 		{
 			name: "no app passed to license context should return defaults",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "abcdef",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "abcdef",
+					},
 				},
 			},
 			expectDecoded: map[string]interface{}{
@@ -37,9 +40,11 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 		},
 		{
 			name: "app passed with no custom registry domains should return defaults",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "abcdef",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "abcdef",
+					},
 				},
 			},
 			App: &kotsv1beta1.Application{
@@ -61,9 +66,11 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 		},
 		{
 			name: "app passed with custom registry domains should return custom domains",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "abcdef",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "abcdef",
+					},
 				},
 			},
 			App: &kotsv1beta1.Application{
@@ -85,9 +92,11 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 		},
 		{
 			name: "version info passed with custom domains should return custom domains",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "abcdef",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "abcdef",
+					},
 				},
 			},
 			VersionInfo: &VersionInfo{
@@ -107,9 +116,11 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 		},
 		{
 			name: "both app and version info are passed with custom domains should return custom domains from version info",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "abcdef",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "abcdef",
+					},
 				},
 			},
 			App: &kotsv1beta1.Application{
@@ -138,7 +149,7 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
-			ctx := licenseCtx{License: test.License, App: test.App, VersionInfo: test.VersionInfo}
+			ctx := licenseCtx{License: &test.License, App: test.App, VersionInfo: test.VersionInfo}
 
 			expectJson, err := json.Marshal(test.expectDecoded)
 			req.NoError(err)
@@ -155,25 +166,27 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 	tests := []struct {
 		name      string
-		License   *kotsv1beta1.License
+		License   licensewrapper.LicenseWrapper
 		fieldName string
 		want      string
 	}{
 		{
 			name:      "license is nil",
-			License:   nil,
+			License:   licensewrapper.LicenseWrapper{},
 			fieldName: "doesNotExist",
 			want:      "",
 		},
 		{
 			name: "licenseField does not exist",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"abc": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "abc",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						Entitlements: map[string]kotsv1beta1.EntitlementField{
+							"abc": {
+								Value: kotsv1beta1.EntitlementValue{
+									Type:   kotsv1beta1.String,
+									StrVal: "abc",
+								},
 							},
 						},
 					},
@@ -184,13 +197,15 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "exists as integer",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"integerField": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.Int,
-								IntVal: 587,
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						Entitlements: map[string]kotsv1beta1.EntitlementField{
+							"integerField": {
+								Value: kotsv1beta1.EntitlementValue{
+									Type:   kotsv1beta1.Int,
+									IntVal: 587,
+								},
 							},
 						},
 					},
@@ -201,13 +216,15 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "exists as string",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"strField": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "strValue",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						Entitlements: map[string]kotsv1beta1.EntitlementField{
+							"strField": {
+								Value: kotsv1beta1.EntitlementValue{
+									Type:   kotsv1beta1.String,
+									StrVal: "strValue",
+								},
 							},
 						},
 					},
@@ -218,14 +235,16 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in isGitOpsSupported",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsGitOpsSupported: true,
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"strField": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "strValue",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsGitOpsSupported: true,
+						Entitlements: map[string]kotsv1beta1.EntitlementField{
+							"strField": {
+								Value: kotsv1beta1.EntitlementValue{
+									Type:   kotsv1beta1.String,
+									StrVal: "strValue",
+								},
 							},
 						},
 					},
@@ -236,9 +255,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in isEmbeddedClusterMultiNodeEnabled",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsEmbeddedClusterMultiNodeEnabled: true,
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsEmbeddedClusterMultiNodeEnabled: true,
+					},
 				},
 			},
 			fieldName: "isEmbeddedClusterMultiNodeEnabled",
@@ -246,9 +267,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in isIdentityServiceSupported",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsIdentityServiceSupported: true,
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsIdentityServiceSupported: true,
+					},
 				},
 			},
 			fieldName: "isIdentityServiceSupported",
@@ -256,9 +279,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in isSnapshotSupported",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsSnapshotSupported: true,
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsSnapshotSupported: true,
+					},
 				},
 			},
 			fieldName: "isSnapshotSupported",
@@ -266,9 +291,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in IsDisasterRecoverySupported",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsDisasterRecoverySupported: true,
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsDisasterRecoverySupported: true,
+					},
 				},
 			},
 			fieldName: "IsDisasterRecoverySupported",
@@ -276,9 +303,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in isGeoaxisSupported",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsGeoaxisSupported: true,
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsGeoaxisSupported: true,
+					},
 				},
 			},
 			fieldName: "isGeoaxisSupported",
@@ -286,9 +315,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in isAirgapSupported",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsAirgapSupported: true,
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsAirgapSupported: true,
+					},
 				},
 			},
 			fieldName: "isAirgapSupported",
@@ -296,9 +327,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in licenseSequence",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseSequence: 987,
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseSequence: 987,
+					},
 				},
 			},
 			fieldName: "licenseSequence",
@@ -306,9 +339,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in licenseType",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseType: "test",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseType: "test",
+					},
 				},
 			},
 			fieldName: "licenseType",
@@ -316,9 +351,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in appSlug",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					AppSlug: "appSlug",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						AppSlug: "appSlug",
+					},
 				},
 			},
 			fieldName: "appSlug",
@@ -326,9 +363,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in channelName",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					ChannelName: "stable",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ChannelName: "stable",
+					},
 				},
 			},
 			fieldName: "channelName",
@@ -336,9 +375,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in customerName",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					CustomerName: "name",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						CustomerName: "name",
+					},
 				},
 			},
 			fieldName: "customerName",
@@ -346,9 +387,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in licenseID",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "123",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "123",
+					},
 				},
 			},
 			fieldName: "licenseID",
@@ -356,9 +399,11 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in licenseId",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "123",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						LicenseID: "123",
+					},
 				},
 			},
 			fieldName: "licenseId",
@@ -366,18 +411,20 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in signature",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsGitOpsSupported: true,
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"strField": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "strValue",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsGitOpsSupported: true,
+						Entitlements: map[string]kotsv1beta1.EntitlementField{
+							"strField": {
+								Value: kotsv1beta1.EntitlementValue{
+									Type:   kotsv1beta1.String,
+									StrVal: "strValue",
+								},
 							},
 						},
+						Signature: []byte("abcdef0123456789"),
 					},
-					Signature: []byte("abcdef0123456789"),
 				},
 			},
 			fieldName: "signature",
@@ -385,18 +432,20 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 		},
 		{
 			name: "built-in signature with a custom field of the same name",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsGitOpsSupported: true,
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"signature": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "strValue",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsGitOpsSupported: true,
+						Entitlements: map[string]kotsv1beta1.EntitlementField{
+							"signature": {
+								Value: kotsv1beta1.EntitlementValue{
+									Type:   kotsv1beta1.String,
+									StrVal: "strValue",
+								},
 							},
 						},
+						Signature: []byte("abcdef0123456789"),
 					},
-					Signature: []byte("abcdef0123456789"),
 				},
 			},
 			fieldName: "signature",
@@ -408,7 +457,7 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			req := require.New(t)
 
 			ctx := licenseCtx{
-				License: tt.License,
+				License: &tt.License,
 			}
 			req.Equal(tt.want, ctx.licenseFieldValue(tt.fieldName))
 		})

@@ -6,6 +6,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -170,9 +171,11 @@ func Test_RewritePrivateImages(t *testing.T) {
 					"redis:7@sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
 				},
 				kotsKinds: &kotsutil.KotsKinds{
-					License: &kotsv1beta1.License{
-						Spec: kotsv1beta1.LicenseSpec{
-							AppSlug: "test-app-slug",
+					License: &licensewrapper.LicenseWrapper{
+						V1: &kotsv1beta1.License{
+							Spec: kotsv1beta1.LicenseSpec{
+								AppSlug: "test-app-slug",
+							},
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -217,9 +220,11 @@ func Test_RewritePrivateImages(t *testing.T) {
 					"quay.io/replicatedcom/someimage:1",
 				},
 				kotsKinds: &kotsutil.KotsKinds{
-					License: &kotsv1beta1.License{
-						Spec: kotsv1beta1.LicenseSpec{
-							AppSlug: "test-app-slug",
+					License: &licensewrapper.LicenseWrapper{
+						V1: &kotsv1beta1.License{
+							Spec: kotsv1beta1.LicenseSpec{
+								AppSlug: "test-app-slug",
+							},
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -266,9 +271,11 @@ func Test_RewritePrivateImages(t *testing.T) {
 					"quay.io/replicatedcom/someimage:1",
 				},
 				kotsKinds: &kotsutil.KotsKinds{
-					License: &kotsv1beta1.License{
-						Spec: kotsv1beta1.LicenseSpec{
-							AppSlug: "test-app-slug",
+					License: &licensewrapper.LicenseWrapper{
+						V1: &kotsv1beta1.License{
+							Spec: kotsv1beta1.LicenseSpec{
+								AppSlug: "test-app-slug",
+							},
 						},
 					},
 					Installation: kotsv1beta1.Installation{

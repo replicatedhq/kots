@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -587,19 +588,21 @@ spec:
 
 func Test_downloadReplicatedApp(t *testing.T) {
 	// Create a test license
-	license := &kotsv1beta1.License{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "kots.io/v1beta1",
-			Kind:       "License",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-license",
-		},
-		Spec: kotsv1beta1.LicenseSpec{
-			AppSlug:         "test-app",
-			Endpoint:        "http://localhost:3000",
-			LicenseID:       "test-license-id",
-			LicenseSequence: 1,
+	license := &licensewrapper.LicenseWrapper{
+		V1: &kotsv1beta1.License{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "kots.io/v1beta1",
+				Kind:       "License",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-license",
+			},
+			Spec: kotsv1beta1.LicenseSpec{
+				AppSlug:         "test-app",
+				Endpoint:        "http://localhost:3000",
+				LicenseID:       "test-license-id",
+				LicenseSequence: 1,
+			},
 		},
 	}
 
@@ -635,7 +638,7 @@ spec:
 	}
 
 	upstr := &replicatedapp.ReplicatedUpstream{
-		AppSlug: license.Spec.AppSlug,
+		AppSlug: license.GetAppSlug(),
 		Channel: &cursor.ChannelID,
 	}
 
@@ -644,7 +647,7 @@ spec:
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Verify the request
 			authHeader := r.Header.Get("Authorization")
-			expected := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID))))
+			expected := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.GetLicenseID(), license.GetLicenseID()))))
 			if authHeader != expected {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
@@ -706,7 +709,7 @@ spec:
 		defer server.Close()
 
 		// point the license to the test server
-		license.Spec.Endpoint = server.URL
+		license.V1.Spec.Endpoint = server.URL
 
 		// Call the function being tested
 		release, err := downloadReplicatedApp(upstr, license, cursor, nil, "")
@@ -741,7 +744,7 @@ spec:
 		defer errorServer.Close()
 
 		// point the license to the test server
-		license.Spec.Endpoint = errorServer.URL
+		license.V1.Spec.Endpoint = errorServer.URL
 
 		_, err := downloadReplicatedApp(upstr, license, cursor, nil, "")
 		require.Error(t, err)
@@ -762,7 +765,7 @@ spec:
 		defer invalidServer.Close()
 
 		// point the license to the test server
-		license.Spec.Endpoint = invalidServer.URL
+		license.V1.Spec.Endpoint = invalidServer.URL
 
 		_, err := downloadReplicatedApp(upstr, license, cursor, nil, "")
 		require.Error(t, err)
@@ -822,7 +825,7 @@ spec:
 		defer interruptedServer.Close()
 
 		// point the license to the test server
-		license.Spec.Endpoint = interruptedServer.URL
+		license.V1.Spec.Endpoint = interruptedServer.URL
 
 		_, err := downloadReplicatedApp(upstr, license, cursor, nil, "")
 		require.Error(t, err)

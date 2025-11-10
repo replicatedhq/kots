@@ -20,6 +20,7 @@ import (
 	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type StartUpgradeServiceRequest struct {
@@ -104,7 +105,7 @@ func (h *Handler) GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request
 }
 
 func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool, string, error) {
-	currLicense, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+	currLicense, err := licensewrapper.LoadLicenseFromBytes([]byte(a.License))
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to parse app license")
 	}
@@ -118,7 +119,7 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 		if err != nil {
 			return false, "", errors.Wrap(err, "failed to find airgap metadata")
 		}
-		if _, err := kotsutil.FindChannelInLicense(airgap.Spec.ChannelID, currLicense); err != nil {
+		if _, err := kotsutil.FindChannelInLicense(airgap.Spec.ChannelID, &currLicense); err != nil {
 			return false, "channel mismatch, channel not in license", nil
 		}
 		if r.ChannelID != airgap.Spec.ChannelID {
@@ -135,14 +136,14 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 		return true, "", nil
 	}
 
-	ll, err := replicatedapp.GetLatestLicense(currLicense, a.SelectedChannelID)
+	ll, err := replicatedapp.GetLatestLicense(&currLicense, a.SelectedChannelID)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get latest license")
 	}
-	if currLicense.Spec.ChannelID != ll.License.Spec.ChannelID || r.ChannelID != ll.License.Spec.ChannelID {
+	if currLicense.GetChannelID() != ll.License.GetChannelID() || r.ChannelID != ll.License.GetChannelID() {
 		return false, "license channel has changed, please sync the license", nil
 	}
-	updates, err := update.GetAvailableUpdates(store.GetStore(), a, currLicense)
+	updates, err := update.GetAvailableUpdates(store.GetStore(), a, &currLicense)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get available updates")
 	}
@@ -210,7 +211,7 @@ func GetUpgradeServiceParams(s store.Store, a *apptypes.App, r StartUpgradeServi
 		source = "Airgap Update"
 	}
 
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+	licenseWrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(a.License))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse app license")
 	}
@@ -236,12 +237,12 @@ func GetUpgradeServiceParams(s store.Store, a *apptypes.App, r StartUpgradeServi
 		}
 		updateECVersion = ecv
 	} else {
-		kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
+		kb, err := replicatedapp.DownloadKOTSBinary(&licenseWrapper, r.VersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to download kots binary")
 		}
 		updateKOTSBin = kb
-		ecv, err := replicatedapp.GetECVersionForRelease(license, r.VersionLabel)
+		ecv, err := replicatedapp.GetECVersionForRelease(&licenseWrapper, r.VersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get kots version for release")
 		}

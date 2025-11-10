@@ -16,16 +16,31 @@ import (
 )
 
 func getLicenseSecretYAML(deployOptions *types.DeployOptions) (map[string][]byte, error) {
+	if deployOptions.License == nil {
+		return nil, errors.New("deploy options license is nil")
+	}
+
+	if !deployOptions.License.IsV1() && !deployOptions.License.IsV2() {
+		return nil, errors.New("no license to encode")
+	}
+
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
-	if err := s.Encode(deployOptions.License, &b); err != nil {
-		return nil, errors.Wrap(err, "failed to encode license")
+	// Encode the actual license object (V1 or V2), not the wrapper
+	if deployOptions.License.IsV1() {
+		if err := s.Encode(deployOptions.License.V1, &b); err != nil {
+			return nil, errors.Wrap(err, "failed to encode v1beta1 license")
+		}
+	} else if deployOptions.License.IsV2() {
+		if err := s.Encode(deployOptions.License.V2, &b); err != nil {
+			return nil, errors.Wrap(err, "failed to encode v1beta2 license")
+		}
 	}
 
 	var license bytes.Buffer
-	if err := s.Encode(kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.Spec.AppSlug, deployOptions.Airgap, b.String()), &license); err != nil {
+	if err := s.Encode(kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.GetAppSlug(), deployOptions.Airgap, b.String()), &license); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal license secret")
 	}
 	docs["secret-license.yaml"] = license.Bytes()
@@ -43,7 +58,7 @@ func ensureLicenseSecret(deployOptions *types.DeployOptions, clientset *kubernet
 		return false, nil
 	}
 
-	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.Spec.AppSlug, deployOptions.Airgap, deployOptions.LicenseData), metav1.CreateOptions{})
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.GetAppSlug(), deployOptions.Airgap, deployOptions.LicenseData), metav1.CreateOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create license secret")
 	}

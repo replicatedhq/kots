@@ -275,8 +275,12 @@ func buildReplicatedValues(u *types.Upstream, options types.WriteOptions) (map[s
 
 	// only add the license if this is an airgap install
 	// because the airgap builder doesn't have the license context
-	if u.License != nil && options.IsAirgap {
-		replicatedValues["license"] = string(MustMarshalLicense(u.License))
+	if !u.License.IsEmpty() && options.IsAirgap {
+		licenseBytes, err := MustMarshalLicenseWrapper(u.License)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal license")
+		}
+		replicatedValues["license"] = string(licenseBytes)
 	}
 
 	if options.PrivateCAsConfigmap != "" {
@@ -374,16 +378,28 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 
 	// only add license related info if this is an airgap install
 	// because the airgap builder doesn't have the license context
-	if u.License != nil && options.IsAirgap {
-		globalReplicatedValues["channelName"] = u.License.Spec.ChannelName
-		globalReplicatedValues["customerName"] = u.License.Spec.CustomerName
-		globalReplicatedValues["customerEmail"] = u.License.Spec.CustomerEmail
-		globalReplicatedValues["licenseID"] = u.License.Spec.LicenseID
-		globalReplicatedValues["licenseType"] = u.License.Spec.LicenseType
+	if !u.License.IsEmpty() && options.IsAirgap {
+		globalReplicatedValues["channelName"] = u.License.GetChannelName()
+		globalReplicatedValues["customerName"] = u.License.GetCustomerName()
+		globalReplicatedValues["customerEmail"] = u.License.GetCustomerEmail()
+		globalReplicatedValues["licenseID"] = u.License.GetLicenseID()
+		globalReplicatedValues["licenseType"] = u.License.GetLicenseType()
 
 		// we marshal and then unmarshal entitlements into an interface to evaluate entitlement values
 		// and end up with a single value instead of (intVal, boolVal, strVal, and type)
-		marshalledEntitlements, err := json.Marshal(u.License.Spec.Entitlements)
+		// Note: GetEntitlements() returns wrapped entitlements, so we need to unwrap them first
+		wrappedEntitlements := u.License.GetEntitlements()
+		unwrappedEntitlements := make(map[string]interface{})
+		for key, wrapper := range wrappedEntitlements {
+			// Get the underlying entitlement (V1 or V2) from the wrapper
+			if wrapper.V1 != nil {
+				unwrappedEntitlements[key] = wrapper.V1
+			} else if wrapper.V2 != nil {
+				unwrappedEntitlements[key] = wrapper.V2
+			}
+		}
+
+		marshalledEntitlements, err := json.Marshal(unwrappedEntitlements)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to marshal entitlements")
 		}
@@ -403,7 +419,8 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 		globalReplicatedValues["licenseFields"] = licenseFields
 
 		// add docker config json
-		auth := fmt.Sprintf("%s:%s", "LICENSE_ID", u.License.Spec.LicenseID)
+		licenseID := u.License.GetLicenseID()
+		auth := fmt.Sprintf("%s:%s", "LICENSE_ID", licenseID)
 		encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
 		dockercfg := map[string]interface{}{
 			"auths": map[string]interface{}{

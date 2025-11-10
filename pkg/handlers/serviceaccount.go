@@ -60,7 +60,7 @@ func (h *Handler) UploadServiceAccountToken(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	saToken, _, err := kotsadmlicense.ValidateServiceAccountToken(request.ServiceAccountToken, currentLicense.Spec.LicenseID)
+	saToken, _, err := kotsadmlicense.ValidateServiceAccountToken(request.ServiceAccountToken, currentLicense)
 	if err != nil {
 		response.Error = err.Error()
 		logger.Error(errors.Wrap(err, "failed to validate service account token"))

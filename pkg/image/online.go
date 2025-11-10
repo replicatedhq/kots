@@ -30,6 +30,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -138,7 +139,7 @@ func UpdateInstallationImages(opts UpdateInstallationImagesOptions) error {
 	return nil
 }
 
-func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) error {
+func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kotsKinds *kotsutil.KotsKinds, license *licensewrapper.LicenseWrapper, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) error {
 	installationImages := make(map[string]imagetypes.InstallationImageInfo)
 	for _, i := range kotsKinds.Installation.Spec.KnownImages {
 		installationImages[i.Image] = imagetypes.InstallationImageInfo{
@@ -156,9 +157,10 @@ func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kots
 		ProxyEndpoint:    replicatedRegistryInfo.Proxy,
 		UpstreamEndpoint: replicatedRegistryInfo.Upstream,
 	}
-	if license != nil {
-		sourceRegistry.Username = license.Spec.LicenseID
-		sourceRegistry.Password = license.Spec.LicenseID
+	if !license.IsEmpty() {
+		licenseID := license.GetLicenseID()
+		sourceRegistry.Username = licenseID
+		sourceRegistry.Password = licenseID
 	}
 
 	dockerHubRegistry := dockerregistrytypes.RegistryOptions{

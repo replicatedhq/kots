@@ -23,6 +23,7 @@ import (
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kotskinds/pkg/helmchart"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"helm.sh/helm/v3/pkg/chart"
@@ -469,7 +470,9 @@ func getTemplatingKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, err
 			case "kots.io/v1beta1, Kind=Application":
 				kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
 			case "kots.io/v1beta1, Kind=License":
-				kotsKinds.License = decoded.(*kotsv1beta1.License)
+				kotsKinds.License = &licensewrapper.LicenseWrapper{V1: decoded.(*kotsv1beta1.License)}
+			case "kots.io/v1beta2, Kind=License":
+				kotsKinds.License = &licensewrapper.LicenseWrapper{V2: decoded.(*kotsv1beta2.License)}
 			case "kots.io/v1beta1, Kind=IdentityConfig":
 				kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
 			case "kots.io/v1beta1, Kind=Installation":

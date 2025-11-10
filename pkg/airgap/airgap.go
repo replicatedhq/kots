@@ -27,8 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
-	"k8s.io/client-go/kubernetes/scheme"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 type CreateAirgapAppOpts struct {
@@ -132,12 +131,10 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(opts.PendingApp.LicenseData), nil, nil)
+	license, err := licensewrapper.LoadLicenseFromBytes([]byte(opts.PendingApp.LicenseData))
 	if err != nil {
 		return errors.Wrap(err, "failed to read pending license data")
 	}
-	license := obj.(*kotsv1beta1.License)
 
 	licenseFile, err := ioutil.TempFile("", "kotsadm")
 	if err != nil {
@@ -228,7 +225,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		SkipCompatibilityCheck: opts.SkipCompatibilityCheck,
 	}
 
-	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
+	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.GetAppSlug()), pullOptions); err != nil {
 		if errors.Cause(err) != pull.ErrConfigNeeded {
 			return errors.Wrap(err, "failed to pull")
 		}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
 var (
@@ -41,6 +42,43 @@ func (e LicenseDataError) Error() string {
 	return e.message
 }
 
+// VerifyLicenseWrapper validates a license wrapper by delegating to the appropriate
+// version-specific validation method. Returns the same wrapper if validation succeeds.
+// This function supports both v1beta1 (MD5) and v1beta2 (SHA-256) licenses.
+//
+// Note: This function validates the license signature only. Entitlement signature validation
+// is handled separately where needed, matching the behavior of the deprecated VerifySignature function.
+func VerifyLicenseWrapper(wrapper *licensewrapper.LicenseWrapper) (*licensewrapper.LicenseWrapper, error) {
+	if wrapper.IsEmpty() {
+		return nil, errors.New("license wrapper contains no license")
+	}
+
+	if wrapper.IsV1() {
+		// Validate v1beta1 license using built-in ValidateLicense (MD5)
+		_, err := wrapper.V1.ValidateLicense()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to validate v1beta1 license")
+		}
+
+		return wrapper, nil
+	}
+
+	if wrapper.IsV2() {
+		// Validate v1beta2 license using built-in ValidateLicense (SHA-256)
+		_, err := wrapper.V2.ValidateLicense()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to validate v1beta2 license")
+		}
+
+		return wrapper, nil
+	}
+
+	return nil, errors.New("license wrapper contains no license")
+}
+
+// VerifySignature validates a v1beta1 license signature using MD5.
+// Deprecated: Use VerifyLicenseWrapper for multi-version support (v1beta1 and v1beta2).
+// This function only supports v1beta1 licenses with MD5 signatures.
 func VerifySignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error) {
 	outerSignature := &OuterSignature{}
 	if err := json.Unmarshal(license.Spec.Signature, outerSignature); err != nil {
@@ -91,6 +129,51 @@ func VerifySignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error)
 	return verifiedLicense, nil
 }
 
+// VerifyWithLicense validates a signature using the appropriate hash algorithm based on the license version.
+// V1 licenses use MD5, V2 licenses use SHA-256. This extracts the public key from the license and verifies
+// the signature using RSA-PSS.
+func VerifyWithLicense(message, signature []byte, license *licensewrapper.LicenseWrapper) error {
+	if license.IsEmpty() {
+		return errors.New("license wrapper contains no license")
+	}
+
+	publicKeyPEM, err := GetAppPublicKey(license)
+	if err != nil {
+		return errors.Wrap(err, "failed to get public key from license")
+	}
+
+	pubBlock, _ := pem.Decode(publicKeyPEM)
+	publicKey, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
+	if err != nil {
+		return errors.Wrap(err, "failed to load public key from PEM")
+	}
+
+	var opts rsa.PSSOptions
+	opts.SaltLength = rsa.PSSSaltLengthAuto
+
+	// Choose hash algorithm based on license version
+	var hashFunc crypto.Hash
+	if license.IsV1() {
+		hashFunc = crypto.MD5
+	} else {
+		hashFunc = crypto.SHA256
+	}
+
+	hasher := hashFunc.New()
+	hasher.Write(message)
+	hashed := hasher.Sum(nil)
+
+	err = rsa.VerifyPSS(publicKey.(*rsa.PublicKey), hashFunc, hashed, signature, &opts)
+	if err != nil {
+		// this ordering makes errors.Cause a little more useful
+		return errors.Wrap(ErrSignatureInvalid, err.Error())
+	}
+
+	return nil
+}
+
+// Verify validates a signature using MD5 and RSA-PSS.
+// Deprecated: Only supports v1beta1 MD5 signatures. Use VerifyWithLicense instead.
 func Verify(message, signature, publicKeyPEM []byte) error {
 	pubBlock, _ := pem.Decode(publicKeyPEM)
 	publicKey, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
@@ -115,6 +198,8 @@ func Verify(message, signature, publicKeyPEM []byte) error {
 	return nil
 }
 
+// verifyLicenseData checks that the outer license fields match the inner signed fields.
+// Deprecated: Only supports v1beta1 licenses. Use VerifyLicenseWrapper instead.
 func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1beta1.License) error {
 	if outerLicense.Spec.AppSlug != innerLicense.Spec.AppSlug {
 		return fmt.Errorf("\"appSlug\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.AppSlug, innerLicense.Spec.AppSlug)
@@ -197,6 +282,8 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 	return nil
 }
 
+// verifyOldSignature validates licenses with the old signature format.
+// Deprecated: Only supports v1beta1 legacy format. Use VerifyLicenseWrapper instead.
 func verifyOldSignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error) {
 	signature := &InnerSignature{}
 	if err := json.Unmarshal(license.Spec.Signature, signature); err != nil {
@@ -272,22 +359,23 @@ func getMessageFromLicense(license *kotsv1beta1.License) ([]byte, error) {
 	return message, err
 }
 
-func GetAppPublicKey(license *kotsv1beta1.License) ([]byte, error) {
+func GetAppPublicKey(license *licensewrapper.LicenseWrapper) ([]byte, error) {
+	signature := license.GetSignature()
 	// old licenses's signature is a single space character
-	if len(license.Spec.Signature) == 0 || len(license.Spec.Signature) == 1 {
+	if len(signature) == 0 || len(signature) == 1 {
 		return nil, ErrSignatureMissing
 	}
 
 	innerSignature := &InnerSignature{}
 
 	outerSignature := &OuterSignature{}
-	if err := json.Unmarshal(license.Spec.Signature, outerSignature); err != nil {
+	if err := json.Unmarshal(signature, outerSignature); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal license outer signature")
 	}
 
 	isOldFormat := len(outerSignature.InnerSignature) == 0
 	if isOldFormat {
-		if err := json.Unmarshal(license.Spec.Signature, innerSignature); err != nil {
+		if err := json.Unmarshal(signature, innerSignature); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal license signature")
 		}
 	} else {

@@ -35,7 +35,7 @@ func (r *AirgapReporter) SubmitAppInfo(appID string) error {
 	}
 	reportingInfo := GetReportingInfo(appID)
 
-	report := BuildInstanceReport(license.Spec.LicenseID, reportingInfo)
+	report := BuildInstanceReport(license.GetLicenseID(), reportingInfo)
 
 	if err := AppendReport(r.clientset, util.PodNamespace, a.Slug, report); err != nil {
 		return errors.Wrap(err, "failed to append instance report")

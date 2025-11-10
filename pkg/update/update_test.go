@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -284,7 +285,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 			mockServer := newMockServerWithReleases(tt.perChannelReleases, tt.expectedSelectedChannelId, tt.wantErr)
 			defer mockServer.Close()
 			tt.setup(t, tt.args, mockServer.URL)
-			got, err := GetAvailableUpdates(tt.args.kotsStore, tt.args.app, tt.args.license)
+			got, err := GetAvailableUpdates(tt.args.kotsStore, tt.args.app, &licensewrapper.LicenseWrapper{V1: tt.args.license})
 			if tt.wantErr {
 				req.Error(err)
 				return

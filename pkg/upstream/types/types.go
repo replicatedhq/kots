@@ -9,6 +9,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -27,7 +28,7 @@ type Upstream struct {
 	Type                     string
 	Files                    []UpstreamFile
 	UpdateCursor             string
-	License                  *kotsv1beta1.License
+	License                  *licensewrapper.LicenseWrapper
 	ChannelID                string
 	ChannelName              string
 	VersionLabel             string
@@ -94,7 +95,7 @@ type FetchOptions struct {
 	UseAppDir                       bool
 	HelmRepoURI                     string
 	LocalPath                       string
-	License                         *kotsv1beta1.License
+	License                         *licensewrapper.LicenseWrapper
 	ConfigValues                    *kotsv1beta1.ConfigValues
 	IdentityConfig                  *kotsv1beta1.IdentityConfig
 	Airgap                          *kotsv1beta1.Airgap

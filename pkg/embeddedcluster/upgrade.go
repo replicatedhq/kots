@@ -26,7 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
@@ -42,7 +42,7 @@ func startClusterUpgrade(
 	ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec,
 	artifacts *embeddedclusterv1beta1.ArtifactsLocation,
 	registrySettings registrytypes.RegistrySettings,
-	license *kotsv1beta1.License, versionLabel string,
+	license *licensewrapper.LicenseWrapper, versionLabel string,
 ) error {
 	// TODO(upgrade): put a lock here to prevent multiple upgrades at the same time
 
@@ -72,8 +72,8 @@ func startClusterUpgrade(
 	newInstall.Spec.Artifacts = artifacts
 	newInstall.Spec.Config = &newcfg
 	newInstall.Spec.LicenseInfo = &embeddedclusterv1beta1.LicenseInfo{
-		IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported,
-		IsMultiNodeEnabled:          license.Spec.IsEmbeddedClusterMultiNodeEnabled,
+		IsDisasterRecoverySupported: license.IsDisasterRecoverySupported(),
+		IsMultiNodeEnabled:          license.IsEmbeddedClusterMultiNodeEnabled(),
 	}
 
 	log.Printf("Starting cluster upgrade to version %s...", newcfg.Version)
@@ -104,7 +104,7 @@ func runClusterUpgrade(
 	ctx context.Context,
 	in *embeddedclusterv1beta1.Installation,
 	registrySettings registrytypes.RegistrySettings,
-	license *kotsv1beta1.License, versionLabel string,
+	license *licensewrapper.LicenseWrapper, versionLabel string,
 ) error {
 	var bin string
 
@@ -147,9 +147,9 @@ func runClusterUpgrade(
 	args := []string{
 		"upgrade",
 		"--local-artifact-mirror-image", localArtifactMirrorImage,
-		"--license-id", license.Spec.LicenseID,
-		"--app-slug", license.Spec.AppSlug,
-		"--channel-id", license.Spec.ChannelID,
+		"--license-id", license.GetLicenseID(),
+		"--app-slug", license.GetAppSlug(),
+		"--channel-id", license.GetChannelID(),
 		"--app-version", versionLabel,
 		"--installation", "-",
 	}
@@ -209,7 +209,7 @@ const (
 	upgradeBinaryOCIAsset = "operator.tar.gz"
 )
 
-func downloadUpgradeBinary(ctx context.Context, license *kotsv1beta1.License, versionLabel string) (string, error) {
+func downloadUpgradeBinary(ctx context.Context, license *licensewrapper.LicenseWrapper, versionLabel string) (string, error) {
 	tmpdir, err := os.MkdirTemp("", "embedded-cluster-artifact-*")
 	if err != nil {
 		return "", fmt.Errorf("create temp dir: %w", err)
@@ -253,13 +253,14 @@ func downloadUpgradeBinary(ctx context.Context, license *kotsv1beta1.License, ve
 	return filepath.Join(tmpdir, upgradeBinary), nil
 }
 
-func newDownloadUpgradeBinaryRequest(ctx context.Context, license *kotsv1beta1.License, versionLabel string) (*retryablehttp.Request, error) {
+func newDownloadUpgradeBinaryRequest(ctx context.Context, license *licensewrapper.LicenseWrapper, versionLabel string) (*retryablehttp.Request, error) {
 	url := fmt.Sprintf("%s/clusterconfig/artifact/operator?versionLabel=%s", util.ReplicatedAppEndpoint(license), url.QueryEscape(versionLabel))
 	req, err := util.NewRetryableRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
 	}
-	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
+	licenseID := license.GetLicenseID()
+	req.SetBasicAuth(licenseID, licenseID)
 	req = req.WithContext(ctx)
 
 	return req, nil
@@ -295,7 +296,7 @@ const (
 )
 
 func getLocalArtifactMirrorImage(
-	ctx context.Context, in *embeddedclusterv1beta1.Installation, license *kotsv1beta1.License,
+	ctx context.Context, in *embeddedclusterv1beta1.Installation, license *licensewrapper.LicenseWrapper,
 	registrySettings registrytypes.RegistrySettings,
 ) (string, error) {
 	var data []byte
@@ -342,7 +343,7 @@ func getLocalArtifactMirrorImage(
 }
 
 func getEmbeddedClusterMetadataFromReplicatedApp(
-	ctx context.Context, in *embeddedclusterv1beta1.Installation, license *kotsv1beta1.License,
+	ctx context.Context, in *embeddedclusterv1beta1.Installation, license *licensewrapper.LicenseWrapper,
 ) ([]byte, error) {
 	var metadataURL string
 	if in.Spec.Config.MetadataOverrideURL != "" {
