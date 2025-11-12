@@ -66,7 +66,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/tj/go-spin v1.1.0
-	github.com/vmware-tanzu/velero v1.16.2
+	github.com/vmware-tanzu/velero v1.17.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
 	go.yaml.in/yaml/v2 v2.4.3
@@ -409,7 +409,7 @@ require (
 	github.com/hashicorp/aws-sdk-go-base/v2 v2.0.0-beta.65 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/k0sproject/dig v0.4.0 // indirect
-	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0 // indirect
+	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.0.0 // indirect
 	github.com/lestrrat-go/dsig-secp256k1 v1.0.0 // indirect
