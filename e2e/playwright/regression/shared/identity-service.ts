@@ -47,9 +47,11 @@ export const validateIdentityService = async (page: Page, expect: Expect, namesp
   await page.getByText('Log in with Okta').click();
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill(IDENTITY_SERVICE_OKTA_USERNAME);
+  await page.locator('input[type="submit"]').click(); // Next button
+
   await page.locator('input[name="credentials.passcode"]').click();
   await page.locator('input[name="credentials.passcode"]').fill(process.env.IDENTITY_SERVICE_OKTA_PASSWORD!);
-  await page.locator('input[type="submit"]').click();
+  await page.locator('input[type="submit"]').click(); // Verify button
 
   await validateDashboardInfo(page, expect, isAirgapped);
 
