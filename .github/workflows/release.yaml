@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - emosbaugh/20251114/regression-fix
 
 permissions:
   contents: write
