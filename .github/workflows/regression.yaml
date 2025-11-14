@@ -181,13 +181,15 @@ jobs:
             id: "embedded-airgapped-install",
             name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "embedded-airgapped-install-backend-config.tfvars",
-            terraform_script: "embedded-airgapped-install.sh"
+            terraform_script: "embedded-airgapped-install.sh",
+            is_upgrade: "0"
           },
           {
             id: "embedded-online-install",
             name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "embedded-online-install-backend-config.tfvars",
-            terraform_script: "embedded-online-install.sh"
+            terraform_script: "embedded-online-install.sh",
+            is_upgrade: "0"
           },
           # NOTE (@salah): decided not to port this test to playwright
           # {
@@ -201,13 +203,15 @@ jobs:
             id: "existing-airgapped-install-admin",
             name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
-            terraform_script: "existing-airgapped-install-admin.sh"
+            terraform_script: "existing-airgapped-install-admin.sh",
+            is_upgrade: "0"
           },
           {
             id: "existing-airgapped-install-minimum",
             name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
             backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
-            terraform_script: "existing-airgapped-install-minimum.sh"
+            terraform_script: "existing-airgapped-install-minimum.sh",
+            is_upgrade: "0"
           },
           {
             id: "existing-online-upgrade-admin",
@@ -227,13 +231,15 @@ jobs:
             id: "existing-online-install-admin",
             name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "existing-online-install-admin-backend-config.tfvars",
-            terraform_script: "existing-online-install-admin.sh"
+            terraform_script: "existing-online-install-admin.sh",
+            is_upgrade: "0"
           },
           {
             id: "existing-online-install-minimum",
             name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
             backend_config: "existing-online-install-minimum-backend-config.tfvars",
-            terraform_script: "existing-online-install-minimum.sh"
+            terraform_script: "existing-online-install-minimum.sh",
+            is_upgrade: "0"
           },
           {
             id: "existing-airgapped-upgrade-admin",
@@ -254,7 +260,8 @@ jobs:
           #   id: "helmvm-online-install",
           #   name: "type=helmvm cluster, env=online, phase=new install, rbac=cluster admin",
           #   backend_config: "helmvm-online-install-backend-config.tfvars",
-          #   terraform_script: "helmvm-online-install.sh"
+          #   terraform_script: "helmvm-online-install.sh",
+          #   is_upgrade: "0"
           # }
         ]
     steps:
@@ -286,7 +293,7 @@ jobs:
           export CURRENT_TAG="${{ github.event.inputs.version_tag_old || inputs.version_tag_old }}"
           export NEXT_TAG="${{ github.event.inputs.version_tag_new || inputs.version_tag_new }}"
 
-          if [ -n "${{ matrix.test.is_upgrade }}" ]; then
+          if [ "${{ matrix.test.is_upgrade }}" == "1" ]; then
             export TF_VAR_kots_version_initial="${CURRENT_TAG:1}"
             export TF_VAR_kots_version_upgrade="${NEXT_TAG:1}"
           else

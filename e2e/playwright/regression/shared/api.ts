@@ -107,6 +107,7 @@ export async function updateIdentityServiceOktaApp(oktaDomain: string, oktaAppId
   }
 
   const app = await response.json();
+
   app.settings.oauthClient.redirect_uris = [`${process.env.BASE_URL}/dex/callback`];
   app.settings.oauthClient.post_logout_redirect_uris = [process.env.BASE_URL];
 
