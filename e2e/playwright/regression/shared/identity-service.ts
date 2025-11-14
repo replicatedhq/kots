@@ -18,6 +18,8 @@ export const validateIdentityService = async (page: Page, expect: Expect, namesp
   const identityProviderForm = page.getByTestId('identity-provider-form');
   await expect(identityProviderForm).toBeVisible({ timeout: 15000 });
 
+  await identityProviderForm.getByTestId('admin-console-address-input').fill(process.env.BASE_URL!);
+
   const openidRadio = identityProviderForm.getByTestId('openid-radio');
   await expect(openidRadio).toBeVisible();
   await openidRadio.click();
