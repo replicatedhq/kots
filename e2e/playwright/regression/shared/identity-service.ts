@@ -23,7 +23,7 @@ export const validateIdentityService = async (page: Page, expect: Expect, namesp
   await openidRadio.click();
 
   await identityProviderForm.getByTestId('connector-name-input').fill('Okta');
-  await identityProviderForm.getByTestId('issuer-input').fill('https://' + IDENTITY_SERVICE_OKTA_DOMAIN);
+  await identityProviderForm.getByTestId('issuer-input').fill(`https://${IDENTITY_SERVICE_OKTA_DOMAIN}/oauth2/default`);
   await identityProviderForm.getByTestId('client-id-input').fill(IDENTITY_SERVICE_OKTA_CLIENT_ID);
   await identityProviderForm.getByTestId('client-secret-input').fill(process.env.IDENTITY_SERVICE_OKTA_CLIENT_SECRET!);
 
