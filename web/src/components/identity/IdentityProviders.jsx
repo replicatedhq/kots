@@ -690,6 +690,7 @@ class IdentityProviders extends Component {
                     <input
                       type="text"
                       className="Input u-marginTop--12"
+                      data-testid="identity-service-address-input"
                       placeholder="https://kots.somebigbankadmin.com/dex"
                       value={this.state.identityServiceAddress}
                       disabled={syncAppWithGlobal}
