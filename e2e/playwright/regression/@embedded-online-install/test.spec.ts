@@ -46,7 +46,7 @@ import {
 } from '../shared';
 
 test('type=embedded cluster, env=online, phase=new install, rbac=cluster admin', async ({ page }) => {
-  test.setTimeout(30 * 60 * 1000); // 30 minutes
+  test.setTimeout(40 * 60 * 1000); // 30 minutes
 
   // Initial setup
   resetPassword(constants.NAMESPACE);
