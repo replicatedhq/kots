@@ -460,18 +460,83 @@ export const isDexReady = (namespace: string) => {
   const parsedDeployment = JSON.parse(dexDeployment);
 
   if (parsedDeployment.status.observedGeneration !== parsedDeployment.metadata.generation) {
-    console.log(`observedGeneration: ${parsedDeployment.status.observedGeneration}, generation: ${parsedDeployment.metadata.generation}`);
-    return false;
-  }
-  if (parsedDeployment.status.readyReplicas !== parsedDeployment.spec.replicas) {
-    console.log(`readyReplicas: ${parsedDeployment.status.readyReplicas}, replicas: ${parsedDeployment.spec.replicas}`);
-    return false;
-  }
-  if (!!parsedDeployment.status.unavailableReplicas) {
-    console.log(`unavailableReplicas: ${parsedDeployment.status.unavailableReplicas}`);
+    console.log(`[Dex Not Ready] observedGeneration: ${parsedDeployment.status.observedGeneration}, generation: ${parsedDeployment.metadata.generation}`);
     return false;
   }
 
+  // Check for common failure conditions in pods
+  try {
+    const podsOutput = runCommandWithOutput(`kubectl get pods -n ${namespace} -l app=kotsadm-dex -ojson`);
+    const pods = JSON.parse(podsOutput);
+
+    if (pods.items && pods.items.length > 0) {
+      for (const pod of pods.items) {
+        const podName = pod.metadata.name;
+        const containerStatuses = pod.status?.containerStatuses || [];
+
+        for (const containerStatus of containerStatuses) {
+          // Check for CrashLoopBackOff
+          if (containerStatus.state?.waiting?.reason === 'CrashLoopBackOff') {
+            const logs = runCommandWithOutput(`kubectl logs ${podName} -n ${namespace} --tail=20 2>&1 || echo "Could not fetch logs"`);
+            throw new Error(`Dex pod ${podName} is in CrashLoopBackOff. Recent logs:\n${logs}\n\nCheck full logs: kubectl logs ${podName} -n ${namespace}`);
+          }
+
+          // Check for ImagePullBackOff
+          if (containerStatus.state?.waiting?.reason === 'ImagePullBackOff' ||
+              containerStatus.state?.waiting?.reason === 'ErrImagePull') {
+            const message = containerStatus.state.waiting.message || 'Unknown image pull error';
+            throw new Error(`Dex pod ${podName} cannot pull image: ${message}\n\nCheck: kubectl describe pod ${podName} -n ${namespace}`);
+          }
+
+          // Check for other waiting states with restart count > 3
+          if (containerStatus.state?.waiting && containerStatus.restartCount > 3) {
+            const reason = containerStatus.state.waiting.reason;
+            const message = containerStatus.state.waiting.message || '';
+            throw new Error(`Dex pod ${podName} is repeatedly failing (${containerStatus.restartCount} restarts). Reason: ${reason}. ${message}\n\nCheck: kubectl describe pod ${podName} -n ${namespace}`);
+          }
+        }
+
+        // Log pod phase for diagnostics
+        const phase = pod.status?.phase;
+        if (phase !== 'Running') {
+          console.log(`[Dex Not Ready] Pod ${podName} phase: ${phase}`);
+        }
+      }
+    } else {
+      console.log(`[Dex Not Ready] No pods found with label app=kotsadm-dex`);
+    }
+  } catch (error: any) {
+    // If it's our thrown error, re-throw it
+    if (error.message && (error.message.includes('CrashLoopBackOff') || error.message.includes('ImagePullBackOff') || error.message.includes('repeatedly failing'))) {
+      throw error;
+    }
+    // Otherwise log but don't fail - pod check is supplementary
+    console.log(`[Dex Not Ready] Could not check pod status: ${error.message}`);
+  }
+
+  if (parsedDeployment.status.readyReplicas !== parsedDeployment.spec.replicas) {
+    const ready = parsedDeployment.status.readyReplicas ?? 0;
+    const desired = parsedDeployment.spec.replicas;
+    console.log(`[Dex Not Ready] readyReplicas: ${ready}/${desired}`);
+
+    // Show deployment conditions for additional context
+    if (parsedDeployment.status.conditions) {
+      const failedConditions = parsedDeployment.status.conditions.filter((c: any) => c.status === 'False');
+      if (failedConditions.length > 0) {
+        failedConditions.forEach((c: any) => {
+          console.log(`[Dex Not Ready] Condition ${c.type}: ${c.reason} - ${c.message}`);
+        });
+      }
+    }
+    return false;
+  }
+
+  if (!!parsedDeployment.status.unavailableReplicas) {
+    console.log(`[Dex Not Ready] unavailableReplicas: ${parsedDeployment.status.unavailableReplicas}`);
+    return false;
+  }
+
+  console.log(`[Dex Ready] All ${parsedDeployment.spec.replicas} replicas are ready`);
   return true;
 }
 
