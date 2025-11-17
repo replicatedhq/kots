@@ -27,10 +27,15 @@ jobs:
         tar -xzvf APKINDEX.tar.gz
 
         minio_version=$(< APKINDEX grep -A1 "^P:minio$" | tail -n 1 | sed -n -e 's/V://p' | tr -d '\n')
-        rqlite_version=$(< APKINDEX grep -A1 "^P:rqlite$" | tail -n 1 | sed -n -e 's/V://p' | tr -d '\n')
 
         sed "s/__MINIO_VERSION__/$minio_version/g" deploy/minio/apko.yaml.tmpl > deploy/minio/apko.yaml
-        sed "s/__RQLITE_VERSION__/$rqlite_version/g" deploy/rqlite/apko.yaml.tmpl > deploy/rqlite/apko.yaml
+
+        # Get latest rqlite version from registry
+        rqlite_version=$(skopeo list-tags docker://proxy.replicated.com/library/rqlite | \
+          jq -r '.Tags[]' | \
+          grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | \
+          sort -V | \
+          tail -n 1)
 
         # Get latest dex version from registry
         dex_version=$(skopeo list-tags docker://proxy.replicated.com/library/dex | \
@@ -55,14 +60,12 @@ jobs:
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
         overwrite: ${{ github.event.inputs.overwrite }}
 
-    - name: Build and push rqlite image
-      uses: ./.github/actions/build-dep-image-with-apko
-      with:
-        apko-config: deploy/rqlite/apko.yaml
-        image-name: index.docker.io/kotsadm/rqlite:${{ steps.get-tags.outputs.rqlite-tag }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-        overwrite: ${{ github.event.inputs.overwrite }}
+    - name: Copy rqlite image
+      run: |
+        skopeo copy --all \
+          --dest-creds "${{ secrets.DOCKERHUB_USER }}:${{ secrets.DOCKERHUB_PASSWORD }}" \
+          docker://proxy.replicated.com/library/rqlite:${{ steps.get-tags.outputs.rqlite-tag }} \
+          docker://index.docker.io/kotsadm/rqlite:${{ steps.get-tags.outputs.rqlite-tag }}
 
     - name: Copy dex image
       run: |

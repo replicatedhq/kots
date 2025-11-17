@@ -1,5 +1,5 @@
 minio docker.io/kotsadm/minio ^0\.([0-9]*)\.([0-9]*)-r([0-9]*)$
-rqlite docker.io/kotsadm/rqlite ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)-r([0-9]*)$
+rqlite docker.io/kotsadm/rqlite ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
 dex docker.io/kotsadm/dex ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
 schemahero docker.io/schemahero/schemahero ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
 lvp docker.io/replicated/local-volume-provider ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
