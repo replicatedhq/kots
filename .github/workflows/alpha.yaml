@@ -143,8 +143,10 @@ jobs:
           severity-cutoff: 'medium'
           upload-sarif: 'true'
       - name: Print scan report
+        if: ${{ !cancelled() }}
         run: cat rqlite-scan-output.sarif
       - name: Upload scan report
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: rqlite-scan-output.sarif
@@ -173,8 +175,10 @@ jobs:
           severity-cutoff: 'medium'
           upload-sarif: 'true'
       - name: Print scan report
+        if: ${{ !cancelled() }}
         run: cat minio-scan-output.sarif
       - name: Upload scan report
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'minio-scan-output.sarif'
@@ -203,8 +207,10 @@ jobs:
           severity-cutoff: 'medium'
           upload-sarif: 'true'
       - name: Print scan report
+        if: ${{ !cancelled() }}
         run: cat dex-scan-output.sarif
       - name: Upload scan report
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: dex-scan-output.sarif
@@ -229,8 +235,10 @@ jobs:
           severity-cutoff: 'medium'
           upload-sarif: 'true'
       - name: Print scan report
+        if: ${{ !cancelled() }}
         run: cat kurl-proxy-scan-output.sarif
       - name: Upload scan report
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: kurl-proxy-scan-output.sarif
@@ -259,8 +267,10 @@ jobs:
           severity-cutoff: 'medium'
           upload-sarif: 'true'
       - name: Print scan report
+        if: ${{ !cancelled() }}
         run: cat scan-output.sarif
       - name: Upload scan report
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: scan-output.sarif
@@ -285,11 +295,14 @@ jobs:
           severity-cutoff: 'medium'
           upload-sarif: 'true'
       - name: Print scan report
+        if: ${{ !cancelled() }}
         run: cat kotsadm-scan-output.sarif
       - name: Upload scan report
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: kotsadm-scan-output.sarif
+          category: 'image-scan-kotsadm'
 
   scan_kotsadm_migrations:
     runs-on: ubuntu-latest
@@ -310,8 +323,10 @@ jobs:
           severity-cutoff: 'medium'
           upload-sarif: 'true'
       - name: Print scan report
+        if: ${{ !cancelled() }}
         run: cat kotsadm-migration-scan-output.sarif
       - name: Upload scan report
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: kotsadm-migration-scan-output.sarif
