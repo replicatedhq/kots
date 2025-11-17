@@ -33,8 +33,7 @@ jobs:
         # Get latest rqlite version from registry
         rqlite_version=$(skopeo list-tags docker://proxy.replicated.com/library/rqlite | \
           jq -r '.Tags[]' | \
-          grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | \
-          sed 's/^v//' | \
+          grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | \
           sort -V | \
           tail -n 1)
 
@@ -65,7 +64,7 @@ jobs:
       run: |
         skopeo copy --all \
           --dest-creds "${{ secrets.DOCKERHUB_USER }}:${{ secrets.DOCKERHUB_PASSWORD }}" \
-          docker://proxy.replicated.com/library/rqlite:v${{ steps.get-tags.outputs.rqlite-tag }} \
+          docker://proxy.replicated.com/library/rqlite:${{ steps.get-tags.outputs.rqlite-tag }} \
           docker://index.docker.io/kotsadm/rqlite:${{ steps.get-tags.outputs.rqlite-tag }}
 
     - name: Copy dex image
