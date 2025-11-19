@@ -285,7 +285,7 @@ class Redactors extends Component {
                 Secrets or IP addresses. For help with creating custom
                 redactors,
                 <a
-                  href="https://troubleshoot.sh/reference/redactors/overview/"
+                  href="https://troubleshoot.sh/docs/redact/redactors"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="link"
@@ -325,7 +325,7 @@ class Redactors extends Component {
                   things like Secrets or IP addresses. For help with creating
                   custom redactors,
                   <a
-                    href="https://troubleshoot.sh/reference/redactors/overview/"
+                    href="https://troubleshoot.sh/docs/redact/redactors"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="link"

@@ -356,7 +356,7 @@ spec:
         <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10">
           For more information about creating redactors,
           <a
-            href="https://troubleshoot.sh/reference/redactors/overview/"
+            href="https://troubleshoot.sh/docs/redact/redactors"
             target="_blank"
             rel="noopener noreferrer"
             className="link"
