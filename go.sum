@@ -1107,8 +1107,8 @@ github.com/opencontainers/runc v1.2.8 h1:RnEICeDReapbZ5lZEgHvj7E9Q3Eex9toYmaGBsb
 github.com/opencontainers/runc v1.2.8/go.mod h1:cC0YkmZcuvr+rtBZ6T7NBoVbMGNAdLa/21vIElJDOzI=
 github.com/opencontainers/runtime-spec v1.2.1 h1:S4k4ryNgEpxW1dzyqffOmhI1BHYcjzU8lpJfSlR0xww=
 github.com/opencontainers/runtime-spec v1.2.1/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
-github.com/opencontainers/selinux v1.12.0 h1:6n5JV4Cf+4y0KNXW48TLj5DwfXpvWlxXplUkdTrmPb8=
-github.com/opencontainers/selinux v1.12.0/go.mod h1:BTPX+bjVbWGXw7ZZWUbdENt8w0htPSrlgOOysQaU62U=
+github.com/opencontainers/selinux v1.13.1 h1:A8nNeceYngH9Ow++M+VVEwJVpdFmrlxsN22F+ISDCJE=
+github.com/opencontainers/selinux v1.13.1/go.mod h1:S10WXZ/osk2kWOYKy1x2f/eXF5ZHJoUs8UU/2caNRbg=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
 github.com/ory/dockertest/v3 v3.12.0 h1:3oV9d0sDzlSQfHtIaB5k6ghUCVMVLpAY8hwrqoCyRCw=
 github.com/ory/dockertest/v3 v3.12.0/go.mod h1:aKNDTva3cp8dwOWwb9cWuX84aH5akkxXRvO7KCwWVjE=
@@ -1189,8 +1189,6 @@ github.com/redis/go-redis/v9 v9.7.3/go.mod h1:bGUrSggJ9X9GUmZpZNEOQKaANxSGgOEBRl
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250729184643-f055e67a064d h1:Wl0fHoWTcrveqbWmDVEPFoa/K3EzyROC8tjHZxzwg3Q=
 github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250729184643-f055e67a064d/go.mod h1:gZdtXCAVJt0a5Ry64Jlaeph7qh+IGsAkq4P0PE6XiZI=
-github.com/replicatedhq/kotskinds v0.0.0-20251029124314-174e89c93554 h1:a9vLewcXgVC/vclEak7CV0gsSYhYinjnWDoUkzrqN4w=
-github.com/replicatedhq/kotskinds v0.0.0-20251029124314-174e89c93554/go.mod h1:+k4PHo2wukoU9kdiKrqqgi89Wmj+9AiwppYGVK11zig=
 github.com/replicatedhq/kotskinds v0.0.0-20251106194120-8ae701787e22 h1:WXzSYpKmNtTHk7W1nQXYVYWIv6pRtjs2rarVVJZ9cfw=
 github.com/replicatedhq/kotskinds v0.0.0-20251106194120-8ae701787e22/go.mod h1:+k4PHo2wukoU9kdiKrqqgi89Wmj+9AiwppYGVK11zig=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=
