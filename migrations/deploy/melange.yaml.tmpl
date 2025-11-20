@@ -9,14 +9,11 @@ package:
 environment:
   contents:
     repositories:
-      - https://packages.wolfi.dev/os
+      - https://apk.cve0.io
     keyring:
-      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+      - https://apk.cve0.io/key/cve0-signing.rsa.pub
     packages:
-      - ca-certificates-bundle
       - busybox
-      - git
-      - go
 
 pipeline:
   - runs: |
@@ -24,7 +21,4 @@ pipeline:
       export DESTDIR="${{targets.destdir}}"
       mkdir -p "${DESTDIR}"
 
-      mv migrations/tables "${DESTDIR}/tables"
-
-      # expected to have already been extracted from the schemahero image
-      mv migrations/schemahero "${DESTDIR}/schemahero"
+      mv tables "${DESTDIR}/tables"
