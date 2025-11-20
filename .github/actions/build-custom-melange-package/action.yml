@@ -27,23 +27,6 @@ runs:
         sudo apt-get update -y
         sudo apt-get install -y curl jq gettext-base pkg-config
 
-    # download schemahero binary for kotsadm-migrations for the specified arch
-
-    - if: inputs.component == 'kotsadm-migrations'
-      uses: falti/dotenv-action@v1
-      id: dotenv
-      with:
-        path: .image.env
-
-    - if: inputs.component == 'kotsadm-migrations'
-      uses: imjasonh/setup-crane@v0.4
-
-    - if: inputs.component == 'kotsadm-migrations'
-      shell: bash
-      run: |
-        crane export schemahero/schemahero:${{ steps.dotenv.outputs.SCHEMAHERO_TAG }} --platform linux/${{ inputs.arch }} - | tar -Oxf - schemahero > migrations/schemahero
-        chmod +x migrations/schemahero
-
     # build the melange package
 
     - name: template melange config
