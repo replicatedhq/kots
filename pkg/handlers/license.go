@@ -229,7 +229,7 @@ func getLicenseEntitlements(license *licensewrapper.LicenseWrapper) ([]Entitleme
 				continue
 			}
 
-			expiration, err := time.Parse(time.RFC3339, entitlement.GetValue().(string))
+			expiration, err := time.Parse(time.RFC3339, strVal)
 			if err != nil {
 				return nil, time.Time{}, errors.Wrap(err, "failed to parse expiration date")
 			}
