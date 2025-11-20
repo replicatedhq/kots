@@ -1,9 +1,9 @@
 contents:
   repositories:
-    - https://packages.wolfi.dev/os
+    - https://apk.cve0.io
     - ./packages/
   keyring:
-    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://apk.cve0.io/key/cve0-signing.rsa.pub
     - ./melange-arm64.rsa.pub
     - ./melange-amd64.rsa.pub
   packages:
@@ -12,7 +12,9 @@ contents:
     - busybox
     - curl
     - git
-    - wolfi-baselayout
+    - ca-certificates
+    - securebuild-baselayout
+    - schemahero
 
 accounts:
   groups:
@@ -28,6 +30,6 @@ environment:
   VERSION: ${GIT_TAG}
 
 entrypoint:
-  command: /schemahero
+  command: /usr/bin/schemahero
 
 cmd: apply
