@@ -40,38 +40,15 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 	// Update docs at https://github.com/replicatedhq/kots.io/blob/main/content/reference/template-functions/license-context.md
 	// when adding new values
 	switch name {
-	case "isSnapshotSupported":
-		return strconv.FormatBool(ctx.License.IsSnapshotSupported())
-	case "IsDisasterRecoverySupported":
-		return strconv.FormatBool(ctx.License.IsDisasterRecoverySupported())
-	case "isGitOpsSupported":
-		return strconv.FormatBool(ctx.License.IsGitOpsSupported())
-	case "isSupportBundleUploadSupported":
-		return strconv.FormatBool(ctx.License.IsSupportBundleUploadSupported())
-	case "isEmbeddedClusterMultiNodeEnabled":
-		return strconv.FormatBool(ctx.License.IsEmbeddedClusterMultiNodeEnabled())
-	case "isIdentityServiceSupported":
-		return strconv.FormatBool(ctx.License.IsIdentityServiceSupported())
-	case "isGeoaxisSupported":
-		return strconv.FormatBool(ctx.License.IsGeoaxisSupported())
-	case "isAirgapSupported":
-		return strconv.FormatBool(ctx.License.IsAirgapSupported())
-	case "licenseType":
-		return ctx.License.GetLicenseType()
-	case "licenseSequence":
-		return strconv.FormatInt(ctx.License.GetLicenseSequence(), 10)
-	case "signature":
-		return string(ctx.License.GetSignature())
+	// GENERAL FIELDS
 	case "appSlug":
 		return ctx.License.GetAppSlug()
 	case "channelID":
 		return ctx.License.GetChannelID()
 	case "channelName":
 		return ctx.License.GetChannelName()
-	case "isSemverRequired":
-		return strconv.FormatBool(ctx.License.IsSemverRequired())
-	case "customerName":
-		return ctx.License.GetCustomerName()
+	case "customerEmail":
+		return ctx.License.GetCustomerEmail()
 	case "endpoint":
 		endpoint := ctx.License.GetEndpoint()
 		if endpoint == "" {
@@ -80,6 +57,42 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 		return endpoint
 	case "licenseID", "licenseId":
 		return ctx.License.GetLicenseID()
+	case "licenseSequence":
+		return strconv.FormatInt(ctx.License.GetLicenseSequence(), 10)
+	case "customerName":
+		return ctx.License.GetCustomerName()
+	case "signature":
+		return string(ctx.License.GetSignature())
+	case "licenseType":
+		return ctx.License.GetLicenseType()
+	case "replicatedProxyDomain":
+		return ctx.License.GetReplicatedProxyDomain()
+	// INSTALL TYPES
+	case "isEmbeddedClusterDownloadEnabled":
+		return strconv.FormatBool(ctx.License.IsEmbeddedClusterDownloadEnabled())
+	// INSTALL OPTIONS
+	case "isAirgapSupported":
+		return strconv.FormatBool(ctx.License.IsAirgapSupported())
+	case "isEmbeddedClusterMultiNodeEnabled":
+		return strconv.FormatBool(ctx.License.IsEmbeddedClusterMultiNodeEnabled())
+	// ADMIN CONSOLE FEATURE OPTIONS
+	// there was a bug where this one started ithe a capital I but I don't
+	// want to remove it in case some vendors are using it that way
+	case "IsDisasterRecoverySupported", "isDisasterRecoverySupported":
+		return strconv.FormatBool(ctx.License.IsDisasterRecoverySupported())
+	case "isGeoaxisSupported":
+		return strconv.FormatBool(ctx.License.IsGeoaxisSupported())
+	case "isGitOpsSupported":
+		return strconv.FormatBool(ctx.License.IsGitOpsSupported())
+	case "isIdentityServiceSupported":
+		return strconv.FormatBool(ctx.License.IsIdentityServiceSupported())
+	case "isSemverRequired":
+		return strconv.FormatBool(ctx.License.IsSemverRequired())
+	case "isSnapshotSupported":
+		return strconv.FormatBool(ctx.License.IsSnapshotSupported())
+	case "isSupportBundleUploadSupported":
+		return strconv.FormatBool(ctx.License.IsSupportBundleUploadSupported())
+		// ENTITLEMENT FIELDS (a.k.a custom license fields)
 	default:
 		entitlements := ctx.License.GetEntitlements()
 		entitlement, ok := entitlements[name]
