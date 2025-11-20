@@ -451,6 +451,102 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			fieldName: "signature",
 			want:      "abcdef0123456789",
 		},
+		{
+			name: "built-in channelID",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ChannelID: "channel-123",
+					},
+				},
+			},
+			fieldName: "channelID",
+			want:      "channel-123",
+		},
+		{
+			name: "built-in customerEmail",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						CustomerEmail: "customer@example.com",
+					},
+				},
+			},
+			fieldName: "customerEmail",
+			want:      "customer@example.com",
+		},
+		{
+			name: "built-in endpoint",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						Endpoint: "https://replicated.example.com",
+					},
+				},
+			},
+			fieldName: "endpoint",
+			want:      "https://replicated.example.com",
+		},
+		{
+			name: "built-in endpoint with empty value returns default",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						Endpoint: "",
+					},
+				},
+			},
+			fieldName: "endpoint",
+			want:      "https://replicated.app",
+		},
+		{
+			name: "built-in replicatedProxyDomain",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ReplicatedProxyDomain: "proxy.example.com",
+					},
+				},
+			},
+			fieldName: "replicatedProxyDomain",
+			want:      "proxy.example.com",
+		},
+		{
+			name: "built-in isEmbeddedClusterDownloadEnabled",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsEmbeddedClusterDownloadEnabled: true,
+					},
+				},
+			},
+			fieldName: "isEmbeddedClusterDownloadEnabled",
+			want:      "true",
+		},
+		{
+			name: "built-in isSemverRequired",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsSemverRequired: true,
+					},
+				},
+			},
+			fieldName: "isSemverRequired",
+			want:      "true",
+		},
+		{
+			name: "built-in isSupportBundleUploadSupported",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsSupportBundleUploadSupported: true,
+					},
+				},
+			},
+			fieldName: "isSupportBundleUploadSupported",
+			want:      "true",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
