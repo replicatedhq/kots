@@ -46,7 +46,7 @@ func VerifyLicenseWrapper(wrapper *licensewrapper.LicenseWrapper) (*licensewrapp
 		return nil, errors.New("license wrapper contains no license")
 	}
 
-  return wrapper, wrapper.VerifySignature()
+	return wrapper, wrapper.VerifySignature()
 }
 
 func VerifyWithLicense(message, signature []byte, license *licensewrapper.LicenseWrapper) error {
@@ -54,5 +54,5 @@ func VerifyWithLicense(message, signature []byte, license *licensewrapper.Licens
 		return errors.New("license wrapper contains no license")
 	}
 
-  return license.VerifySignature() 
+	return license.VerifySignature()
 }
