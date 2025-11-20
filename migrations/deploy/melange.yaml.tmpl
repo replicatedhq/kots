@@ -21,4 +21,4 @@ pipeline:
       export DESTDIR="${{targets.destdir}}"
       mkdir -p "${DESTDIR}"
 
-      mv tables "${DESTDIR}/tables"
+      mv migrations/tables "${DESTDIR}/tables"
