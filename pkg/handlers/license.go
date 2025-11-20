@@ -224,7 +224,8 @@ func getLicenseEntitlements(license *licensewrapper.LicenseWrapper) ([]Entitleme
 	// Use wrapper method to get entitlements (works for both v1beta1 and v1beta2)
 	for key, entitlement := range license.GetEntitlements() {
 		if key == "expires_at" {
-			if entitlement.GetValue() == "" {
+			strVal, _ := entitlement.GetValue()
+			if strVal == "" {
 				continue
 			}
 
