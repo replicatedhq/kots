@@ -597,8 +597,8 @@ func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http
 
 	for k, e := range license.GetEntitlements() {
 		if k == "expires_at" {
-			if e.GetValue().(string) != "" {
-				platformLicense.ExpirationTime = e.GetValue().(string)
+			if v, _ := e.GetValue().(string); v != "" {
+				platformLicense.ExpirationTime = v
 			}
 			continue
 		}
