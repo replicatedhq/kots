@@ -47,7 +47,6 @@ jobs:
           component: kotsadm-migrations
           git-tag: ${{ needs.generate-tag.outputs.tag }}
           arch: ${{ matrix.runner.arch }}
-          workdir: migrations
 
   build-migrations:
     runs-on: ubuntu-latest
