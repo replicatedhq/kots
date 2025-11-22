@@ -13,7 +13,7 @@ jobs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Get tags
         id: get_tag
         uses: ./.github/actions/version-tag
@@ -30,7 +30,7 @@ jobs:
         ]
     runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build-custom-melange-package
         with:
           context: migrations/deploy
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [generate-tag, build-migrations-melange-packages]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build-custom-image-with-apko
         with:
           context: migrations/deploy
@@ -64,7 +64,7 @@ jobs:
         ]
     runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build-custom-melange-package
         with:
           context: deploy
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [generate-tag, build-kotsadm-melange-packages]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build-custom-image-with-apko
         with:
           context: deploy
@@ -98,7 +98,7 @@ jobs:
         ]
     runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build-custom-melange-package
         with:
           context: kurl_proxy/deploy
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [generate-tag, build-kurl-proxy-melange-packages]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build-custom-image-with-apko
         with:
           context: kurl_proxy/deploy
@@ -125,7 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -188,7 +188,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -221,7 +221,7 @@ jobs:
     needs: [build-kurl-proxy]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Scan kurl-proxy for vulnerabilities
         id: scan
         uses: ./.github/actions/scan-image
@@ -248,7 +248,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -281,7 +281,7 @@ jobs:
     needs: [build-kotsadm]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Scan kotsadm for vulnerabilities
         id: scan
         uses: ./.github/actions/scan-image
@@ -309,7 +309,7 @@ jobs:
     needs: [build-migrations]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Scan migrations for vulnerabilities
         id: scan
         uses: ./.github/actions/scan-image
