@@ -66,15 +66,15 @@ spec:
 
 func TestPullApplicationMetadata(t *testing.T) {
 	tests := []struct {
-		name               string
-		upstreamURI        string
-		license            *licensewrapper.LicenseWrapper
-		versionLabel       string
-		mockServerHandler  http.HandlerFunc
-		expectedError      bool
-		expectedErrorMsg   string
-		expectNilMetadata  bool
-		validateResult     func(t *testing.T, metadata interface{})
+		name              string
+		upstreamURI       string
+		license           *licensewrapper.LicenseWrapper
+		versionLabel      string
+		mockServerHandler http.HandlerFunc
+		expectedError     bool
+		expectedErrorMsg  string
+		expectNilMetadata bool
+		validateResult    func(t *testing.T, metadata interface{})
 	}{
 		{
 			name:        "Valid replicated URI with v1beta1 license returns metadata",
@@ -313,9 +313,9 @@ spec:
 			},
 		},
 		{
-			name:        "Empty license wrapper is handled",
-			upstreamURI: "replicated://test-app",
-			license:     &licensewrapper.LicenseWrapper{}, // Empty wrapper
+			name:         "Empty license wrapper is handled",
+			upstreamURI:  "replicated://test-app",
+			license:      &licensewrapper.LicenseWrapper{}, // Empty wrapper
 			versionLabel: "1.0.0",
 			mockServerHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)

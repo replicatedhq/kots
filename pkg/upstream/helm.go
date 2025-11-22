@@ -385,28 +385,26 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 		globalReplicatedValues["licenseID"] = u.License.GetLicenseID()
 		globalReplicatedValues["licenseType"] = u.License.GetLicenseType()
 
-		// we marshal and then unmarshal entitlements into an interface to evaluate entitlement values
-		// and end up with a single value instead of (intVal, boolVal, strVal, and type)
-		// Note: GetEntitlements() returns wrapped entitlements, so we need to unwrap them first
+		// Build license fields using wrapper methods to properly handle both V1 and V2 entitlements
 		wrappedEntitlements := u.License.GetEntitlements()
-		unwrappedEntitlements := make(map[string]interface{})
+		licenseFields := make(map[string]interface{})
 		for key, wrapper := range wrappedEntitlements {
-			// Get the underlying entitlement (V1 or V2) from the wrapper
-			if wrapper.V1 != nil {
-				unwrappedEntitlements[key] = wrapper.V1
-			} else if wrapper.V2 != nil {
-				unwrappedEntitlements[key] = wrapper.V2
+			entitlement := map[string]interface{}{
+				"title":       wrapper.GetTitle(),
+				"description": wrapper.GetDescription(),
+				"valueType":   wrapper.GetValueType(),
+				"value":       wrapper.GetValue(),
 			}
-		}
 
-		marshalledEntitlements, err := json.Marshal(unwrappedEntitlements)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal entitlements")
-		}
+			// Add signature as empty object if nil/empty to match expected format
+			sig := wrapper.GetSignature()
+			if sig == nil || len(sig) == 0 {
+				entitlement["signature"] = map[string]interface{}{}
+			} else {
+				entitlement["signature"] = sig
+			}
 
-		var licenseFields map[string]interface{}
-		if err := json.Unmarshal(marshalledEntitlements, &licenseFields); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal entitlements")
+			licenseFields[key] = entitlement
 		}
 
 		// add the field name if missing

@@ -97,8 +97,7 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 		entitlements := ctx.License.GetEntitlements()
 		entitlement, ok := entitlements[name]
 		if ok {
-			value := entitlement.GetValue()
-			return fmt.Sprintf("%v", (&value).Value())
+			return fmt.Sprintf("%v", entitlement.GetValue())
 		}
 		return ""
 	}
