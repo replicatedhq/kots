@@ -14,7 +14,7 @@ jobs:
       GH_TOKEN: ${{ secrets.REPLICATED_GH_PAT }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: List PRs
         id: list-prs
@@ -53,7 +53,7 @@ jobs:
       GH_TOKEN: ${{ secrets.REPLICATED_GH_PAT }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ matrix.pr.headRefName }}
 

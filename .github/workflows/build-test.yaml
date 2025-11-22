@@ -40,7 +40,7 @@ jobs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Get tags
         id: get_tag
         uses: ./.github/actions/version-tag
@@ -51,7 +51,7 @@ jobs:
     needs: [ can-run-ci ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -78,7 +78,7 @@ jobs:
     needs: [ can-run-ci, deps-web ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -105,7 +105,7 @@ jobs:
     needs: [ can-run-ci, deps-web ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -135,7 +135,7 @@ jobs:
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action checks out the remote branch and runs CI
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -168,7 +168,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -184,7 +184,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ can-run-ci, deps-kots ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -201,7 +201,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ can-run-ci, deps-kots ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -220,7 +220,7 @@ jobs:
     needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -258,7 +258,7 @@ jobs:
         ]
     runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -273,7 +273,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ can-run-ci, generate-tag, build-kotsadm-melange-packages ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -290,7 +290,7 @@ jobs:
     needs: [ can-run-ci ]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: main
           repository: replicatedhq/kots-helm
@@ -319,7 +319,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -356,7 +356,7 @@ jobs:
         ]
     runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -371,7 +371,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ can-run-ci, generate-tag, build-kurl-proxy-melange-packages ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -394,7 +394,7 @@ jobs:
         ]
     runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -409,7 +409,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ can-run-ci, generate-tag, build-migrations-melange-packages ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -427,7 +427,7 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -449,7 +449,7 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -470,7 +470,7 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -488,7 +488,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ enable-tests, can-run-ci ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: get CMX versions to test
@@ -514,7 +514,7 @@ jobs:
     outputs:
       ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -530,7 +530,7 @@ jobs:
       pull-requests: write
     steps:
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: set outputs
         id: vars
         run: |
@@ -582,7 +582,7 @@ jobs:
   #   needs: [ validate-deps, generate-tag ]
   #   steps:
   #     - name: Checkout
-  #       uses: actions/checkout@v5
+  #       uses: actions/checkout@v6
   #     - name: download e2e deps
   #       uses: actions/download-artifact@v5
   #       with:
@@ -622,7 +622,7 @@ jobs:
     continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -660,7 +660,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -702,7 +702,7 @@ jobs:
       APP_SLUG: minimal-rbac
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -922,7 +922,7 @@ jobs:
       APP_VERSION_LABEL: v1.0.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster
         id: create-cluster
@@ -1142,7 +1142,7 @@ jobs:
       APP_VERSION_LABEL: v1.0.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster
         id: create-cluster
@@ -1356,7 +1356,7 @@ jobs:
     continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -1394,7 +1394,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -1433,7 +1433,7 @@ jobs:
       APP_SLUG: strict-preflight-checks
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -1585,7 +1585,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -1622,7 +1622,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -1656,7 +1656,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -1692,7 +1692,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -1732,7 +1732,7 @@ jobs:
       APP_VERSION_LABEL: "0.0.1"
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -1903,7 +1903,7 @@ jobs:
       APP_SLUG: multi-namespace-yeti
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - uses: azure/setup-helm@v4
         with:
@@ -2021,7 +2021,7 @@ jobs:
       APP_SLUG: multi-namespace
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -2132,7 +2132,7 @@ jobs:
       LATEST_APP_VERSION_LABEL: v1.0.1
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -2287,7 +2287,7 @@ jobs:
       APP_SLUG: helm-install-order
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -2384,7 +2384,7 @@ jobs:
       APP_SLUG: no-redeploy-on-restart
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -2504,7 +2504,7 @@ jobs:
     env:
       APP_SLUG: kubernetes-installer-preflight
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -2626,7 +2626,7 @@ jobs:
     needs: [ validate-deps ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: download kots binary
         uses: actions/download-artifact@v5
@@ -2657,7 +2657,7 @@ jobs:
       NAMESPACE: generate-manifests
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: download kots binary
         uses: actions/download-artifact@v5
@@ -2849,7 +2849,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -2913,7 +2913,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -2965,7 +2965,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -3027,7 +3027,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -3079,7 +3079,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -3141,7 +3141,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -3198,7 +3198,7 @@ jobs:
       BASE_KOTS_VERSION: v1.57.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -3339,7 +3339,7 @@ jobs:
       BASE_KOTS_VERSION: v1.94.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -3520,7 +3520,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -3557,7 +3557,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -3596,7 +3596,7 @@ jobs:
       APP_SLUG: remove-app
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -3772,7 +3772,7 @@ jobs:
         ] 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -3870,7 +3870,7 @@ jobs:
       UPGRADE_VERSION: '0.2.1'
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - uses: azure/setup-helm@v4
         with:
@@ -4093,7 +4093,7 @@ jobs:
       APP_SLUG: deployment-orchestration
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - uses: azure/setup-helm@v4
         with:
@@ -4261,7 +4261,7 @@ jobs:
       KOTS_NAMESPACE: replicated-sdk
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -4357,7 +4357,7 @@ jobs:
 
       - run: rm -rf ./replicated-sdk
       - name: Checkout replicated-sdk
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: replicatedhq/replicated-sdk
           path: replicated-sdk
@@ -4434,7 +4434,7 @@ jobs:
 
       - run: rm -rf ./replicated-sdk
       - name: Checkout replicated-sdk
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: replicatedhq/replicated-sdk
           path: replicated-sdk
@@ -4511,7 +4511,7 @@ jobs:
 
       - run: rm -rf ./replicated-sdk
       - name: Checkout replicated-sdk
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: replicatedhq/replicated-sdk
           path: replicated-sdk
@@ -4567,7 +4567,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -4604,7 +4604,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: download e2e deps
         uses: actions/download-artifact@v5
         with:
@@ -4643,7 +4643,7 @@ jobs:
       APP_SLUG: get-set-config
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster 
         id: create-cluster 
@@ -4904,7 +4904,7 @@ jobs:
       APP_SLUG: get-set-config
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Create Cluster
         id: create-cluster
