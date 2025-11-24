@@ -40,7 +40,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Verify image access
         run: |
           if ! docker pull kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}; then
@@ -67,7 +67,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Verify image access
         run: |
           if ! docker pull kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}; then
@@ -94,7 +94,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Verify image access
         run: |
           if ! docker pull kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}; then
@@ -120,7 +120,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -151,7 +151,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -182,7 +182,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -213,7 +213,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
