@@ -207,6 +207,9 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 	if outerLicense.Spec.Endpoint != innerLicense.Spec.Endpoint {
 		return fmt.Errorf("\"endpoint\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.Endpoint, innerLicense.Spec.Endpoint)
 	}
+	if outerLicense.Spec.ReplicatedProxyDomain != innerLicense.Spec.ReplicatedProxyDomain {
+		return fmt.Errorf("\"replicatedProxyDomain\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.ReplicatedProxyDomain, innerLicense.Spec.ReplicatedProxyDomain)
+	}
 	if outerLicense.Spec.CustomerName != innerLicense.Spec.CustomerName {
 		return fmt.Errorf("\"CustomerName\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.CustomerName, innerLicense.Spec.CustomerName)
 	}

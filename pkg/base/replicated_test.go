@@ -2025,6 +2025,7 @@ spec:
   appSlug: my-app
   channelName: stable
   endpoint: https://example.com
+	customerID: customer-id
   customerName: My Customer
   customerEmail:
   licenseID: "1234"
@@ -2086,6 +2087,7 @@ spec:
 							AppSlug:       "my-app",
 							ChannelName:   "stable",
 							Endpoint:      "https://example.com",
+							CustomerID:    "customer-id",
 							CustomerName:  "My Customer",
 							CustomerEmail: "",
 							LicenseID:     "1234",

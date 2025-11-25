@@ -5,6 +5,7 @@ metadata:
 spec:
   licenseID: test-license-id
   licenseType: trial
+  customerID: test-customer-id
   customerName: Test Customer
   appSlug: test-app
   channelID: "1"

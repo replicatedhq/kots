@@ -37,6 +37,7 @@ type SyncLicenseRequest struct {
 
 type LicenseResponse struct {
 	ID                                string                `json:"id"`
+	CustomerID                        string                `json:"customerID"`
 	Assignee                          string                `json:"assignee"`
 	ExpiresAt                         time.Time             `json:"expiresAt"`
 	ChannelName                       string                `json:"channelName"`
@@ -722,6 +723,7 @@ func licenseResponseFromLicense(license *licensewrapper.LicenseWrapper, app *app
 
 	response := LicenseResponse{
 		ID:                                license.GetLicenseID(),
+		CustomerID:                        license.GetCustomerID(),
 		Assignee:                          license.GetCustomerName(),
 		ChannelName:                       license.GetChannelName(),
 		LicenseSequence:                   license.GetLicenseSequence(),

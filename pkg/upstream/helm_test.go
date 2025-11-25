@@ -1301,6 +1301,7 @@ some: value
 									},
 								},
 							},
+							CustomerID:    "customer-id",
 							CustomerEmail: "customer@example.com",
 							CustomerName:  "Customer Name",
 							LicenseType:   "dev",

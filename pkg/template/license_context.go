@@ -59,6 +59,8 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 		return ctx.License.GetLicenseID()
 	case "licenseSequence":
 		return strconv.FormatInt(ctx.License.GetLicenseSequence(), 10)
+	case "customerID":
+		return ctx.License.GetCustomerID()
 	case "customerName":
 		return ctx.License.GetCustomerName()
 	case "signature":
