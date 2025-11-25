@@ -446,6 +446,7 @@ license: |
     appSlug: app-slug
     channelName: channel-name
     customerEmail: customer@example.com
+    customerID: customer-id
     customerName: Customer Name
     endpoint: https://replicated.app
     entitlements:
@@ -489,6 +490,7 @@ global:
   replicated:
     channelName: channel-name
     customerEmail: customer@example.com
+    customerID: customer-id
     customerName: Customer Name
     dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJURWxEUlU1VFJWOUpSRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6IlRFbERSVTVUUlY5SlJEcHNhV05sYm5ObExXbGsifX19
     licenseFields:
@@ -729,6 +731,7 @@ image:
       appSlug: app-slug
       channelName: channel-name
       customerEmail: customer@example.com
+      customerID: customer-id
       customerName: Customer Name
       endpoint: https://replicated.app
       entitlements:
@@ -747,6 +750,7 @@ global:
   replicated:
     channelName: channel-name
     customerEmail: customer@example.com
+    customerID: customer-id
     customerName: Customer Name
     dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJURWxEUlU1VFJWOUpSRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6IlRFbERSVTVUUlY5SlJEcHNhV05sYm5ObExXbGsifX19
     licenseFields:
@@ -996,6 +1000,7 @@ global:
     some: value
     channelName: channel-name
     customerEmail: customer@example.com
+    customerID: customer-id
     customerName: Customer Name
     dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJURWxEUlU1VFJWOUpSRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6IlRFbERSVTVUUlY5SlJEcHNhV05sYm5ObExXbGsifX19
     licenseFields:
@@ -1040,6 +1045,7 @@ global:
       appSlug: app-slug
       channelName: channel-name
       customerEmail: customer@example.com
+      customerID: customer-id
       customerName: Customer Name
       endpoint: https://replicated.app
       entitlements:
