@@ -21,11 +21,11 @@ func LicenseIsExpired(license *licensewrapper.LicenseWrapper) (bool, error) {
 	if val.GetValueType() != "" && val.GetValueType() != "String" {
 		return false, errors.Errorf("expires_at must be type String: %s", val.GetValueType())
 	}
-	if val.GetValue().StrVal == "" {
+	if val.GetValue().(string) == "" {
 		return false, nil
 	}
 
-	parsed, err := time.Parse(time.RFC3339, val.GetValue().StrVal)
+	parsed, err := time.Parse(time.RFC3339, val.GetValue().(string))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to parse expiration time")
 	}
