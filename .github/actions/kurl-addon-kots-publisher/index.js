@@ -1,4 +1,4 @@
-import { getInput } from '@actions/core'
+import { getInput, info } from '@actions/core'
 import { getOctokit } from '@actions/github'
 import { HttpClient } from '@actions/http-client';
 import fs from 'node:fs/promises';
@@ -6,8 +6,9 @@ import { appendVersion } from './publisher.js';
 
 const addonVersion = getInput('ADDON_VERSION');
 const addonPackageUrl = getInput('ADDON_PACKAGE_URL');
-const isRelease = getInput('IS_RELEASE');
-const isPrerelease = isRelease !== 'true';
+const isReleaseInput = getInput('IS_RELEASE') || '';
+const isRelease = isReleaseInput.trim().toLowerCase() === 'true';
+const isPrerelease = !isRelease;
 const githubToken = getInput('GITHUB_TOKEN');
 const github = getOctokit(githubToken);
 const client = new HttpClient();
@@ -19,6 +20,10 @@ const latestKurlVersion = await github.rest.repos.getLatestRelease({
 let kotsAddonVersions = await client.get('https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json')
   .then(response => response.readBody())
   .then(response => JSON.parse(response));
+
+info(`IS_RELEASE input: "${isReleaseInput}"`);
+info(`isRelease parsed: ${isRelease}`);
+info(`isPrerelease: ${isPrerelease}`);
 
 kotsAddonVersions = appendVersion(kotsAddonVersions, {
   version: addonVersion,
