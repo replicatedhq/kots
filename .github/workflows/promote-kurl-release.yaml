@@ -12,6 +12,11 @@ on:
         required: true
         type: boolean
         default: false
+      no_publish:
+        description: Do not publish the kurl addon
+        required: false
+        type: boolean
+        default: false
   release:
     types: [released]
 
@@ -19,8 +24,12 @@ permissions:
   contents: read
 
 jobs:
-  promote-kurl-release:
+  publish-kurl-addon:
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -28,13 +37,27 @@ jobs:
       - name: Output variables
         id: vars
         run: |
-          echo "addon_version=${github.event_name == 'release' ? github.ref_name : inputs.addon_version}" >> "$GITHUB_OUTPUT"
-          echo "is_release=${github.event_name == 'release' ? 'true' : inputs.is_release}" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" == "release" ]; then
+            echo "addon_version=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "addon_version=${{ inputs.addon_version }}" >> "$GITHUB_OUTPUT"
+            echo "is_release=${{ inputs.is_release }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Get addon package url
         id: addon-package-url
         run: |
-          addon_package_url=$(curl -fsSL https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json | jq -r '.[] | select(.version == "${{ steps.vars.outputs.addon_version }}") | .url')
+          set -euo pipefail
+          VERSION="${{ steps.vars.outputs.addon_version }}"
+          VERSIONS_JSON=$(curl -fsSL https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json)
+          addon_package_url=$(echo "$VERSIONS_JSON" | jq -r --arg version "$VERSION" '.[] | select(.version == $version) | .url')
+
+          if [ -z "$addon_package_url" ] || [ "$addon_package_url" == "null" ]; then
+            echo "Error: Could not find package URL for version $VERSION"
+            exit 1
+          fi
+
           echo "value=${addon_package_url}" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/kurl-addon-kots-publisher
@@ -43,3 +66,24 @@ jobs:
           ADDON_PACKAGE_URL: ${{ steps.addon-package-url.outputs.value }}
           IS_RELEASE: "${{ steps.vars.outputs.is_release }}"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kurl-addon
+          path: ./deploy/kurl/versions.json
+
+      - name: Publish kurl versions.json
+        run: |
+          set -euo pipefail
+          VERSIONS_FILE="./deploy/kurl/versions.json"
+
+          if [ ! -f "$VERSIONS_FILE" ]; then
+            echo "Error: versions.json file not found at $VERSIONS_FILE"
+            exit 1
+          fi
+
+          if [ "${{ inputs.no_publish }}" != "true" ]; then
+            echo "Uploading versions.json to S3..."
+            aws s3 cp "$VERSIONS_FILE" s3://kots-kurl-addons-production-1658439274/versions.json
+          fi
