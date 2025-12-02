@@ -3,19 +3,15 @@ description: Test kURL Add-On
 
 inputs:
   addon_version:
-    type: string
     description: "Kots version (without the 'v')."
     required: true
   addon_package_url:
-    type: string
     description: "S3 package url (from actions/kurl-addon-kots-generate)"
     required: true
   priority:
-    type: number
     description: 'Testgrid run priority.'
-    default: 0
+    default: "0"
   testgrid_api_token:
-    type: string
     description: "Testgrid API token."
     required: true
 outputs:
