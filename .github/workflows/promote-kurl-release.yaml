@@ -1,4 +1,4 @@
-name: tag-helm-chart
+name: promote-kurl-release
 
 on:
   workflow_dispatch:
