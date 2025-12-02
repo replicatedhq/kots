@@ -15,6 +15,9 @@ on:
   release:
     types: [released]
 
+permissions:
+  contents: read
+
 jobs:
   promote-kurl-release:
     runs-on: ubuntu-latest
