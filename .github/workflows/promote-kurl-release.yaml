@@ -1,0 +1,42 @@
+name: tag-helm-chart
+
+on:
+  workflow_dispatch:
+    inputs:
+      addon_version:
+        description: Version to promote
+        required: true
+        type: string
+      is_release:
+        description: Is not a prerelease
+        required: true
+        type: boolean
+        default: false
+  release:
+    types: [released]
+
+jobs:
+  promote-kurl-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Output variables
+        id: vars
+        run: |
+          echo "addon_version=${github.event_name == 'release' ? github.ref_name : inputs.addon_version}" >> "$GITHUB_OUTPUT"
+          echo "is_release=${github.event_name == 'release' ? 'true' : inputs.is_release}" >> "$GITHUB_OUTPUT"
+
+      - name: Get addon package url
+        id: addon-package-url
+        run: |
+          addon_package_url=$(curl -fsSL https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json | jq -r '.[] | select(.version == "${{ steps.vars.outputs.addon_version }}") | .url')
+          echo "addon_package_url=${addon_package_url}" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/kurl-addon-kots-publisher
+        with:
+          ADDON_VERSION: ${{ steps.vars.outputs.addon_version }}
+          ADDON_PACKAGE_URL: ${{ steps.addon-package-url.outputs.value }}
+          IS_RELEASE: "${{ steps.vars.outputs.is_release }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

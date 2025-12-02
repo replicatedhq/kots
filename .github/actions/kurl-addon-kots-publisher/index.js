@@ -6,6 +6,8 @@ import { appendVersion } from './publisher.js';
 
 const addonVersion = getInput('ADDON_VERSION');
 const addonPackageUrl = getInput('ADDON_PACKAGE_URL');
+const isRelease = getInput('IS_RELEASE');
+const isPrerelease = isRelease !== 'true';
 const githubToken = getInput('GITHUB_TOKEN');
 const github = getOctokit(githubToken);
 const client = new HttpClient();
@@ -24,6 +26,7 @@ kotsAddonVersions = appendVersion(kotsAddonVersions, {
   // Be careful when regenerating the kURL add-on package as the kurlVersionCompatibilityRange
   // will be updated to the latest kURL version.
   kurlVersionCompatibilityRange: `>= ${latestKurlVersion.data.tag_name}`,
+  isPrerelease: isPrerelease,
 });
 
 fs.writeFile('./deploy/kurl/versions.json', JSON.stringify(kotsAddonVersions));
