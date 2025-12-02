@@ -32,7 +32,7 @@ jobs:
         id: addon-package-url
         run: |
           addon_package_url=$(curl -fsSL https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json | jq -r '.[] | select(.version == "${{ steps.vars.outputs.addon_version }}") | .url')
-          echo "addon_package_url=${addon_package_url}" >> "$GITHUB_OUTPUT"
+          echo "value=${addon_package_url}" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/kurl-addon-kots-publisher
         with:
