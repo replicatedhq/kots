@@ -74,6 +74,7 @@ jobs:
           path: ./deploy/kurl/versions.json
 
       - name: Publish kurl versions.json
+        if: ${{ inputs.no_publish != 'true' }}
         run: |
           set -euo pipefail
           VERSIONS_FILE="./deploy/kurl/versions.json"
@@ -83,7 +84,5 @@ jobs:
             exit 1
           fi
 
-          if [ "${{ inputs.no_publish }}" != "true" ]; then
-            echo "Uploading versions.json to S3..."
-            aws s3 cp "$VERSIONS_FILE" s3://kots-kurl-addons-production-1658439274/versions.json
-          fi
+          echo "Uploading versions.json to S3..."
+          aws s3 cp "$VERSIONS_FILE" s3://kots-kurl-addons-production-1658439274/versions.json
