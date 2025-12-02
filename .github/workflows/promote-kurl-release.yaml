@@ -38,13 +38,17 @@ jobs:
         id: vars
         run: |
           if [ "${{ github.event_name }}" == "release" ]; then
-            echo "addon_version=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-            echo "is_release=true" >> "$GITHUB_OUTPUT"
-            echo "no_publish=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "addon_version=${{ github.ref_name }}"
+              echo "is_release=true"
+              echo "no_publish=false"
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "addon_version=${{ inputs.addon_version }}" >> "$GITHUB_OUTPUT"
-            echo "is_release=${{ inputs.is_release }}" >> "$GITHUB_OUTPUT"
-            echo "no_publish=${{ inputs.no_publish }}" >> "$GITHUB_OUTPUT"
+            {
+              echo "addon_version=${{ inputs.addon_version }}"
+              echo "is_release=${{ inputs.is_release }}"
+              echo "no_publish=${{ inputs.no_publish }}"
+            } >> "$GITHUB_OUTPUT"
           fi
 
       - name: Get addon package url
