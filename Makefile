@@ -239,3 +239,8 @@ scan:
 .PHONY: generate-kubectl-versions
 generate-kubectl-versions:
 	node .github/actions/kubectl-versions/dist/index.js
+
+.PHONY: actionlint
+actionlint:
+	go install github.com/rhysd/actionlint/cmd/actionlint@latest
+	actionlint
