@@ -3,23 +3,18 @@ description: Publish kURL Add-On
 
 inputs:
   addon_version:
-    type: string
     description: "Kots version (without the 'v')."
     required: true
   s3_prefix:
-    type: string
     description: "S3 key prefix."
     default: "test/"
   priority:
-    type: number
     description: 'Testgrid run priority.'
     default: 0
   testgrid_api_token:
-    type: string
     description: "Testgrid API token."
     required: true
   kotsadm_binary_override:
-    type: string
     description: "Kots binary override."
 outputs:
   addon_package_url:
