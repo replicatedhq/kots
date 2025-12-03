@@ -48,7 +48,7 @@ func Test_KotsadmRegistry(t *testing.T) {
 	}{
 		{
 			name:     "no overrides",
-			expected: "kotsadm",
+			expected: "docker.io/kotsadm",
 		},
 		{
 			name:             "local registry",

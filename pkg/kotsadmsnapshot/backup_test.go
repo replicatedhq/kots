@@ -943,7 +943,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 					Containers: []corev1.Container{
 						{
 							Name:  "kotsadm",
-							Image: "kotsadm/kotsadm:1.0.0",
+							Image: "docker.io/kotsadm/kotsadm:1.0.0",
 						},
 					},
 				},
@@ -1021,7 +1021,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				"kots.io/embedded-registry":        "host",
 				"kots.io/is-airgap":                "true",
 				"kots.io/kotsadm-deploy-namespace": "kotsadm",
-				"kots.io/kotsadm-image":            "kotsadm/kotsadm:1.0.0",
+				"kots.io/kotsadm-image":            "docker.io/kotsadm/kotsadm:1.0.0",
 				"kots.io/snapshot-requested":       "2024-01-01T00:00:00Z",
 				"kots.io/snapshot-trigger":         "manual",
 			},
@@ -1083,7 +1083,7 @@ func Test_appendCommonAnnotations(t *testing.T) {
 				"kots.io/embedded-registry":                           "host",
 				"kots.io/is-airgap":                                   "false",
 				"kots.io/kotsadm-deploy-namespace":                    "kotsadm",
-				"kots.io/kotsadm-image":                               "kotsadm/kotsadm:1.0.0",
+				"kots.io/kotsadm-image":                               "docker.io/kotsadm/kotsadm:1.0.0",
 				"kots.io/snapshot-requested":                          "2024-01-01T00:00:00Z",
 				"kots.io/snapshot-trigger":                            "schedule",
 				"kots.io/embedded-cluster":                            "true",
@@ -1551,7 +1551,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					Containers: []corev1.Container{
 						{
 							Name:  "kotsadm",
-							Image: "kotsadm/kotsadm:1.0.0",
+							Image: "docker.io/kotsadm/kotsadm:1.0.0",
 						},
 					},
 				},
@@ -2015,7 +2015,7 @@ func Test_getInfrastructureInstanceBackupSpec(t *testing.T) {
 					Containers: []corev1.Container{
 						{
 							Name:  "kotsadm",
-							Image: "kotsadm/kotsadm:1.0.0",
+							Image: "docker.io/kotsadm/kotsadm:1.0.0",
 						},
 					},
 				},

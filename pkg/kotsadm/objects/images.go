@@ -45,8 +45,8 @@ func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string 
 
 func GetOriginalAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
 	return map[string]string{
-		"kotsadm-migrations": fmt.Sprintf("kotsadm/kotsadm-migrations:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
-		"kotsadm":            fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
+		"kotsadm-migrations": fmt.Sprintf("docker.io/kotsadm/kotsadm-migrations:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
+		"kotsadm":            fmt.Sprintf("docker.io/kotsadm/kotsadm:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"minio":              image.Minio,
 		"rqlite":             image.Rqlite,
 		"dex":                image.Dex,
