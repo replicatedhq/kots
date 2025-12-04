@@ -1296,7 +1296,7 @@ some: value
 										Type:   kotsv1beta1.String,
 										StrVal: "license-field-value",
 									},
-									Signature: kotsv1beta1.EntitlementFieldSignature{
+									Signature: &kotsv1beta1.EntitlementFieldSignature{
 										V1: []byte{},
 									},
 								},
