@@ -56,7 +56,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 				alwaysRewrite: true,
 			},
 			isDependency:         true,
-			wantImage:            "testnamespace/dex:v2.26.0",
+			wantImage:            "docker.io/testnamespace/dex:v2.26.0",
 			wantImagePullSecrets: nil,
 		},
 		{
@@ -70,7 +70,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 				alwaysRewrite: true,
 			},
 			isDependency:         true,
-			wantImage:            "testnamespace/dex:v2.26.0",
+			wantImage:            "docker.io/testnamespace/dex:v2.26.0",
 			wantImagePullSecrets: nil,
 		},
 		{
@@ -92,7 +92,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 				alwaysRewrite: true,
 			},
 			isDependency:         false,
-			wantImage:            "testnamespace/kotsadm:v0.0.0-unknown",
+			wantImage:            "docker.io/testnamespace/kotsadm:v0.0.0-unknown",
 			wantImagePullSecrets: nil,
 		},
 	}

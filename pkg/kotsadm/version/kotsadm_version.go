@@ -48,7 +48,7 @@ func KotsadmRegistry(registryConfig types.RegistryConfig) string {
 		if registryConfig.OverrideNamespace == "" {
 			return "docker.io/kotsadm"
 		} else {
-			return registryConfig.OverrideNamespace
+			return fmt.Sprintf("docker.io/%s", registryConfig.OverrideNamespace)
 		}
 	}
 
