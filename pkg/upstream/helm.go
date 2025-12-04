@@ -389,20 +389,25 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 		wrappedEntitlements := u.License.GetEntitlements()
 		licenseFields := make(map[string]interface{})
 		for key, wrapper := range wrappedEntitlements {
+			// SDK is using it's own types so we have to adapt
+			// https://github.com/replicatedhq/replicated-sdk/blob/f83579fa4a937f19693929657ba9bae66046ce70/pkg/license/types/types.go#L3-L16
+
 			entitlement := map[string]interface{}{
 				"title":       wrapper.GetTitle(),
 				"description": wrapper.GetDescription(),
 				"valueType":   wrapper.GetValueType(),
 				"value":       wrapper.GetValue(),
+				"isHidden":    wrapper.IsHidden(),
 			}
 
-			// Add signature as empty object if nil/empty to match expected format
-			sig := wrapper.GetSignature()
-			if sig == nil || len(sig) == 0 {
-				entitlement["signature"] = map[string]interface{}{}
-			} else {
-				entitlement["signature"] = sig
+			signature := map[string]interface{}{}
+			if wrapper.V1 != nil {
+				signature["v1"] = string(wrapper.V1.Signature.V1)
 			}
+			if wrapper.V2 != nil {
+				signature["v2"] = string(wrapper.V2.Signature.V2)
+			}
+			entitlement["signature"] = signature
 
 			licenseFields[key] = entitlement
 		}
