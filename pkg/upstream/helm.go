@@ -401,10 +401,10 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 
 			signature := map[string]interface{}{}
 			if wrapper.V1 != nil && wrapper.V1.Signature.V1 != nil && len(wrapper.V1.Signature.V1) > 0 {
-				signature["v1"] = string(wrapper.V1.Signature.V1)
+				signature["v1"] = base64.StdEncoding.EncodeToString(wrapper.V1.Signature.V1)
 			}
 			if wrapper.V2 != nil && wrapper.V2.Signature.V2 != nil {
-				signature["v2"] = string(wrapper.V2.Signature.V2)
+				signature["v2"] = base64.StdEncoding.EncodeToString(wrapper.V2.Signature.V2)
 			}
 			entitlement["signature"] = signature
 
