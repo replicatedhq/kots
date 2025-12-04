@@ -374,6 +374,18 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			want:      "stable",
 		},
 		{
+			name: "built-in customerID",
+			License: licensewrapper.LicenseWrapper{
+				V1: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						CustomerID: "123",
+					},
+				},
+			},
+			fieldName: "customerID",
+			want:      "123",
+		},
+		{
 			name: "built-in customerName",
 			License: licensewrapper.LicenseWrapper{
 				V1: &kotsv1beta1.License{

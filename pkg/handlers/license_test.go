@@ -34,6 +34,7 @@ spec:
   appSlug: test-app
   channelID: test-channel-id
   channelName: Stable
+  customerID: test-customer-id
   customerName: Test Customer
   endpoint: https://replicated.app
   entitlements:
@@ -59,6 +60,7 @@ spec:
 
 	// Verify response fields
 	assert.Equal(t, "test-license-id", response.ID)
+	assert.Equal(t, "test-customer-id", response.CustomerID)
 	assert.Equal(t, "Test Customer", response.Assignee)
 	assert.Equal(t, "Stable", response.ChannelName)
 	assert.Equal(t, "trial", response.LicenseType)
@@ -101,6 +103,7 @@ spec:
   appSlug: test-app-v2
   channelID: test-channel-id-v2
   channelName: Beta
+  customerID: test-customer-id-v2
   customerName: Test Customer V2
   endpoint: https://replicated.app
   entitlements:
@@ -128,6 +131,7 @@ spec:
 
 	// Verify response fields - should be identical format to v1beta1
 	assert.Equal(t, "test-license-id-v2", response.ID)
+	assert.Equal(t, "test-customer-id-v2", response.CustomerID)
 	assert.Equal(t, "Test Customer V2", response.Assignee)
 	assert.Equal(t, "Beta", response.ChannelName)
 	assert.Equal(t, "prod", response.LicenseType)
@@ -171,6 +175,7 @@ spec:
   appSlug: same-app
   channelID: same-channel
   channelName: Same Channel
+  customerID: same-customer-id
   customerName: Same Customer
   endpoint: https://replicated.app
   isAirgapSupported: true
@@ -187,6 +192,7 @@ spec:
   appSlug: same-app
   channelID: same-channel
   channelName: Same Channel
+  customerID: same-customer-id
   customerName: Same Customer
   endpoint: https://replicated.app
   isAirgapSupported: true
@@ -207,6 +213,7 @@ spec:
 
 	// Compare key fields - they should be identical
 	assert.Equal(t, v1Response.ID, v2Response.ID, "ID should match")
+	assert.Equal(t, v1Response.CustomerID, v2Response.CustomerID, "CustomerID should match")
 	assert.Equal(t, v1Response.Assignee, v2Response.Assignee, "Assignee should match")
 	assert.Equal(t, v1Response.ChannelName, v2Response.ChannelName, "ChannelName should match")
 	assert.Equal(t, v1Response.LicenseType, v2Response.LicenseType, "LicenseType should match")
@@ -374,6 +381,7 @@ func TestGetLicense_V1Beta2(t *testing.T) {
 			expectSuccess: true,
 			expectedLicense: func(t *testing.T, license LicenseResponse) {
 				assert.Equal(t, "test-license-id", license.ID)
+				assert.Equal(t, "test-customer-id", license.CustomerID)
 				assert.Equal(t, "Test Customer", license.Assignee)
 				assert.Equal(t, "Stable", license.ChannelName)
 				assert.Equal(t, "trial", license.LicenseType)

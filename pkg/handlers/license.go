@@ -37,6 +37,7 @@ type SyncLicenseRequest struct {
 
 type LicenseResponse struct {
 	ID                                string                `json:"id"`
+	CustomerID                        string                `json:"customerID"`
 	Assignee                          string                `json:"assignee"`
 	ExpiresAt                         time.Time             `json:"expiresAt"`
 	ChannelName                       string                `json:"channelName"`
@@ -224,11 +225,11 @@ func getLicenseEntitlements(license *licensewrapper.LicenseWrapper) ([]Entitleme
 	// Use wrapper method to get entitlements (works for both v1beta1 and v1beta2)
 	for key, entitlement := range license.GetEntitlements() {
 		if key == "expires_at" {
-			if entitlement.GetValue().StrVal == "" {
+			if entitlement.GetValue().(string) == "" {
 				continue
 			}
 
-			expiration, err := time.Parse(time.RFC3339, entitlement.GetValue().StrVal)
+			expiration, err := time.Parse(time.RFC3339, entitlement.GetValue().(string))
 			if err != nil {
 				return nil, time.Time{}, errors.Wrap(err, "failed to parse expiration date")
 			}
@@ -241,7 +242,7 @@ func getLicenseEntitlements(license *licensewrapper.LicenseWrapper) ([]Entitleme
 				EntitlementResponse{
 					Title:     entitlement.GetTitle(),
 					Label:     key,
-					Value:     (&val).Value(),
+					Value:     val,
 					ValueType: entitlement.GetValueType(),
 				})
 		}
@@ -597,8 +598,8 @@ func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http
 
 	for k, e := range license.GetEntitlements() {
 		if k == "expires_at" {
-			if e.GetValue().StrVal != "" {
-				platformLicense.ExpirationTime = e.GetValue().StrVal
+			if e.GetValue().(string) != "" {
+				platformLicense.ExpirationTime = e.GetValue().(string)
 			}
 			continue
 		}
@@ -608,7 +609,7 @@ func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http
 			Field:            k,
 			Title:            e.GetTitle(),
 			Type:             e.GetValueType(),
-			Value:            (&val).Value(),
+			Value:            val,
 			HideFromCustomer: e.IsHidden(),
 		}
 
@@ -722,6 +723,7 @@ func licenseResponseFromLicense(license *licensewrapper.LicenseWrapper, app *app
 
 	response := LicenseResponse{
 		ID:                                license.GetLicenseID(),
+		CustomerID:                        license.GetCustomerID(),
 		Assignee:                          license.GetCustomerName(),
 		ChannelName:                       license.GetChannelName(),
 		LicenseSequence:                   license.GetLicenseSequence(),

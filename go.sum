@@ -1191,6 +1191,8 @@ github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250729184643-f055e67a
 github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250729184643-f055e67a064d/go.mod h1:gZdtXCAVJt0a5Ry64Jlaeph7qh+IGsAkq4P0PE6XiZI=
 github.com/replicatedhq/kotskinds v0.0.0-20251106194120-8ae701787e22 h1:WXzSYpKmNtTHk7W1nQXYVYWIv6pRtjs2rarVVJZ9cfw=
 github.com/replicatedhq/kotskinds v0.0.0-20251106194120-8ae701787e22/go.mod h1:+k4PHo2wukoU9kdiKrqqgi89Wmj+9AiwppYGVK11zig=
+github.com/replicatedhq/kotskinds v0.0.0-20251125152515-acc84923a4f5 h1:NaLh1hQbIrjU/hIppLGEnOWm6FvFdOwNrQP101K7H9g=
+github.com/replicatedhq/kotskinds v0.0.0-20251125152515-acc84923a4f5/go.mod h1:+k4PHo2wukoU9kdiKrqqgi89Wmj+9AiwppYGVK11zig=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=
 github.com/replicatedhq/kurlkinds v1.5.0/go.mod h1:rUpBMdC81IhmJNCWMU/uRsMETv9P0xFoMvdSP/TAr5A=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDHxGfVkPCRXbA4BfQJvt5DHjFiTtWy3R/t4djyY=
