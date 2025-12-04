@@ -393,6 +393,7 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 			// https://github.com/replicatedhq/replicated-sdk/blob/f83579fa4a937f19693929657ba9bae66046ce70/pkg/license/types/types.go#L3-L16
 
 			entitlement := map[string]interface{}{
+        "name" :       key,
 				"title":       wrapper.GetTitle(),
 				"description": wrapper.GetDescription(),
 				"valueType":   wrapper.GetValueType(),
@@ -409,13 +410,6 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 			entitlement["signature"] = signature
 
 			licenseFields[key] = entitlement
-		}
-
-		// add the field name if missing
-		for k, v := range licenseFields {
-			if name, ok := v.(map[string]interface{})["name"]; !ok || name == "" {
-				licenseFields[k].(map[string]interface{})["name"] = k
-			}
 		}
 
 		globalReplicatedValues["licenseFields"] = licenseFields
