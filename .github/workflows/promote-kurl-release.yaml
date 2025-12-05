@@ -56,6 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.vars.outputs.addon_version }}"
+          VERSION="${VERSION#v}" # remove the 'v' prefix
           VERSIONS_JSON=$(curl -fsSL https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json)
           addon_package_url=$(echo "$VERSIONS_JSON" | jq -r --arg version "$VERSION" '.[] | select(.version == $version) | .url')
 
