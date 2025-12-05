@@ -48,7 +48,12 @@ func Test_KotsadmRegistry(t *testing.T) {
 	}{
 		{
 			name:     "no overrides",
-			expected: "kotsadm",
+			expected: "docker.io/kotsadm",
+		},
+		{
+			name:              "docker hub with custom namespace",
+			overrideNamespace: "my-namespace",
+			expected:          "docker.io/my-namespace",
 		},
 		{
 			name:             "local registry",

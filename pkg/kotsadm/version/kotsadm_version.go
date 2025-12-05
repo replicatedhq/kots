@@ -46,9 +46,9 @@ func KotsadmRegistry(registryConfig types.RegistryConfig) string {
 	if registryConfig.OverrideRegistry == "" {
 		// Images hosted in docker hub
 		if registryConfig.OverrideNamespace == "" {
-			return "kotsadm"
+			return "docker.io/kotsadm"
 		} else {
-			return registryConfig.OverrideNamespace
+			return fmt.Sprintf("docker.io/%s", registryConfig.OverrideNamespace)
 		}
 	}
 
