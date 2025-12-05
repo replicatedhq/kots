@@ -224,11 +224,12 @@ func getLicenseEntitlements(license *licensewrapper.LicenseWrapper) ([]Entitleme
 	// Use wrapper method to get entitlements (works for both v1beta1 and v1beta2)
 	for key, entitlement := range license.GetEntitlements() {
 		if key == "expires_at" {
-			if entitlement.GetValue().StrVal == "" {
+			strVal, _ := entitlement.GetValue().(string)
+			if strVal == "" {
 				continue
 			}
 
-			expiration, err := time.Parse(time.RFC3339, entitlement.GetValue().StrVal)
+			expiration, err := time.Parse(time.RFC3339, strVal)
 			if err != nil {
 				return nil, time.Time{}, errors.Wrap(err, "failed to parse expiration date")
 			}
@@ -236,12 +237,11 @@ func getLicenseEntitlements(license *licensewrapper.LicenseWrapper) ([]Entitleme
 		} else if key == "gitops_enabled" {
 			/* do nothing */
 		} else if !entitlement.IsHidden() {
-			val := entitlement.GetValue()
 			entitlements = append(entitlements,
 				EntitlementResponse{
 					Title:     entitlement.GetTitle(),
 					Label:     key,
-					Value:     (&val).Value(),
+					Value:     entitlement.GetValue(),
 					ValueType: entitlement.GetValueType(),
 				})
 		}
@@ -597,18 +597,17 @@ func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http
 
 	for k, e := range license.GetEntitlements() {
 		if k == "expires_at" {
-			if e.GetValue().StrVal != "" {
-				platformLicense.ExpirationTime = e.GetValue().StrVal
+			if v, _ := e.GetValue().(string); v != "" {
+				platformLicense.ExpirationTime = v
 			}
 			continue
 		}
 
-		val := e.GetValue()
 		field := licenseFieldType{
 			Field:            k,
 			Title:            e.GetTitle(),
 			Type:             e.GetValueType(),
-			Value:            (&val).Value(),
+			Value:            e.GetValue(),
 			HideFromCustomer: e.IsHidden(),
 		}
 

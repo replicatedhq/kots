@@ -385,35 +385,31 @@ func buildGlobalReplicatedValues(u *types.Upstream, options types.WriteOptions) 
 		globalReplicatedValues["licenseID"] = u.License.GetLicenseID()
 		globalReplicatedValues["licenseType"] = u.License.GetLicenseType()
 
-		// we marshal and then unmarshal entitlements into an interface to evaluate entitlement values
-		// and end up with a single value instead of (intVal, boolVal, strVal, and type)
-		// Note: GetEntitlements() returns wrapped entitlements, so we need to unwrap them first
+		// Build license fields using wrapper methods to properly handle both V1 and V2 entitlements
 		wrappedEntitlements := u.License.GetEntitlements()
-		unwrappedEntitlements := make(map[string]interface{})
+		licenseFields := make(map[string]interface{})
 		for key, wrapper := range wrappedEntitlements {
-			// Get the underlying entitlement (V1 or V2) from the wrapper
-			if wrapper.V1 != nil {
-				unwrappedEntitlements[key] = wrapper.V1
-			} else if wrapper.V2 != nil {
-				unwrappedEntitlements[key] = wrapper.V2
+			// SDK is using it's own types so we have to adapt
+			// https://github.com/replicatedhq/replicated-sdk/blob/f83579fa4a937f19693929657ba9bae66046ce70/pkg/license/types/types.go#L3-L16
+
+			entitlement := map[string]interface{}{
+				"name":        key,
+				"title":       wrapper.GetTitle(),
+				"description": wrapper.GetDescription(),
+				"valueType":   wrapper.GetValueType(),
+				"value":       wrapper.GetValue(),
 			}
-		}
 
-		marshalledEntitlements, err := json.Marshal(unwrappedEntitlements)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal entitlements")
-		}
-
-		var licenseFields map[string]interface{}
-		if err := json.Unmarshal(marshalledEntitlements, &licenseFields); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal entitlements")
-		}
-
-		// add the field name if missing
-		for k, v := range licenseFields {
-			if name, ok := v.(map[string]interface{})["name"]; !ok || name == "" {
-				licenseFields[k].(map[string]interface{})["name"] = k
+			signature := map[string]interface{}{}
+			if wrapper.V1 != nil && wrapper.V1.Signature.V1 != nil && len(wrapper.V1.Signature.V1) > 0 {
+				signature["v1"] = base64.StdEncoding.EncodeToString(wrapper.V1.Signature.V1)
 			}
+			if wrapper.V2 != nil && wrapper.V2.Signature.V2 != nil {
+				signature["v2"] = base64.StdEncoding.EncodeToString(wrapper.V2.Signature.V2)
+			}
+			entitlement["signature"] = signature
+
+			licenseFields[key] = entitlement
 		}
 
 		globalReplicatedValues["licenseFields"] = licenseFields

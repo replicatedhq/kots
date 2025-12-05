@@ -560,8 +560,8 @@ func listPendingChannelReleases(license *licensewrapper.LicenseWrapper, lastUpda
 // It marshals the appropriate version (v1beta1 or v1beta2) based on what's present in the wrapper.
 func MustMarshalLicenseWrapper(license *licensewrapper.LicenseWrapper) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-
 	var b bytes.Buffer
+
 	if license.IsV1() {
 		if err := s.Encode(license.V1, &b); err != nil {
 			return nil, errors.Wrap(err, "failed to encode v1beta1 license")
