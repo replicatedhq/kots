@@ -32,7 +32,7 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Output variables
         id: vars
