@@ -1521,12 +1521,17 @@ func LoadAirgapFromBytes(data []byte) (*kotsv1beta1.Airgap, error) {
 
 func GetKOTSBinPath() string {
 	if util.PodNamespace != "" {
-		// we're inside the kotsadm pod, the kots binary exists at /kots
-		return "/kots"
-	} else {
-		// we're not inside the kotsadm pod, return the command used to run kots
-		return os.Args[0]
+		// check that we are inside a kubernetes pod
+		//nolint:gosec // G101: This is a standard Kubernetes service account token path, not a hardcoded credential
+		tokenFile := "/var/run/secrets/kubernetes.io/serviceaccount/token"
+		if _, err := os.Stat(tokenFile); err == nil {
+			// we're inside the kotsadm pod, the kots binary exists at /kots
+			return "/kots"
+		}
 	}
+
+	// we're not inside the kotsadm pod, return the command used to run kots
+	return os.Args[0]
 }
 
 func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
