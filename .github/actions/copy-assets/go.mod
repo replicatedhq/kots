@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots/actions/copy-assets
 
-go 1.25.4
+go 1.25.5
 
 require (
 	github.com/google/go-github/v73 v73.0.0
