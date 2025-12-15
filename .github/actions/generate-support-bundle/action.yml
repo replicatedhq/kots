@@ -27,7 +27,7 @@ runs:
       shell: bash
 
     - id: upload-support-bundle
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ steps.generate-support-bundle.outputs.bundle-name }}
