@@ -155,7 +155,7 @@ runs:
 
     - name: Archive scan results
       if: ${{ !cancelled() && inputs.upload-sarif == 'true' }}
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: "sarif-${{ steps.image_details.outputs.safe_name }}"
         path: ${{ inputs.output-file }}
