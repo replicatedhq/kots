@@ -134,7 +134,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-kots-
     - name: Download web artifact
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: web
         path: ./web/dist
@@ -263,7 +263,7 @@ jobs:
       env:
         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
     - name: Download web artifact
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: web
         path: ./web/dist
@@ -320,7 +320,7 @@ jobs:
           addon_version=${{ needs.generate-tag.outputs.tag }}
           echo "addon_version=${addon_version#v}" >> "$GITHUB_OUTPUT"
       - name: download kots binary
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: kots
           path: bin/
@@ -416,13 +416,13 @@ jobs:
     needs: [goreleaser, generate-tag, build-kotsadm-bundle]
     steps:
     - name: Download kotsadm bundle
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: kotsadm-bundle
         path: kotsadm-bundle
 
     - name: Download kotsadm bundle without minio
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: kotsadm-bundle-nominio
         path: kotsadm-bundle-nominio

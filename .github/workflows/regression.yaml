@@ -111,13 +111,13 @@ jobs:
           ref: main
 
       - name: Download kots binary
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: kots
           path: ./automation/jumpbox/bin
 
       - name: Download kotsadm bundle
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: kotsadm-bundle
           path: ./automation/jumpbox/kotsadm-bundle
