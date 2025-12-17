@@ -85,33 +85,13 @@ func Deploy(opts DeployOptions) error {
 		return fmt.Errorf("failed to get kubeclient: %w", err)
 	}
 
-	rcu, err := embeddedcluster.RequiresClusterUpgrade(opts.Ctx, kbClient, opts.KotsKinds)
-	if err != nil {
-		return errors.Wrap(err, "failed to check if cluster requires upgrade")
-	}
-	if !rcu {
-		// a cluster upgrade is not required so we can proceed with deploying the app
-		if err := createDeployment(createDeploymentOptions{
-			ctx:                          opts.Ctx,
-			isSkipPreflights:             opts.IsSkipPreflights,
-			continueWithFailedPreflights: opts.ContinueWithFailedPreflights,
-			params:                       opts.Params,
-			tgzArchiveKey:                tgzArchiveKey,
-			requiresClusterUpgrade:       false,
-		}); err != nil {
-			return errors.Wrap(err, "failed to create deployment")
-		}
-		// wait for deployment to be processed by the kots operator
-		if err := waitForDeployment(opts.Ctx, opts.Params.AppSlug); err != nil {
-			return errors.Wrap(err, "failed to wait for deployment")
-		}
-		return nil
-	}
-
-	// a cluster upgrade is required. that's a long running process, and there's a high chance
-	// kots will be upgraded and restart during the process. so we run the upgrade in a goroutine
+	// Always run cluster upgrade for embedded-cluster installations
+	// to ensure artifacts are always distributed for joining nodes.
+	//
+	// The upgrade is a long running process, and there's a high chance
+	// kots will be upgraded and restart during the process. So we run the upgrade in a goroutine
 	// and report the status back to the ui for the user to see the progress.
-	// the kots operator takes care of reporting the progress after the deployment gets created
+	// The kots operator takes care of reporting the progress after the deployment gets created.
 
 	if err := task.SetStatusUpgradingCluster(opts.Params.AppSlug, embeddedclusterv1beta1.InstallationStateEnqueued); err != nil {
 		return errors.Wrap(err, "failed to set task status")
@@ -144,7 +124,6 @@ func Deploy(opts DeployOptions) error {
 			continueWithFailedPreflights: opts.ContinueWithFailedPreflights,
 			params:                       opts.Params,
 			tgzArchiveKey:                tgzArchiveKey,
-			requiresClusterUpgrade:       true,
 		}); err != nil {
 			// The operator is responsible for notifying of upgrade success/failure using the deployment.
 			// If we cannot create the deployment, the operator cannot take over and we need to notify of failure here.
@@ -191,7 +170,6 @@ type createDeploymentOptions struct {
 	continueWithFailedPreflights bool
 	params                       types.UpgradeServiceParams
 	tgzArchiveKey                string
-	requiresClusterUpgrade       bool
 }
 
 // createDeployment creates a configmap with the app version info which gets detected by the operator of the new kots version to deploy the app.
@@ -239,7 +217,6 @@ func createDeployment(opts createDeploymentOptions) error {
 			"continue-with-failed-preflights": fmt.Sprintf("%t", opts.continueWithFailedPreflights),
 			"preflight-result":                preflightResult,
 			"embedded-cluster-version":        opts.params.UpdateECVersion,
-			"requires-cluster-upgrade":        fmt.Sprintf("%t", opts.requiresClusterUpgrade),
 		},
 	}
 
