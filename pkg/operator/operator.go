@@ -997,12 +997,10 @@ func (o *Operator) watchDeployments() {
 }
 
 func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) {
-	if cm.Data["requires-cluster-upgrade"] == "true" {
-		// wait for cluster upgrade even if the embedded cluster version doesn't match yet
-		// in order to continuously report progress to the user
-		if err := o.waitForClusterUpgrade(cm.Data["app-id"], cm.Data["app-slug"]); err != nil {
-			return errors.Wrap(err, "failed to wait for cluster upgrade")
-		}
+	// wait for cluster upgrade even if the embedded cluster version doesn't match yet
+	// in order to continuously report progress to the user
+	if err := o.waitForClusterUpgrade(cm.Data["app-id"], cm.Data["app-slug"]); err != nil {
+		return errors.Wrap(err, "failed to wait for cluster upgrade")
 	}
 
 	// CAUTION: changes to the embedded cluster version field can break backwards compatibility
