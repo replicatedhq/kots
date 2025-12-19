@@ -997,19 +997,29 @@ func (o *Operator) watchDeployments() {
 }
 
 func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) {
-	// wait for cluster upgrade even if the embedded cluster version doesn't match yet
-	// in order to continuously report progress to the user
-	if err := o.waitForClusterUpgrade(cm.Data["app-id"], cm.Data["app-slug"]); err != nil {
-		return errors.Wrap(err, "failed to wait for cluster upgrade")
-	}
-
-	// CAUTION: changes to the embedded cluster version field can break backwards compatibility
-	ecVersion := cm.Data["embedded-cluster-version"]
-	if ecVersion == "" {
+	targetECVersion := cm.Data["embedded-cluster-version"]
+	if targetECVersion == "" {
 		return errors.New("embedded cluster version not found in deployment")
 	}
-	if ecVersion != util.EmbeddedClusterVersion() {
-		logger.Infof("deployment has embedded cluster version (%s) which does not match current embedded cluster version (%s). will not process...", ecVersion, util.EmbeddedClusterVersion())
+
+	currentECVersion := util.EmbeddedClusterVersion()
+
+	// Only wait for cluster upgrade if the EC version is actually changing.
+	// If versions match, the upgrade service already distributed artifacts in the background,
+	// so we can proceed directly to app deployment.
+	if targetECVersion != currentECVersion {
+		logger.Infof("EC version changing from %s to %s - waiting for cluster upgrade", currentECVersion, targetECVersion)
+		// wait for cluster upgrade even if the embedded cluster version doesn't match yet
+		// in order to continuously report progress to the user
+		if err := o.waitForClusterUpgrade(cm.Data["app-id"], cm.Data["app-slug"]); err != nil {
+			return errors.Wrap(err, "failed to wait for cluster upgrade")
+		}
+
+	}
+
+	// After cluster upgrade completes, check if we're now on the target version
+	if targetECVersion != util.EmbeddedClusterVersion() {
+		logger.Infof("deployment has embedded cluster version (%s) which does not match current embedded cluster version (%s). will not process...", targetECVersion, util.EmbeddedClusterVersion())
 		return nil
 	}
 
