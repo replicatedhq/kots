@@ -997,6 +997,7 @@ func (o *Operator) watchDeployments() {
 }
 
 func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) {
+	// CAUTION: changes to the embedded cluster version field can break backwards compatibility
 	targetECVersion := cm.Data["embedded-cluster-version"]
 	if targetECVersion == "" {
 		return errors.New("embedded cluster version not found in deployment")
