@@ -1009,7 +1009,7 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) 
 	// If versions match, the upgrade service already distributed artifacts in the background,
 	// so we can proceed directly to app deployment.
 	if targetECVersion != currentECVersion {
-		logger.Infof("embedded cluster version changing from %s to %s - waiting for cluster upgrade", currentECVersion, targetECVersion)
+		logger.Infof("embedded cluster version changing from (%s) to (%s) - waiting for cluster upgrade", currentECVersion, targetECVersion)
 		// wait for cluster upgrade even if the embedded cluster version doesn't match yet
 		// in order to continuously report progress to the user
 		if err := o.waitForClusterUpgrade(cm.Data["app-id"], cm.Data["app-slug"]); err != nil {
