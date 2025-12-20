@@ -113,6 +113,8 @@ type KotsKinds struct {
 
 	LintConfig *kotsv1beta1.LintConfig
 
+	Terraforms *kotsv1beta1.TerraformList
+
 	EmbeddedClusterConfig *embeddedclusterv1beta1.Config
 }
 
@@ -354,6 +356,15 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 				var b bytes.Buffer
 				if err := s.Encode(o.IdentityConfig, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode identityconfig")
+				}
+				return string(b.Bytes()), nil
+			case "TerraformList":
+				if o.Terraforms == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.Terraforms, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode terraforms")
 				}
 				return string(b.Bytes()), nil
 			case "HelmChartList":
@@ -600,6 +611,16 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 			k.V1Beta2HelmCharts.Items = append(k.V1Beta2HelmCharts.Items, *decoded.(*kotsv1beta2.HelmChart))
 		case "kots.io/v1beta1, Kind=LintConfig":
 			k.LintConfig = decoded.(*kotsv1beta1.LintConfig)
+		case "kots.io/v1beta1, Kind=Terraform":
+			if k.Terraforms == nil {
+				k.Terraforms = &kotsv1beta1.TerraformList{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "TerraformList",
+					},
+				}
+			}
+			k.Terraforms.Items = append(k.Terraforms.Items, *decoded.(*kotsv1beta1.Terraform))
 		case "troubleshoot.sh/v1beta2, Kind=Collector":
 			k.Collector = decoded.(*troubleshootv1beta2.Collector)
 		case "troubleshoot.sh/v1beta2, Kind=Analyzer":
