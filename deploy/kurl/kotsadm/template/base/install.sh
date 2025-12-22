@@ -291,7 +291,7 @@ function kotsadm_api_encryption_key() {
     local dst="$DIR/kustomize/kotsadm"
 
     local API_ENCRYPTION_ENCODED API_ENCRYPTION
-    API_ENCRYPTION_ENCODED=$(kubectl -n default get secret kotsadm-encryption -ojsonpath="{ .data.encryptionKey }" 2>/dev/null)
+    API_ENCRYPTION_ENCODED=$(kubectl -n default get secret kotsadm-encryption --ignore-not-found -ojsonpath="{ .data.encryptionKey }")
     API_ENCRYPTION=$(echo "$API_ENCRYPTION_ENCODED" | base64 --decode)
 
     if [ -z "$API_ENCRYPTION" ]; then
