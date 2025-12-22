@@ -1182,8 +1182,8 @@ github.com/redis/go-redis/v9 v9.10.0/go.mod h1:huWgSWd8mW6+m0VPhJjSSQ+d6Nh1VICQ6
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250729184643-f055e67a064d h1:Wl0fHoWTcrveqbWmDVEPFoa/K3EzyROC8tjHZxzwg3Q=
 github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250729184643-f055e67a064d/go.mod h1:gZdtXCAVJt0a5Ry64Jlaeph7qh+IGsAkq4P0PE6XiZI=
-github.com/replicatedhq/kotskinds v0.0.0-20251202215158-294aceff2380 h1:c5hnM6zpxVYZk/wCzGKsbABiBVpFHqQ08T5RXP7wLHQ=
-github.com/replicatedhq/kotskinds v0.0.0-20251202215158-294aceff2380/go.mod h1:hpR1pZ3mEtbMrl/tmuqNjK+cSBcmb8F7A1EPhXwssfI=
+github.com/replicatedhq/kotskinds v0.0.0-20251219184143-fc5e03d7bbc6 h1:2xmBPZQTdytaQUfSpNi2XgsLgH1aD1YFsJPX0ltC+Zc=
+github.com/replicatedhq/kotskinds v0.0.0-20251219184143-fc5e03d7bbc6/go.mod h1:hpR1pZ3mEtbMrl/tmuqNjK+cSBcmb8F7A1EPhXwssfI=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=
 github.com/replicatedhq/kurlkinds v1.5.0/go.mod h1:rUpBMdC81IhmJNCWMU/uRsMETv9P0xFoMvdSP/TAr5A=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDHxGfVkPCRXbA4BfQJvt5DHjFiTtWy3R/t4djyY=
