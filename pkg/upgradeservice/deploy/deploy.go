@@ -87,7 +87,11 @@ func Deploy(opts DeployOptions) error {
 
 	// Always run cluster upgrade for embedded-cluster installations
 	// to ensure artifacts are always distributed for joining nodes.
-	//
+	rcu, err := embeddedcluster.RequiresClusterUpgrade(opts.Ctx, kbClient, opts.KotsKinds)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if cluster upgrade is required")
+	}
+
 	// The upgrade is a long running process, and there's a high chance
 	// kots will be upgraded and restart during the process. So we run the upgrade in a goroutine
 	// and report the status back to the ui for the user to see the progress.
@@ -124,6 +128,7 @@ func Deploy(opts DeployOptions) error {
 			continueWithFailedPreflights: opts.ContinueWithFailedPreflights,
 			params:                       opts.Params,
 			tgzArchiveKey:                tgzArchiveKey,
+			requiresClusterUpgrade:       rcu,
 		}); err != nil {
 			// The operator is responsible for notifying of upgrade success/failure using the deployment.
 			// If we cannot create the deployment, the operator cannot take over and we need to notify of failure here.
@@ -170,6 +175,7 @@ type createDeploymentOptions struct {
 	continueWithFailedPreflights bool
 	params                       types.UpgradeServiceParams
 	tgzArchiveKey                string
+	requiresClusterUpgrade       bool
 }
 
 // createDeployment creates a configmap with the app version info which gets detected by the operator of the new kots version to deploy the app.
@@ -217,6 +223,7 @@ func createDeployment(opts createDeploymentOptions) error {
 			"continue-with-failed-preflights": fmt.Sprintf("%t", opts.continueWithFailedPreflights),
 			"preflight-result":                preflightResult,
 			"embedded-cluster-version":        opts.params.UpdateECVersion,
+			"requires-cluster-upgrade":        fmt.Sprintf("%t", opts.requiresClusterUpgrade),
 		},
 	}
 

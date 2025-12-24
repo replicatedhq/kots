@@ -997,19 +997,22 @@ func (o *Operator) watchDeployments() {
 }
 
 func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) {
-	// wait for cluster upgrade even if the embedded cluster version doesn't match yet
-	// in order to continuously report progress to the user
-	if err := o.waitForClusterUpgrade(cm.Data["app-id"], cm.Data["app-slug"]); err != nil {
-		return errors.Wrap(err, "failed to wait for cluster upgrade")
+	if cm.Data["requires-cluster-upgrade"] == "true" {
+		// wait for cluster upgrade even if the embedded cluster version doesn't match yet
+		// in order to continuously report progress to the user
+		if err := o.waitForClusterUpgrade(cm.Data["app-id"], cm.Data["app-slug"]); err != nil {
+			return errors.Wrap(err, "failed to wait for cluster upgrade")
+		}
 	}
 
 	// CAUTION: changes to the embedded cluster version field can break backwards compatibility
-	ecVersion := cm.Data["embedded-cluster-version"]
-	if ecVersion == "" {
+	targetECVersion := cm.Data["embedded-cluster-version"]
+	if targetECVersion == "" {
 		return errors.New("embedded cluster version not found in deployment")
 	}
-	if ecVersion != util.EmbeddedClusterVersion() {
-		logger.Infof("deployment has embedded cluster version (%s) which does not match current embedded cluster version (%s). will not process...", ecVersion, util.EmbeddedClusterVersion())
+	currentECVersion := util.EmbeddedClusterVersion()
+	if targetECVersion != currentECVersion {
+		logger.Infof("deployment has embedded cluster version (%s) which does not match current embedded cluster version (%s). will not process...", targetECVersion, currentECVersion)
 		return nil
 	}
 
