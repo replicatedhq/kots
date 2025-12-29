@@ -91,6 +91,18 @@ func Deploy(opts DeployOptions) error {
 	}
 	if !rcu {
 		// a cluster upgrade is not required so we can proceed with deploying the app
+
+		// distribute artifacts even during app-only upgrades to ensure new nodes can join successfully
+		in, err := embeddedcluster.GetCurrentInstallation(opts.Ctx, kbClient)
+		if err != nil {
+			return errors.Wrap(err, "failed to get current installation for artifact distribution")
+		}
+
+		err = embeddedcluster.DistributeArtifacts(opts.Ctx, in, opts.RegistrySettings, opts.KotsKinds.License, opts.Params.UpdateVersionLabel)
+		if err != nil {
+			return errors.Wrap(err, "failed to distribute artifacts")
+		}
+
 		if err := createDeployment(createDeploymentOptions{
 			ctx:                          opts.Ctx,
 			isSkipPreflights:             opts.IsSkipPreflights,
