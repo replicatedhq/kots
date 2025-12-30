@@ -129,6 +129,7 @@ test('type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admi
   await expect(page.getByTestId("build-version")).toHaveText(process.env.NEW_KOTS_VERSION!);
   await login(page);
   await joinWorkerNode(page, expect); // runs in the background
+  await waitForWorkerNode();
   await validateDashboardInfo(page, expect, constants.IS_AIRGAPPED, false);
   await validateDashboardGraphs(page, expect, constants.IS_EXISTING_CLUSTER);
   await validateInitialPreflightsSkipped(page, expect);
