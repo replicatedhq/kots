@@ -67,13 +67,16 @@ func Test_General(t *testing.T) {
 	req.NoError(err)
 	req.Equal(altPlaintext, string(altDecrypted))
 
-	// ensure that after adding a new key, encryption still works and can be decrypted
+	// ensure that after adding a new key, the original key is still used for encryption
 	testReEncrypted := Encrypt([]byte(testValue))
+	// each encryption uses a unique nonce, so encrypting the same plaintext produces different ciphertexts
+	req.NotEqual(string(testEncrypted), string(testReEncrypted))
+
+	// but decryption should still work for both
 	testReDecrypted, err := Decrypt(testReEncrypted)
 	req.NoError(err)
 	req.Equal(testValue, string(testReDecrypted))
 
-	// ensure original encrypted value can still be decrypted (backward compatibility)
 	testDecrypted, err = Decrypt(testEncrypted)
 	req.NoError(err)
 	req.Equal(testValue, string(testDecrypted))
