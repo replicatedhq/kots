@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/pkg/errors"
@@ -25,6 +26,9 @@ const keyLength = 24 // 192 bit
 
 var decryptionCiphers []*aesCipher // used to decrypt data
 var encryptionCipher *aesCipher    // used to encrypt data
+
+// nonceSource is the random source for nonces (overridable for tests)
+var nonceSource io.Reader = rand.Reader
 
 // add cipher from API_ENCRYPTION_KEY environment variable if it is present (and set that key to be used for encryption)
 func init() {
@@ -193,13 +197,47 @@ func (c *aesCipher) decrypt(in []byte) (result []byte, err error) {
 	return
 }
 
+func (c *aesCipher) decryptWithNoncePrefix(in []byte) (result []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Errorf("decrypt with nonce prefix recovered from panic: %v", r)
+		}
+	}()
+
+	nonceSize := c.cipher.NonceSize()
+	if len(in) < nonceSize {
+		return nil, errors.New("ciphertext too short")
+	}
+
+	// Extract nonce from prefix
+	nonce := in[:nonceSize]
+	ciphertext := in[nonceSize:]
+
+	return c.cipher.Open(nil, nonce, ciphertext, nil)
+}
+
 // Encrypt encrypts the data with the registered encryption key
 func Encrypt(in []byte) []byte {
 	if encryptionCipher == nil {
 		_ = NewAESCipher()
 	}
 
-	return encryptionCipher.cipher.Seal(nil, encryptionCipher.nonce, in, nil)
+	// Generate fresh nonce for THIS encryption operation
+	nonceSize := encryptionCipher.cipher.NonceSize()
+	nonce := make([]byte, nonceSize)
+	if _, err := io.ReadFull(nonceSource, nonce); err != nil {
+		panic(fmt.Sprintf("failed to read random nonce: %v", err))
+	}
+
+	// Encrypt with the fresh nonce
+	sealed := encryptionCipher.cipher.Seal(nil, nonce, in, nil)
+
+	// Prepend nonce to ciphertext: [nonce || ciphertext]
+	result := make([]byte, 0, len(nonce)+len(sealed))
+	result = append(result, nonce...)
+	result = append(result, sealed...)
+
+	return result
 }
 
 // Decrypt attempts to decrypt the provided data with all registered keys
@@ -209,10 +247,15 @@ func Decrypt(in []byte) (result []byte, err error) {
 	}
 
 	for _, decryptCipher := range decryptionCiphers {
+		// Try new format first (nonce-prefixed)
+		result, err = decryptCipher.decryptWithNoncePrefix(in)
+		if err == nil {
+			return result, nil
+		}
+
+		// Fall back to legacy format (stored nonce)
 		result, err = decryptCipher.decrypt(in)
-		if err != nil {
-			continue
-		} else {
+		if err == nil {
 			return result, nil
 		}
 	}
