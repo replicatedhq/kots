@@ -67,9 +67,16 @@ func Test_General(t *testing.T) {
 	req.NoError(err)
 	req.Equal(altPlaintext, string(altDecrypted))
 
-	// ensure that after adding a new key, the original key is still used for encryption and decryption
+	// ensure that after adding a new key, the original key is still used for encryption
 	testReEncrypted := Encrypt([]byte(testValue))
-	req.Equal(string(testEncrypted), string(testReEncrypted))
+	// each encryption uses a unique nonce, so encrypting the same plaintext produces different ciphertexts
+	req.NotEqual(string(testEncrypted), string(testReEncrypted))
+
+	// but decryption should still work for both
+	testReDecrypted, err := Decrypt(testReEncrypted)
+	req.NoError(err)
+	req.Equal(testValue, string(testReDecrypted))
+
 	testDecrypted, err = Decrypt(testEncrypted)
 	req.NoError(err)
 	req.Equal(testValue, string(testDecrypted))
@@ -159,4 +166,71 @@ func Test_InitFromSecret(t *testing.T) {
 	decryptedData, err := Decrypt(encryptedData)
 	req.NoError(err)
 	req.Equal(testString, string(decryptedData))
+}
+
+func Test_NonceIsEncodedInCiphertext(t *testing.T) {
+	req := require.New(t)
+
+	encryptionCipher = nil
+	decryptionCiphers = nil
+	req.NoError(NewAESCipher())
+
+	testValue := "test nonce encoding"
+	encrypted := Encrypt([]byte(testValue))
+
+	// Verify ciphertext is longer than plaintext (includes nonce + auth tag)
+	nonceSize := encryptionCipher.cipher.NonceSize()
+	req.Greater(len(encrypted), len(testValue)+nonceSize)
+
+	// Verify decryption works
+	decrypted, err := Decrypt(encrypted)
+	req.NoError(err)
+	req.Equal(testValue, string(decrypted))
+}
+
+func Test_UniqueNoncesPerEncryption(t *testing.T) {
+	req := require.New(t)
+
+	encryptionCipher = nil
+	decryptionCiphers = nil
+	req.NoError(NewAESCipher())
+
+	testValue := "test unique nonces"
+	encrypted1 := Encrypt([]byte(testValue))
+	encrypted2 := Encrypt([]byte(testValue))
+
+	// Same plaintext should produce different ciphertexts (different nonces)
+	req.NotEqual(encrypted1, encrypted2)
+
+	// Both should decrypt correctly
+	decrypted1, err := Decrypt(encrypted1)
+	req.NoError(err)
+	req.Equal(testValue, string(decrypted1))
+
+	decrypted2, err := Decrypt(encrypted2)
+	req.NoError(err)
+	req.Equal(testValue, string(decrypted2))
+}
+
+func Test_LegacyCiphertextStillDecrypts(t *testing.T) {
+	req := require.New(t)
+
+	encryptionCipher = nil
+	decryptionCiphers = nil
+
+	// Use known cipher from old implementation (lines 55-68 in existing tests)
+	altCipher := "wwYTl3RHaCirSqx7alC/hsRQXyycHDdGZZCyNMy9R01p5czC"
+	altCiphertext := "sNrI1egS1iLGesPDecd8G7WoNyE/KL7IFR6mYPzWwZLY5xCC"
+	altPlaintext := "this is a test value"
+
+	err := InitFromString(altCipher)
+	req.NoError(err)
+
+	altCipherBytes, err := base64.StdEncoding.DecodeString(altCiphertext)
+	req.NoError(err)
+
+	// Legacy ciphertext should still decrypt with fallback logic
+	altDecrypted, err := Decrypt(altCipherBytes)
+	req.NoError(err)
+	req.Equal(altPlaintext, string(altDecrypted))
 }
