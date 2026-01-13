@@ -153,7 +153,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version. if an airgap bundle is provided, the version created from that airgap bundle is deployed instead.")
 	cmd.Flags().String("deploy-version-label", "", "when set, automatically deploy the version with the provided version label")
-	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
+	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks if no strict preflights exist; when strict preflights are present, all preflights still run, but non-strict failures are ignored")
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and new app version(s)")
 	cmd.Flags().Bool("wait", true, "set to false to download the updates in the background")
 

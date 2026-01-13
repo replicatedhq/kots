@@ -162,7 +162,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 	}
 
 	cmd.Flags().Int64("sequence", -1, "local app sequence for the version to retry downloading.")
-	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
+	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks if no strict preflights exist; when strict preflights are present, all preflights still run, but non-strict failures are ignored")
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the update")
 	cmd.Flags().Bool("wait", true, "set to false to download the update in the background")
 	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")

@@ -114,7 +114,7 @@ func UploadCmd() *cobra.Command {
 	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
 
 	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the uploaded version")
-	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
+	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks if no strict preflights exist; when strict preflights are present, all preflights still run, but non-strict failures are ignored")
 
 	return cmd
 }
