@@ -23,6 +23,9 @@
     "@babel/preset-env": "^7.28.0",
     "@babel/register": "^7.27.1",
     "chai": "^6.2.0",
-    "mocha": "^11.7.4"
+    "mocha": "^11.7.5"
+  },
+  "overrides": {
+    "glob": "^10.5.0"
   }
 }
