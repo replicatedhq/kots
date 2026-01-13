@@ -234,6 +234,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
 
+    - name: Free up disk space
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: false
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
+
     - uses: actions/setup-go@v6
       with:
         go-version-file: go.mod
