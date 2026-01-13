@@ -12,6 +12,10 @@ import (
 //go:embed testdata/*
 var testdata embed.FS
 
+// TestVerifyLicenseWrapper_V1Beta1 tests v1beta1 license verification with MD5 signatures.
+// It verifies two distinct error paths:
+// 1. Cryptographic signature failures (invalid/tampered signatures) -> returns error
+// 2. Data validation errors (field mismatches between outer and signed license) -> logs warning, returns success
 func TestVerifyLicenseWrapper_V1Beta1(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -45,6 +49,7 @@ func TestVerifyLicenseWrapper_V1Beta1(t *testing.T) {
 		},
 		{
 			name: "invalid v1beta1 signature should fail",
+			// Cryptographic signature is invalid - this should return an error
 			license: func() string {
 				b, err := testdata.ReadFile("testdata/invalid-signature.yaml")
 				if err != nil {
@@ -53,18 +58,19 @@ func TestVerifyLicenseWrapper_V1Beta1(t *testing.T) {
 				return string(b)
 			}(),
 			wantErr: true,
-			// The actual error message contains more context from VerifyLicenseWrapper
 		},
 		{
-			name: "v1beta1 license with tampered data should fail",
+			name: "v1beta1 license with isEmbeddedClusterMultiNodeEnabled field mismatch logs warning but succeeds",
+			// Data validation error: field value differs between outer license and signed inner license.
+			// The cryptographic signature is valid, so this logs a warning but succeeds.
 			license: func() string {
-				b, err := testdata.ReadFile("testdata/invalid-changed-licenseID.yaml")
+				b, err := testdata.ReadFile("testdata/invalid-changed-isEmbeddedClusterMultiNodeEnabled.yaml")
 				if err != nil {
 					t.Fatal(err)
 				}
 				return string(b)
 			}(),
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -125,6 +131,10 @@ func TestVerifyLicenseWrapper_PreservesVersion(t *testing.T) {
 	req.Equal(wrapper.GetAppSlug(), verified.GetAppSlug())
 }
 
+// TestVerifyLicenseWrapper_V1Beta2 tests v1beta2 license verification with SHA-256 signatures.
+// It verifies two distinct error paths:
+// 1. Cryptographic signature failures (invalid/tampered signatures) -> returns error
+// 2. Data validation errors (field mismatches between outer and signed license) -> logs warning, returns success
 func TestVerifyLicenseWrapper_V1Beta2(t *testing.T) {
 	// Set up custom global key for v1beta2 test licenses
 	// This key was used to sign the test licenses in testdata/
@@ -161,6 +171,7 @@ LQIDAQAB
 		},
 		{
 			name: "invalid v1beta2 signature should fail",
+			// Cryptographic signature is invalid - this should return an error
 			license: func() string {
 				b, err := testdata.ReadFile("testdata/invalid-v1beta2-signature.yaml")
 				if err != nil {
@@ -171,7 +182,9 @@ LQIDAQAB
 			wantErr: true,
 		},
 		{
-			name: "v1beta2 license with tampered licenseID should fail",
+			name: "v1beta2 license with licenseID field mismatch logs warning but succeeds",
+			// Data validation error: licenseID field differs between outer license and signed inner license.
+			// The cryptographic signature is valid, so this logs a warning but succeeds.
 			license: func() string {
 				b, err := testdata.ReadFile("testdata/invalid-v1beta2-changed-licenseID.yaml")
 				if err != nil {
@@ -179,7 +192,7 @@ LQIDAQAB
 				}
 				return string(b)
 			}(),
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 

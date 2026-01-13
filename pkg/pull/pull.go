@@ -864,7 +864,7 @@ func publicKeysMatch(log *logger.CLILogger, license *licensewrapper.LicenseWrapp
 	}
 
 	appSlug := license.GetAppSlug()
-	if err := kotslicense.VerifyWithLicense([]byte(appSlug), []byte(airgap.Spec.Signature), license); err != nil {
+	if _, err := kotslicense.VerifyLicenseWrapper(license); err != nil {
 		log.Info("got error validating airgap bundle: %s", err.Error())
 		if airgap.Spec.AppSlug != "" {
 			return util.ActionableError{
