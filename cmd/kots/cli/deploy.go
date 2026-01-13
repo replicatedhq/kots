@@ -140,7 +140,7 @@ func DeployCmd() *cobra.Command {
 	cmd.Flags().Int64("channel-sequence", 0, "channel sequence")
 	cmd.Flags().String("airgap-bundle", "", "path to airgap bundle")
 	cmd.Flags().String("config-values", "", "path to config values file")
-	cmd.Flags().Bool("skip-preflights", false, "skip preflight checks")
+	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks if no strict preflights exist; when strict preflights are present, all preflights still run, but non-strict failures are ignored")
 	cmd.Flags().Bool("disable-image-push", false, "disable pushing images from airgap bundle")
 
 	cmd.MarkFlagRequired("config-values")

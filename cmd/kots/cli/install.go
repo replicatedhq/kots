@@ -569,7 +569,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into all KOTS Admin Console components")
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application metadata will be loaded from")
 	cmd.Flags().Bool("airgap", false, "set to true to run install in airgapped mode. setting --airgap-bundle implies --airgap=true.")
-	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
+	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks if no strict preflights exist; when strict preflights are present, all preflights still run, but non-strict failures are ignored")
 	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
 	cmd.Flags().Bool("skip-registry-check", false, "set to true to skip the connectivity test and validation of the provided registry information")
 	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")

@@ -170,7 +170,7 @@ func SetConfigCmd() *cobra.Command {
 	cmd.Flags().Bool("merge", false, "when set to true, only keys specified in config file will be updated. This flag can only be used when --config-file flag is used.")
 
 	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the version with the new configuration")
-	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks when deploying new version")
+	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks when deploying new version if no strict preflights exist; when strict preflights are present, all preflights still run, but non-strict failures are ignored")
 	cmd.Flags().Bool("current", false, "set to true to use the currently deployed version of the app as the base for the new version")
 	cmd.Flags().Int64("sequence", -1, "sequence of the app version to use as the base for the new version (defaults to the latest version unless --current flag is set)")
 
