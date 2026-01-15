@@ -392,6 +392,7 @@ require (
 	github.com/containerd/platforms v1.0.0-rc.1 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
 	github.com/containers/storage v1.59.1 // indirect
+	github.com/creack/pty v1.1.24 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
@@ -421,8 +422,6 @@ require (
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/minio/minlz v1.0.1 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/moby/moby/api v1.52.0 // indirect
-	github.com/moby/moby/client v0.2.1 // indirect
 	github.com/moby/sys/capability v0.4.0 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/nwaples/rardecode/v2 v2.2.0 // indirect
@@ -462,4 +461,7 @@ require (
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 )
 
-replace go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.36.0
+replace (
+	github.com/docker/cli => github.com/docker/cli v28.5.1+incompatible
+	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.36.0
+)
