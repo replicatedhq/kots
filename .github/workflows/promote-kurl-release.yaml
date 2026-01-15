@@ -38,14 +38,18 @@ jobs:
         id: vars
         run: |
           if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}" # remove the 'v' prefix
             {
-              echo "addon_version=${{ github.ref_name }}"
+              echo "addon_version=${VERSION}"
               echo "is_release=true"
               echo "no_publish=false"
             } >> "$GITHUB_OUTPUT"
           else
+            VERSION="${{ inputs.addon_version }}"
+            VERSION="${VERSION#v}" # remove the 'v' prefix
             {
-              echo "addon_version=${{ inputs.addon_version }}"
+              echo "addon_version=${VERSION}"
               echo "is_release=${{ inputs.is_release }}"
               echo "no_publish=${{ inputs.no_publish }}"
             } >> "$GITHUB_OUTPUT"
@@ -56,7 +60,6 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.vars.outputs.addon_version }}"
-          VERSION="${VERSION#v}" # remove the 'v' prefix
           VERSIONS_JSON=$(curl -fsSL https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json)
           addon_package_url=$(echo "$VERSIONS_JSON" | jq -r --arg version "$VERSION" '.[] | select(.version == $version) | .url')
 
