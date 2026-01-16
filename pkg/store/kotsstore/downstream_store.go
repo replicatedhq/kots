@@ -905,6 +905,11 @@ func isAppVersionDeployable(
 		return true, "", nil
 	}
 
+	// cannot skip a required version that failed to deploy
+	if appVersions.CurrentVersion.Status == types.VersionFailed && appVersions.CurrentVersion.IsRequired {
+		return false, "The current required version is not deployed", nil
+	}
+
 	// rollback support is determined across all versions from all channels
 	// versions below the current veresion in the list are considered past versions
 	versionIndex := -1

@@ -3,6 +3,7 @@ package updatechecker
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -365,6 +366,15 @@ func maybeUpdatePendingVersionsMetadata(appID string, getUpdatesOptions kotspull
 		getUpdatesOptions.CurrentChannelName = currentVersion.KOTSKinds.Installation.Spec.ChannelName
 	} else {
 		getUpdatesOptions.CurrentChannelName = ""
+	}
+
+	// also include current version in the updates fetch if it is required and failed to deploy
+	// as vendor may remove the required flag for that release
+	if currentVersion.IsRequired && currentVersion.Status == storetypes.VersionFailed {
+		updateCursor, err := strconv.Atoi(currentVersion.UpdateCursor)
+		if err == nil && updateCursor > 0 {
+			getUpdatesOptions.CurrentCursor = strconv.Itoa(updateCursor - 1)
+		}
 	}
 
 	updates, err := getUpdates(fmt.Sprintf("replicated://%s", getUpdatesOptions.License.GetAppSlug()), getUpdatesOptions)
