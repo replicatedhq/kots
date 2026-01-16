@@ -905,6 +905,12 @@ func isAppVersionDeployable(
 		return true, "", nil
 	}
 
+	// cannot skip a required version that failed to deploy
+	if appVersions.CurrentVersion.Status == types.VersionFailed && appVersions.CurrentVersion.IsRequired {
+		msg := fmt.Sprintf("Cannot deploy this version because required version %s failed to deploy. Please retry deploying version %s or check for new updates.", appVersions.CurrentVersion.VersionLabel, appVersions.CurrentVersion.VersionLabel)
+		return false, msg, nil
+	}
+
 	// rollback support is determined across all versions from all channels
 	// versions below the current veresion in the list are considered past versions
 	versionIndex := -1
