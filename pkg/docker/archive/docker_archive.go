@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/containers/image/v5/docker/tarfile"
+	"go.podman.io/image/v5/docker/tarfile"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/types"
 )

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
-	"github.com/containers/image/v5/docker"
-	"github.com/containers/image/v5/types"
+	"go.podman.io/image/v5/docker"
+	"go.podman.io/image/v5/types"
 	"github.com/pkg/errors"
 
 	"github.com/replicatedhq/kots/pkg/auth"

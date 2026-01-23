@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	containersmanifest "github.com/containers/image/v5/manifest"
-	"github.com/containers/image/v5/transports/alltransports"
-	containerstypes "github.com/containers/image/v5/types"
+	containersmanifest "go.podman.io/image/v5/manifest"
+	"go.podman.io/image/v5/transports/alltransports"
+	containerstypes "go.podman.io/image/v5/types"
 	"github.com/distribution/reference"
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"

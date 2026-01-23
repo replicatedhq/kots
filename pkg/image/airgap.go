@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containers/image/v5/transports/alltransports"
+	"go.podman.io/image/v5/transports/alltransports"
 	"github.com/distribution/reference"
 	imagespecsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"

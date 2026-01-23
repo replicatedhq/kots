@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/containers/image/v5/types"
+	"go.podman.io/image/v5/types"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
