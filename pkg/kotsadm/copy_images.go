@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/transports/alltransports"
-	imagev5types "github.com/containers/image/v5/types"
+	"go.podman.io/image/v5/copy"
+	"go.podman.io/image/v5/transports/alltransports"
+	imagev5types "go.podman.io/image/v5/types"
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"

@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containers/image/v5/docker/reference"
+	"go.podman.io/image/v5/docker/reference"
 
-	dockerref "github.com/containers/image/v5/docker/reference"
+	dockerref "go.podman.io/image/v5/docker/reference"
 	"github.com/pkg/errors"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
