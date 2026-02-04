@@ -90,14 +90,35 @@ func Deploy(opts DeployOptions) error {
 		return errors.Wrap(err, "failed to check if cluster requires upgrade")
 	}
 	if !rcu {
-		// a cluster upgrade is not required so we can proceed with deploying the app
+		// App-only upgrade path: deploy the app without upgrading the cluster
+		logger.Info("Starting app-only upgrade (no cluster upgrade required)")
 
-		// distribute artifacts even during app-only upgrades to ensure new nodes can join successfully
+		// Prepare for artifact distribution by ensuring Artifacts field is populated
 		in, err := embeddedcluster.GetCurrentInstallation(opts.Ctx, kbClient)
 		if err != nil {
 			return errors.Wrap(err, "failed to get current installation for artifact distribution")
 		}
 
+		// Initial installations don't populate Artifacts since artifacts are available locally from the airgap bundle.
+		// For app-only upgrades, we need artifact locations to distribute binaries from the registry to all nodes.
+		// Get them from the app bundle and persist to the cluster for this and future operations.
+		if in.Spec.AirGap && in.Spec.Artifacts == nil {
+			artifacts := embeddedcluster.GetArtifactsFromInstallation(opts.KotsKinds.Installation)
+			if artifacts == nil {
+				return errors.New("airgap bundle does not contain embedded cluster artifacts required for upgrade")
+			}
+
+			in.Spec.Artifacts = artifacts
+
+			// Update the cluster so subsequent operations have artifact locations
+			err = kbClient.Update(opts.Ctx, in)
+			if err != nil {
+				return errors.Wrap(err, "failed to update installation with artifacts")
+			}
+			logger.Info("Populated missing Artifacts field in Installation from app bundle for airgap app-only upgrade")
+		}
+
+		// Distribute artifacts during app-only upgrades to ensure new nodes can join successfully using the correct binaries
 		err = embeddedcluster.DistributeArtifacts(opts.Ctx, in, opts.RegistrySettings, opts.KotsKinds.License, opts.Params.UpdateVersionLabel)
 		if err != nil {
 			return errors.Wrap(err, "failed to distribute artifacts")
