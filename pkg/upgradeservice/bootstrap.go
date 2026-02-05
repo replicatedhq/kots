@@ -85,7 +85,13 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	// the container, as we are running in a previous release of the helm chart. If this is the
 	// case, we fall back to the previous behavior and get the endpoint from the license.
 	if val := os.Getenv("REPLICATED_APP_ENDPOINT"); val == "" {
-		endpoint := util.ReplicatedAppEndpoint(&licenseWrapper)
+		endpoint := "https://replicated.app"
+		if !licenseWrapper.IsEmpty() {
+			endpoint = licenseWrapper.GetEndpoint()
+		}
+		if ep := os.Getenv("REPLICATED_API_ENDPOINT"); ep != "" {
+			endpoint = ep
+		}
 		os.Setenv("REPLICATED_APP_ENDPOINT", endpoint)
 	}
 
