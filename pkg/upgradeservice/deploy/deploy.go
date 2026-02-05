@@ -110,11 +110,7 @@ func Deploy(opts DeployOptions) error {
 
 			in.Spec.Artifacts = artifacts
 
-			// Update the cluster so subsequent operations have artifact locations
-			err = kbClient.Update(opts.Ctx, in)
-			if err != nil {
-				return errors.Wrap(err, "failed to update installation with artifacts")
-			}
+			// Do not update the installation in the cluster as operations may conflict with the operator which is controlling the resource
 			logger.Info("Populated missing Artifacts field in Installation from app bundle for airgap app-only upgrade")
 		}
 
