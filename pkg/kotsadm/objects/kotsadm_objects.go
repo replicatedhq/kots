@@ -503,6 +503,10 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									Name:      "migrations",
 									MountPath: "/migrations",
 								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
+								},
 							},
 							Env: []corev1.EnvVar{
 								{
@@ -553,6 +557,10 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 								{
 									Name:      "migrations",
 									MountPath: "/migrations",
+								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -1088,6 +1096,10 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									Name:      "migrations",
 									MountPath: "/migrations",
 								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
+								},
 							},
 							Env: []corev1.EnvVar{
 								{
@@ -1138,6 +1150,10 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 								{
 									Name:      "migrations",
 									MountPath: "/migrations",
+								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
 								},
 							},
 							Env: []corev1.EnvVar{
