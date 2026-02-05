@@ -133,9 +133,6 @@ spec:
 			licenseWrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseData))
 			require.NoError(t, err)
 
-			// Execute the function - should not panic
-			ensureReplicatedAppEndpointSet(licenseWrapper)
-
 			require.NotPanics(t, func() {
 				ensureReplicatedAppEndpointSet(licenseWrapper)
 			})
