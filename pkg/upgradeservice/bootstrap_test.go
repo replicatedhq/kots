@@ -1,9 +1,12 @@
 package upgradeservice
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
+	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -71,6 +74,71 @@ func TestBootstrapUpdateWithinKubeRange(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestEnsureReplicatedAppEndpointSet(t *testing.T) {
+	tests := []struct {
+		name            string
+		existingEnv     string
+		licenseEndpoint string
+		expectedSet     string
+	}{
+		{
+			name:            "sets endpoint from license",
+			existingEnv:     "",
+			licenseEndpoint: "https://replicated.app",
+			expectedSet:     "https://replicated.app",
+		},
+		{
+			name:            "sets default endpoint when license has no endpoint",
+			existingEnv:     "",
+			licenseEndpoint: "",
+			expectedSet:     "https://replicated.app",
+		},
+		{
+			name:            "does not change when REPLICATED_APP_ENDPOINT already set",
+			existingEnv:     "https://existing.replicated.app",
+			licenseEndpoint: "https://license.replicated.app",
+			expectedSet:     "https://existing.replicated.app",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup initial REPLICATED_APP_ENDPOINT state
+			t.Setenv("REPLICATED_APP_ENDPOINT", tt.existingEnv)
+
+			// Create license
+			licenseData := `apiVersion: kots.io/v1beta1
+kind: License
+metadata:
+  name: test
+spec:
+  appSlug: test-app
+  licenseID: test-id`
+
+			if tt.licenseEndpoint != "" {
+				licenseData = fmt.Sprintf(`apiVersion: kots.io/v1beta1
+kind: License
+metadata:
+  name: test
+spec:
+  endpoint: %s
+  appSlug: test-app
+  licenseID: test-id`, tt.licenseEndpoint)
+			}
+
+			licenseWrapper, err := licensewrapper.LoadLicenseFromBytes([]byte(licenseData))
+			require.NoError(t, err)
+
+			require.NotPanics(t, func() {
+				ensureReplicatedAppEndpointSet(licenseWrapper)
+			})
+
+			// Verify env var was set correctly
+			assert.Equal(t, tt.expectedSet, os.Getenv("REPLICATED_APP_ENDPOINT"))
 		})
 	}
 }
