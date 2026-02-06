@@ -201,7 +201,9 @@ func ReplicatedAppEndpoint(license *licensewrapper.LicenseWrapper) string {
 	}
 
 	if !license.IsEmpty() {
-		return license.GetEndpoint()
+		if ep := license.GetEndpoint(); ep != "" {
+			return ep
+		}
 	}
 
 	return "https://replicated.app"

@@ -392,6 +392,16 @@ func Test_ReplicatedAppEndpoint(t *testing.T) {
 			isEmbedded: true,
 			wantPanic:  true,
 		},
+		{
+			name: "empty endpoint",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint: "",
+				},
+			},
+			isEmbedded: false,
+			want:       "https://replicated.app",
+		},
 	}
 
 	for _, tt := range tests {
