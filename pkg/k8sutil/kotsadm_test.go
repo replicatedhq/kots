@@ -44,7 +44,7 @@ func TestGetKotsadmID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetKotsadmID(tt.args.clientset)
+			got := GetKotsadmID(tt.args.clientset, "")
 			if tt.want != "" {
 				assert.Equal(t, tt.want, got)
 			} else {

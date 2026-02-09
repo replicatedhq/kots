@@ -77,19 +77,34 @@ func IsKotsadmClusterScoped(ctx context.Context, clientset kubernetes.Interface,
 	return false
 }
 
-func GetKotsadmID(clientset kubernetes.Interface) string {
-	var clusterID string
+// GetKotsadmID retrieves the stable cluster ID.
+// Priority order:
+// 1. ConfigMap value (if available and readable)
+// 2. clusterID parameter (authoritative source of truth from database)
+// 3. Generate new KSUID only if both are unavailable
+//
+// Pass the cluster_id as clusterID to prevent generating duplicate
+// cluster IDs when the ConfigMap is unavailable. Pass empty string if
+// the value is unknown.
+func GetKotsadmID(clientset kubernetes.Interface, clusterID string) string {
 	configMap, err := GetKotsadmIDConfigMap(clientset)
-	// if configmap is not found, generate a new guid and create a new configmap, if configmap is found, use the existing guid, otherwise generate
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		clusterID = ksuid.New().String()
-	} else if configMap != nil {
-		clusterID = configMap.Data["id"]
-	} else {
-		// configmap is missing for some reason, recreate with new guid, this will appear as a new instance in the report
-		clusterID = ksuid.New().String()
-		CreateKotsadmIDConfigMap(clientset, clusterID)
+
+	if err != nil && !kuberneteserrors.IsNotFound(err) && clusterID != "" {
+		return clusterID
 	}
+
+	if configMap != nil && configMap.Data["id"] != "" {
+		// ConfigMap exists, use its value
+		return configMap.Data["id"]
+	}
+
+	if clusterID == "" {
+		clusterID = ksuid.New().String()
+	}
+
+	// Attempt to recreate ConfigMap with the resolved cluster_id
+	CreateKotsadmIDConfigMap(clientset, clusterID)
+
 	return clusterID
 }
 

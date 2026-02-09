@@ -128,7 +128,8 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	if err != nil {
 		logger.Warnf("failed to get clientset: %v", err.Error())
 	}
-	r.ClusterID = k8sutil.GetKotsadmID(clientset)
+
+	r.ClusterID = k8sutil.GetKotsadmID(clientset, store.GetStore().GetClusterID())
 
 	di, err := getDownstreamInfo(appID)
 	if err != nil {

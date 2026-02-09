@@ -28,6 +28,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/rendered"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -315,7 +316,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsGKEAutopilot:      k8sutil.IsGKEAutopilot(clientset),
 		IncludeMinio:        pullOptions.IncludeMinio,
 		IsAirgap:            pullOptions.IsAirgap,
-		KotsadmID:           k8sutil.GetKotsadmID(clientset),
+		KotsadmID:           k8sutil.GetKotsadmID(clientset, store.GetStore().GetClusterID()),
 		AppID:               pullOptions.AppID,
 		PrivateCAsConfigmap: pullOptions.PrivateCAsConfigmap,
 	}

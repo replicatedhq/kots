@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/midstream"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/rendered"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -111,7 +112,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		IsOpenShift:          k8sutil.IsOpenShift(clientset),
 		IsGKEAutopilot:       k8sutil.IsGKEAutopilot(clientset),
 		IsAirgap:             rewriteOptions.IsAirgap,
-		KotsadmID:            k8sutil.GetKotsadmID(clientset),
+		KotsadmID:            k8sutil.GetKotsadmID(clientset, store.GetStore().GetClusterID()),
 		AppID:                rewriteOptions.AppID,
 		HTTPProxyEnvValue:    rewriteOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:   rewriteOptions.HTTPSProxyEnvValue,
