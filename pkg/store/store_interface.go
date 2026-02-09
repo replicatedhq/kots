@@ -216,6 +216,7 @@ type UserStore interface {
 
 type ClusterStore interface {
 	ListClusters() ([]*downstreamtypes.Downstream, error)
+	GetClusterID() string
 	GetClusterIDFromSlug(slug string) (clusterID string, err error)
 	GetClusterIDFromDeployToken(deployToken string) (clusterID string, err error)
 	CreateNewCluster(userID string, isAllUsers bool, title string, token string) (clusterID string, err error)
