@@ -536,6 +536,20 @@ func (mr *MockStoreMockRecorder) GetAppVersionBaseSequence(appID, versionLabel i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionBaseSequence", reflect.TypeOf((*MockStore)(nil).GetAppVersionBaseSequence), appID, versionLabel)
 }
 
+// GetClusterID mocks base method.
+func (m *MockStore) GetClusterID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClusterID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetClusterID indicates an expected call of GetClusterID.
+func (mr *MockStoreMockRecorder) GetClusterID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterID", reflect.TypeOf((*MockStore)(nil).GetClusterID))
+}
+
 // GetClusterIDFromDeployToken mocks base method.
 func (m *MockStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
 	m.ctrl.T.Helper()
@@ -4004,6 +4018,20 @@ func (m *MockClusterStore) CreateNewCluster(userID string, isAllUsers bool, titl
 func (mr *MockClusterStoreMockRecorder) CreateNewCluster(userID, isAllUsers, title, token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNewCluster", reflect.TypeOf((*MockClusterStore)(nil).CreateNewCluster), userID, isAllUsers, title, token)
+}
+
+// GetClusterID mocks base method.
+func (m *MockClusterStore) GetClusterID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClusterID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetClusterID indicates an expected call of GetClusterID.
+func (mr *MockClusterStoreMockRecorder) GetClusterID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterID", reflect.TypeOf((*MockClusterStore)(nil).GetClusterID))
 }
 
 // GetClusterIDFromDeployToken mocks base method.
