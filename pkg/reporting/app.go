@@ -59,14 +59,10 @@ func Init() error {
 
 func initFromDownstream() error {
 	// Retrieve the ClusterID from store
-	clusters, err := store.GetStore().ListClusters()
-	if err != nil {
-		return errors.Wrap(err, "failed to list clusters")
-	}
-	if len(clusters) == 0 {
+	clusterID := store.GetStore().GetClusterID()
+	if clusterID == "" {
 		return nil
 	}
-	clusterID := clusters[0].ClusterID
 
 	isKotsadmIDGenerated, err := store.GetStore().IsKotsadmIDGenerated()
 	if err != nil {
