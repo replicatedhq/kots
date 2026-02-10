@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - emosbaugh/20260210/regression-test-velero-secret
 
 permissions:
   contents: write
