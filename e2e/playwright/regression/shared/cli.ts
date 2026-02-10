@@ -139,15 +139,15 @@ export const installVeleroHostPath = async (
     configureVeleroImagePullSecret(registryInfo);
   }
 
+  // wait for velero to be ready
+  await waitForVeleroAndNodeAgent();
+
   // Configure hostpath backend
   let configureHostpathCommand = `yes | kubectl kots velero configure-hostpath --hostpath ${SNAPSHOTS_HOST_PATH} --namespace ${APP_SLUG}`;
   if (isAirgapped) {
     configureHostpathCommand += ` --kotsadm-registry ${registryInfo.ip}/${APP_SLUG} --registry-username ${registryInfo.username} --registry-password ${registryInfo.password}`;
   }
   runCommand(configureHostpathCommand);
-
-  // wait for velero to be ready
-  await waitForVeleroAndNodeAgent();
 }
 
 export const prepareVeleroImages = (
