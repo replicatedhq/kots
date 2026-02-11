@@ -14,8 +14,7 @@ import (
 func TestGetKotsadmID(t *testing.T) {
 
 	type args struct {
-		clientset         kubernetes.Interface
-		databaseClusterID string
+		clientset kubernetes.Interface
 	}
 	tests := []struct {
 		name                  string
@@ -30,25 +29,14 @@ func TestGetKotsadmID(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{Name: KotsadmIDConfigMapName},
 					Data:       map[string]string{"id": "cluster-id-from-configmap"},
 				}),
-				databaseClusterID: "cluster-id-from-database",
 			},
 			want:                  "cluster-id-from-configmap",
 			shouldCreateConfigMap: false,
 		},
 		{
-			name: "configmap does not exist, database cluster id provided - uses database value",
+			name: "configmap does not exist, no store initialized - generates new id",
 			args: args{
-				clientset:         fake.NewClientset(),
-				databaseClusterID: "cluster-id-from-database",
-			},
-			want:                  "cluster-id-from-database",
-			shouldCreateConfigMap: true,
-		},
-		{
-			name: "configmap does not exist, no database cluster id - generates new id",
-			args: args{
-				clientset:         fake.NewClientset(),
-				databaseClusterID: "",
+				clientset: fake.NewClientset(),
 			},
 			want:                  "",
 			shouldCreateConfigMap: true,
@@ -56,7 +44,11 @@ func TestGetKotsadmID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetKotsadmID(tt.args.clientset, tt.args.databaseClusterID)
+			// Ensure no cluster ID provider is registered for these tests
+			SetClusterIDProvider(nil)
+			defer SetClusterIDProvider(nil)
+
+			got := GetKotsadmID(tt.args.clientset)
 			if tt.want != "" {
 				assert.Equal(t, tt.want, got)
 			} else {
@@ -68,11 +60,29 @@ func TestGetKotsadmID(t *testing.T) {
 				// should have created the configmap if it didn't exist
 				cm, err := tt.args.clientset.CoreV1().ConfigMaps("").Get(context.TODO(), KotsadmIDConfigMapName, metav1.GetOptions{})
 				assert.Equal(t, nil, err)
-				// ConfigMap should contain the returned value
-				if tt.want != "" {
-					assert.Equal(t, tt.want, cm.Data["id"])
-				}
+				// ConfigMap should contain the returned value (the generated ID)
+				assert.Equal(t, got, cm.Data["id"])
 			}
 		})
 	}
+}
+
+func TestGetKotsadmID_WithStoreProvider(t *testing.T) {
+	// Test that when store is available, it's used as a fallback
+	clientset := fake.NewClientset() // No ConfigMap
+
+	// Register a mock store provider
+	mockClusterID := "cluster-id-from-store"
+	SetClusterIDProvider(func() string {
+		return mockClusterID
+	})
+	defer SetClusterIDProvider(nil)
+
+	got := GetKotsadmID(clientset)
+	assert.Equal(t, mockClusterID, got)
+
+	// Should have created ConfigMap with the store's cluster ID
+	cm, err := clientset.CoreV1().ConfigMaps("").Get(context.TODO(), KotsadmIDConfigMapName, metav1.GetOptions{})
+	assert.Equal(t, nil, err)
+	assert.Equal(t, mockClusterID, cm.Data["id"])
 }
