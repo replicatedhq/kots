@@ -43,6 +43,21 @@ func (s *KOTSStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 	return clusters, nil
 }
 
+// GetClusterID retrieves the authoritative cluster_id from the database.
+// Returns empty string if unavailable (no database access or no clusters).
+// This should be used as a fallback when the kotsadm-id ConfigMap is unavailable.
+func (s *KOTSStore) GetClusterID() string {
+	clusters, err := s.ListClusters()
+	if err != nil {
+		logger.Debug("Failed to get database cluster ID", zap.Error(err))
+		return ""
+	}
+	if len(clusters) == 0 {
+		return ""
+	}
+	return clusters[0].ClusterID
+}
+
 func (s *KOTSStore) GetClusterIDFromSlug(slug string) (string, error) {
 	db := persistence.MustGetDBSession()
 	query := `select id from cluster where slug = ?`

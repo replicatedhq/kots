@@ -13,6 +13,8 @@ import (
 	cp "github.com/otiai10/copy"
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
+	"github.com/replicatedhq/kots/pkg/store"
+	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +35,11 @@ type testCase struct {
 func TestKotsRenderDir(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	mockStore := mock_store.NewMockStore(ctrl)
+	mockStore.EXPECT().GetClusterID().Return("").AnyTimes()
+	store.SetStore(mockStore)
+	defer store.SetStore(nil)
 
 	t.Setenv("USE_MOCK_REPORTING", "1")
 	defer os.Unsetenv("USE_MOCK_REPORTING")
