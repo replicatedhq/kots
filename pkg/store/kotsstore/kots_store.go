@@ -99,6 +99,7 @@ func waitForRqlite(ctx context.Context) error {
 
 		select {
 		case <-time.After(period):
+			logger.Debug("waiting for database to be ready")
 			continue
 		case <-ctx.Done():
 			if rows.Err != nil {
