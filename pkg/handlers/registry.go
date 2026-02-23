@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/containers/image/v5/docker"
+	"go.podman.io/image/v5/docker"
 	"github.com/distribution/distribution/v3/registry/api/errcode"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"

@@ -25,6 +25,7 @@ func Test_PullReplicated(t *testing.T) {
 	defer store.SetStore(nil)
 
 	mockStore.EXPECT().ListInstalledApps().MaxTimes(1)
+	mockStore.EXPECT().GetClusterID().Return("").AnyTimes()
 
 	namespace := "test_ns"
 

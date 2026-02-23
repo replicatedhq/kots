@@ -81,13 +81,7 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 		return errors.Wrap(err, "failed to load license from bytes")
 	}
 
-	// In the upgrade service, it may be the case that the environment variables do not exist in
-	// the container, as we are running in a previous release of the helm chart. If this is the
-	// case, we fall back to the previous behavior and get the endpoint from the license.
-	if val := os.Getenv("REPLICATED_APP_ENDPOINT"); val == "" {
-		endpoint := util.ReplicatedAppEndpoint(&licenseWrapper)
-		os.Setenv("REPLICATED_APP_ENDPOINT", endpoint)
-	}
+	ensureReplicatedAppEndpointSet(licenseWrapper)
 
 	identityConfigFile, err := getIdentityConfigFile(params)
 	if err != nil {
@@ -166,4 +160,22 @@ func getIdentityConfigFile(params types.UpgradeServiceParams) (string, error) {
 		return "", errors.Wrap(err, "failed to get stat identity config file")
 	}
 	return identityConfigFile, nil
+}
+
+// ensureReplicatedAppEndpointSet ensures that the REPLICATED_APP_ENDPOINT environment variable is set.
+// When running in a previous release of the helm chart, the environment variable may not exist in
+// the container, so we fall back to getting the endpoint from the license.
+func ensureReplicatedAppEndpointSet(licenseWrapper licensewrapper.LicenseWrapper) {
+	if val := os.Getenv("REPLICATED_APP_ENDPOINT"); val == "" {
+		endpoint := "https://replicated.app"
+		if !licenseWrapper.IsEmpty() {
+			if ep := licenseWrapper.GetEndpoint(); ep != "" {
+				endpoint = ep
+			}
+		}
+		if ep := os.Getenv("REPLICATED_API_ENDPOINT"); ep != "" {
+			endpoint = ep
+		}
+		os.Setenv("REPLICATED_APP_ENDPOINT", endpoint)
+	}
 }

@@ -317,6 +317,152 @@ func Test_maybeUpdatePendingVersionsMetadata(t *testing.T) {
 				mockStore.EXPECT().UpdateAppVersionDemotion("test-app", "channel-1", "cursor-3", false).Return(nil)
 			},
 		},
+		{
+			name:  "required version failed to deploy - should decrement cursor to re-fetch current version metadata",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "5",
+				ChannelID:    "channel-1",
+				IsRequired:   true,
+				Status:       storetypes.VersionFailed, // deployment failed
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				// No store calls expected since no updates returned
+			},
+			validateOptions: func(t *testing.T, options kotspull.GetUpdatesOptions) {
+				// Cursor should be decremented from "5" to "4" to re-fetch the current version
+				assert.Equal(t, "4", options.CurrentCursor)
+				assert.Equal(t, "channel-1", options.CurrentChannelID)
+				assert.False(t, options.ChannelChanged)
+			},
+		},
+		{
+			name:  "required version successfully deployed - should NOT decrement cursor",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "5",
+				ChannelID:    "channel-1",
+				IsRequired:   true,
+				Status:       storetypes.VersionDeployed, // deployment succeeded
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				// No store calls expected since no updates returned
+			},
+			validateOptions: func(t *testing.T, options kotspull.GetUpdatesOptions) {
+				// Cursor should NOT be decremented since version was deployed successfully
+				assert.Equal(t, "5", options.CurrentCursor)
+				assert.Equal(t, "channel-1", options.CurrentChannelID)
+			},
+		},
+		{
+			name:  "non-required version failed to deploy - should NOT decrement cursor",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "5",
+				ChannelID:    "channel-1",
+				IsRequired:   false,                    // not required
+				Status:       storetypes.VersionFailed, // deployment failed
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				// No store calls expected since no updates returned
+			},
+			validateOptions: func(t *testing.T, options kotspull.GetUpdatesOptions) {
+				// Cursor should NOT be decremented since version is not required
+				assert.Equal(t, "5", options.CurrentCursor)
+				assert.Equal(t, "channel-1", options.CurrentChannelID)
+			},
+		},
+		{
+			name:  "required version with cursor 0 failed to deploy - should NOT decrement cursor below 0",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "0",
+				ChannelID:    "channel-1",
+				IsRequired:   true,
+				Status:       storetypes.VersionFailed,
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				// No store calls expected since no updates returned
+			},
+			validateOptions: func(t *testing.T, options kotspull.GetUpdatesOptions) {
+				// Cursor should NOT be decremented since it's 0 (guard against going negative)
+				assert.Equal(t, "0", options.CurrentCursor)
+				assert.Equal(t, "channel-1", options.CurrentChannelID)
+			},
+		},
+		{
+			name:  "required version deploying (not yet complete) - should NOT decrement cursor since only VersionFailed triggers refresh",
+			appID: "test-app",
+			currentVersion: &downstreamtypes.DownstreamVersion{
+				UpdateCursor: "10",
+				ChannelID:    "channel-1",
+				IsRequired:   true,
+				Status:       storetypes.VersionDeploying, // still deploying, not failed
+			},
+			pendingVersions: []*downstreamtypes.DownstreamVersion{},
+			getUpdatesOptions: kotspull.GetUpdatesOptions{
+				License: &licensewrapper.LicenseWrapper{
+					V1: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							AppSlug: "test-app-slug",
+						},
+					},
+				},
+			},
+			mockUpdates: []upstreamtypes.Update{},
+			setupMockStore: func(mockStore *mock_store.MockStore) {
+				// No store calls expected since no updates returned
+			},
+			validateOptions: func(t *testing.T, options kotspull.GetUpdatesOptions) {
+				// Cursor should NOT be decremented since status is VersionDeploying (not VersionFailed)
+				assert.Equal(t, "10", options.CurrentCursor)
+				assert.Equal(t, "channel-1", options.CurrentChannelID)
+			},
+		},
 	}
 
 	for _, test := range tests {

@@ -29,6 +29,9 @@ func DistributeArtifacts(
 	var bin string
 
 	if in.Spec.AirGap {
+		if in.Spec.Artifacts == nil || in.Spec.Artifacts.AdditionalArtifacts == nil {
+			return fmt.Errorf("missing artifacts configuration for airgap installation")
+		}
 		artifact := in.Spec.Artifacts.AdditionalArtifacts["operator"]
 		if artifact == "" {
 			return fmt.Errorf("missing operator binary in airgap artifacts")

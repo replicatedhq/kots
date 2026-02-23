@@ -9,9 +9,12 @@ import (
 
 	envsubst "github.com/drone/envsubst/v2"
 	"github.com/ghodss/yaml"
+	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/store"
+	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -90,6 +93,14 @@ func TestKotsPull(t *testing.T) {
 		fmt.Printf("Kots Pull test cases not found")
 		t.FailNow()
 	}
+
+	// pull.Pull calls store.GetStore().GetClusterID(); initialize mock store
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockStore := mock_store.NewMockStore(ctrl)
+	mockStore.EXPECT().GetClusterID().Return("").AnyTimes()
+	store.SetStore(mockStore)
+	defer store.SetStore(nil)
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {

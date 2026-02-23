@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/blang/semver"
-	dockerref "github.com/containers/image/v5/docker/reference"
+	dockerref "go.podman.io/image/v5/docker/reference"
 	"github.com/pkg/errors"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"

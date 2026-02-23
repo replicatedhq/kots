@@ -2,6 +2,7 @@ package kotsstore
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -25,7 +26,12 @@ func (s *KOTSStore) IsKotsadmIDGenerated() (bool, error) {
 		return false, errors.Wrap(err, "failed to scan")
 	}
 
-	return true, nil
+	parsedValue, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to parse boolean value")
+	}
+
+	return parsedValue, nil
 }
 
 // SetIsKotsadmIDGenerated sets the status to true if the pod is starting for the first time

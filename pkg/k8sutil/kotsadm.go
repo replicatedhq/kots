@@ -21,6 +21,18 @@ const (
 	KotsadmIDConfigMapName = "kotsadm-id"
 )
 
+var (
+	// getClusterIDFunc is a function pointer that can be set by the store package
+	// to provide the cluster ID without creating an import cycle
+	getClusterIDFunc func() string
+)
+
+// SetClusterIDProvider allows the store package to register a function
+// that provides the cluster ID without creating an import cycle
+func SetClusterIDProvider(fn func() string) {
+	getClusterIDFunc = fn
+}
+
 func FindKotsadmImage(clientset kubernetes.Interface, namespace string) (string, error) {
 	var containers []corev1.Container
 	if os.Getenv("POD_OWNER_KIND") == "deployment" {
@@ -77,19 +89,41 @@ func IsKotsadmClusterScoped(ctx context.Context, clientset kubernetes.Interface,
 	return false
 }
 
+// GetKotsadmID retrieves the stable cluster ID.
+// Priority order:
+// 1. ConfigMap value (if available and readable)
+// 2. Database cluster_id (if store is initialized)
+// 3. Generate new KSUID only if both are unavailable
+//
+// This function works in both CLI and server contexts by checking if the
+// store is available before attempting to access it.
 func GetKotsadmID(clientset kubernetes.Interface) string {
-	var clusterID string
 	configMap, err := GetKotsadmIDConfigMap(clientset)
-	// if configmap is not found, generate a new guid and create a new configmap, if configmap is found, use the existing guid, otherwise generate
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		clusterID = ksuid.New().String()
-	} else if configMap != nil {
-		clusterID = configMap.Data["id"]
-	} else {
-		// configmap is missing for some reason, recreate with new guid, this will appear as a new instance in the report
-		clusterID = ksuid.New().String()
-		CreateKotsadmIDConfigMap(clientset, clusterID)
+
+	if configMap != nil && configMap.Data["id"] != "" {
+		// ConfigMap exists, use its value
+		return configMap.Data["id"]
 	}
+
+	// Try to get cluster ID from store (if available via registered function)
+	var clusterID string
+	if getClusterIDFunc != nil {
+		clusterID = getClusterIDFunc()
+	}
+
+	// If ConfigMap read failed with a non-NotFound error and we have a cluster ID from store, use it
+	if err != nil && !kuberneteserrors.IsNotFound(err) && clusterID != "" {
+		return clusterID
+	}
+
+	// Generate new ID if we don't have one from store
+	if clusterID == "" {
+		clusterID = ksuid.New().String()
+	}
+
+	// Attempt to create/recreate ConfigMap with the resolved cluster_id
+	CreateKotsadmIDConfigMap(clientset, clusterID)
+
 	return clusterID
 }
 
