@@ -3768,6 +3768,106 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			expectedCause:        "Rollback is not supported.",
 		},
 		/* ---- Embedded cluster config tests end here ---- */
+		/* ---- Required + failed current version tests begin here ---- */
+		{
+			name: "required failed current version - deploying different upstream release is blocked",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     6,
+				UpdateCursor: "6",
+				ChannelID:    "channel-id-1",
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     6,
+						UpdateCursor: "6",
+						ChannelID:    "channel-id-1",
+					},
+					{
+						Sequence:     5,
+						UpdateCursor: "5",
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     5,
+					UpdateCursor: "5",
+					ChannelID:    "channel-id-1",
+					IsRequired:   true,
+					Status:       types.VersionFailed,
+					VersionLabel: "1.0.0",
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "Cannot deploy this version because required version 1.0.0 failed to deploy. Please retry deploying version 1.0.0 or check for new updates.",
+		},
+		{
+			name: "required failed current version - deploying same upstream release with config change is allowed",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     6,
+				UpdateCursor: "5",
+				ChannelID:    "channel-id-1",
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     6,
+						UpdateCursor: "5",
+						ChannelID:    "channel-id-1",
+					},
+					{
+						Sequence:     5,
+						UpdateCursor: "5",
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     5,
+					UpdateCursor: "5",
+					ChannelID:    "channel-id-1",
+					IsRequired:   true,
+					Status:       types.VersionFailed,
+					VersionLabel: "1.0.0",
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-required failed current version - deploying different upstream release is not blocked",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     6,
+				UpdateCursor: "6",
+				ChannelID:    "channel-id-1",
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     6,
+						UpdateCursor: "6",
+						ChannelID:    "channel-id-1",
+					},
+					{
+						Sequence:     5,
+						UpdateCursor: "5",
+						ChannelID:    "channel-id-1",
+						IsRequired:   false,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     5,
+					UpdateCursor: "5",
+					ChannelID:    "channel-id-1",
+					IsRequired:   false,
+					Status:       types.VersionFailed,
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		/* ---- Required + failed current version tests end here ---- */
 	}
 
 	for _, test := range tests {
