@@ -9,6 +9,10 @@ PACT_PUBLISH_CONTRACT ?= false
 OS ?= linux
 ARCH ?= $(shell go env GOARCH)
 
+HELM_VERSION = 3.20.0
+HELM_SHA256_amd64 = dbb4c8fc8e19d159d1a63dda8db655f9ffa4aac1b9a6b188b34a40957119b286
+HELM_SHA256_arm64 = bfb14953295d5324d47ab55f3dfba6da28d46c848978c8fbf412d4271bdc29f1
+
 .PHONY: test
 test:
 	if [ -n "$(RUN)" ]; then \
@@ -59,6 +63,15 @@ kots:
 	mkdir -p web/dist
 	touch web/dist/README.md
 	go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
+
+.PHONY: helm
+helm:
+	curl -fsSL -o /tmp/helm.tar.gz "https://get.helm.sh/helm-v$(HELM_VERSION)-$(OS)-$(ARCH).tar.gz"
+	echo "$(HELM_SHA256_$(ARCH))  /tmp/helm.tar.gz" | sha256sum -c -
+	tar -xzf /tmp/helm.tar.gz -C /tmp/ "$(OS)-$(ARCH)/helm"
+	mkdir -p bin
+	mv "/tmp/$(OS)-$(ARCH)/helm" bin/helm
+	rm -rf /tmp/helm.tar.gz "/tmp/$(OS)-$(ARCH)"
 
 .PHONY: build
 build:
