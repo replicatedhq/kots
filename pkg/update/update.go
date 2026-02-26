@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	storepkg "github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/update/types"
 	upstreampkg "github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -61,6 +62,29 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *l
 	currentECVersion := util.EmbeddedClusterVersion()
 
 	availableUpdates := getAvailableUpdates(updates.Updates, currentECVersion)
+
+	// additional deployable checks against current version
+	downstreams, err := kotsStore.ListDownstreamsForApp(app.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list downstreams for app")
+	}
+	if len(downstreams) == 0 {
+		return availableUpdates, nil
+	}
+
+	currentVersion, err := kotsStore.GetCurrentDownstreamVersion(app.ID, downstreams[0].ClusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current downstream version")
+	}
+	if currentVersion != nil &&
+		currentVersion.Status == storetypes.VersionFailed &&
+		currentVersion.IsRequired {
+		// none of the upstream available updates are deployable if current version is required and failed to deploy
+		for i := range availableUpdates {
+			availableUpdates[i].IsDeployable = false
+			availableUpdates[i].NonDeployableCause = fmt.Sprintf("Cannot deploy this version because required version %s failed to deploy. Please retry deploying version %s or check for new updates.", currentVersion.VersionLabel, currentVersion.VersionLabel)
+		}
+	}
 
 	return availableUpdates, nil
 }
