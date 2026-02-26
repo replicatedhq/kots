@@ -9,8 +9,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	storepkg "github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/update/types"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -62,6 +64,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
+				mockStore.EXPECT().ListDownstreamsForApp(args.app.ID).Return(nil, nil)
 			},
 			want:                      []types.AvailableUpdate{},
 			wantErr:                   false,
@@ -128,6 +131,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 				t.Setenv("EMBEDDED_CLUSTER_VERSION", "2.4.0+k8s-1.30")
 				args.license.Spec.Endpoint = licenseEndpoint
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
+				mockStore.EXPECT().ListDownstreamsForApp(args.app.ID).Return(nil, nil)
 			},
 			want: []types.AvailableUpdate{
 				{
@@ -263,6 +267,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.Channels[1].ChannelID).Return("1", nil)
+				mockStore.EXPECT().ListDownstreamsForApp(args.app.ID).Return(nil, nil)
 			},
 			want: []types.AvailableUpdate{
 				{
@@ -277,6 +282,154 @@ func TestGetAvailableUpdates(t *testing.T) {
 			},
 			wantErr:                   false,
 			expectedSelectedChannelId: "channel-id2",
+		},
+		{
+			name: "current version is failed and required - all updates blocked",
+			args: args{
+				kotsStore: mockStore,
+				app: &apptypes.App{
+					ID:                "app-id",
+					SelectedChannelID: "channel-id",
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						AppSlug:     "app-slug",
+						LicenseID:   "license-id",
+					},
+				},
+			},
+			perChannelReleases: map[string][]upstream.ChannelRelease{
+				"channel-id": {
+					{
+						ChannelSequence: 2,
+						ReleaseSequence: 2,
+						VersionLabel:    "0.0.2",
+						IsRequired:      false,
+						CreatedAt:       testTime.Format(time.RFC3339),
+						ReleaseNotes:    "release notes",
+					},
+					{
+						ChannelSequence: 1,
+						ReleaseSequence: 1,
+						VersionLabel:    "0.0.1",
+						IsRequired:      false,
+						CreatedAt:       testTime.Format(time.RFC3339),
+						ReleaseNotes:    "release notes",
+					},
+				},
+			},
+			setup: func(t *testing.T, args args, licenseEndpoint string) {
+				t.Setenv("USE_MOCK_REPORTING", "1")
+				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("0", nil)
+				mockStore.EXPECT().ListDownstreamsForApp(args.app.ID).Return([]downstreamtypes.Downstream{
+					{ClusterID: "cluster-id"},
+				}, nil)
+				mockStore.EXPECT().GetCurrentDownstreamVersion(args.app.ID, "cluster-id").Return(&downstreamtypes.DownstreamVersion{
+					VersionLabel: "0.0.0",
+					Status:       storetypes.VersionFailed,
+					IsRequired:   true,
+				}, nil)
+			},
+			want: []types.AvailableUpdate{
+				{
+					VersionLabel:       "0.0.2",
+					UpdateCursor:       "2",
+					ChannelID:          "channel-id",
+					IsRequired:         false,
+					UpstreamReleasedAt: &testTime,
+					ReleaseNotes:       "release notes",
+					IsDeployable:       false,
+					NonDeployableCause: "Cannot deploy this version because required version 0.0.0 failed to deploy. Please retry deploying version 0.0.0 or check for new updates.",
+				},
+				{
+					VersionLabel:       "0.0.1",
+					UpdateCursor:       "1",
+					ChannelID:          "channel-id",
+					IsRequired:         false,
+					UpstreamReleasedAt: &testTime,
+					ReleaseNotes:       "release notes",
+					IsDeployable:       false,
+					NonDeployableCause: "Cannot deploy this version because required version 0.0.0 failed to deploy. Please retry deploying version 0.0.0 or check for new updates.",
+				},
+			},
+			wantErr:                   false,
+			expectedSelectedChannelId: "channel-id",
+		},
+		{
+			name: "current version is failed but not required - updates unaffected",
+			args: args{
+				kotsStore: mockStore,
+				app: &apptypes.App{
+					ID:                "app-id",
+					SelectedChannelID: "channel-id",
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						AppSlug:     "app-slug",
+						LicenseID:   "license-id",
+					},
+				},
+			},
+			perChannelReleases: map[string][]upstream.ChannelRelease{
+				"channel-id": {
+					{
+						ChannelSequence: 2,
+						ReleaseSequence: 2,
+						VersionLabel:    "0.0.2",
+						IsRequired:      false,
+						CreatedAt:       testTime.Format(time.RFC3339),
+						ReleaseNotes:    "release notes",
+					},
+					{
+						ChannelSequence: 1,
+						ReleaseSequence: 1,
+						VersionLabel:    "0.0.1",
+						IsRequired:      false,
+						CreatedAt:       testTime.Format(time.RFC3339),
+						ReleaseNotes:    "release notes",
+					},
+				},
+			},
+			setup: func(t *testing.T, args args, licenseEndpoint string) {
+				t.Setenv("USE_MOCK_REPORTING", "1")
+				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("0", nil)
+				mockStore.EXPECT().ListDownstreamsForApp(args.app.ID).Return([]downstreamtypes.Downstream{
+					{ClusterID: "cluster-id"},
+				}, nil)
+				mockStore.EXPECT().GetCurrentDownstreamVersion(args.app.ID, "cluster-id").Return(&downstreamtypes.DownstreamVersion{
+					VersionLabel: "0.0.0",
+					Status:       storetypes.VersionFailed,
+					IsRequired:   false,
+				}, nil)
+			},
+			want: []types.AvailableUpdate{
+				{
+					VersionLabel:       "0.0.2",
+					UpdateCursor:       "2",
+					ChannelID:          "channel-id",
+					IsRequired:         false,
+					UpstreamReleasedAt: &testTime,
+					ReleaseNotes:       "release notes",
+					IsDeployable:       true,
+				},
+				{
+					VersionLabel:       "0.0.1",
+					UpdateCursor:       "1",
+					ChannelID:          "channel-id",
+					IsRequired:         false,
+					UpstreamReleasedAt: &testTime,
+					ReleaseNotes:       "release notes",
+					IsDeployable:       true,
+				},
+			},
+			wantErr:                   false,
+			expectedSelectedChannelId: "channel-id",
 		},
 	}
 	for _, tt := range tests {
