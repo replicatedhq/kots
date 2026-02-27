@@ -12,7 +12,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.55.8
-	github.com/bitnami-labs/sealed-secrets v0.32.2
+	github.com/bitnami-labs/sealed-secrets v0.36.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/coreos/go-oidc v2.4.0+incompatible
 	github.com/distribution/distribution/v3 v3.0.0
@@ -40,8 +40,8 @@ require (
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/onsi/ginkgo/v2 v2.27.2
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/ginkgo/v2 v2.28.1
+	github.com/onsi/gomega v1.39.1
 	github.com/open-policy-agent/opa v1.9.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/ory/dockertest/v3 v3.12.0
@@ -71,7 +71,7 @@ require (
 	go.uber.org/zap v1.27.1
 	go.yaml.in/yaml/v2 v2.4.3
 	go.yaml.in/yaml/v3 v3.0.4
-	golang.org/x/crypto v0.47.0
+	golang.org/x/crypto v0.48.0
 	golang.org/x/oauth2 v0.34.0
 	golang.org/x/sync v0.19.0
 	google.golang.org/api v0.259.0
@@ -79,10 +79,10 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.20.0
-	k8s.io/api v0.35.0
-	k8s.io/apimachinery v0.35.0
+	k8s.io/api v0.35.1
+	k8s.io/apimachinery v0.35.1
 	k8s.io/cli-runtime v0.35.0
-	k8s.io/client-go v0.35.0
+	k8s.io/client-go v0.35.1
 	k8s.io/cluster-bootstrap v0.35.0
 	k8s.io/helm v2.17.0+incompatible
 	k8s.io/kubelet v0.35.0
@@ -205,7 +205,7 @@ require (
 	github.com/google/go-intervals v0.0.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20250820193118-f64d9cf942d6 // indirect
+	github.com/google/pprof v0.0.0-20260115054156-294ebfa9ad83 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.7 // indirect
@@ -336,8 +336,8 @@ require (
 	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/term v0.39.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
+	golang.org/x/term v0.40.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	golang.org/x/tools v0.41.0 // indirect
 	google.golang.org/genproto v0.0.0-20251202230838-ff82c1b0f217 // indirect
