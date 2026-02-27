@@ -37,6 +37,12 @@ export const waitForWorkerNode = async () => {
       maxTry: 30,   // 5 minutes total
     }
   );
+
+  // Wait for kube-proxy and CNI pods to be ready on all nodes. When a worker node joins, these
+  // DaemonSets update network routes and iptables rules on the host, which can cause
+  // ERR_NETWORK_CHANGED errors in the browser for any in-flight requests. Waiting here ensures
+  // the network has fully stabilized before proceeding.
+  runCommand('kubectl wait pods --all -n kube-system --for=condition=Ready --timeout=5m');
 };
 
 export const validateClusterManagement = async (page: Page, expect: Expect) => {

@@ -98,7 +98,7 @@ export const installVeleroHostPath = async (
   runCommand(`kubectl delete namespace velero --ignore-not-found`);
 
   if (isAirgapped) {
-    prepareVeleroImages(veleroVersion, veleroAwsPluginVersion, registryInfo);
+    await prepareVeleroImages(veleroVersion, veleroAwsPluginVersion, registryInfo);
   }
 
   // Reset the host path directory for snapshots
@@ -150,7 +150,7 @@ export const installVeleroHostPath = async (
   runCommand(configureHostpathCommand);
 }
 
-export const prepareVeleroImages = (
+export const prepareVeleroImages = async (
   veleroVersion: string,
   veleroAwsPluginVersion: string,
   registryInfo: RegistryInfo
@@ -178,20 +178,35 @@ spec:
   - nodePort: 30443
     port: 443
     protocol: TCP
-    targetPort: 443 
+    targetPort: 443
   selector:
     app: registry
 EOF`);
 
-  // Copy velero image from docker to the registry
-  runCommand(`skopeo copy docker://velero/velero:${veleroVersion} docker://${process.env.PRIVATE_IP}:30443/velero:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
+  // Copy velero image from docker to the registry with retry logic since DockerHub occasionally returns 503 errors
+  await retry(
+    async () => {
+      runCommand(`skopeo copy docker://velero/velero:${veleroVersion} docker://${process.env.PRIVATE_IP}:30443/velero:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
+    },
+    { delay: 5000, maxTry: 3 }
+  );
 
-  // Copy velero aws plugin image from docker to the registry
-  runCommand(`skopeo copy docker://velero/velero-plugin-for-aws:${veleroAwsPluginVersion} docker://${process.env.PRIVATE_IP}:30443/velero-plugin-for-aws:${veleroAwsPluginVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
+  // Copy velero aws plugin image from docker to the registry with retry logic since DockerHub occasionally returns 503 errors
+  await retry(
+    async () => {
+      runCommand(`skopeo copy docker://velero/velero-plugin-for-aws:${veleroAwsPluginVersion} docker://${process.env.PRIVATE_IP}:30443/velero-plugin-for-aws:${veleroAwsPluginVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
+    },
+    { delay: 5000, maxTry: 3 }
+  );
 
-  // Copy restore helper image from docker to the registry
+  // Copy restore helper image from docker to the registry with retry logic since DockerHub occasionally returns 503 errors
   const restoreHelperImageName = isVelero10OrNewer ? "velero-restore-helper" : "velero-restic-restore-helper";
-  runCommand(`skopeo copy docker://velero/${restoreHelperImageName}:${veleroVersion} docker://${process.env.PRIVATE_IP}:30443/${restoreHelperImageName}:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
+  await retry(
+    async () => {
+      runCommand(`skopeo copy docker://velero/${restoreHelperImageName}:${veleroVersion} docker://${process.env.PRIVATE_IP}:30443/${restoreHelperImageName}:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
+    },
+    { delay: 5000, maxTry: 3 }
+  );
 
   // Create velero namespace so that applying the restore helper configmap doesn't fail.
   // This could be done after velero is installed, but it is easier to have it as part of the "prepare velero images" section.
@@ -226,7 +241,7 @@ const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
 export const waitForVeleroAndNodeAgent = async (timeout: number = 60000): Promise<void> => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
-    if (isVeleroReady() && isNodeAgentReady()) {
+    if (isVeleroReady() && isNodeAgentReady() && isVeleroVersionGettable()) {
       return;
     }
     await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2 seconds between checks
@@ -277,6 +292,21 @@ const isNodeAgentReady = (): boolean => {
   }
 
   return true;
+};
+
+const isVeleroVersionGettable = (): boolean => {
+  // Try local binary first (host path installs), then fall back to PATH (AWS installs)
+  const candidates = ['./velero', 'velero'];
+  for (const binary of candidates) {
+    try {
+      execSync(`${binary} version`, { timeout: 30000, stdio: 'pipe' });
+      return true;
+    } catch {
+      // binary not found or server not yet ready, try next candidate
+    }
+  }
+  console.log('velero version not yet gettable');
+  return false;
 };
 
 export const cliOnlineInstall = (

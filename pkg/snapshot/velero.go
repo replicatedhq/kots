@@ -358,7 +358,7 @@ func getVersion(ctx context.Context, namespace string) (string, error) {
 		return "", errors.Wrap(err, "failed to get velero kube client")
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	serverStatusGetter := &serverstatus.DefaultServerStatusGetter{
 		Namespace: namespace,
