@@ -221,6 +221,10 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
+	// capture channel changed state before license sync, since the sync may reset it in the DB
+	// if the license sequence changes (but the channel hasn't changed again)
+	channelChanged := a.ChannelChanged
+
 	// sync license, this method is only called when online
 	latestLicense, _, err := license.Sync(a, "", false)
 	if err != nil {
@@ -232,6 +236,9 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app")
 	}
+
+	// preserve channel changed if it was set before the license sync
+	channelChanged = channelChanged || a.ChannelChanged
 
 	// FindChannelInLicense now accepts LicenseWrapper
 	licenseChan, err := kotsutil.FindChannelInLicense(a.SelectedChannelID, latestLicense)
@@ -250,7 +257,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		CurrentCursor:      updateCursor,
 		CurrentChannelID:   licenseChan.ChannelID,
 		CurrentChannelName: licenseChan.ChannelName,
-		ChannelChanged:     a.ChannelChanged,
+		ChannelChanged:     channelChanged,
 		Silent:             false,
 		ReportingInfo:      reporting.GetReportingInfo(a.ID),
 	}
