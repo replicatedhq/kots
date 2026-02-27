@@ -108,7 +108,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: main
+          ref: emosbaugh/sc-134613/fix-regression-test-failures
 
       - name: Download kots binary
         uses: actions/download-artifact@v7
@@ -271,7 +271,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: main
+          ref: emosbaugh/sc-134613/fix-regression-test-failures
 
       - name: Initialize terraform
         if: always()
@@ -350,7 +350,32 @@ jobs:
         with:
           name: ${{ github.job }}-${{ matrix.test.name }}-playwright-report
           path: ./automation/cluster/playwright-report/
-  
+
+      - name: Copy support bundles from remote machine
+        if: failure()
+        working-directory: automation/cluster
+        run: |
+          jumpbox_public_ip=$(terraform output -raw jumpbox_public_ip)
+          control_plane_private_ip=$(terraform output -raw control_plane_private_ip)
+
+          for bundle in host-support-bundle in-cluster-support-bundle; do
+            # Copy tarball from control plane to jumpbox
+            ssh -i ssh.pem "ubuntu@$jumpbox_public_ip" \
+                "scp ubuntu@$control_plane_private_ip:/tmp/${bundle}.tar.gz /home/ubuntu/${{ matrix.test.id }}-${bundle}.tar.gz 2>/dev/null || true"
+
+            # Copy tarball from jumpbox to local machine
+            scp -i ssh.pem "ubuntu@$jumpbox_public_ip:/home/ubuntu/${{ matrix.test.id }}-${bundle}.tar.gz" ./${bundle}.tar.gz 2>/dev/null || true
+          done
+
+      - name: Upload support bundles
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: ${{ github.job }}-${{ matrix.test.name }}-support-bundles
+          path: |
+            ./automation/cluster/host-support-bundle.tar.gz
+            ./automation/cluster/in-cluster-support-bundle.tar.gz
+
       - name: Troubleshoot Playwright
         if: ${{ failure() && steps.upload-playwright-report.outputs.artifact-url != '' }}
         run: |
