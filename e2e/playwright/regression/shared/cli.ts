@@ -241,7 +241,7 @@ const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
 export const waitForVeleroAndNodeAgent = async (timeout: number = 60000): Promise<void> => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
-    if (isVeleroReady() && isNodeAgentReady()) {
+    if (isVeleroReady() && isNodeAgentReady() && isVeleroVersionGettable()) {
       return;
     }
     await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2 seconds between checks
@@ -292,6 +292,21 @@ const isNodeAgentReady = (): boolean => {
   }
 
   return true;
+};
+
+const isVeleroVersionGettable = (): boolean => {
+  // Try local binary first (host path installs), then fall back to PATH (AWS installs)
+  const candidates = ['./velero', 'velero'];
+  for (const binary of candidates) {
+    try {
+      execSync(`${binary} version`, { timeout: 30000, stdio: 'pipe' });
+      return true;
+    } catch {
+      // binary not found or server not yet ready, try next candidate
+    }
+  }
+  console.log('velero version not yet gettable');
+  return false;
 };
 
 export const cliOnlineInstall = (
