@@ -108,7 +108,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: emosbaugh/sc-134613/fix-regression-test-failures
+          ref: main
 
       - name: Download kots binary
         uses: actions/download-artifact@v7
@@ -271,7 +271,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: emosbaugh/sc-134613/fix-regression-test-failures
+          ref: main
 
       - name: Initialize terraform
         if: always()

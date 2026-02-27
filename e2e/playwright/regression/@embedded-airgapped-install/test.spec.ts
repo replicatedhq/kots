@@ -109,9 +109,6 @@ test('type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admi
   await validateUiAirgapUpdate(page, expect, NEW_VERSION_SMALL_BUNDLE_PATH);
   await validateImageGarbageCollection(page, registryInfo, constants.NAMESPACE);
 
-  // fake a failure to collect a support bundle
-  await expect(page.getByTestId("build-version")).toHaveText("ASDLKJASDLKSJ");
-
   // Clean up UI install so we can test CLI install
   await logout(page, expect);
   removeApp(constants.NAMESPACE);
