@@ -155,7 +155,7 @@ runs:
         artifact-name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}-support-bundle
 
     - id: upload-playwright-report
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: ${{ failure() }}
       with:
         name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}-playwright-report
