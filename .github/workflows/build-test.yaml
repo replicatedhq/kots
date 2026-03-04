@@ -1684,6 +1684,12 @@ jobs:
   validate-change-channel:
     runs-on: ubuntu-24.04
     needs: [ validate-deps ]
+    # This test uses a shared Replicated customer and channel IDs. Concurrent runs
+    # race to change the customer's channel, causing license validation failures.
+    # Queue runs instead of running them in parallel.
+    concurrency:
+      group: e2e-change-channel
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
