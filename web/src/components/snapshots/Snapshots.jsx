@@ -468,7 +468,7 @@ class Snapshots extends Component {
             style={{
               fontSize: 18,
               marginRight: "0.5em",
-              backgroundImage: `url(${iconUri})`,
+              backgroundImage: iconUri ? `url(${iconUri})` : undefined,
             }}
           ></span>
           <span style={{ fontSize: 14 }}>{name}</span>
