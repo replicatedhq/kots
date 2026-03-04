@@ -21,7 +21,15 @@ test('change channel', async ({ page }) => {
     await page.getByRole('button', { name: 'Ok, got it!' }).click();
 
     await expect(page.locator('#app')).toContainText('Alternate');
-    await expect(page.locator('#app')).toContainText('v1.0.1', { timeout: 10000 });
+    // There is a race condition here: two new versions are created simultaneously — one for the
+    // new release (v1.0.1) and one for the "License change". The page may initially show the
+    // "License change" version before v1.0.1 appears, so we retry after a reload if needed.
+    try {
+        await expect(page.locator('#app')).toContainText('v1.0.1', { timeout: 10000 });
+    } catch {
+        await page.reload();
+        await expect(page.locator('#app')).toContainText('v1.0.1', { timeout: 10000 });
+    }
     await expect(page.locator('#app')).toContainText('Upstream Update', { timeout: 10000 });
     await expect(page.locator('#app')).not.toContainText('Running checks', { timeout: 10000 });
 
