@@ -5,7 +5,7 @@ on:
   pull_request:
 
 env:
-  TRIVY_VERSION: 0.47.0
+  TRIVY_VERSION: 0.69.3
 
 name: License scan
 
