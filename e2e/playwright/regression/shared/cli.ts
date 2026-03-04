@@ -139,7 +139,7 @@ export const installVeleroHostPath = async (
     configureVeleroImagePullSecret(registryInfo);
   }
 
-  // wait for velero to be ready
+  // wait for velero to be ready before configuring hostpath
   await waitForVeleroAndNodeAgent();
 
   // Configure hostpath backend
@@ -148,6 +148,9 @@ export const installVeleroHostPath = async (
     configureHostpathCommand += ` --kotsadm-registry ${registryInfo.ip}/${APP_SLUG} --registry-username ${registryInfo.username} --registry-password ${registryInfo.password}`;
   }
   runCommand(configureHostpathCommand);
+
+  // wait for velero to be ready again after hostpath configuration (which may restart velero pods)
+  await waitForVeleroAndNodeAgent();
 }
 
 export const prepareVeleroImages = async (
@@ -299,7 +302,8 @@ const isVeleroVersionGettable = (): boolean => {
   const candidates = ['./velero', 'velero'];
   for (const binary of candidates) {
     try {
-      execSync(`${binary} version`, { timeout: 30000, stdio: 'pipe' });
+      const version = execSync(`${binary} version`, { timeout: 30000, stdio: 'pipe' }).toString();
+      console.log(`velero version: ${version}`);
       return true;
     } catch {
       // binary not found or server not yet ready, try next candidate
