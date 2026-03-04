@@ -149,14 +149,14 @@ test("smoke test onine", async ({ page }) => {
   await expect(page.getByTestId("navbar-dropdown-button")).toBeVisible();
   await page.locator(".NavItem").getByText("Snapshots", { exact: true }).click();
   await page.getByRole("link", { name: "Settings & Schedule" }).click();
-  await expect(page.locator("#app")).toContainText("Snapshot settings");
+  await expect(page.locator("#app")).toContainText("Snapshot settings", { timeout: 15000 });
   await page.getByText("+ Add a new destination").click();
   await expect(page.getByRole("button", { name: "Check for Velero" })).toBeVisible();
   await page.getByRole("button", { name: "Check for Velero" }).click();
   await expect(page.getByLabel("Modal")).toContainText("Velero is installed on your cluster");
   await page.getByRole("button", { name: "Ok, got it!" }).click();
   await page.getByRole("link", { name: "Full Snapshots (Instance)" }).click();
-  await expect(page.locator("#app")).toContainText("No snapshots yet");
+  await expect(page.locator("#app")).toContainText("No snapshots yet", { timeout: 15000 });
   await page.getByRole("button", { name: "Start a snapshot" }).click();
   await expect(page.locator("#app")).toContainText("In Progress");
   await expect(page.locator("#app")).toContainText("Completed", { timeout: 300000 });

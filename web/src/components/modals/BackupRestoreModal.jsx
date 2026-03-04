@@ -206,7 +206,7 @@ export default function BackupRestoreModal(props) {
                     className="app-icon"
                     style={{
                       marginRight: "0.5em",
-                      backgroundImage: `url(${selectedRestoreApp?.iconUri})`,
+                      backgroundImage: selectedRestoreApp?.iconUri ? `url(${selectedRestoreApp.iconUri})` : undefined,
                     }}
                   ></span>
                   <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary u-lineHeight--normal">
