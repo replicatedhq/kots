@@ -311,6 +311,7 @@ func CopyImage(opts types.CopyImageOptions) error {
 		DestinationCtx:        destCtx,
 		ForceManifestMIMEType: "",
 		ImageListSelection:    imageListSelection,
+		PreserveDigests:       true,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to copy image")
