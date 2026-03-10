@@ -1169,14 +1169,16 @@ jobs:
           CUSTOMER_ID: 32nDkj22qp7zkJMqjUGrPYV002o
           PORTAL_B64_PASSWORD: bm90LWEtc2VjcmV0 # no-a-secret
         run: |
-          # Download initial version airgap bundle (sequence 4)
-          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=4" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle1.json
+          echo "Getting initial version airgap bundle url (sequence 3)"
+          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=3" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle1.json
           BUNDLE1_URL=$(jq -r .url < bundle1.json)
+          echo "Downloading initial version airgap bundle (sequence 3)"
           curl "${BUNDLE1_URL}" -o app-seq1.airgap
 
-          # Download update version airgap bundle (sequence 5)
-          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=5" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle2.json
+          echo "Getting update version airgap bundle url (sequence 4)"
+          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=4" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle2.json
           BUNDLE2_URL=$(jq -r .url < bundle2.json)
+          echo "Downloading update version airgap bundle (sequence 4)"
           curl "${BUNDLE2_URL}" -o app-seq2.airgap
 
       - name: create initial config file for deploy command
