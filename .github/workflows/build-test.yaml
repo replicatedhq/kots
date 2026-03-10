@@ -1239,6 +1239,9 @@ jobs:
           echo "App is ready, initial version installed"
           ./bin/kots get apps --namespace "$APP_SLUG"
 
+          echo "Pods after initial version install:"
+          kubectl -n "$APP_SLUG" get pods
+
       - name: create update config file for deploy command
         run: |
           cat > config.yaml << EOF
@@ -1328,6 +1331,9 @@ jobs:
             echo "Airgap Update version should be pending but got status: $AIRGAP_UPDATE"
             exit 1
           fi
+
+          echo "Pods after update command:"
+          kubectl -n "$APP_SLUG" get pods
 
           echo "Deploy command test passed"
 
