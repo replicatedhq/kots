@@ -1242,6 +1242,15 @@ jobs:
           echo "Pods after initial version install:"
           kubectl -n "$APP_SLUG" get pods
 
+          echo "Waiting for deploy-command-airgap deployment to be ready..."
+          if ! kubectl rollout status deployment/deploy-command-airgap --namespace "$APP_SLUG" --timeout=120s; then
+            echo "Deployment did not become ready"
+            kubectl -n "$APP_SLUG" get pods
+            kubectl -n "$APP_SLUG" describe deployment/deploy-command-airgap
+            kubectl -n "$APP_SLUG" logs -l app=deploy-command-airgap --tail=50
+            exit 1
+          fi
+
       - name: create update config file for deploy command
         run: |
           cat > config.yaml << EOF
@@ -1332,8 +1341,17 @@ jobs:
             exit 1
           fi
 
-          echo "Pods after update command:"
+          echo "Pods after update:"
           kubectl -n "$APP_SLUG" get pods
+
+          echo "Waiting for deploy-command-airgap deployment to be ready after update..."
+          if ! kubectl rollout status deployment/deploy-command-airgap --namespace "$APP_SLUG" --timeout=120s; then
+            echo "Deployment did not become ready after update"
+            kubectl -n "$APP_SLUG" get pods
+            kubectl -n "$APP_SLUG" describe deployment/deploy-command-airgap
+            kubectl -n "$APP_SLUG" logs -l app=deploy-command-airgap --tail=50
+            exit 1
+          fi
 
           echo "Deploy command test passed"
 
