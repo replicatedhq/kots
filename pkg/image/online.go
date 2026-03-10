@@ -244,6 +244,7 @@ func copyOnlineImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 			Password: destRegistry.Password,
 		},
 		CopyAll:           copyAll,
+		PreserveDigests:   copyAll,
 		SrcDisableV1Ping:  true,
 		SrcSkipTLSVerify:  os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true",
 		DestDisableV1Ping: true,
@@ -313,7 +314,7 @@ func CopyImage(opts types.CopyImageOptions) error {
 		DestinationCtx:        destCtx,
 		ForceManifestMIMEType: "",
 		ImageListSelection:    imageListSelection,
-		PreserveDigests:       true,
+		PreserveDigests:       opts.PreserveDigests,
 	})
 	if err != nil {
 		// When copying multi-arch images with PreserveDigests, the library may fail to write

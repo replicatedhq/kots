@@ -39,6 +39,7 @@ type CopyImageOptions struct {
 	SrcAuth           RegistryAuth
 	DestAuth          RegistryAuth
 	CopyAll           bool
+	PreserveDigests   bool
 	SrcDisableV1Ping  bool
 	SrcSkipTLSVerify  bool
 	DestDisableV1Ping bool

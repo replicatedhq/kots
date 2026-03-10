@@ -244,6 +244,7 @@ func PushECImagesFromTempRegistry(airgapRootDir string, airgap *kotsv1beta1.Airg
 			return errors.Wrap(err, "failed to normalize source image")
 		}
 		srcImage := parsed.String()
+		_, isDigestPinned := parsed.(reference.Canonical)
 
 		destImage, err := imageutil.DestECImage(options.Registry, srcImage)
 		if err != nil {
@@ -270,6 +271,7 @@ func PushECImagesFromTempRegistry(airgapRootDir string, airgap *kotsv1beta1.Airg
 					Password: options.Registry.Password,
 				},
 				CopyAll:           true,
+				PreserveDigests:   isDigestPinned,
 				SrcDisableV1Ping:  true,
 				SrcSkipTLSVerify:  true,
 				DestDisableV1Ping: true,
@@ -366,6 +368,12 @@ func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, option
 		// this also handles kotsadm airgap bundles that have multi-arch images but are referenced by tag.
 		copyAll := true
 
+		parsedImageID, err := reference.ParseDockerRef(imageID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse image ref %s", imageID)
+		}
+		_, isDigestPinned := parsedImageID.(reference.Canonical)
+
 		pushImageOpts := imagetypes.PushImageOptions{
 			ImageID:      imageID,
 			ImageInfo:    imageInfo,
@@ -380,6 +388,7 @@ func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, option
 					Password: options.Registry.Password,
 				},
 				CopyAll:           copyAll,
+				PreserveDigests:   isDigestPinned,
 				SrcDisableV1Ping:  true,
 				SrcSkipTLSVerify:  true,
 				DestDisableV1Ping: true,
