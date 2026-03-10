@@ -1169,14 +1169,16 @@ jobs:
           CUSTOMER_ID: 32nDkj22qp7zkJMqjUGrPYV002o
           PORTAL_B64_PASSWORD: bm90LWEtc2VjcmV0 # no-a-secret
         run: |
-          # Download initial version airgap bundle (sequence 1)
-          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=1" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle1.json
+          echo "Getting initial version airgap bundle url (sequence 3)"
+          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=3" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle1.json
           BUNDLE1_URL=$(jq -r .url < bundle1.json)
+          echo "Downloading initial version airgap bundle (sequence 3)"
           curl "${BUNDLE1_URL}" -o app-seq1.airgap
 
-          # Download update version airgap bundle (sequence 2)
-          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=2" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle2.json
+          echo "Getting update version airgap bundle url (sequence 4)"
+          curl -XGET "https://api.replicated.com/market/v3/airgap/images/url?customer_id=${CUSTOMER_ID}&channel_sequence=4" -H "Authorization: Basic ${PORTAL_B64_PASSWORD}" -o bundle2.json
           BUNDLE2_URL=$(jq -r .url < bundle2.json)
+          echo "Downloading update version airgap bundle (sequence 4)"
           curl "${BUNDLE2_URL}" -o app-seq2.airgap
 
       - name: create initial config file for deploy command
@@ -1236,6 +1238,18 @@ jobs:
 
           echo "App is ready, initial version installed"
           ./bin/kots get apps --namespace "$APP_SLUG"
+
+          echo "Pods after initial version install:"
+          kubectl -n "$APP_SLUG" get pods
+
+          echo "Waiting for deploy-command-airgap deployment to be ready..."
+          if ! kubectl rollout status deployment/deploy-command-airgap --namespace "$APP_SLUG" --timeout=120s; then
+            echo "Deployment did not become ready"
+            kubectl -n "$APP_SLUG" get pods
+            kubectl -n "$APP_SLUG" describe deployment/deploy-command-airgap
+            kubectl -n "$APP_SLUG" logs -l app=deploy-command-airgap --tail=50
+            exit 1
+          fi
 
       - name: create update config file for deploy command
         run: |
@@ -1324,6 +1338,18 @@ jobs:
 
           if [ "$AIRGAP_UPDATE" != "pending" ]; then
             echo "Airgap Update version should be pending but got status: $AIRGAP_UPDATE"
+            exit 1
+          fi
+
+          echo "Pods after update:"
+          kubectl -n "$APP_SLUG" get pods
+
+          echo "Waiting for deploy-command-airgap deployment to be ready after update..."
+          if ! kubectl rollout status deployment/deploy-command-airgap --namespace "$APP_SLUG" --timeout=120s; then
+            echo "Deployment did not become ready after update"
+            kubectl -n "$APP_SLUG" get pods
+            kubectl -n "$APP_SLUG" describe deployment/deploy-command-airgap
+            kubectl -n "$APP_SLUG" logs -l app=deploy-command-airgap --tail=50
             exit 1
           fi
 
