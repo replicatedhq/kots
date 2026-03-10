@@ -455,7 +455,7 @@ func Test_DestImage(t *testing.T) {
 				registry: registryOps,
 				srcImage: "quay.io/someorg/debian:0.1@sha256:17c5f462c92fc39303e6363c65e074559f8d6a1354150027ed5053557e3298c5",
 			},
-			want: fmt.Sprintf("%s/%s/debian@sha256:17c5f462c92fc39303e6363c65e074559f8d6a1354150027ed5053557e3298c5", registryOps.Endpoint, registryOps.Namespace),
+			want: fmt.Sprintf("%s/%s/debian:0.1", registryOps.Endpoint, registryOps.Namespace),
 		},
 		{
 			name: "No Namespace",
@@ -527,7 +527,7 @@ func Test_DestECImage(t *testing.T) {
 				registry: registryOps,
 				srcImage: "quay.io/someorg/debian:0.1@sha256:17c5f462c92fc39303e6363c65e074559f8d6a1354150027ed5053557e3298c5",
 			},
-			want: fmt.Sprintf("%s/%s/embedded-cluster/debian@sha256:17c5f462c92fc39303e6363c65e074559f8d6a1354150027ed5053557e3298c5", registryOps.Endpoint, registryOps.Namespace),
+			want: fmt.Sprintf("%s/%s/embedded-cluster/debian:0.1", registryOps.Endpoint, registryOps.Namespace),
 		},
 		{
 			name: "No Namespace",
