@@ -17,6 +17,7 @@ import (
 	dockerref "go.podman.io/image/v5/docker/reference"
 	"go.podman.io/image/v5/manifest"
 	"go.podman.io/image/v5/signature"
+	godigest "github.com/opencontainers/go-digest"
 	"go.podman.io/image/v5/transports/alltransports"
 	containerstypes "go.podman.io/image/v5/types"
 	"github.com/distribution/reference"
@@ -460,6 +461,13 @@ func pushSourceManifestList(opts types.CopyImageOptions, srcCtx, destCtx *contai
 		return errors.Errorf("expected manifest list but got %s", mimeType)
 	}
 
+	manifestDigest := godigest.FromBytes(manifestBytes)
+	destRefName := ""
+	if opts.DestRef.DockerReference() != nil {
+		destRefName = opts.DestRef.DockerReference().String()
+	}
+	logger.Infof("Pushing manifest list directly: digest=%s type=%s size=%d dest=%s", manifestDigest, mimeType, len(manifestBytes), destRefName)
+
 	// Push the original manifest list bytes directly to the destination.
 	// This uses the library's own ImageDestination which handles auth (basic, token, ECR)
 	// and TLS correctly.
@@ -469,9 +477,17 @@ func pushSourceManifestList(opts types.CopyImageOptions, srcCtx, destCtx *contai
 	}
 	defer destImg.Close()
 
+	// Push by tag (nil instanceDigest uses the tag from the destination ref)
 	if err := destImg.PutManifest(ctx, manifestBytes, nil); err != nil {
-		return errors.Wrap(err, "failed to put manifest list to destination")
+		return errors.Wrap(err, "failed to put manifest list by tag to destination")
 	}
+	logger.Infof("Pushed manifest list by tag: digest=%s dest=%s", manifestDigest, destRefName)
+
+	// Also push by digest so the image is pullable by digest directly
+	if err := destImg.PutManifest(ctx, manifestBytes, &manifestDigest); err != nil {
+		return errors.Wrap(err, "failed to put manifest list by digest to destination")
+	}
+	logger.Infof("Pushed manifest list by digest: digest=%s dest=%s", manifestDigest, destRefName)
 
 	return nil
 }
