@@ -15,6 +15,7 @@ import (
 	"go.podman.io/image/v5/copy"
 	imagedocker "go.podman.io/image/v5/docker"
 	dockerref "go.podman.io/image/v5/docker/reference"
+	"go.podman.io/image/v5/manifest"
 	"go.podman.io/image/v5/signature"
 	"go.podman.io/image/v5/transports/alltransports"
 	containerstypes "go.podman.io/image/v5/types"
@@ -314,6 +315,18 @@ func CopyImage(opts types.CopyImageOptions) error {
 		PreserveDigests:       true,
 	})
 	if err != nil {
+		// When copying multi-arch images with PreserveDigests, the library may fail to write
+		// the manifest list due to a bug where it spuriously modifies annotation fields during
+		// the copy (nil -> empty map), causing a byte mismatch. At this point all child blobs
+		// and manifests have been successfully pushed. We recover by fetching the original
+		// manifest list from the source and pushing it directly to the destination registry.
+		if opts.CopyAll && strings.Contains(err.Error(), "Manifest list must be converted") {
+			logger.Infof("Manifest list copy failed due to library bug, pushing original manifest list directly: %v", err)
+			if fallbackErr := pushSourceManifestList(opts, srcCtx, destCtx); fallbackErr != nil {
+				return errors.Wrap(fallbackErr, "failed to push manifest list directly after copy error")
+			}
+			return nil
+		}
 		return errors.Wrap(err, "failed to copy image")
 	}
 
@@ -421,6 +434,46 @@ func getPolicyContext() (*signature.PolicyContext, error) {
 		return nil, errors.Wrap(err, "failed to create policy")
 	}
 	return policyContext, nil
+}
+
+// pushSourceManifestList fetches the raw manifest list from the source and pushes it
+// directly to the destination registry. This is used as a fallback when the copy library
+// fails to write the manifest list due to spurious byte differences caused by annotation
+// field mutations (nil -> empty map) during the copy process. At this point all child
+// blobs and manifests have already been pushed successfully.
+func pushSourceManifestList(opts types.CopyImageOptions, srcCtx, destCtx *containerstypes.SystemContext) error {
+	ctx := context.Background()
+
+	// Fetch raw manifest bytes from source
+	srcImg, err := opts.SrcRef.NewImageSource(ctx, srcCtx)
+	if err != nil {
+		return errors.Wrap(err, "failed to create source for manifest list")
+	}
+	defer srcImg.Close()
+
+	manifestBytes, mimeType, err := srcImg.GetManifest(ctx, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to get source manifest list")
+	}
+
+	if !manifest.MIMETypeIsMultiImage(mimeType) {
+		return errors.Errorf("expected manifest list but got %s", mimeType)
+	}
+
+	// Push the original manifest list bytes directly to the destination.
+	// This uses the library's own ImageDestination which handles auth (basic, token, ECR)
+	// and TLS correctly.
+	destImg, err := opts.DestRef.NewImageDestination(ctx, destCtx)
+	if err != nil {
+		return errors.Wrap(err, "failed to create destination for manifest list")
+	}
+	defer destImg.Close()
+
+	if err := destImg.PutManifest(ctx, manifestBytes, nil); err != nil {
+		return errors.Wrap(err, "failed to put manifest list to destination")
+	}
+
+	return nil
 }
 
 func CopyImageWithGC(ctx context.Context, destRef, srcRef containerstypes.ImageReference, options *copy.Options) ([]byte, error) {
