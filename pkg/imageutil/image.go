@@ -88,11 +88,7 @@ func RewriteDockerRegistryImage(destRegistry registrytypes.RegistryOptions, srcI
 
 // DestImage returns the location to push the image to on the dest registry
 func DestImage(destRegistry registrytypes.RegistryOptions, srcImage string) (string, error) {
-	// If the image has both a tag and a digest, strip the digest and keep the tag.
-	// ParseDockerRef strips the tag when both are present, which results in a
-	// digest-pinned destination that cannot accept manifest list copies.
-	srcImage = stripDigestWhenTagged(srcImage)
-
+	// parsing as a docker reference strips the tag if both a tag and a digest are used
 	parsed, err := reference.ParseDockerRef(srcImage)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to normalize source image")
@@ -107,11 +103,7 @@ func DestImage(destRegistry registrytypes.RegistryOptions, srcImage string) (str
 
 // DestECImage returns the location to push an embedded cluster image to on the dest registry
 func DestECImage(destRegistry registrytypes.RegistryOptions, srcImage string) (string, error) {
-	// If the image has both a tag and a digest, strip the digest and keep the tag.
-	// ParseDockerRef strips the tag when both are present, which results in a
-	// digest-pinned destination that cannot accept manifest list copies.
-	srcImage = stripDigestWhenTagged(srcImage)
-
+	// parsing as a docker reference strips the tag if both a tag and a digest are used
 	parsed, err := reference.ParseDockerRef(srcImage)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to normalize source image")
@@ -369,28 +361,6 @@ func (p *OCIArtifactPath) String() string {
 		return fmt.Sprintf("%s:%s", filepath.Join(p.RegistryHost, p.Repository), p.Tag)
 	}
 	return fmt.Sprintf("%s:%s", filepath.Join(p.RegistryHost, p.RegistryNamespace, p.Repository), p.Tag)
-}
-
-// stripDigestWhenTagged removes the digest from an image reference that has both a tag and a digest.
-// For example, "busybox:1.37.0@sha256:abc..." becomes "busybox:1.37.0".
-// This is needed because ParseDockerRef strips the tag (not the digest) when both are present,
-// which would result in a digest-pinned destination reference that cannot accept manifest list copies.
-func stripDigestWhenTagged(image string) string {
-	atIdx := strings.LastIndex(image, "@")
-	if atIdx == -1 {
-		return image
-	}
-	nameBeforeDigest := image[:atIdx]
-	// Check if there's a colon (tag separator) in the name portion after the last slash
-	lastSlash := strings.LastIndex(nameBeforeDigest, "/")
-	nameAfterSlash := nameBeforeDigest
-	if lastSlash != -1 {
-		nameAfterSlash = nameBeforeDigest[lastSlash+1:]
-	}
-	if strings.Contains(nameAfterSlash, ":") {
-		return nameBeforeDigest
-	}
-	return image
 }
 
 type EmbeddedClusterArtifactOCIPathOptions struct {
