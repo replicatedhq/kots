@@ -78,7 +78,6 @@ func (h *Handler) Deploy(w http.ResponseWriter, r *http.Request) {
 		KotsKinds:                    kotsKinds,
 		RegistrySettings:             registrySettings,
 	}); err != nil {
-		logger.Errorf("failed to deploy app: %v", err)
 		response.Error = "failed to deploy app"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
