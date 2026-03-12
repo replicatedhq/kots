@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"go.podman.io/image/v5/transports/alltransports"
 	"github.com/distribution/reference"
 	imagespecsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -31,6 +30,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"go.podman.io/image/v5/transports/alltransports"
 	oras "oras.land/oras-go/v2"
 	orasfile "oras.land/oras-go/v2/content/file"
 	orasremote "oras.land/oras-go/v2/registry/remote"

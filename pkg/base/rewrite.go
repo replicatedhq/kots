@@ -3,7 +3,6 @@ package base
 import (
 	"strings"
 
-	dockerref "go.podman.io/image/v5/docker/reference"
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
@@ -12,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
+	dockerref "go.podman.io/image/v5/docker/reference"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 

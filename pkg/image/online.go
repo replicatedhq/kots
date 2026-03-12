@@ -12,12 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"go.podman.io/image/v5/copy"
-	imagedocker "go.podman.io/image/v5/docker"
-	dockerref "go.podman.io/image/v5/docker/reference"
-	"go.podman.io/image/v5/signature"
-	"go.podman.io/image/v5/transports/alltransports"
-	containerstypes "go.podman.io/image/v5/types"
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
@@ -31,6 +25,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
+	"go.podman.io/image/v5/copy"
+	imagedocker "go.podman.io/image/v5/docker"
+	dockerref "go.podman.io/image/v5/docker/reference"
+	"go.podman.io/image/v5/signature"
+	"go.podman.io/image/v5/transports/alltransports"
+	containerstypes "go.podman.io/image/v5/types"
 	"golang.org/x/sync/errgroup"
 )
 
