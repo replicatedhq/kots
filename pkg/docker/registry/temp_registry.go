@@ -11,15 +11,15 @@ import (
 	"strings"
 	"time"
 
-	containersmanifest "go.podman.io/image/v5/manifest"
-	"go.podman.io/image/v5/transports/alltransports"
-	containerstypes "go.podman.io/image/v5/types"
 	"github.com/distribution/reference"
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	containersmanifest "go.podman.io/image/v5/manifest"
+	"go.podman.io/image/v5/transports/alltransports"
+	containerstypes "go.podman.io/image/v5/types"
 )
 
 //go:embed assets/temp-registry-config.yml

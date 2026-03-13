@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"go.podman.io/image/v5/pkg/docker/config"
-	"go.podman.io/image/v5/types"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry/challenge"
 	"github.com/replicatedhq/kots/pkg/util"
+	"go.podman.io/image/v5/pkg/docker/config"
+	"go.podman.io/image/v5/types"
 )
 
 var (

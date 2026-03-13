@@ -8,9 +8,9 @@ import (
 
 	"go.podman.io/image/v5/docker/reference"
 
-	dockerref "go.podman.io/image/v5/docker/reference"
 	"github.com/pkg/errors"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	dockerref "go.podman.io/image/v5/docker/reference"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 

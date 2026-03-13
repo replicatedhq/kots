@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"go.podman.io/image/v5/docker/tarfile"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/types"
+	"go.podman.io/image/v5/docker/tarfile"
 )
 
 func GetImageLayers(path string) ([]types.Layer, error) {
