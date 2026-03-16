@@ -616,7 +616,7 @@ version: ver2
 						HelmUpgradeFlags: []string{
 							"--skip-crds",
 							"--no-hooks",
-							"--atomic",
+							"--rollback-on-failure",
 							"--description=my description",
 						},
 					},
@@ -646,7 +646,7 @@ version: ver2
 					UpgradeFlags: []string{
 						"--skip-crds",
 						"--no-hooks",
-						"--atomic",
+						"--rollback-on-failure",
 						"--description=my description",
 					},
 					APIVersion: "kots.io/v1beta1",
