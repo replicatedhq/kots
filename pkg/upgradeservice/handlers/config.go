@@ -384,6 +384,7 @@ func (h *Handler) SaveConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DownloadFileFromConfig(w http.ResponseWriter, r *http.Request) {
+
 	downloadFileFromConfigResponse := DownloadFileFromConfigResponse{
 		Success: false,
 	}

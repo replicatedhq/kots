@@ -60,9 +60,14 @@ func DistributeArtifacts(
 	if err != nil {
 		return fmt.Errorf("marshal installation: %w", err)
 	}
+	localArtifactMirrorImage, err := getLocalArtifactMirrorImage(ctx, in, license, registrySettings)
+	if err != nil {
+		return fmt.Errorf("get local artifact mirror image: %w", err)
+	}
 
 	args := []string{
 		"distribute-artifacts",
+		"--local-artifact-mirror-image", localArtifactMirrorImage,
 		"--installation", "-",
 		"--license-id", license.GetLicenseID(),
 		"--app-slug", license.GetAppSlug(),
