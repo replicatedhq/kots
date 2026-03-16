@@ -43,10 +43,10 @@ func (e LicenseDataError) Error() string {
 // This function supports both v1beta1 (MD5) and v1beta2 (SHA-256) licenses.
 //
 // Behavior:
-// - Cryptographic signature failures (invalid/tampered signature): Returns an error
-// - Data validation errors (field mismatch between outer license and signed inner license):
-//   Logs a warning but returns success. This handles cases where Replicated SaaS adds fields
-//   to the signature that KOTS doesn't know about or defaults differently.
+//   - Cryptographic signature failures (invalid/tampered signature): Returns an error
+//   - Data validation errors (field mismatch between outer license and signed inner license):
+//     Logs a warning but returns success. This handles cases where Replicated SaaS adds fields
+//     to the signature that KOTS doesn't know about or defaults differently.
 //
 // Note: This function validates the license signature only. Entitlement signature validation
 // is handled separately where needed, matching the behavior of the deprecated VerifySignature function.

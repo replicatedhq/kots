@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/blang/semver"
-	dockerref "go.podman.io/image/v5/docker/reference"
 	"github.com/pkg/errors"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
@@ -40,6 +39,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	dockerref "go.podman.io/image/v5/docker/reference"
 	"go.yaml.in/yaml/v2"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -33,7 +33,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"go.yaml.in/yaml/v3"
-	helmengine "helm.sh/helm/v3/pkg/engine"
+	helmengine "helm.sh/helm/v4/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sversion "k8s.io/apimachinery/pkg/version"

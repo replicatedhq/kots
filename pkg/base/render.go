@@ -32,7 +32,7 @@ func RenderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 	return renderedKotsKinds, nil
 }
 
-// RenderUpstream is responsible for any conversions or transpilation steps are required
+// RenderUpstream is responsible for any conversions or transpilation steps that are required
 // to take an upstream and make it a valid kubernetes base
 func RenderUpstream(u *upstreamtypes.Upstream, renderOptions *RenderOptions, renderedKotsKinds *kotsutil.KotsKinds) (base *Base, helmBases []Base, err error) {
 	if u.Type == "helm" {

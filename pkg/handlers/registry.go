@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"go.podman.io/image/v5/docker"
 	"github.com/distribution/distribution/v3/registry/api/errcode"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -22,6 +21,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/tasks"
+	"go.podman.io/image/v5/docker"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )

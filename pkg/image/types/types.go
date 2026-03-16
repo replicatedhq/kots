@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"go.podman.io/image/v5/types"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"go.podman.io/image/v5/types"
 )
 
 type ProcessImageOptions struct {

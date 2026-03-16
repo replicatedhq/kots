@@ -8,9 +8,9 @@ import (
 	"time"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
+	"github.com/pkg/errors"
 	"go.podman.io/image/v5/docker"
 	"go.podman.io/image/v5/types"
-	"github.com/pkg/errors"
 
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/docker/registry"

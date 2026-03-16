@@ -20,10 +20,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"go.yaml.in/yaml/v2"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v4/pkg/action"
+	"helm.sh/helm/v4/pkg/chart"
+	"helm.sh/helm/v4/pkg/chart/common"
+	"helm.sh/helm/v4/pkg/chart/v2/loader"
+	relv1 "helm.sh/helm/v4/pkg/release/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/helm/pkg/chartutil"
 )
 
 // GetV1Beta2ChartsArchive returns an archive of the v1beta2 charts to be deployed
@@ -234,14 +236,11 @@ func WriteRenderedV1Beta2HelmCharts(opts WriteRenderedV1Beta2HelmChartsOptions) 
 }
 
 func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, chartDir, valuesPath, outputDir string, log func(string, ...interface{})) error {
-	cfg := &action.Configuration{
-		Log: log,
-	}
+	cfg := action.NewConfiguration()
 	client := action.NewInstall(cfg)
-	client.DryRun = true
+	client.DryRunStrategy = action.DryRunClient
 	client.ReleaseName = helmChart.GetReleaseName()
 	client.Replace = true
-	client.ClientOnly = true
 	client.IncludeCRDs = true
 
 	client.Namespace = helmChart.Spec.Namespace
@@ -257,27 +256,31 @@ func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, c
 	}
 
 	if req := chartRequested.Metadata.Dependencies; req != nil {
-		if err := action.CheckDependencies(chartRequested, req); err != nil {
+		deps := make([]chart.Dependency, len(req))
+		for i, d := range req {
+			deps[i] = d
+		}
+		if err := action.CheckDependencies(chartRequested, deps); err != nil {
 			return errors.Wrap(err, "failed dependency check")
 		}
 	}
 
-	values, err := chartutil.ReadValuesFile(valuesPath)
+	values, err := common.ReadValuesFile(valuesPath)
 	if err != nil {
 		return errors.Wrap(err, "failed to read values file")
 	}
 
-	rel, err := client.Run(chartRequested, values)
+	relIface, err := client.Run(chartRequested, values)
 	if err != nil {
 		return errors.Wrap(err, "failed to run helm install")
+	}
+	rel, ok := relIface.(*relv1.Release)
+	if !ok {
+		return errors.New("helm returned unexpected release type")
 	}
 
 	var manifests bytes.Buffer
 	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
-	for _, m := range rel.Hooks {
-		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
-	}
-	// add hooks
 	for _, m := range rel.Hooks {
 		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
 	}

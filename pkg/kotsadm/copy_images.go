@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"go.podman.io/image/v5/copy"
-	"go.podman.io/image/v5/transports/alltransports"
-	imagev5types "go.podman.io/image/v5/types"
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
@@ -16,6 +13,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"go.podman.io/image/v5/copy"
+	"go.podman.io/image/v5/transports/alltransports"
+	imagev5types "go.podman.io/image/v5/types"
 	"k8s.io/client-go/kubernetes"
 )
 

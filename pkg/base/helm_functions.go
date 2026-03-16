@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strconv"
 
-	rspb "helm.sh/helm/v3/pkg/release"
-	"helm.sh/helm/v3/pkg/storage"
+	relv1 "helm.sh/helm/v4/pkg/release/v1"
+	"helm.sh/helm/v4/pkg/storage"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,36 +28,23 @@ import (
 // "status"         - status of the release (see pkg/release/status.go for variants)
 // "owner"          - owner of the secret, currently "helm".
 // "name"           - name of the release.
-func newSecretsObject(rls *rspb.Release) (*v1.Secret, error) {
+func newSecretsObject(rls *relv1.Release) (*v1.Secret, error) {
 	const owner = "helm"
 	key := makeKey(rls.Name, rls.Version)
 
-	// encode the release
 	s, err := encodeRelease(rls)
 	if err != nil {
 		return nil, err
 	}
 
 	lbs := map[string]string{
-		//"createdAt": strconv.Itoa(int(time.Now().Unix())),
-		"createdAt": strconv.Itoa(1), // make a constant so that there aren't spurious diffs
+		"createdAt": strconv.Itoa(1), // constant to avoid spurious diffs
 		"version":   strconv.Itoa(rls.Version),
 		"status":    rls.Info.Status.String(),
 		"owner":     owner,
 		"name":      rls.Name,
 	}
 
-	// create and return secret object.
-	// Helm 3 introduced setting the 'Type' field
-	// in the Kubernetes storage object.
-	// Helm defines the field content as follows:
-	// <helm_domain>/<helm_object>.v<helm_object_version>
-	// Type field for Helm 3: helm.sh/release.v1
-	// Note: Version starts at 'v1' for Helm 3 and
-	// should be incremented if the release object
-	// metadata is modified.
-	// This would potentially be a breaking change
-	// and should only happen between major versions.
 	return &v1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -67,6 +54,7 @@ func newSecretsObject(rls *rspb.Release) (*v1.Secret, error) {
 			Name:   key,
 			Labels: lbs,
 		},
+		// The secret type is unchanged between Helm 3 and 4.
 		Type: "helm.sh/release.v1",
 		Data: map[string][]byte{"release": []byte(s)},
 	}, nil
@@ -74,7 +62,7 @@ func newSecretsObject(rls *rspb.Release) (*v1.Secret, error) {
 
 // encodeRelease encodes a release returning a base64 encoded
 // gzipped string representation, or error.
-func encodeRelease(rls *rspb.Release) (string, error) {
+func encodeRelease(rls *relv1.Release) (string, error) {
 	b, err := json.Marshal(rls)
 	if err != nil {
 		return "", err
@@ -88,7 +76,6 @@ func encodeRelease(rls *rspb.Release) (string, error) {
 		return "", err
 	}
 	w.Close()
-
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
 

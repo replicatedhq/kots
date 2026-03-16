@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
-	"helm.sh/helm/v3/pkg/chartutil"
+	"helm.sh/helm/v4/pkg/chart/common"
 )
 
 func InitHelmCapabilities() error {
@@ -24,7 +24,7 @@ func InitHelmCapabilities() error {
 		return errors.Wrap(err, "failed to get server version")
 	}
 
-	versionSet := chartutil.VersionSet{}
+	versionSet := common.VersionSet{}
 	for _, serverGroup := range serverGroups.Groups {
 		for _, version := range serverGroup.Versions {
 			versionSet = append(versionSet, version.GroupVersion)
@@ -37,14 +37,16 @@ func InitHelmCapabilities() error {
 		return errors.Wrap(err, "failed to compile regex")
 	}
 
-	chartutil.DefaultCapabilities = &chartutil.Capabilities{
-		KubeVersion: chartutil.KubeVersion{
-			Version: fmt.Sprintf("v%s.%s.0", serverVersion.Major, reg.ReplaceAllString(serverVersion.Minor, "")),
-			Major:   serverVersion.Major,
-			Minor:   serverVersion.Minor,
-		},
+	kubeVersionStr := fmt.Sprintf("v%s.%s.0", serverVersion.Major, reg.ReplaceAllString(serverVersion.Minor, ""))
+	kubeVersion, err := common.ParseKubeVersion(kubeVersionStr)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse kubernetes version")
+	}
+
+	common.DefaultCapabilities = &common.Capabilities{
+		KubeVersion: *kubeVersion,
 		APIVersions: versionSet,
-		HelmVersion: chartutil.DefaultCapabilities.HelmVersion,
+		HelmVersion: common.DefaultCapabilities.HelmVersion,
 	}
 
 	return nil
