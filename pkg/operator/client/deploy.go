@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -348,6 +349,7 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 		if len(dir.UpgradeFlags) > 0 {
 			args = append(args, dir.UpgradeFlags...)
 		}
+		args = appendTakeOwnershipArgs(args, dir.UpgradeFlags)
 
 		logger.Infof("running helm with arguments %v", args)
 		cmd := exec.Command("helm", args...)
@@ -375,6 +377,16 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 		multiStdout: multiStdout,
 	}
 	return result, nil
+}
+
+// appendTakeOwnershipArgs adds --server-side=false when --take-ownership is in upgradeFlags.
+// kubectl apply (used by Replicated helm) uses client-side apply by default, so when taking
+// ownership of resources already deployed, using SSA will result in a conflict.
+func appendTakeOwnershipArgs(args []string, upgradeFlags []string) []string {
+	if slices.Contains(upgradeFlags, "--take-ownership") {
+		return append(args, "--server-side=false")
+	}
+	return args
 }
 
 type orderedDir struct {

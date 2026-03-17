@@ -1039,6 +1039,40 @@ version: ver2
 	}
 }
 
+func Test_appendTakeOwnershipArgs(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		upgradeFlags []string
+		want         []string
+	}{
+		{
+			name:         "adds --server-side=false when --take-ownership is present",
+			args:         []string{"upgrade", "-i", "myrelease", "--timeout", "3600s", "--take-ownership"},
+			upgradeFlags: []string{"--take-ownership"},
+			want:         []string{"upgrade", "-i", "myrelease", "--timeout", "3600s", "--take-ownership", "--server-side=false"},
+		},
+		{
+			name:         "no change when --take-ownership is not in upgrade flags",
+			args:         []string{"upgrade", "-i", "myrelease", "--skip-crds"},
+			upgradeFlags: []string{"--skip-crds", "--no-hooks"},
+			want:         []string{"upgrade", "-i", "myrelease", "--skip-crds"},
+		},
+		{
+			name:         "no change when upgrade flags are empty",
+			args:         []string{"upgrade", "-i", "myrelease"},
+			upgradeFlags: []string{},
+			want:         []string{"upgrade", "-i", "myrelease"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := appendTakeOwnershipArgs(tt.args, tt.upgradeFlags)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func Test_getRemovedCharts(t *testing.T) {
 	type chart struct {
 		name    string

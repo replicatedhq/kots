@@ -99,6 +99,7 @@ func zeroChartModTimes(c *v2chart.Chart) {
 		return
 	}
 	c.ModTime = time.Time{}
+	c.SchemaModTime = time.Time{}
 	for _, f := range c.Templates {
 		f.ModTime = time.Time{}
 	}
