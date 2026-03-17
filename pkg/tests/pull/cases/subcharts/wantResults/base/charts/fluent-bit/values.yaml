@@ -187,6 +187,7 @@ fluent-bit:
   serviceAccount:
     annotations: {}
     create: true
+    name: null
   serviceMonitor:
     enabled: false
   testFramework:

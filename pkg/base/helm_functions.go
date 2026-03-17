@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
+	v2chart "helm.sh/helm/v4/pkg/chart/v2"
 	relv1 "helm.sh/helm/v4/pkg/release/v1"
 	"helm.sh/helm/v4/pkg/storage"
 	v1 "k8s.io/api/core/v1"
@@ -87,4 +89,23 @@ func encodeRelease(rls *relv1.Release) (string, error) {
 // This key is used to uniquely identify storage objects.
 func makeKey(rlsname string, version int) string {
 	return fmt.Sprintf("%s.%s.v%d", storage.HelmStorageType, rlsname, version)
+}
+
+// zeroChartModTimes zeros out all ModTime fields in a chart and its dependencies.
+// Helm v4 sets ModTime on chart files when loading from disk, causing non-deterministic
+// release secret content. Zeroing these out avoids spurious diffs.
+func zeroChartModTimes(c *v2chart.Chart) {
+	if c == nil {
+		return
+	}
+	c.ModTime = time.Time{}
+	for _, f := range c.Templates {
+		f.ModTime = time.Time{}
+	}
+	for _, f := range c.Files {
+		f.ModTime = time.Time{}
+	}
+	for _, dep := range c.Dependencies() {
+		zeroChartModTimes(dep)
+	}
 }

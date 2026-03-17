@@ -93,7 +93,7 @@ func renderHelmV4(releaseName string, chartPath string, renderOptions *RenderOpt
 	}
 	// add crds
 	for _, crd := range chartRequested.CRDObjects() {
-		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", crd.Filename, string(crd.File.Data))
+		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", crd.Filename, string(crd.File.Data[:]))
 	}
 
 	splitManifests := splitManifests(manifests.String())
@@ -141,9 +141,10 @@ func renderHelmV4(releaseName string, chartPath string, renderOptions *RenderOpt
 		relV1.Info.Status = common.StatusDeployed
 
 		// override deployed times to avoid spurious diffs.
-		// Zero time.Time values are omitted from JSON marshaling by the v4 Info struct.
 		relV1.Info.FirstDeployed = time.Time{}
 		relV1.Info.LastDeployed = time.Time{}
+
+		zeroChartModTimes(relV1.Chart)
 
 		helmReleaseSecretObj, err := newSecretsObject(relV1)
 		if err != nil {
