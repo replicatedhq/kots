@@ -145,9 +145,6 @@ func renderHelmV4(releaseName string, chartPath string, renderOptions *RenderOpt
 		relV1.Info.FirstDeployed = time.Time{}
 		relV1.Info.LastDeployed = time.Time{}
 
-		// zero out chart file modtimes to avoid spurious diffs between runs.
-		zeroChartModTimes(relV1.Chart)
-
 		helmReleaseSecretObj, err := newSecretsObject(relV1)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "failed to generate helm secret")
