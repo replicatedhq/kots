@@ -78,7 +78,6 @@ require (
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v2 v2.4.0
-	helm.sh/helm/v3 v3.20.0
 	helm.sh/helm/v4 v4.1.3
 	k8s.io/api v0.35.1
 	k8s.io/apimachinery v0.35.1
@@ -480,6 +479,7 @@ require (
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	helm.sh/helm/v3 v3.20.0 // indirect
 	k8s.io/cloud-provider v0.35.0 // indirect
 	k8s.io/component-helpers v0.35.1 // indirect
 	k8s.io/controller-manager v0.35.0 // indirect

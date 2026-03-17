@@ -9,8 +9,7 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"helm.sh/helm/v3/pkg/release"
-	helmrelease "helm.sh/helm/v3/pkg/release"
+	relv1 "helm.sh/helm/v4/pkg/release/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,7 +89,7 @@ func moveHelmReleaseSecret(clientset kubernetes.Interface, secret corev1.Secret,
 	return nil
 }
 
-func encodeRelease(helmRelease *release.Release) (string, error) {
+func encodeRelease(helmRelease *relv1.Release) (string, error) {
 	b, err := json.Marshal(helmRelease)
 	if err != nil {
 		return "", err
@@ -108,7 +107,7 @@ func encodeRelease(helmRelease *release.Release) (string, error) {
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
 
-func helmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
+func helmReleaseFromSecretData(data []byte) (*relv1.Release, error) {
 	base64Reader := base64.NewDecoder(base64.StdEncoding, bytes.NewReader(data))
 	gzreader, err := gzip.NewReader(base64Reader)
 	if err != nil {
@@ -121,7 +120,7 @@ func helmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
 		return nil, errors.Wrap(err, "failed to read from gzip reader")
 	}
 
-	release := &helmrelease.Release{}
+	release := &relv1.Release{}
 	err = json.Unmarshal(releaseData, &release)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal release data")
