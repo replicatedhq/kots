@@ -13,6 +13,7 @@ import (
 	"helm.sh/helm/v4/pkg/chart"
 	chartutil "helm.sh/helm/v4/pkg/chart/common/util"
 	"helm.sh/helm/v4/pkg/chart/v2/loader"
+	"helm.sh/helm/v4/pkg/release"
 	"helm.sh/helm/v4/pkg/release/common"
 	relv1 "helm.sh/helm/v4/pkg/release/v1"
 	k8syaml "sigs.k8s.io/yaml"
@@ -57,12 +58,12 @@ func renderHelmV4(releaseName string, chartPath string, renderOptions *RenderOpt
 		}
 	}
 
-	rel, ok := relIface.(*relv1.Release)
-	if !ok {
-		return nil, nil, errors.New("helm v4 returned unexpected release type")
+	acc, err := release.NewAccessor(relIface)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get helm release accessor")
 	}
 
-	coalescedValues, err := chartutil.CoalesceValues(chartRequested, rel.Config)
+	coalescedValues, err := chartutil.CoalesceValues(chartRequested, renderOptions.HelmValues)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to coalesce values")
 	}
@@ -81,10 +82,14 @@ func renderHelmV4(releaseName string, chartPath string, renderOptions *RenderOpt
 	}
 
 	var manifests bytes.Buffer
-	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
+	fmt.Fprintln(&manifests, strings.TrimSpace(acc.Manifest()))
 	// add hooks
-	for _, m := range rel.Hooks {
-		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
+	for _, hookIface := range acc.Hooks() {
+		hookAcc, err := release.NewHookAccessor(hookIface)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to get helm hook accessor")
+		}
+		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", hookAcc.Path(), hookAcc.Manifest())
 	}
 	// add crds
 	for _, crd := range chartRequested.CRDObjects() {
@@ -94,7 +99,7 @@ func renderHelmV4(releaseName string, chartPath string, renderOptions *RenderOpt
 	splitManifests := splitManifests(manifests.String())
 	manifestName := ""
 	for _, manifest := range splitManifests {
-		submatch := HelmV3ManifestNameRegex.FindStringSubmatch(manifest)
+		submatch := HelmV4ManifestNameRegex.FindStringSubmatch(manifest)
 		if len(submatch) > 0 {
 			// multi-doc manifests will not have the Source comment so use the previous name
 			manifestName = strings.TrimPrefix(submatch[1], fmt.Sprintf("%s/", chartRequested.Name()))
@@ -122,20 +127,28 @@ func renderHelmV4(releaseName string, chartPath string, renderOptions *RenderOpt
 	// this secret should only be generated for installs that rely on us rendering yaml internally - not native helm installs
 	// those generate their own secret
 	if !renderOptions.UseHelmInstall {
-		if renderOptions.Namespace == "" {
-			rel.Namespace = namespace()
+		// The release secret format is v1-specific. Type-assert here so the rendering
+		// path above remains format-agnostic via the Accessor interface.
+		relV1, ok := relIface.(*relv1.Release)
+		if !ok {
+			// Chart v3 will return a v2 release
+			return nil, nil, errors.New("helm release secret generation requires a v1 release format")
 		}
-		rel.Info.Status = common.StatusDeployed
+
+		if renderOptions.Namespace == "" {
+			relV1.Namespace = namespace()
+		}
+		relV1.Info.Status = common.StatusDeployed
 
 		// override deployed times to avoid spurious diffs.
 		// Zero time.Time values are omitted from JSON marshaling by the v4 Info struct.
-		rel.Info.FirstDeployed = time.Time{}
-		rel.Info.LastDeployed = time.Time{}
+		relV1.Info.FirstDeployed = time.Time{}
+		relV1.Info.LastDeployed = time.Time{}
 
 		// zero out chart file modtimes to avoid spurious diffs between runs.
-		zeroChartModTimes(rel.Chart)
+		zeroChartModTimes(relV1.Chart)
 
-		helmReleaseSecretObj, err := newSecretsObject(rel)
+		helmReleaseSecretObj, err := newSecretsObject(relV1)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "failed to generate helm secret")
 		}

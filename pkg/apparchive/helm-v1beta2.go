@@ -24,7 +24,7 @@ import (
 	"helm.sh/helm/v4/pkg/chart"
 	"helm.sh/helm/v4/pkg/chart/common"
 	"helm.sh/helm/v4/pkg/chart/v2/loader"
-	relv1 "helm.sh/helm/v4/pkg/release/v1"
+	"helm.sh/helm/v4/pkg/release"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -274,15 +274,19 @@ func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, c
 	if err != nil {
 		return errors.Wrap(err, "failed to run helm install")
 	}
-	rel, ok := relIface.(*relv1.Release)
-	if !ok {
-		return errors.New("helm returned unexpected release type")
+	acc, err := release.NewAccessor(relIface)
+	if err != nil {
+		return errors.Wrap(err, "failed to get helm release accessor")
 	}
 
 	var manifests bytes.Buffer
-	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
-	for _, m := range rel.Hooks {
-		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
+	fmt.Fprintln(&manifests, strings.TrimSpace(acc.Manifest()))
+	for _, hookIface := range acc.Hooks() {
+		hookAcc, err := release.NewHookAccessor(hookIface)
+		if err != nil {
+			return errors.Wrap(err, "failed to get helm hook accessor")
+		}
+		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", hookAcc.Path(), hookAcc.Manifest())
 	}
 
 	if err := os.MkdirAll(outputDir, 0744); err != nil {

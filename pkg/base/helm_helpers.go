@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	HelmV3ManifestNameRegex = regexp.MustCompile("^# Source: (.+)")
+	// regex to extract the manifest name from a helm v3 and v4 manifest
+	HelmV4ManifestNameRegex = regexp.MustCompile("^# Source: (.+)")
 )
 
 const NamespaceTemplateConst = "repl{{ Namespace}}"
