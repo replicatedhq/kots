@@ -364,7 +364,7 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 			logger.Infof("error: %s", err.Error())
 			hasErr = true
 		} else {
-			logger.Infof("helm upgrade -i command completed without errors")
+			logger.Infof("helm upgrade -i command completed successfully")
 		}
 
 		if len(stdout) > 0 {
