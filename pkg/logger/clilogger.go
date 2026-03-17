@@ -1,9 +1,12 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -313,4 +316,75 @@ func (l *CLILogger) IsTerminal() bool {
 		return isatty.IsTerminal(file.Fd())
 	}
 	return false
+}
+
+// SlogHandler returns an slog.Handler that routes log records to the CLILogger.
+// Debug-level records use Debug (respecting Verbose); Info and above use Info; Error uses Errorf.
+func (l *CLILogger) SlogHandler() slog.Handler {
+	return &cliLoggerHandler{log: l}
+}
+
+type cliLoggerHandler struct {
+	log   *CLILogger
+	attrs []slog.Attr
+	group string
+}
+
+func (h *cliLoggerHandler) Enabled(_ context.Context, level slog.Level) bool {
+	if h.log == nil {
+		return false
+	}
+	if level == slog.LevelDebug {
+		return !h.log.isSilent && h.log.isVerbose
+	}
+	return !h.log.isSilent
+}
+
+func (h *cliLoggerHandler) Handle(_ context.Context, r slog.Record) error {
+	if h.log == nil {
+		return nil
+	}
+	msg := r.Message
+	var parts []string
+	r.Attrs(func(a slog.Attr) bool {
+		parts = append(parts, fmt.Sprintf("%s=%v", a.Key, a.Value.Any()))
+		return true
+	})
+	for _, a := range h.attrs {
+		parts = append(parts, fmt.Sprintf("%s=%v", a.Key, a.Value.Any()))
+	}
+	if len(parts) > 0 {
+		msg = msg + " " + strings.Join(parts, " ")
+	}
+	switch r.Level {
+	case slog.LevelDebug:
+		h.log.Debug("%s", msg)
+	case slog.LevelError:
+		h.log.Errorf("%s", msg)
+	default:
+		h.log.Info("%s", msg)
+	}
+	return nil
+}
+
+func (h *cliLoggerHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newAttrs := make([]slog.Attr, 0, len(h.attrs)+len(attrs))
+	newAttrs = append(newAttrs, h.attrs...)
+	newAttrs = append(newAttrs, attrs...)
+	return &cliLoggerHandler{
+		log:   h.log,
+		attrs: newAttrs,
+		group: h.group,
+	}
+}
+
+func (h *cliLoggerHandler) WithGroup(name string) slog.Handler {
+	if name == "" {
+		return h
+	}
+	return &cliLoggerHandler{
+		log:   h.log,
+		attrs: h.attrs,
+		group: h.group + name + ".",
+	}
 }

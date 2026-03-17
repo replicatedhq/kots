@@ -351,6 +351,10 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 		}
 		args = appendTakeOwnershipArgs(args, dir.UpgradeFlags)
 
+		if logger.DebugEnabled() {
+			args = append(args, "--debug")
+		}
+
 		logger.Infof("running helm with arguments %v", args)
 		cmd := exec.Command("helm", args...)
 		stdout, stderr, err := applier.Run(cmd)

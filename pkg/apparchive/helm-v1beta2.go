@@ -3,6 +3,7 @@ package apparchive
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -226,7 +227,7 @@ func WriteRenderedV1Beta2HelmCharts(opts WriteRenderedV1Beta2HelmChartsOptions) 
 			renderedPath := path.Join(opts.RenderedDir, downstream, "helm", helmChart.GetDirName())
 			chartDir := path.Join(opts.HelmDir, helmChart.GetDirName())
 			valuesPath := path.Join(chartDir, "values.yaml")
-			if err := templateV1Beta2HelmChartWithValuesToDir(&helmChart, chartDir, valuesPath, renderedPath, opts.Log.Debug); err != nil {
+			if err := templateV1Beta2HelmChartWithValuesToDir(&helmChart, chartDir, valuesPath, renderedPath, opts.Log); err != nil {
 				return errors.Wrap(err, "failed to template helm chart for rendered dir")
 			}
 		}
@@ -235,8 +236,12 @@ func WriteRenderedV1Beta2HelmCharts(opts WriteRenderedV1Beta2HelmChartsOptions) 
 	return nil
 }
 
-func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, chartDir, valuesPath, outputDir string, log func(string, ...interface{})) error {
-	cfg := action.NewConfiguration()
+func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, chartDir, valuesPath, outputDir string, log *logger.CLILogger) error {
+	handler := slog.Default().Handler()
+	if log != nil {
+		handler = log.SlogHandler()
+	}
+	cfg := action.NewConfiguration(action.ConfigurationSetLogger(handler))
 	client := action.NewInstall(cfg)
 	client.DryRunStrategy = action.DryRunClient
 	client.ReleaseName = helmChart.GetReleaseName()
@@ -329,7 +334,11 @@ func findV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, helmChart *k
 		return nil, errors.Wrap(err, "failed to create temp dir for image processing")
 	}
 
-	if err := templateV1Beta2HelmChartWithValuesToDir(helmChart, chartDir, builderValuesPath, templatedOutputDir, opts.RenderOptions.Log.Debug); err != nil {
+	var log *logger.CLILogger
+	if opts.RenderOptions != nil {
+		log = opts.RenderOptions.Log
+	}
+	if err := templateV1Beta2HelmChartWithValuesToDir(helmChart, chartDir, builderValuesPath, templatedOutputDir, log); err != nil {
 		return nil, errors.Wrap(err, "failed to template helm chart for image processing")
 	}
 
