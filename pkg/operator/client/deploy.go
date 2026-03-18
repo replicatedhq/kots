@@ -349,7 +349,7 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 		if len(dir.UpgradeFlags) > 0 {
 			args = append(args, dir.UpgradeFlags...)
 		}
-		args = appendTakeOwnershipArgs(args, dir.UpgradeFlags)
+		args = appendServerSideArgs(args, dir.UpgradeFlags)
 
 		if logger.DebugEnabled() {
 			args = append(args, "--debug")
@@ -383,11 +383,14 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 	return result, nil
 }
 
-// appendTakeOwnershipArgs adds --server-side=false when --take-ownership is in upgradeFlags.
-// kubectl apply (used by Replicated helm) uses client-side apply by default, so when taking
-// ownership of resources already deployed, using SSA will result in a conflict.
-func appendTakeOwnershipArgs(args []string, upgradeFlags []string) []string {
-	if slices.Contains(upgradeFlags, "--take-ownership") {
+// appendServerSideArgs appends --server-side=false when --take-ownership, --force, or
+// --force-replace is in upgradeFlags. kubectl apply (used by Replicated helm) uses client-side
+// apply by default, so when taking ownership of resources already deployed, using SSA will result
+// in a conflict. --force and --force-replace are also incompatible with server-side apply.
+func appendServerSideArgs(args []string, upgradeFlags []string) []string {
+	if slices.Contains(upgradeFlags, "--take-ownership") ||
+		slices.Contains(upgradeFlags, "--force") ||
+		slices.Contains(upgradeFlags, "--force-replace") {
 		return append(args, "--server-side=false")
 	}
 	return args
