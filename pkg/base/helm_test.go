@@ -589,11 +589,39 @@ func Test_RenderHelm(t *testing.T) {
 				t.Errorf("RenderHelm() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("RenderHelm() \n\n%s", fmtJSONDiff(got, tt.want))
+			// The helm release secret content is non-deterministic (embedded chart JSON
+			// ordering varies). Compare everything except secret content; verify
+			// separately that the secret exists when expected.
+			gotNorm, gotSecret := stripHelmSecretFromBase(got)
+			wantNorm, wantSecret := stripHelmSecretFromBase(tt.want)
+			if !reflect.DeepEqual(gotNorm, wantNorm) {
+				t.Errorf("RenderHelm() \n\n%s", fmtJSONDiff(gotNorm, wantNorm))
+			}
+			if (gotSecret != nil) != (wantSecret != nil) {
+				t.Errorf("RenderHelm() chartHelmSecret.yaml present=%v, want present=%v", gotSecret != nil, wantSecret != nil)
 			}
 		})
 	}
+}
+
+// stripHelmSecretFromBase returns a copy of base with chartHelmSecret.yaml
+// removed from Files, and the removed file (or nil if not present).
+func stripHelmSecretFromBase(base *Base) (*Base, *BaseFile) {
+	if base == nil {
+		return nil, nil
+	}
+	result := *base
+	result.Files = nil
+	var secret *BaseFile
+	for _, f := range base.Files {
+		f := f
+		if f.Path == "chartHelmSecret.yaml" {
+			secret = &f
+		} else {
+			result.Files = append(result.Files, f)
+		}
+	}
+	return &result, secret
 }
 
 func Test_writeHelmBase(t *testing.T) {

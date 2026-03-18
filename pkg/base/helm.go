@@ -20,7 +20,7 @@ import (
 )
 
 func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
-	chartPath, err := ioutil.TempDir("", "kots")
+	chartPath, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create chart dir")
 	}
@@ -47,10 +47,10 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	var rendered []BaseFile
 	var additional []BaseFile
 	switch strings.ToLower(renderOptions.HelmVersion) {
-	case "v3", "":
-		rendered, additional, err = renderHelmV3(u.Name, chartPath, renderOptions)
+	case "v3", "v4", "":
+		rendered, additional, err = renderHelmV4(u.Name, chartPath, renderOptions)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to render with helm v3")
+			return nil, errors.Wrap(err, "failed to render helm chart")
 		}
 	case "v2":
 		rendered, additional, err = renderHelmV2(u.Name, chartPath, renderOptions)
@@ -431,7 +431,7 @@ func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) 
 		return baseFiles, nil
 	}
 
-	chartsPath, err := ioutil.TempDir("", "charts")
+	chartsPath, err := os.MkdirTemp("", "charts")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -459,7 +459,7 @@ func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) 
 		// Only add the namespace if the object itself isn't a namespace.
 		if manifest.Metadata.Namespace == "" && !(manifest.Kind == "Namespace" && manifest.APIVersion == "v1") {
 			name := filepath.Base(baseFile.Path)
-			tmpFile, err := ioutil.TempFile(chartsPath, name)
+			tmpFile, err := os.CreateTemp(chartsPath, name)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to write temp file %v", tmpFile.Name())
 			}

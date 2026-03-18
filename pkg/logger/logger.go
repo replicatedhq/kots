@@ -31,6 +31,11 @@ func SetDebug() {
 	atom.SetLevel(zapcore.DebugLevel)
 }
 
+// DebugEnabled returns true if debug logging is enabled.
+func DebugEnabled() bool {
+	return atom.Level().Enabled(zapcore.DebugLevel)
+}
+
 func SetSilent() {
 	// Set to a very high level to suppress all logs
 	atom.SetLevel(zapcore.FatalLevel)

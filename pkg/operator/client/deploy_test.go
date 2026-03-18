@@ -616,7 +616,7 @@ version: ver2
 						HelmUpgradeFlags: []string{
 							"--skip-crds",
 							"--no-hooks",
-							"--atomic",
+							"--rollback-on-failure",
 							"--description=my description",
 						},
 					},
@@ -646,7 +646,7 @@ version: ver2
 					UpgradeFlags: []string{
 						"--skip-crds",
 						"--no-hooks",
-						"--atomic",
+						"--rollback-on-failure",
 						"--description=my description",
 					},
 					APIVersion: "kots.io/v1beta1",
@@ -1035,6 +1035,40 @@ version: ver2
 			got, err := getSortedCharts(v1Beta1ChartsDir, v1Beta2ChartsDir, tt.kotsCharts, tt.targetNamespace, tt.isUninstall)
 			req.NoError(err)
 			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func Test_appendTakeOwnershipArgs(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		upgradeFlags []string
+		want         []string
+	}{
+		{
+			name:         "adds --server-side=false when --take-ownership is present",
+			args:         []string{"upgrade", "-i", "myrelease", "--timeout", "3600s", "--take-ownership"},
+			upgradeFlags: []string{"--take-ownership"},
+			want:         []string{"upgrade", "-i", "myrelease", "--timeout", "3600s", "--take-ownership", "--server-side=false"},
+		},
+		{
+			name:         "no change when --take-ownership is not in upgrade flags",
+			args:         []string{"upgrade", "-i", "myrelease", "--skip-crds"},
+			upgradeFlags: []string{"--skip-crds", "--no-hooks"},
+			want:         []string{"upgrade", "-i", "myrelease", "--skip-crds"},
+		},
+		{
+			name:         "no change when upgrade flags are empty",
+			args:         []string{"upgrade", "-i", "myrelease"},
+			upgradeFlags: []string{},
+			want:         []string{"upgrade", "-i", "myrelease"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := appendTakeOwnershipArgs(tt.args, tt.upgradeFlags)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

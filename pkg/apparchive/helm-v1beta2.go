@@ -3,6 +3,7 @@ package apparchive
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -20,10 +21,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"go.yaml.in/yaml/v2"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v4/pkg/action"
+	"helm.sh/helm/v4/pkg/chart"
+	"helm.sh/helm/v4/pkg/chart/common"
+	"helm.sh/helm/v4/pkg/chart/v2/loader"
+	"helm.sh/helm/v4/pkg/release"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/helm/pkg/chartutil"
 )
 
 // GetV1Beta2ChartsArchive returns an archive of the v1beta2 charts to be deployed
@@ -224,7 +227,7 @@ func WriteRenderedV1Beta2HelmCharts(opts WriteRenderedV1Beta2HelmChartsOptions) 
 			renderedPath := path.Join(opts.RenderedDir, downstream, "helm", helmChart.GetDirName())
 			chartDir := path.Join(opts.HelmDir, helmChart.GetDirName())
 			valuesPath := path.Join(chartDir, "values.yaml")
-			if err := templateV1Beta2HelmChartWithValuesToDir(&helmChart, chartDir, valuesPath, renderedPath, opts.Log.Debug); err != nil {
+			if err := templateV1Beta2HelmChartWithValuesToDir(&helmChart, chartDir, valuesPath, renderedPath, opts.Log); err != nil {
 				return errors.Wrap(err, "failed to template helm chart for rendered dir")
 			}
 		}
@@ -233,15 +236,16 @@ func WriteRenderedV1Beta2HelmCharts(opts WriteRenderedV1Beta2HelmChartsOptions) 
 	return nil
 }
 
-func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, chartDir, valuesPath, outputDir string, log func(string, ...interface{})) error {
-	cfg := &action.Configuration{
-		Log: log,
+func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, chartDir, valuesPath, outputDir string, log *logger.CLILogger) error {
+	handler := slog.Default().Handler()
+	if log != nil {
+		handler = log.SlogHandler()
 	}
+	cfg := action.NewConfiguration(action.ConfigurationSetLogger(handler))
 	client := action.NewInstall(cfg)
-	client.DryRun = true
+	client.DryRunStrategy = action.DryRunClient
 	client.ReleaseName = helmChart.GetReleaseName()
 	client.Replace = true
-	client.ClientOnly = true
 	client.IncludeCRDs = true
 
 	client.Namespace = helmChart.Spec.Namespace
@@ -257,29 +261,37 @@ func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, c
 	}
 
 	if req := chartRequested.Metadata.Dependencies; req != nil {
-		if err := action.CheckDependencies(chartRequested, req); err != nil {
+		deps := make([]chart.Dependency, len(req))
+		for i, d := range req {
+			deps[i] = d
+		}
+		if err := action.CheckDependencies(chartRequested, deps); err != nil {
 			return errors.Wrap(err, "failed dependency check")
 		}
 	}
 
-	values, err := chartutil.ReadValuesFile(valuesPath)
+	values, err := common.ReadValuesFile(valuesPath)
 	if err != nil {
 		return errors.Wrap(err, "failed to read values file")
 	}
 
-	rel, err := client.Run(chartRequested, values)
+	relIface, err := client.Run(chartRequested, values)
 	if err != nil {
 		return errors.Wrap(err, "failed to run helm install")
 	}
+	acc, err := release.NewAccessor(relIface)
+	if err != nil {
+		return errors.Wrap(err, "failed to get helm release accessor")
+	}
 
 	var manifests bytes.Buffer
-	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
-	for _, m := range rel.Hooks {
-		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
-	}
-	// add hooks
-	for _, m := range rel.Hooks {
-		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
+	fmt.Fprintln(&manifests, strings.TrimSpace(acc.Manifest()))
+	for _, hookIface := range acc.Hooks() {
+		hookAcc, err := release.NewHookAccessor(hookIface)
+		if err != nil {
+			return errors.Wrap(err, "failed to get helm hook accessor")
+		}
+		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", hookAcc.Path(), hookAcc.Manifest())
 	}
 
 	if err := os.MkdirAll(outputDir, 0744); err != nil {
@@ -322,7 +334,11 @@ func findV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, helmChart *k
 		return nil, errors.Wrap(err, "failed to create temp dir for image processing")
 	}
 
-	if err := templateV1Beta2HelmChartWithValuesToDir(helmChart, chartDir, builderValuesPath, templatedOutputDir, opts.RenderOptions.Log.Debug); err != nil {
+	var log *logger.CLILogger
+	if opts.RenderOptions != nil {
+		log = opts.RenderOptions.Log
+	}
+	if err := templateV1Beta2HelmChartWithValuesToDir(helmChart, chartDir, builderValuesPath, templatedOutputDir, log); err != nil {
 		return nil, errors.Wrap(err, "failed to template helm chart for image processing")
 	}
 

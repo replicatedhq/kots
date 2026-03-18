@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v4/pkg/release/common"
+	relv1 "helm.sh/helm/v4/pkg/release/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,12 +39,12 @@ func mockKotsadmHelmReleaseSecretExistsClient(t *testing.T, kotsadmNS string, re
 }
 
 func buildHelmReleaseSecret(t *testing.T, kotsadmNS string, releaseName string) *corev1.Secret {
-	helmRelease := &release.Release{
+	helmRelease := &relv1.Release{
 		Name:      releaseName,
 		Namespace: kotsadmNS,
 		Version:   1,
-		Info: &release.Info{
-			Status: release.StatusDeployed,
+		Info: &relv1.Info{
+			Status: common.StatusDeployed,
 		},
 	}
 	encodedRelease, err := encodeRelease(helmRelease)
