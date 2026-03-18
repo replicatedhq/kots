@@ -1039,7 +1039,7 @@ version: ver2
 	}
 }
 
-func Test_appendTakeOwnershipArgs(t *testing.T) {
+func Test_appendServerSideArgs(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         []string
@@ -1053,7 +1053,19 @@ func Test_appendTakeOwnershipArgs(t *testing.T) {
 			want:         []string{"upgrade", "-i", "myrelease", "--timeout", "3600s", "--take-ownership", "--server-side=false"},
 		},
 		{
-			name:         "no change when --take-ownership is not in upgrade flags",
+			name:         "adds --server-side=false when --force is present",
+			args:         []string{"upgrade", "-i", "myrelease", "--timeout", "3600s", "--force"},
+			upgradeFlags: []string{"--force"},
+			want:         []string{"upgrade", "-i", "myrelease", "--timeout", "3600s", "--force", "--server-side=false"},
+		},
+		{
+			name:         "adds --server-side=false when --force-replace is present",
+			args:         []string{"upgrade", "-i", "myrelease", "--timeout", "3600s", "--force-replace"},
+			upgradeFlags: []string{"--force-replace"},
+			want:         []string{"upgrade", "-i", "myrelease", "--timeout", "3600s", "--force-replace", "--server-side=false"},
+		},
+		{
+			name:         "no change when no conflicting flags are present",
 			args:         []string{"upgrade", "-i", "myrelease", "--skip-crds"},
 			upgradeFlags: []string{"--skip-crds", "--no-hooks"},
 			want:         []string{"upgrade", "-i", "myrelease", "--skip-crds"},
@@ -1067,7 +1079,7 @@ func Test_appendTakeOwnershipArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := appendTakeOwnershipArgs(tt.args, tt.upgradeFlags)
+			got := appendServerSideArgs(tt.args, tt.upgradeFlags)
 			require.Equal(t, tt.want, got)
 		})
 	}
