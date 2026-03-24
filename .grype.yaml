@@ -6,7 +6,7 @@
 # ignore:
 #   - vulnerability: CVE-xxxx-xxxx
 
-# Match Trivy's configuration
+# Vulnerability scan configuration
 fail-on-severity: medium  # Equivalent to CRITICAL,HIGH,MEDIUM setting
 output: table  # Default output format (will be overridden by action for SARIF)
 

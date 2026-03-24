@@ -234,21 +234,6 @@ sbom: sbom/kots-sbom.tgz
 
 	cosign public-key --key ./cosign.key --outfile ./sbom/key.pub
 
-# npm packages scans are ignored(only go modules are scanned)
-.PHONY: scan
-scan:
-	trivy fs \
-		--scanners vuln \
-		--exit-code=1 \
-		--severity="CRITICAL,HIGH,MEDIUM" \
-		--ignore-unfixed \
-		--skip-dirs .github \
-		--skip-files actions/version-tag/package-lock.json \
-		--skip-files web/yarn.lock \
-		--skip-dirs web/node_modules \
-		--ignorefile .trivyignore \
-		./
-
 .PHONY: generate-kubectl-versions
 generate-kubectl-versions:
 	node .github/actions/kubectl-versions/dist/index.js

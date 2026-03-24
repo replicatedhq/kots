@@ -4,9 +4,6 @@ on:
       - main
   pull_request:
 
-env:
-  TRIVY_VERSION: 0.69.3
-
 name: License scan
 
 jobs:
@@ -28,18 +25,33 @@ jobs:
         with:
           cache: yarn
           cache-dependency-path: web/yarn.lock
-      
+
       - name: Install Node.js deps
         working-directory: web
         run: yarn install
 
-      - name: Install trivy
+      - name: Install Syft
+        run: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+
+      - name: Generate SBOM
         run: |
-          wget "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb"
-          sudo dpkg -i "trivy_${TRIVY_VERSION}_Linux-64bit.deb"
+          syft scan dir:. \
+            --exclude './.github/**' \
+            --exclude './package-lock.json' \
+            --exclude './bin/scan-images/package-lock.json' \
+            -o spdx-json > sbom.spdx.json
 
       - name: Create license report artifact
-        run: trivy fs --scanners license --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" . | tee license-report.txt
+        run: |
+          jq -r '
+            ["PACKAGE", "VERSION", "LICENSE"],
+            ["-------", "-------", "-------"],
+            (.packages[] | [
+              .name,
+              (.versionInfo // ""),
+              (.licenseDeclared // "NOASSERTION")
+            ]) | @tsv
+          ' sbom.spdx.json | column -t -s $'\t' | tee license-report.txt
 
       - name: Upload license report artifact
         uses: actions/upload-artifact@v6
@@ -49,7 +61,37 @@ jobs:
 
       - name: Check for unknown licenses
         run: |
-          trivy fs --scanners license --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" --exit-code 1 --severity UNKNOWN . || echo "::warning::Unknown licenses found, please verify"
+          UNKNOWN=$(jq -r '
+            [.packages[] | select(
+              (.licenseDeclared == "NOASSERTION") or
+              (.licenseDeclared == "") or
+              (.licenseDeclared == null)
+            ) | .name] | unique | .[]
+          ' sbom.spdx.json)
+          if [ -n "$UNKNOWN" ]; then
+            echo "::warning::Unknown licenses found for the following packages:"
+            echo "$UNKNOWN"
+          fi
 
       - name: Check for forbidden licenses and fail
-        run: trivy fs --scanners license  --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" --exit-code 1 --severity CRITICAL,HIGH .
+        run: |
+          # Forbidden licenses: strong copyleft (equivalent to Trivy CRITICAL,HIGH)
+          # Matches GPL (but not LGPL), AGPL, SSPL, EUPL
+          # Handles both old SPDX IDs (GPL-2.0) and new ones (GPL-2.0-only, GPL-2.0-or-later)
+          FORBIDDEN='(^|[^L])GPL-[23]\.0|AGPL-|SSPL-|EUPL-'
+
+          VIOLATIONS=$(jq -r --arg forbidden "$FORBIDDEN" '
+            [.packages[] | select(
+              .licenseDeclared != null and
+              .licenseDeclared != "NOASSERTION" and
+              .licenseDeclared != "" and
+              (.licenseDeclared | test($forbidden))
+            ) | "\(.name): \(.licenseDeclared)"] | unique | .[]
+          ' sbom.spdx.json)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::Forbidden licenses (strong copyleft) detected:"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+          echo "No forbidden licenses found."
