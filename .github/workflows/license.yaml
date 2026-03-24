@@ -75,10 +75,9 @@ jobs:
 
       - name: Check for forbidden licenses and fail
         run: |
-          # Forbidden licenses: strong copyleft
-          # Matches GPL (but not LGPL), AGPL, SSPL, EUPL
-          # Handles both old SPDX IDs (GPL-2.0) and new ones (GPL-2.0-only, GPL-2.0-or-later)
-          FORBIDDEN='(^|[^L])GPL-[23]\.0|AGPL-|SSPL-|EUPL-'
+          # Forbidden licenses: strong copyleft and restrictive (equivalent to Trivy CRITICAL,HIGH)
+          # GPL (not LGPL), AGPL, SSPL, EUPL, CC restrictive variants, WTFPL, and other copyleft
+          FORBIDDEN='(^|[^L])GPL-[1-3]\.0|AGPL-|SSPL-|EUPL-|CC-BY-(NC|ND|SA)-|WTFPL|Commons-Clause|OSL-|QPL-|Sleepycat|NPL-|^BCL$'
 
           VIOLATIONS=$(jq -r --arg forbidden "$FORBIDDEN" '
             [.packages[] | select(
