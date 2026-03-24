@@ -75,7 +75,7 @@ jobs:
 
       - name: Check for forbidden licenses and fail
         run: |
-          # Forbidden licenses: strong copyleft (equivalent to Trivy CRITICAL,HIGH)
+          # Forbidden licenses: strong copyleft
           # Matches GPL (but not LGPL), AGPL, SSPL, EUPL
           # Handles both old SPDX IDs (GPL-2.0) and new ones (GPL-2.0-only, GPL-2.0-or-later)
           FORBIDDEN='(^|[^L])GPL-[23]\.0|AGPL-|SSPL-|EUPL-'
