@@ -54,7 +54,7 @@ jobs:
           ' sbom.spdx.json | column -t -s $'\t' | tee license-report.txt
 
       - name: Upload license report artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: license-report
           path: license-report.txt
