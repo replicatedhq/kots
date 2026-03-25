@@ -3,7 +3,7 @@ import AceEditor from "react-ace";
 import Select from "react-select";
 import Loader from "../shared/Loader";
 import yaml from "js-yaml";
-import "brace/ext/searchbox";
+import "ace-builds/src-noconflict/ext-searchbox";
 
 export class PodAnalyzerDetails extends Component {
   state = {

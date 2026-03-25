@@ -3,9 +3,9 @@ import Modal from "react-modal";
 import AceEditor from "react-ace";
 import yaml from "js-yaml";
 import Loader from "../shared/Loader";
-import "brace/mode/text";
-import "brace/mode/yaml";
-import "brace/theme/chrome";
+import "ace-builds/src-noconflict/mode-text";
+import "ace-builds/src-noconflict/mode-yaml";
+import "ace-builds/src-noconflict/theme-chrome";
 import Icon from "../Icon";
 
 const CUSTOM_SPEC_TEMPLATE = `

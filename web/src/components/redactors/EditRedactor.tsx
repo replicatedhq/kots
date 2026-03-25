@@ -1,20 +1,20 @@
 import { useEffect, useReducer } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
-import AceEditor, { Marker } from "react-ace";
-import "brace/mode/text";
-import "brace/mode/yaml";
-import "brace/theme/chrome";
+import AceEditor, { IMarker } from "react-ace";
+import "ace-builds/src-noconflict/mode-text";
+import "ace-builds/src-noconflict/mode-yaml";
+import "ace-builds/src-noconflict/theme-chrome";
 
 import Loader from "../shared/Loader";
 
 import "../../scss/components/redactors/EditRedactor.scss";
 import Icon from "../Icon";
 import { useSelectedApp } from "@features/App";
-import { Editor } from "brace";
+import type { Ace } from "ace-builds";
 
 type State = {
-  activeMarkers?: Marker[];
+  activeMarkers?: IMarker[];
   createConfirm: boolean;
   createErrMsg: string;
   creatingRedactor: boolean;
@@ -200,8 +200,7 @@ const EditRedactor = () => {
             creatingRedactor: false,
             createErrMsg: createResponse.error,
           });
-          // @ts-expect-error: aceEditor is not properly typed
-          const editor = aceEditor.editor as Editor;
+          const editor = aceEditor?.editor as Ace.Editor;
 
           editor.scrollToLine(getEmptyNameLine(state.redactorYaml), true, true, () => {});
           editor.gotoLine(getEmptyNameLine(state.redactorYaml), 1, true);
@@ -378,15 +377,14 @@ spec:
             markers={state.activeMarkers}
             editorProps={{
               $blockScrolling: Infinity,
-              // @ts-expect-error
+            }}
+            setOptions={{
+              scrollPastEnd: false,
+              showGutter: true,
               useSoftTabs: true,
               tabSize: 2,
             }}
             onChange={(value) => onYamlChange(value)}
-            setOptions={{
-              scrollPastEnd: false,
-              showGutter: true,
-            }}
           />
         </div>
         <div className="flex u-marginTop--20 justifyContent--spaceBetween">

@@ -12,10 +12,10 @@ import FileTree from "../shared/FileTree";
 
 import "../../scss/components/troubleshoot/FileTree.scss";
 
-import "brace/mode/json";
-import "brace/mode/text";
-import "brace/mode/yaml";
-import "brace/theme/chrome";
+import "ace-builds/src-noconflict/mode-json";
+import "ace-builds/src-noconflict/mode-text";
+import "ace-builds/src-noconflict/mode-yaml";
+import "ace-builds/src-noconflict/theme-chrome";
 import Icon from "../Icon";
 
 class AnalyzerFileTree extends Component {
