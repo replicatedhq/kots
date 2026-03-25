@@ -35,7 +35,7 @@ runs:
         export GIT_TAG=${{ inputs.git-tag }}
         envsubst '${GIT_TAG}' < ${{ inputs.context }}/melange.yaml.tmpl > ${{ inputs.context }}/melange.yaml
 
-    - uses: chainguard-dev/actions/melange-build@v1.5.6
+    - uses: chainguard-dev/actions/melange-build@v1.6.4
       with:
         config: ${{ inputs.context }}/melange.yaml
         archs: ${{ inputs.arch }}
