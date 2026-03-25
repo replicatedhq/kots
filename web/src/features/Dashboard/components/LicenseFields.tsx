@@ -1,13 +1,11 @@
 import styled from "styled-components";
 import { Entitlement } from "@src/types";
 
-export const CustomerLicenseFields = styled.div`
-  background: ${(props: { count: number }) =>
-    props.count < 5 ? "none" : "#f5f8f9"};
-  border-radius: ${(props: { count: number }) => (props.count < 5 ? 0 : "6px")};
-  border: ${(props: { count: number }) =>
-    props.count < 5 ? "none" : "1px solid #bccacd"};
-  padding: ${(props: { count: number }) => (props.count < 5 ? 0 : "10px")};
+export const CustomerLicenseFields = styled.div<{ count: number }>`
+  background: ${(props) => (props.count < 5 ? "none" : "#f5f8f9")};
+  border-radius: ${(props) => (props.count < 5 ? 0 : "6px")};
+  border: ${(props) => (props.count < 5 ? "none" : "1px solid #bccacd")};
+  padding: ${(props) => (props.count < 5 ? 0 : "10px")};
   line-height: 25px;
 `;
 
