@@ -177,23 +177,35 @@ func getLatestTagFromRegistry(imageUri string, getTags getTagsFn, match filterFn
 		return "", err
 	}
 
-	var versions []*semver.Version
+	type tagVersion struct {
+		original string
+		parsed   *semver.Version
+	}
+	var versions []tagVersion
+
+	// Regex to normalize "-rN" prerelease to "-r.N" so semver compares the
+	// numeric part as an integer instead of lexicographically.
+	// Without this, "-r10" sorts before "-r7" ("1" < "7").
+	rNormalize := regexp.MustCompile(`-r(\d+)$`)
 
 	for _, tag := range tags {
 		if match(tag) {
-			v, err := semver.NewVersion(tag)
+			normalized := rNormalize.ReplaceAllString(tag, "-r.$1")
+			v, err := semver.NewVersion(normalized)
 			if err != nil {
 				return "", fmt.Errorf("parse semver %q: %w", tag, err)
 			}
-			versions = append(versions, v)
+			versions = append(versions, tagVersion{original: tag, parsed: v})
 		}
 	}
-	sort.Sort(semver.Collection(versions))
+	sort.Slice(versions, func(i, j int) bool {
+		return versions[i].parsed.LessThan(versions[j].parsed)
+	})
 	if len(versions) == 0 {
 		return "", fmt.Errorf("no versions found")
 	}
 
-	return versions[len(versions)-1].Original(), nil
+	return versions[len(versions)-1].original, nil
 }
 
 func getLatestTagFromGithub(getReleases getReleaseFn, owner, repo string, match filterFn) (string, error) {
