@@ -52,7 +52,7 @@ jobs:
           category-prefix: image-scan-
           fail-build: 'false'
           image-ref: kotsadm/kotsadm:${{ needs.get-latest-tag.outputs.tag_name }}
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'kotsadm-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: negligible
@@ -79,7 +79,7 @@ jobs:
           category-prefix: image-scan-
           fail-build: 'false'
           image-ref: kotsadm/kotsadm-migrations:${{ needs.get-latest-tag.outputs.tag_name }}
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'kotsadm-migration-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: negligible
@@ -106,7 +106,7 @@ jobs:
           category-prefix: image-scan-
           fail-build: 'false'
           image-ref: kotsadm/kurl-proxy:${{ needs.get-latest-tag.outputs.tag_name }}
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'kurl-proxy-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: negligible
@@ -137,7 +137,7 @@ jobs:
           category-prefix: image-scan-
           fail-build: 'false'
           image-ref: docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'rqlite-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: negligible
@@ -168,7 +168,7 @@ jobs:
           category-prefix: image-scan-
           fail-build: 'false'
           image-ref: docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'minio-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: negligible
@@ -199,7 +199,7 @@ jobs:
           category-prefix: image-scan-
           fail-build: 'false'
           image-ref: docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'dex-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: negligible
@@ -230,7 +230,7 @@ jobs:
           category-prefix: image-scan-
           fail-build: 'false'
           image-ref: docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'local-volume-provider-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: negligible
