@@ -125,7 +125,7 @@ jobs:
       with:
         go-version-file: go.mod
     - name: Cache Go modules
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cache/go-build
@@ -134,7 +134,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-kots-
     - name: Download web artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: web
         path: ./web/dist
@@ -250,7 +250,7 @@ jobs:
         go-version-file: go.mod
 
     - name: Cache Go modules
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cache/go-build
@@ -274,7 +274,7 @@ jobs:
       env:
         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
     - name: Download web artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: web
         path: ./web/dist
@@ -285,7 +285,7 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v6
+      uses: goreleaser/goreleaser-action@v7
       with:
         version: "v1.2.5"
         args: release --rm-dist --config deploy/.goreleaser.yaml
@@ -331,7 +331,7 @@ jobs:
           addon_version=${{ needs.generate-tag.outputs.tag }}
           echo "addon_version=${addon_version#v}" >> "$GITHUB_OUTPUT"
       - name: download kots binary
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: kots
           path: bin/
@@ -427,13 +427,13 @@ jobs:
     needs: [goreleaser, generate-tag, build-kotsadm-bundle]
     steps:
     - name: Download kotsadm bundle
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: kotsadm-bundle
         path: kotsadm-bundle
 
     - name: Download kotsadm bundle without minio
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: kotsadm-bundle-nominio
         path: kotsadm-bundle-nominio
