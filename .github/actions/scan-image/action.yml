@@ -33,9 +33,14 @@ inputs:
     required: false
     default: 'image-scan-'
   only-fixed:
+    # Default to false so the SARIF always contains full scan results.
+    # When set to true and the image has zero fixable CVEs, the SARIF is
+    # empty (0 results) and GitHub code scanning cannot auto-close stale
+    # alerts from previous scans, causing fixed CVEs to persist on the
+    # security page indefinitely.
     description: 'Only report vulnerabilities that have a fix available'
     required: false
-    default: 'true'
+    default: 'false'
 
 runs:
   using: 'composite'
