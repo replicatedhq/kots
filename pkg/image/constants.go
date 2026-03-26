@@ -5,9 +5,9 @@ package image
 // image name.
 
 const (
-	Minio      = "docker.io/kotsadm/minio:0.20251015.172955-r7"
+	Minio      = "docker.io/kotsadm/minio:0.20251015.172955-r10"
 	Rqlite     = "docker.io/kotsadm/rqlite:9.4.5"
 	Dex        = "docker.io/kotsadm/dex:2.44.0"
 	Schemahero = "docker.io/schemahero/schemahero:0.24.0"
-	Lvp        = "docker.io/replicated/local-volume-provider:0.6.11"
+	Lvp        = "docker.io/replicated/local-volume-provider:0.6.12"
 )
