@@ -137,7 +137,7 @@ jobs:
         with:
           category-prefix: 'image-scan-'
           image-ref: "docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'rqlite-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: 'medium'
@@ -169,7 +169,7 @@ jobs:
           category-prefix: 'image-scan-'
           fail-build: 'false'
           image-ref: "docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'minio-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: 'medium'
@@ -201,7 +201,7 @@ jobs:
           category-prefix: 'image-scan-'
           fail-build: 'false'
           image-ref: "docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}"
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'dex-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: 'medium'
@@ -229,7 +229,7 @@ jobs:
           category-prefix: 'image-scan-'
           fail-build: 'false'
           image-ref: 'docker.io/kotsadm/kurl-proxy:alpha'
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'kurl-proxy-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: 'medium'
@@ -261,7 +261,7 @@ jobs:
           category-prefix: 'image-scan-'
           fail-build: 'false'
           image-ref: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}"
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'scan-output.sarif'
           retention-days: '90'
           severity-cutoff: 'medium'
@@ -287,9 +287,9 @@ jobs:
         uses: ./.github/actions/scan-image
         with:
           category-prefix: 'image-scan-'
-          fail-build: 'false'
+          fail-build: 'true'
           image-ref: 'docker.io/kotsadm/kotsadm:alpha'
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'kotsadm-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: 'medium'
@@ -315,9 +315,9 @@ jobs:
         uses: ./.github/actions/scan-image
         with:
           category-prefix: 'image-scan-'
-          fail-build: 'false'
+          fail-build: 'true'
           image-ref: 'docker.io/kotsadm/kotsadm-migrations:alpha'
-          only-fixed: 'false'
+          only-fixed: 'true'
           output-file: 'kotsadm-migration-scan-output.sarif'
           retention-days: '90'
           severity-cutoff: 'medium'
