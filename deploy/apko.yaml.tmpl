@@ -1,9 +1,9 @@
 contents:
   repositories:
-    - https://packages.wolfi.dev/os
+    - https://apk.cve0.io
     - ./packages/
   keyring:
-    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://apk.cve0.io/key/cve0-signing.rsa.pub
     - ./melange-arm64.rsa.pub
     - ./melange-amd64.rsa.pub
   packages:
@@ -17,7 +17,8 @@ contents:
     - py3-dateutil
     - py3-magic
     - s3cmd
-    - wolfi-baselayout
+    - securebuild-baselayout
+    - helm~4.1.3
 
 accounts:
   groups:
@@ -31,6 +32,16 @@ accounts:
 
 environment:
   VERSION: ${GIT_TAG}
+
+paths:
+  - path: /usr/local/bin/helm
+    type: symlink
+    source: /usr/bin/helm
+    permissions: 0o755
+  - path: /usr/local/bin/kustomize
+    type: symlink
+    source: /usr/bin/kustomize
+    permissions: 0o755
 
 entrypoint:
   command: /kotsadm
