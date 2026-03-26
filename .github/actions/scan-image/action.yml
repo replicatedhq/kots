@@ -35,7 +35,7 @@ inputs:
   only-fixed:
     description: 'Only report vulnerabilities that have a fix available'
     required: false
-    default: 'true'
+    default: 'false'
 
 runs:
   using: 'composite'
