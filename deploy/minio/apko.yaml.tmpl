@@ -1,13 +1,23 @@
 contents:
   repositories:
-    - https://packages.wolfi.dev/os
+    - https://apk.cve0.io
   keyring:
-    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://apk.cve0.io/key/cve0-signing.rsa.pub
   packages:
-    - minio=__MINIO_VERSION__
-    - mc
-    - bash
+    - minio~0.20251015.172955
+    - minio-oci-entrypoint~0.20251015.172955
+    - ca-certificates-bundle
+    - securebuild-baselayout
     - busybox
+    - coreutils
+    - glibc
+
+entrypoint:
+  command: /usr/bin/docker-entrypoint.sh
+
+cmd: minio
+
+stop-signal: SIGTERM
 
 accounts:
   groups:
@@ -19,5 +29,12 @@ accounts:
       gid: 1001
   run-as: minio
 
-entrypoint:
-  command: minio
+volumes:
+  - /data
+
+paths:
+  - path: /data
+    type: directory
+    permissions: 0o755
+
+work-dir: /
