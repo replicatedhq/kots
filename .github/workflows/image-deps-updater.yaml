@@ -21,14 +21,8 @@ jobs:
       run: |
         set -euo pipefail
 
-        # We're only using the APKINDEX files to get the versions, so it doesn't matter which arch we use
-
-        curl -LO --fail --show-error https://packages.wolfi.dev/os/x86_64/APKINDEX.tar.gz
-        tar -xzvf APKINDEX.tar.gz
-
-        minio_version=$(< APKINDEX grep -A1 "^P:minio$" | tail -n 1 | sed -n -e 's/V://p' | tr -d '\n')
-
-        sed "s/__MINIO_VERSION__/$minio_version/g" deploy/minio/apko.yaml.tmpl > deploy/minio/apko.yaml
+        # minio repo is now read-only and the version will never change
+        minio_version="0.20251015.172955"
 
         # Get latest rqlite version from registry
         rqlite_version=$(skopeo list-tags docker://proxy.replicated.com/library/rqlite | \
