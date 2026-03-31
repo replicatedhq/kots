@@ -177,13 +177,15 @@ jobs:
           #   terraform_script: "embedded-airgapped-upgrade.sh",
           #   is_upgrade: "1"
           # },
-          {
-            id: "embedded-airgapped-install",
-            name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
-            backend_config: "embedded-airgapped-install-backend-config.tfvars",
-            terraform_script: "embedded-airgapped-install.sh",
-            is_upgrade: "0"
-          },
+          # NOTE (@banjoh): we need to fix this test as part of a separate story
+          # https://app.shortcut.com/replicated/story/136040/kots-regression-test-for-kurl-airgap-install-failing-due-to-libpython-lib-package-version-mismatch
+          # {
+          #   id: "embedded-airgapped-install",
+          #   name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
+          #   backend_config: "embedded-airgapped-install-backend-config.tfvars",
+          #   terraform_script: "embedded-airgapped-install.sh",
+          #   is_upgrade: "0"
+          # },
           {
             id: "embedded-online-install",
             name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
