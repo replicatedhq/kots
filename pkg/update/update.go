@@ -138,6 +138,29 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *licensewrapper.Licens
 		return nil, errors.Wrap(err, "failed to walk airgap root dir")
 	}
 
+	// additional deployable checks against current version
+	downstreams, err := storepkg.GetStore().ListDownstreamsForApp(app.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list downstreams for app")
+	}
+	if len(downstreams) == 0 {
+		return updates, nil
+	}
+
+	currentVersion, err := storepkg.GetStore().GetCurrentDownstreamVersion(app.ID, downstreams[0].ClusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current downstream version")
+	}
+	if currentVersion != nil &&
+		currentVersion.Status == storetypes.VersionFailed &&
+		currentVersion.IsRequired {
+		// none of the airgap available updates are deployable if current version is required and failed to deploy
+		for i := range updates {
+			updates[i].IsDeployable = false
+			updates[i].NonDeployableCause = fmt.Sprintf("Cannot deploy this version because required version %s failed to deploy. Please retry deploying version %s or check for new updates.", currentVersion.VersionLabel, currentVersion.VersionLabel)
+		}
+	}
+
 	return updates, nil
 }
 
