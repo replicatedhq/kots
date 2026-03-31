@@ -43,7 +43,7 @@ archives:
       - changelog*
       - CHANGELOG*
       - sbom/kots-sbom.tgz
-      - sbom/kots-sbom.tgz.sig
+      - sbom/kots-sbom.tgz.bundle
       - sbom/key.pub
 
   - id: kots_experimental
