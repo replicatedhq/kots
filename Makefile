@@ -230,7 +230,8 @@ sbom: sbom/kots-sbom.tgz
 		--tlog-upload \
 		--yes \
 		--rekor-url=https://rekor.sigstore.dev \
-		sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
+		--bundle ./sbom/kots-sbom.tgz.bundle \
+		sbom/kots-sbom.tgz
 
 	cosign public-key --key ./cosign.key --outfile ./sbom/key.pub
 
