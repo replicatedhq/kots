@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots/kurl_proxy
 
-go 1.25.7
+go 1.26.1
 
 require (
 	github.com/gin-gonic/gin v1.11.0
