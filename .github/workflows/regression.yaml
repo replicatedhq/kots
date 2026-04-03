@@ -243,20 +243,24 @@ jobs:
             terraform_script: "existing-online-install-minimum.sh",
             is_upgrade: "0"
           },
-          {
-            id: "existing-airgapped-upgrade-admin",
-            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-            backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
-            terraform_script: "existing-airgapped-upgrade-admin.sh",
-            is_upgrade: "1"
-          },
-          {
-            id: "existing-airgapped-upgrade-minimum",
-            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
-            backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
-            terraform_script: "existing-airgapped-upgrade-minimum.sh",
-            is_upgrade: "1"
-          }
+          # NOTE: commented out until kotsadm bundle upload to GitHub releases is fixed
+          # (bundle exceeds GitHub's 2GB release asset limit as of v1.130.0)
+          # https://github.com/replicatedhq/kots/actions/runs/23936804237/job/69816872139
+          # {
+          #   id: "existing-airgapped-upgrade-admin",
+          #   name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
+          #   backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
+          #   terraform_script: "existing-airgapped-upgrade-admin.sh",
+          #   is_upgrade: "1"
+          # },
+          # https://github.com/replicatedhq/kots/actions/runs/23936804237/job/69816872152
+          # {
+          #   id: "existing-airgapped-upgrade-minimum",
+          #   name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
+          #   backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
+          #   terraform_script: "existing-airgapped-upgrade-minimum.sh",
+          #   is_upgrade: "1"
+          # }
           # NOTE (@salah): decided not to port this test to playwright
           # {
           #   id: "helmvm-online-install",
