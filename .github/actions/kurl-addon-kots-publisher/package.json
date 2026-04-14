@@ -26,6 +26,10 @@
     "mocha": "^11.7.5"
   },
   "overrides": {
-    "glob": "^10.5.0"
+    "glob": "^10.5.0",
+    "@actions/http-client": "^4.0.0",
+    "serialize-javascript": "^7.0.5",
+    "brace-expansion": "^2.0.3",
+    "diff": "^8.0.3"
   }
 }
