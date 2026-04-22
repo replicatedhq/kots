@@ -335,41 +335,64 @@ func CopyImage(opts types.CopyImageOptions) error {
 	return nil
 }
 
+// imageProber attempts to open an image source to determine if it is publicly accessible.
+// It returns nil if the image can be pulled without authentication, or an error otherwise.
+// The error text is used by callers to distinguish between transient failures (EOF) and
+// permanent ones (auth required, unreachable registry, no matching arch).
+type imageProber func(context.Context, containerstypes.ImageReference, *containerstypes.SystemContext) error
+
+// defaultImageProber is the real implementation of imageProber used in production.
+// It opens a connection to the registry and immediately closes it; a nil error means the
+// image is publicly accessible.
+func defaultImageProber(ctx context.Context, imageRef containerstypes.ImageReference, sys *containerstypes.SystemContext) error {
+	src, err := imageRef.NewImageSource(ctx, sys)
+	if err != nil {
+		return err
+	}
+	src.Close()
+	return nil
+}
+
 // if dockerHubRegistry is provided, its credentials will be used for DockerHub images to increase the rate limit.
 func IsPrivateImage(image string, dockerHubRegistry dockerregistrytypes.RegistryOptions) (bool, error) {
+	return isPrivateImageWithProber(image, dockerHubRegistry, defaultImageProber)
+}
+
+// isPrivateImageWithProber is the testable core of IsPrivateImage. Tests pass a mock prober
+// that controls what NewImageSource returns without making real network calls.
+func isPrivateImageWithProber(image string, dockerHubRegistry dockerregistrytypes.RegistryOptions, prober imageProber) (bool, error) {
+	dockerRef, err := dockerref.ParseDockerRef(image)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to parse docker ref %q", image)
+	}
+
+	sysCtx := containerstypes.SystemContext{DockerDisableV1Ping: true}
+
+	registryHost := reference.Domain(dockerRef)
+	isDockerIO := registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io")
+	if isDockerIO && dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
+		sysCtx.DockerAuthConfig = &containerstypes.DockerAuthConfig{
+			Username: dockerHubRegistry.Username,
+			Password: dockerHubRegistry.Password,
+		}
+	}
+
+	// allow pulling images from http/invalid https docker repos
+	// intended for development only, _THIS MAKES THINGS INSECURE_
+	if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
+		sysCtx.DockerInsecureSkipTLSVerify = containerstypes.OptionalBoolTrue
+	}
+
+	// ParseReference requires the // prefix
+	imageRef, err := imagedocker.ParseReference(fmt.Sprintf("//%s", dockerRef.String()))
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to parse image ref %s", dockerRef.String())
+	}
+
 	var lastErr error
 	for i := 0; i < 3; i++ {
-		dockerRef, err := dockerref.ParseDockerRef(image)
-		if err != nil {
-			return false, errors.Wrapf(err, "failed to parse docker ref %q", image)
-		}
-
-		sysCtx := containerstypes.SystemContext{DockerDisableV1Ping: true}
-
-		registryHost := reference.Domain(dockerRef)
-		isDockerIO := registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io")
-		if isDockerIO && dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
-			sysCtx.DockerAuthConfig = &containerstypes.DockerAuthConfig{
-				Username: dockerHubRegistry.Username,
-				Password: dockerHubRegistry.Password,
-			}
-		}
-
-		// allow pulling images from http/invalid https docker repos
-		// intended for development only, _THIS MAKES THINGS INSECURE_
-		if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
-			sysCtx.DockerInsecureSkipTLSVerify = containerstypes.OptionalBoolTrue
-		}
-
-		// ParseReference requires the // prefix
-		imageRef, err := imagedocker.ParseReference(fmt.Sprintf("//%s", dockerRef.String()))
-		if err != nil {
-			return false, errors.Wrapf(err, "failed to parse image ref %s", dockerRef.String())
-		}
-
-		remoteImage, err := imageRef.NewImageSource(context.Background(), &sysCtx)
+		err := prober(context.Background(), imageRef, &sysCtx)
 		if err == nil {
-			remoteImage.Close()
 			return false, nil
 		}
 

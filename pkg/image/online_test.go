@@ -1,75 +1,71 @@
 package image
 
 import (
+	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	containerstypes "go.podman.io/image/v5/types"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_IsPrivateImages(t *testing.T) {
-	type args struct {
-		baseImages      []string
-		kotsKindsImages []string
-		kotsKinds       *kotsutil.KotsKinds
-	}
-
+func Test_IsPrivateImage(t *testing.T) {
 	tests := []struct {
-		image string
-		want  bool
+		name      string
+		image     string
+		openerErr error // nil = public, non-nil = private (or retry on EOF)
+		wantPriv  bool
+		wantErr   bool
 	}{
 		{
-			image: "registry.replicated.com/appslug/image:version",
-			want:  true,
+			name:      "public image",
+			image:     "redis:latest",
+			openerErr: nil,
+			wantPriv:  false,
 		},
 		{
-			image: "quay.io/replicatedcom/qa-kots-2:alpine-3.4",
-			want:  true,
+			name:      "private image auth required",
+			image:     "quay.io/replicated/myimage:latest",
+			openerErr: errors.New("unauthorized: authentication required"),
+			wantPriv:  true,
 		},
 		{
-			image: "quay.io/replicatedcom/qa-kots-1:alpine-3.5",
-			want:  true,
+			name:      "manifest list no matching arch is not private",
+			image:     "redis:7@sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+			openerErr: errors.New("no image found in manifest list for architecture amd64"),
+			wantPriv:  false,
 		},
 		{
-			image: "quay.io/replicatedcom/qa-kots-3:alpine-3.6",
-			want:  true,
+			name:      "unreachable registry treated as private",
+			image:     "testing.registry.com:5000/ns/image:1",
+			openerErr: errors.New("dial tcp: connection refused"),
+			wantPriv:  true,
 		},
 		{
-			image: "quay.io/replicatedcom/someimage:1@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
-			want:  true,
-		},
-		{
-			image: "testing.registry.com:5000/testing-ns/random-image:2",
-			want:  true,
-		},
-		{
-			image: "testing.registry.com:5000/testing-ns/random-image:1",
-			want:  true,
-		},
-		{
-			image: "redis:7@sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
-			want:  false,
-		},
-		{
-			image: "nginx:1",
-			want:  false,
-		},
-		{
-			image: "busybox",
-			want:  false,
+			name:     "invalid image ref returns error",
+			image:    "not a valid image ref !!",
+			wantErr:  true,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.image, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			got, err := IsPrivateImage(test.image, dockerregistrytypes.RegistryOptions{})
+			openerErr := tt.openerErr
+			prober := func(_ context.Context, _ containerstypes.ImageReference, _ *containerstypes.SystemContext) error {
+				return openerErr
+			}
+			got, err := isPrivateImageWithProber(tt.image, dockerregistrytypes.RegistryOptions{}, prober)
+			if tt.wantErr {
+				req.Error(err)
+				return
+			}
 			req.NoError(err)
-
-			assert.Equal(t, test.want, got)
+			assert.Equal(t, tt.wantPriv, got)
 		})
 	}
 }

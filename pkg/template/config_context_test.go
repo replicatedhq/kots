@@ -2,6 +2,7 @@ package template
 
 import (
 	"encoding/base64"
+	"strings"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/crypto"
@@ -13,6 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// mockIsPrivateImage returns true for quay.io images (private) and false for everything else.
+// It is used in Test_localImageName to avoid real network calls.
+func mockIsPrivateImage(imageRef string, _ dockerregistrytypes.RegistryOptions) (bool, error) {
+	return strings.HasPrefix(imageRef, "quay.io/"), nil
+}
 
 func TestBuilder_NewConfigContext(t *testing.T) {
 	err := crypto.NewAESCipher()
@@ -538,6 +545,7 @@ func Test_localImageName(t *testing.T) {
 				ProxyPublicImages: false,
 			},
 		},
+		isPrivateImage: mockIsPrivateImage,
 	}
 
 	ctxWithoutRegistryProxyAll := ConfigCtx{
@@ -578,10 +586,12 @@ func Test_localImageName(t *testing.T) {
 			ReplicatedRegistryDomain: "custom.registry.com",
 			ReplicatedProxyDomain:    "custom.proxy.com",
 		},
+		isPrivateImage: mockIsPrivateImage,
 	}
 
 	ctxWithNothing := ConfigCtx{
-		LocalRegistry: registrytypes.RegistrySettings{},
+		LocalRegistry:  registrytypes.RegistrySettings{},
+		isPrivateImage: mockIsPrivateImage,
 	}
 
 	tests := []struct {
