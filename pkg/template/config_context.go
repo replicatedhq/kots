@@ -58,6 +58,10 @@ func (i ItemValue) DefaultStr() string {
 	return ""
 }
 
+// isPrivateImageFn is the function signature used to check if an image requires authentication.
+// It matches image.IsPrivateImage and can be replaced in tests to avoid network calls.
+type isPrivateImageFn func(imageRef string, dockerHubRegistry dockerregistrytypes.RegistryOptions) (bool, error)
+
 // ConfigCtx is the context for builder functions before the application has started.
 type ConfigCtx struct {
 	ItemValues        map[string]ItemValue
@@ -67,8 +71,9 @@ type ConfigCtx struct {
 	AppSlug           string
 	DecryptValues     bool
 
-	license *licensewrapper.LicenseWrapper // Another agument for unifying all these contexts
-	app     *kotsv1beta1.Application
+	license        *licensewrapper.LicenseWrapper // Another agument for unifying all these contexts
+	app            *kotsv1beta1.Application
+	isPrivateImage isPrivateImageFn // if nil, defaults to image.IsPrivateImage
 }
 
 // newConfigContext creates and returns a context for template rendering
@@ -308,7 +313,11 @@ func (ctx ConfigCtx) localImageName(imageRef string) (string, error) {
 	// Not airgap and no local registry. Rewrite images that are private only.
 
 	if ctx.app == nil || !ctx.app.Spec.ProxyPublicImages {
-		isPrivate, err := image.IsPrivateImage(imageRef, ctx.DockerHubRegistry)
+		checkPrivate := ctx.isPrivateImage
+		if checkPrivate == nil {
+			checkPrivate = image.IsPrivateImage
+		}
+		isPrivate, err := checkPrivate(imageRef, ctx.DockerHubRegistry)
 		if err != nil {
 			logger.Warnf("Failed to check if image is private for %s: %v", imageRef, err)
 			return "", nil
