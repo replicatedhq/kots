@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - em/regression-aws-cli-expat
 
 permissions:
   contents: write
