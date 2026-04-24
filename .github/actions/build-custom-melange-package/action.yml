@@ -26,6 +26,17 @@ runs:
       run: |
         sudo apt-get update -y
         sudo apt-get install -y curl jq gettext-base pkg-config apparmor
+        # ARC container runners don't run systemd as PID 1, so 'systemctl reload apparmor'
+        # (called by setup-melange) fails. Shim it to use apparmor_parser directly.
+        sudo tee /usr/local/bin/systemctl > /dev/null << 'SHIM'
+        #!/bin/bash
+        if [[ "$1" == "reload" && "$2" == "apparmor" ]]; then
+          apparmor_parser -r /etc/apparmor.d/ 2>/dev/null || true
+          exit 0
+        fi
+        exec /usr/bin/systemctl "$@"
+        SHIM
+        sudo chmod +x /usr/local/bin/systemctl
 
     # build the melange package
 
