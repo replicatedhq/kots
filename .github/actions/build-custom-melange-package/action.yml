@@ -25,7 +25,7 @@ runs:
       shell: bash
       run: |
         sudo apt-get update -y
-        sudo apt-get install -y curl jq gettext-base pkg-config
+        sudo apt-get install -y curl jq gettext-base pkg-config apparmor
 
     # build the melange package
 
