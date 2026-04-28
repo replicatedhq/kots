@@ -98,7 +98,7 @@ jobs:
     needs: [get-workspace-name, get-workspace-expiration]
     runs-on: ubuntu-latest
     container:
-      image: hashicorp/terraform:1.13.1
+      image: hashicorp/terraform:1.14.9
     env:
       WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
     steps:
@@ -162,7 +162,7 @@ jobs:
     needs: [get-workspace-name, get-workspace-expiration, jumpbox]
     runs-on: ubuntu-latest
     container:
-      image: hashicorp/terraform:1.13.1
+      image: hashicorp/terraform:1.14.9
     env:
       WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
     strategy:
