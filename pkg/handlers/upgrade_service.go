@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
@@ -125,6 +126,20 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 		if r.ChannelID != airgap.Spec.ChannelID {
 			return false, "channel mismatch", nil
 		}
+		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+		if err != nil {
+			return false, "", errors.Wrap(err, "failed to list downstreams for app")
+		}
+		if len(downstreams) > 0 {
+			currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(a.ID, downstreams[0].ClusterID)
+			if err != nil {
+				return false, "", errors.Wrap(err, "failed to get current downstream version")
+			}
+			if currentVersion != nil && currentVersion.Status == storetypes.VersionFailed && currentVersion.IsRequired {
+				return false, fmt.Sprintf("Cannot deploy this version because required version %s failed to deploy. Please retry deploying version %s or check for new updates.", currentVersion.VersionLabel, currentVersion.VersionLabel), nil
+			}
+		}
+
 		currentECVersion := util.EmbeddedClusterVersion()
 		isDeployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, airgap, currentECVersion)
 		if err != nil {
