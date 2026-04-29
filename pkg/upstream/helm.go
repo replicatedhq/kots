@@ -23,12 +23,19 @@ import (
 // configureChart will configure the chart archive (values.yaml),
 // repackage it, and return the updated content of the chart
 func configureChart(chartContent []byte, u *types.Upstream, options types.WriteOptions) ([]byte, error) {
-	replicatedChartName, isSubchart, err := findReplicatedChart(bytes.NewReader(chartContent), u.ReplicatedChartNames)
+	replicatedChartName, isSubchart, alias, err := findReplicatedChart(bytes.NewReader(chartContent), u.ReplicatedChartNames)
 	if err != nil {
 		return nil, errors.Wrap(err, "find replicated chart")
 	}
 	if replicatedChartName == "" {
 		return chartContent, nil
+	}
+
+	// when the replicated chart is included as a subchart with an alias,
+	// helm uses the alias as the values key in the parent's values.yaml
+	valuesKey := replicatedChartName
+	if isSubchart && alias != "" {
+		valuesKey = alias
 	}
 
 	chartValues, pathInArchive, extractedArchiveRoot, err := findTopLevelChartValues(bytes.NewReader(chartContent))
@@ -37,7 +44,7 @@ func configureChart(chartContent []byte, u *types.Upstream, options types.WriteO
 	}
 	defer os.RemoveAll(extractedArchiveRoot)
 
-	updatedValues, err := configureChartValues(chartValues, replicatedChartName, isSubchart, u, options)
+	updatedValues, err := configureChartValues(chartValues, valuesKey, isSubchart, u, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "configure values yaml")
 	}
@@ -61,13 +68,25 @@ func configureChart(chartContent []byte, u *types.Upstream, options types.WriteO
 }
 
 // findReplicatedChart will look for the replicated chart in the archive
-// and return the name of the replicated chart and whether it is the parent chart or a subchart
-func findReplicatedChart(chartArchive io.Reader, replicatedChartNames []string) (string, bool, error) {
+// and return the name of the replicated chart, whether it is a subchart, and
+// (for subcharts) any alias declared on the dependency in the parent's Chart.yaml.
+func findReplicatedChart(chartArchive io.Reader, replicatedChartNames []string) (string, bool, string, error) {
 	gzReader, err := gzip.NewReader(chartArchive)
 	if err != nil {
-		return "", false, errors.Wrap(err, "failed to create gzip reader")
+		return "", false, "", errors.Wrap(err, "failed to create gzip reader")
 	}
 	defer gzReader.Close()
+
+	type chartDependency struct {
+		Name  string `json:"name" yaml:"name"`
+		Alias string `json:"alias" yaml:"alias"`
+	}
+
+	var (
+		foundChartName  string
+		foundIsSubchart bool
+		topLevelDeps    []chartDependency
+	)
 
 	tarReader := tar.NewReader(gzReader)
 	for {
@@ -76,7 +95,7 @@ func findReplicatedChart(chartArchive io.Reader, replicatedChartNames []string) 
 			break
 		}
 		if err != nil {
-			return "", false, errors.Wrap(err, "failed to read header from tar")
+			return "", false, "", errors.Wrap(err, "failed to read header from tar")
 		}
 
 		switch header.Typeflag {
@@ -93,25 +112,45 @@ func findReplicatedChart(chartArchive io.Reader, replicatedChartNames []string) 
 
 			content, err := io.ReadAll(tarReader)
 			if err != nil {
-				return "", false, errors.Wrapf(err, "failed to read file %s", header.Name)
+				return "", false, "", errors.Wrapf(err, "failed to read file %s", header.Name)
 			}
 
 			chartInfo := struct {
-				ChartName string `json:"name" yaml:"name"`
+				ChartName    string            `json:"name" yaml:"name"`
+				Dependencies []chartDependency `json:"dependencies" yaml:"dependencies"`
 			}{}
 			if err := yaml.Unmarshal(content, &chartInfo); err != nil {
-				return "", false, errors.Wrapf(err, "failed to unmarshal %s", header.Name)
+				return "", false, "", errors.Wrapf(err, "failed to unmarshal %s", header.Name)
 			}
 
+			if len(parts) == 2 {
+				topLevelDeps = chartInfo.Dependencies
+			}
+
+			if foundChartName != "" {
+				continue
+			}
 			for _, replicatedChartName := range replicatedChartNames {
 				if chartInfo.ChartName == replicatedChartName {
-					return replicatedChartName, len(parts) == 4, nil
+					foundChartName = replicatedChartName
+					foundIsSubchart = len(parts) == 4
+					break
 				}
 			}
 		}
 	}
 
-	return "", false, nil
+	alias := ""
+	if foundIsSubchart {
+		for _, dep := range topLevelDeps {
+			if dep.Name == foundChartName && dep.Alias != "" {
+				alias = dep.Alias
+				break
+			}
+		}
+	}
+
+	return foundChartName, foundIsSubchart, alias, nil
 }
 
 func findTopLevelChartValues(r io.Reader) (valuesYaml []byte, pathInArchive string, workspace string, finalErr error) {
@@ -189,7 +228,7 @@ func findTopLevelChartValues(r io.Reader) (valuesYaml []byte, pathInArchive stri
 	return
 }
 
-func configureChartValues(valuesYAML []byte, replicatedChartName string, isSubchart bool, u *types.Upstream, options types.WriteOptions) ([]byte, error) {
+func configureChartValues(valuesYAML []byte, valuesKey string, isSubchart bool, u *types.Upstream, options types.WriteOptions) ([]byte, error) {
 	// unmarshal to insert the replicated values
 	var valuesNode yaml.Node
 	if err := yaml.Unmarshal([]byte(valuesYAML), &valuesNode); err != nil {
@@ -200,8 +239,8 @@ func configureChartValues(valuesYAML []byte, replicatedChartName string, isSubch
 		return nil, errors.New("no content")
 	}
 
-	if replicatedChartName != "" {
-		err := addReplicatedValues(valuesNode.Content[0], replicatedChartName, isSubchart, u, options)
+	if valuesKey != "" {
+		err := addReplicatedValues(valuesNode.Content[0], valuesKey, isSubchart, u, options)
 		if err != nil {
 			return nil, errors.Wrap(err, "add replicated values")
 		}
@@ -219,7 +258,7 @@ func configureChartValues(valuesYAML []byte, replicatedChartName string, isSubch
 	return updatedValues, nil
 }
 
-func addReplicatedValues(doc *yaml.Node, replicatedChartName string, isSubchart bool, u *types.Upstream, options types.WriteOptions) error {
+func addReplicatedValues(doc *yaml.Node, valuesKey string, isSubchart bool, u *types.Upstream, options types.WriteOptions) error {
 	replicatedValues, err := buildReplicatedValues(u, options)
 	if err != nil {
 		return errors.Wrap(err, "build replicated values")
@@ -234,7 +273,7 @@ func addReplicatedValues(doc *yaml.Node, replicatedChartName string, isSubchart 
 	// as helm expects the field name to match the subchart name
 	if isSubchart {
 		for i, n := range doc.Content {
-			if n.Value == replicatedChartName { // check if field already exists
+			if n.Value == valuesKey { // check if field already exists
 				targetNode = doc.Content[i+1]
 				hasReplicatedValues = true
 				break
@@ -242,7 +281,7 @@ func addReplicatedValues(doc *yaml.Node, replicatedChartName string, isSubchart 
 		}
 		if !hasReplicatedValues {
 			v = map[string]interface{}{
-				replicatedChartName: replicatedValues,
+				valuesKey: replicatedValues,
 			}
 		}
 	}
