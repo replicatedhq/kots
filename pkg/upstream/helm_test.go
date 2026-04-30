@@ -1265,6 +1265,196 @@ some: value
 `,
 			},
 		})
+
+		tests = append(tests, Test{
+			name:                "online - a guestbook chart with the replicated subchart aliased as my-replicated",
+			isAirgap:            false,
+			httpProxy:           "http://10.1.0.1:3128",
+			httpsProxy:          "https://10.1.0.1:3129",
+			noProxy:             "localhost,127.0.0.1",
+			privateCAsConfigmap: "my-private-cas",
+			chartContent: map[string]string{
+				"guestbook/Chart.yaml": fmt.Sprintf(`apiVersion: v2
+name: guestbook
+version: 1.16.0
+description: A Guestbook Chart
+dependencies:
+  - name: %s
+    version: 1.0.0
+    repository: oci://registry.replicated.com/library
+    alias: my-replicated
+`, chartName),
+				"guestbook/values.yaml": `affinity: {}
+
+# top level nameOverride must be preserved
+nameOverride: ""
+
+my-replicated:
+  # subchart-level nameOverride must be preserved
+  nameOverride: my-replicated-name
+  channelName: keep-this-channel-name
+`,
+				"guestbook/charts/replicated/Chart.yaml": fmt.Sprintf(`apiVersion: v1
+name: %s
+version: 1.0.0
+description: A Replicated Chart
+`, chartName),
+				"guestbook/charts/replicated/values.yaml": `# preserve this comment
+
+channelName: keep-this-channel-name
+`,
+			},
+			want: map[string]string{
+				"guestbook/Chart.yaml": fmt.Sprintf(`apiVersion: v2
+name: guestbook
+version: 1.16.0
+description: A Guestbook Chart
+dependencies:
+  - name: %s
+    version: 1.0.0
+    repository: oci://registry.replicated.com/library
+    alias: my-replicated
+`, chartName),
+				"guestbook/values.yaml": `affinity: {}
+# top level nameOverride must be preserved
+nameOverride: ""
+my-replicated:
+  # subchart-level nameOverride must be preserved
+  nameOverride: my-replicated-name
+  channelName: keep-this-channel-name
+  appID: app-id
+  extraEnv:
+    - name: HTTP_PROXY
+      value: http://10.1.0.1:3128
+    - name: HTTPS_PROXY
+      value: https://10.1.0.1:3129
+    - name: NO_PROXY
+      value: localhost,127.0.0.1
+  isAirgap: false
+  privateCAConfigmap: my-private-cas
+  replicatedID: kotsadm-id
+`,
+				"guestbook/charts/replicated/Chart.yaml": fmt.Sprintf(`apiVersion: v1
+name: %s
+version: 1.0.0
+description: A Replicated Chart
+`, chartName),
+				"guestbook/charts/replicated/values.yaml": `# preserve this comment
+
+channelName: keep-this-channel-name
+`,
+			},
+			wantErr: false,
+		})
+
+		tests = append(tests, Test{
+			name:     "airgap - a guestbook chart with the replicated subchart aliased as my-replicated and nameOverride",
+			isAirgap: true,
+			chartContent: map[string]string{
+				"guestbook/Chart.yaml": fmt.Sprintf(`apiVersion: v2
+name: guestbook
+version: 1.16.0
+description: A Guestbook Chart
+dependencies:
+  - name: %s
+    version: 1.0.0
+    repository: oci://registry.replicated.com/library
+    alias: my-replicated
+`, chartName),
+				"guestbook/values.yaml": `# top level nameOverride preserved
+nameOverride: parent-name
+
+my-replicated:
+  nameOverride: my-replicated-name
+  appName: app-name
+  channelID: channel-id
+  channelName: channel-name
+`,
+				"guestbook/charts/replicated/Chart.yaml": fmt.Sprintf(`apiVersion: v1
+name: %s
+version: 1.0.0
+description: A Replicated Chart
+`, chartName),
+				"guestbook/charts/replicated/values.yaml": `channelName: keep-this-channel-name
+`,
+			},
+			want: map[string]string{
+				"guestbook/Chart.yaml": fmt.Sprintf(`apiVersion: v2
+name: guestbook
+version: 1.16.0
+description: A Guestbook Chart
+dependencies:
+  - name: %s
+    version: 1.0.0
+    repository: oci://registry.replicated.com/library
+    alias: my-replicated
+`, chartName),
+				"guestbook/values.yaml": `# top level nameOverride preserved
+nameOverride: parent-name
+my-replicated:
+  nameOverride: my-replicated-name
+  appName: app-name
+  channelID: channel-id
+  channelName: channel-name
+  appID: app-id
+  extraEnv:
+    - name: HTTP_PROXY
+      value: ""
+    - name: HTTPS_PROXY
+      value: ""
+    - name: NO_PROXY
+      value: ""
+  isAirgap: true
+  license: |
+    apiVersion: kots.io/v1beta1
+    kind: License
+    metadata:
+      name: kots-license
+    spec:
+      appSlug: app-slug
+      channelName: channel-name
+      customerEmail: customer@example.com
+      customerName: Customer Name
+      endpoint: https://replicated.app
+      entitlements:
+        license-field:
+          description: This is a license field
+          signature: {}
+          title: License Field
+          value: license-field-value
+          valueType: string
+      licenseID: license-id
+      licenseType: dev
+      signature: ""
+    status: {}
+  replicatedID: kotsadm-id
+global:
+  replicated:
+    channelName: channel-name
+    customerEmail: customer@example.com
+    customerName: Customer Name
+    dockerconfigjson: eyJhdXRocyI6eyJjdXN0b20ucHJveHkuY29tIjp7ImF1dGgiOiJURWxEUlU1VFJWOUpSRHBzYVdObGJuTmxMV2xrIn0sImN1c3RvbS5yZWdpc3RyeS5jb20iOnsiYXV0aCI6IlRFbERSVTVUUlY5SlJEcHNhV05sYm5ObExXbGsifX19
+    licenseFields:
+      license-field:
+        description: This is a license field
+        name: license-field
+        signature: {}
+        title: License Field
+        value: license-field-value
+        valueType: string
+    licenseID: license-id
+    licenseType: dev
+`,
+				"guestbook/charts/replicated/Chart.yaml": fmt.Sprintf(`apiVersion: v1
+name: %s
+version: 1.0.0
+description: A Replicated Chart
+`, chartName),
+				"guestbook/charts/replicated/values.yaml": `channelName: keep-this-channel-name
+`,
+			},
+			wantErr: false,
+		})
 	}
 
 	for _, tt := range tests {

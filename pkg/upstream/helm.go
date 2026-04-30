@@ -61,13 +61,23 @@ func configureChart(chartContent []byte, u *types.Upstream, options types.WriteO
 }
 
 // findReplicatedChart will look for the replicated chart in the archive
-// and return the name of the replicated chart and whether it is the parent chart or a subchart
+// and return the values key for the replicated chart and whether it is a
+// subchart. The values key is the chart name, except when the chart is
+// included as a subchart with an alias declared on the dependency in the
+// parent's Chart.yaml — helm uses the alias as the values key in that case.
 func findReplicatedChart(chartArchive io.Reader, replicatedChartNames []string) (string, bool, error) {
 	gzReader, err := gzip.NewReader(chartArchive)
 	if err != nil {
 		return "", false, errors.Wrap(err, "failed to create gzip reader")
 	}
 	defer gzReader.Close()
+
+	// dependencies declared in the top-level Chart.yaml; used to look up an
+	// alias for a matched subchart, since helm uses the alias as the values key.
+	var topLevelDeps []struct {
+		Name  string `json:"name" yaml:"name"`
+		Alias string `json:"alias" yaml:"alias"`
+	}
 
 	tarReader := tar.NewReader(gzReader)
 	for {
@@ -97,15 +107,33 @@ func findReplicatedChart(chartArchive io.Reader, replicatedChartNames []string) 
 			}
 
 			chartInfo := struct {
-				ChartName string `json:"name" yaml:"name"`
+				ChartName    string `json:"name" yaml:"name"`
+				Dependencies []struct {
+					Name  string `json:"name" yaml:"name"`
+					Alias string `json:"alias" yaml:"alias"`
+				} `json:"dependencies" yaml:"dependencies"`
 			}{}
 			if err := yaml.Unmarshal(content, &chartInfo); err != nil {
 				return "", false, errors.Wrapf(err, "failed to unmarshal %s", header.Name)
 			}
 
+			if len(parts) == 2 {
+				topLevelDeps = chartInfo.Dependencies
+			}
+
 			for _, replicatedChartName := range replicatedChartNames {
 				if chartInfo.ChartName == replicatedChartName {
-					return replicatedChartName, len(parts) == 4, nil
+					isSubchart := len(parts) == 4
+					valuesKey := replicatedChartName
+					if isSubchart {
+						for _, dep := range topLevelDeps {
+							if dep.Name == replicatedChartName && dep.Alias != "" {
+								valuesKey = dep.Alias
+								break
+							}
+						}
+					}
+					return valuesKey, isSubchart, nil
 				}
 			}
 		}
