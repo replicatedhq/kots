@@ -31,7 +31,7 @@ jobs:
         # Get latest rqlite version from registry
         rqlite_version=$(skopeo list-tags docker://proxy.replicated.com/library/rqlite | \
           jq -r '.Tags[]' | \
-          grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | \
+          grep -E '^9\.[0-9]+\.[0-9]+$' | \
           sort -V | \
           tail -n 1)
 
