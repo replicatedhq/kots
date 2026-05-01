@@ -1,4 +1,4 @@
-minio docker.io/kotsadm/minio ^0\.([0-9]*)\.([0-9]*)-r([0-9]*)$
+minio docker.io/kotsadm/minio ^RELEASE\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z$
 rqlite docker.io/kotsadm/rqlite ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
 dex docker.io/kotsadm/dex ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
 schemahero docker.io/schemahero/schemahero ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
