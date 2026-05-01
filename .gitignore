@@ -49,6 +49,9 @@ packages/*
 # tmp files
 *.tmp
 
+# worktrees
+.worktrees/
+
 # dev cache
 dev/.gocache
 dev/.gomodcache
