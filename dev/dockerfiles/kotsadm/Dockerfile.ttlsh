@@ -49,5 +49,6 @@ WORKDIR /
 EXPOSE 3000
 ARG version=unknown
 ENV VERSION=${version}
+ENV TROUBLESHOOT_AUTO_UPDATE=false
 ENTRYPOINT ["/kotsadm"]
 CMD ["api"]
