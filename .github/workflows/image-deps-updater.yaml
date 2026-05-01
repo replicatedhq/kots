@@ -21,8 +21,12 @@ jobs:
       run: |
         set -euo pipefail
 
-        # minio repo is now read-only and the version will never change
-        minio_version="0.20251015.172955"
+        # Get latest minio version from registry
+        minio_version=$(skopeo list-tags docker://proxy.replicated.com/library/minio | \
+          jq -r '.Tags[]' | \
+          grep -E '^RELEASE\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z$' | \
+          sort -V | \
+          tail -n 1)
 
         # Get latest rqlite version from registry
         rqlite_version=$(skopeo list-tags docker://proxy.replicated.com/library/rqlite | \
@@ -45,14 +49,12 @@ jobs:
           echo "dex-tag=$dex_version"
         } >> "$GITHUB_OUTPUT"
 
-    - name: Build and push minio image
-      uses: ./.github/actions/build-dep-image-with-apko
-      with:
-        apko-config: deploy/minio/apko.yaml
-        image-name: index.docker.io/kotsadm/minio:${{ steps.get-tags.outputs.minio-tag }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-        overwrite: ${{ github.event.inputs.overwrite }}
+    - name: Copy minio image
+      run: |
+        skopeo copy --all \
+          --dest-creds "${{ secrets.DOCKERHUB_USER }}:${{ secrets.DOCKERHUB_PASSWORD }}" \
+          docker://proxy.replicated.com/library/minio:${{ steps.get-tags.outputs.minio-tag }} \
+          docker://index.docker.io/kotsadm/minio:${{ steps.get-tags.outputs.minio-tag }}
 
     - name: Copy rqlite image
       run: |
