@@ -79,6 +79,17 @@ func findReplicatedChart(chartArchive io.Reader, replicatedChartNames []string) 
 		Alias string `json:"alias" yaml:"alias"`
 	}
 
+	type chartFile struct {
+		path     string
+		parts    []string
+		chartName string
+		deps     []struct {
+			Name  string `json:"name" yaml:"name"`
+			Alias string `json:"alias" yaml:"alias"`
+		}
+	}
+	var chartFiles []chartFile
+
 	tarReader := tar.NewReader(gzReader)
 	for {
 		header, err := tarReader.Next()
@@ -117,24 +128,38 @@ func findReplicatedChart(chartArchive io.Reader, replicatedChartNames []string) 
 				return "", false, errors.Wrapf(err, "failed to unmarshal %s", header.Name)
 			}
 
-			if len(parts) == 2 {
-				topLevelDeps = chartInfo.Dependencies
-			}
+			chartFiles = append(chartFiles, chartFile{
+				path:      header.Name,
+				parts:     parts,
+				chartName: chartInfo.ChartName,
+				deps:      chartInfo.Dependencies,
+			})
+		}
+	}
 
-			for _, replicatedChartName := range replicatedChartNames {
-				if chartInfo.ChartName == replicatedChartName {
-					isSubchart := len(parts) == 4
-					valuesKey := replicatedChartName
-					if isSubchart {
-						for _, dep := range topLevelDeps {
-							if dep.Name == replicatedChartName && dep.Alias != "" {
-								valuesKey = dep.Alias
-								break
-							}
+	// Process root Chart.yaml first to populate topLevelDeps, then subcharts.
+	// This ensures alias lookups work correctly regardless of tar entry order.
+	for _, cf := range chartFiles {
+		if len(cf.parts) == 2 {
+			topLevelDeps = cf.deps
+			break
+		}
+	}
+
+	for _, cf := range chartFiles {
+		for _, replicatedChartName := range replicatedChartNames {
+			if cf.chartName == replicatedChartName {
+				isSubchart := len(cf.parts) == 4
+				valuesKey := replicatedChartName
+				if isSubchart {
+					for _, dep := range topLevelDeps {
+						if dep.Name == replicatedChartName && dep.Alias != "" {
+							valuesKey = dep.Alias
+							break
 						}
 					}
-					return valuesKey, isSubchart, nil
 				}
+				return valuesKey, isSubchart, nil
 			}
 		}
 	}

@@ -119,7 +119,7 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 
 		switch imageName {
 		case minioReference:
-			latestReleaseTag, err = getLatestTagFromRegistry("kotsadm/minio", config.repositoryTagsFinder, matcherFn)
+			latestReleaseTag, err = getLatestMinioTagFromRegistry("kotsadm/minio", config.repositoryTagsFinder, matcherFn)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}
@@ -200,6 +200,41 @@ func getLatestTagFromRegistry(imageUri string, getTags getTagsFn, match filterFn
 	}
 	sort.Slice(versions, func(i, j int) bool {
 		return versions[i].parsed.LessThan(versions[j].parsed)
+	})
+	if len(versions) == 0 {
+		return "", fmt.Errorf("no versions found")
+	}
+
+	return versions[len(versions)-1].original, nil
+}
+
+func getLatestMinioTagFromRegistry(imageUri string, getTags getTagsFn, match filterFn) (string, error) {
+	tags, err := getTags(imageUri)
+	if err != nil {
+		return "", err
+	}
+
+	type tagVersion struct {
+		original   string
+		normalized string
+	}
+	var versions []tagVersion
+
+	for _, tag := range tags {
+		if match(tag) {
+			// Normalize minio tags by removing all non-digit characters.
+			// e.g. RELEASE.2025-10-15T17-29-55Z -> 20251015172955
+			normalized := strings.Map(func(r rune) rune {
+				if r >= '0' && r <= '9' {
+					return r
+				}
+				return -1
+			}, tag)
+			versions = append(versions, tagVersion{original: tag, normalized: normalized})
+		}
+	}
+	sort.Slice(versions, func(i, j int) bool {
+		return versions[i].normalized < versions[j].normalized
 	})
 	if len(versions) == 0 {
 		return "", fmt.Errorf("no versions found")
