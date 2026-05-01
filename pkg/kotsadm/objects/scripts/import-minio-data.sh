@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
@@ -29,8 +29,10 @@ cd $KOTSADM_MINIO_MIGRATION_DIR
 
 # now that we have a copy of the old minio data in the migration directory, remove the old data from the volume
 echo "removing old minio data"
-shopt -s dotglob
-rm -rfv /export/*
+for f in /export/* /export/.[!.]* /export/..?*; do
+    [ -e "$f" ] || continue
+    rm -rfv "$f"
+done
 
 echo "starting new minio instance"
 /bin/sh -ce "minio -C /home/minio/.minio/ server /export" &
