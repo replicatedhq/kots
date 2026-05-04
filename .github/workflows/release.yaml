@@ -6,6 +6,7 @@ on:
       - "v*.*.*"
     branches:
       - main
+      - bump-rqlite-to-10.0.0
 
 permissions:
   contents: write
