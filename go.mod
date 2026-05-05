@@ -162,7 +162,7 @@ require (
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker v28.5.2+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.5 // indirect
-	github.com/docker/go-connections v0.6.0 // indirect
+	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-events v0.0.0-20250808211157-605354379745 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
@@ -391,7 +391,6 @@ require (
 	github.com/containerd/ttrpc v1.2.7 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
-	github.com/creack/pty v1.1.24 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/dylibso/observe-sdk/go v0.0.0-20240819160327-2d926c5d788a // indirect
@@ -435,6 +434,8 @@ require (
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible // indirect
 	github.com/mistifyio/go-zfs/v4 v4.0.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
+	github.com/moby/moby/api v1.54.2 // indirect
+	github.com/moby/moby/client v0.4.1 // indirect
 	github.com/moby/sys/capability v0.4.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/nwaples/rardecode/v2 v2.2.0 // indirect
@@ -494,9 +495,6 @@ require (
 )
 
 replace (
-	github.com/docker/cli => github.com/docker/cli v28.5.1+incompatible
-	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.40.0
-	go.opentelemetry.io/otel/sdk/metric => go.opentelemetry.io/otel/sdk/metric v1.40.0
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.35.0
 	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.35.0
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.35.0
