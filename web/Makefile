@@ -13,10 +13,6 @@ endif
 deps:
 	yarn --silent --frozen-lockfile
 
-.PHONY: publish-pact
-publish-pact:
-	yarn run publish:pact
-
 .PHONY: clean
 clean:
 	rm -rf node_modules
