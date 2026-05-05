@@ -154,10 +154,10 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 							},
 							VolumeMounts: volumeMounts,
 							Env:          getRqliteEnvs(),
-						LivenessProbe: &corev1.Probe{
-							InitialDelaySeconds: 120,
-							TimeoutSeconds:      5,
-							FailureThreshold:    10,
+							LivenessProbe: &corev1.Probe{
+								InitialDelaySeconds: 30,
+								TimeoutSeconds:      5,
+								FailureThreshold:    3,
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path:   "/readyz?noleader",
@@ -166,10 +166,10 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 									},
 								},
 							},
-						ReadinessProbe: &corev1.Probe{
-							InitialDelaySeconds: 60,
-							PeriodSeconds:       10,
-							TimeoutSeconds:      5,
+							ReadinessProbe: &corev1.Probe{
+								InitialDelaySeconds: 1,
+								PeriodSeconds:       1,
+								TimeoutSeconds:      5,
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path:   "/readyz",

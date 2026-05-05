@@ -80,17 +80,17 @@ spec:
             scheme: HTTP
             path: /readyz?noleader
             port: rqlite
-          initialDelaySeconds: 120
+          initialDelaySeconds: 30
           timeoutSeconds: 5
-          failureThreshold: 10
+          failureThreshold: 3
         readinessProbe:
           httpGet:
             scheme: HTTP
             path: /readyz
             port: rqlite
-          initialDelaySeconds: 60
+          initialDelaySeconds: 1
           timeoutSeconds: 1
-          periodSeconds: 10
+          periodSeconds: 1
         resources:
           limits:
             memory: 1Gi
