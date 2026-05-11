@@ -656,7 +656,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -695,7 +695,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0},
+          {distribution: kind, version: v1.33.7},
           {distribution: openshift, version: 4.16.0-okd}
         ]
     env:
@@ -915,7 +915,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     env:
       APP_SLUG: deploy-command-online
@@ -1135,7 +1135,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     env:
       APP_SLUG: deploy-command-airgap
@@ -1416,7 +1416,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -1453,7 +1453,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     env:
       APP_SLUG: strict-preflight-checks
@@ -1607,7 +1607,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -1644,7 +1644,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s-local, version: v1.30.10-k3s1}
+          {distribution: k3s-local, version: v1.33.11-k3s1}
         ]
     steps:
       - name: Checkout
@@ -1678,7 +1678,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -1720,7 +1720,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -1756,7 +1756,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0},
+          {distribution: kind, version: v1.33.7},
           {distribution: openshift, version: 4.17.0-okd}
         ]
     env:
@@ -2157,7 +2157,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ] 
     env:
       APP_SLUG: app-version-label
@@ -2314,7 +2314,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     env:
       APP_SLUG: helm-install-order
@@ -2411,7 +2411,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ] 
     env:
       APP_SLUG: no-redeploy-on-restart
@@ -2532,7 +2532,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ] 
     env:
       APP_SLUG: kubernetes-installer-preflight
@@ -2682,7 +2682,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ] 
     env:
       APP_SLUG: minimal-rbac
@@ -2878,7 +2878,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -2942,7 +2942,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -2994,7 +2994,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -3056,7 +3056,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -3108,7 +3108,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -3170,7 +3170,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -3365,7 +3365,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ] 
     env:
       APP_SLUG: helm-release-secret-migration
@@ -3551,7 +3551,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -3588,7 +3588,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -3625,7 +3625,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0, instance_type: r1.medium}
+          {distribution: kind, version: v1.33.7, instance_type: r1.medium}
         ]
     env:
       APP_SLUG: remove-app
@@ -3803,7 +3803,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ] 
     steps:
       - name: Checkout
@@ -3897,7 +3897,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ] 
     env:
       APP_SLUG: native-helm-v2
@@ -4122,7 +4122,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ] 
     env:
       APP_SLUG: deployment-orchestration
@@ -4289,7 +4289,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0},
+          {distribution: kind, version: v1.33.7},
           {distribution: openshift, version: 4.16.0-okd}
         ]
     env:
@@ -4598,7 +4598,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -4635,7 +4635,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     steps:
       - name: Checkout
@@ -4672,7 +4672,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ] 
     env:
       APP_SLUG: get-set-config
@@ -4933,7 +4933,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.30.0}
+          {distribution: kind, version: v1.33.7}
         ]
     env:
       APP_SLUG: get-set-config
