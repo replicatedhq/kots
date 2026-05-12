@@ -7,7 +7,7 @@ module.exports = {
 
   // Transform files with babel and ts-jest
   transform: {
-    '^.+\\.(js|jsx)$': 'babel-jest',
+    '^.+\\.(js|jsx|mjs)$': 'babel-jest',
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       useESM: true
     }],
@@ -18,7 +18,7 @@ module.exports = {
 
   // Transform ignore patterns for ES modules
   transformIgnorePatterns: [
-    'node_modules/(?!(query-string|intersection-observer|@tanstack|msw|decode-uri-component|filter-obj|split-on-first|until-async)/)'
+    'node_modules/(?!(query-string|intersection-observer|@tanstack|msw|@mswjs|@open-draft|decode-uri-component|filter-obj|split-on-first|until-async|rettime|outvariant|strict-event-emitter|headers-polyfill|is-node-process)/)'
   ],
 
   // Module name mapping for imports
