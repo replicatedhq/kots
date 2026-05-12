@@ -1937,7 +1937,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -3907,7 +3907,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -4130,7 +4130,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
