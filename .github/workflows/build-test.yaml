@@ -566,7 +566,7 @@ jobs:
           addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
       - name: comment testgrid url
-        uses: mshick/add-pr-comment@v2
+        uses: mshick/add-pr-comment@v3
         with:
           message: ${{ steps.addon-test.outputs.testgrid_run_message }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
