@@ -7,5 +7,6 @@ module.exports = {
   plugins: [
     ["@babel/plugin-transform-class-properties", { loose: true }],
     ["@babel/plugin-transform-optional-chaining", { loose: true }],
+    ["@babel/plugin-transform-private-methods", { loose: true }],
   ],
 };

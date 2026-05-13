@@ -1,5 +1,14 @@
 import "intersection-observer";
 import "@testing-library/jest-dom";
+import { WritableStream } from "node:stream/web";
+
+// Polyfill WritableStream for MSW compatibility in JSDOM
+// jest-fixed-jsdom provides ReadableStream but not WritableStream
+// @ts-ignore
+if (typeof globalThis.WritableStream === "undefined") {
+  // @ts-ignore
+  globalThis.WritableStream = WritableStream;
+}
 
 // Set default API endpoint for tests to prevent undefined URLs
 process.env.API_ENDPOINT = process.env.API_ENDPOINT || "http://test-api";

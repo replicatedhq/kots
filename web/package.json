@@ -139,14 +139,16 @@
     "not dead"
   ],
   "resolutions": {
-    "qs": "^6.14.2",
+    "qs": "^6.15.1",
     "**/glob": "^10.5.0",
-    "**/react-router": "^7.12.0",
+    "**/react-router": "^7.15.0",
     "**/js-yaml": "^4.1.1",
     "dompurify": "^3.4.2",
     "serialize-javascript": "^7.0.5",
     "lodash": "^4.18.1",
-    "minimatch": "^3.1.4",
-    "picomatch": "^2.3.2"
+    "minimatch": "^3.1.5",
+    "picomatch": "^2.3.2",
+    "schema-utils/ajv": "^8.20.0",
+    "ajv-formats/ajv": "^8.20.0"
   }
 }
