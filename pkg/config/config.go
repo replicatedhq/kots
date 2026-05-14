@@ -3,7 +3,12 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -13,8 +18,19 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/multitype"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
+	goyaml "go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
+)
+
+// Regexps for decoding Unicode escape sequences introduced by yaml.v2 marshalling.
+// yaml.v2 escapes non-BMP characters (codepoints > U+FFFF) as \UXXXXXXXX because its
+// isPrintable() excludes the 0x10000-0x10FFFF range. These escape sequences break
+// Go's text/template parser when they appear in config fields alongside repl{{}} expressions.
+var (
+	reUnicodeEscape8 = regexp.MustCompile(`\\U([0-9A-Fa-f]{8})`)
+	reSurrogatePair  = regexp.MustCompile(`\\u([Dd][89ABab][0-9A-Fa-f]{2})\\u([Dd][C-Fc-f][0-9A-Fa-f]{2})`)
+	reUnicodeEscape4 = regexp.MustCompile(`\\u([0-9A-Fa-f]{4})`)
 )
 
 func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, localRegistry registrytypes.RegistrySettings, versionInfo *template.VersionInfo, appInfo *template.ApplicationInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, decryptValues bool) (*kotsv1beta1.Config, error) {
@@ -156,7 +172,123 @@ func MarshalConfig(config *kotsv1beta1.Config) (string, error) {
 		return "", errors.Wrap(err, "failed to fix up yaml")
 	}
 
-	return string(b), nil
+	normalized, err := normalizeTemplateStyles(b)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to normalize template styles")
+	}
+
+	return decodeUnicodeEscapes(string(normalized)), nil
+}
+
+// decodeUnicodeEscapes replaces YAML/JSON Unicode escape sequences with their UTF-8 equivalents.
+// This is needed because the K8s serialiser routes through gopkg.in/yaml.v2, which escapes
+// non-BMP Unicode characters (codepoints > U+FFFF) as \UXXXXXXXX in double-quoted strings.
+// Processing order matters: \UXXXXXXXX first, then surrogate pairs, then standalone \uXXXX.
+func decodeUnicodeEscapes(s string) string {
+	// Decode \UXXXXXXXX (8-digit YAML escapes for non-BMP codepoints)
+	s = reUnicodeEscape8.ReplaceAllStringFunc(s, func(match string) string {
+		codepoint, err := strconv.ParseUint(match[2:], 16, 32)
+		if err != nil || !utf8.ValidRune(rune(codepoint)) {
+			return match
+		}
+		return string(rune(codepoint))
+	})
+
+	// Decode \uXXXX\uXXXX (JSON-style UTF-16 surrogate pairs)
+	s = reSurrogatePair.ReplaceAllStringFunc(s, func(match string) string {
+		high, err1 := strconv.ParseUint(match[2:6], 16, 16)
+		low, err2 := strconv.ParseUint(match[8:12], 16, 16)
+		if err1 != nil || err2 != nil {
+			return match
+		}
+		r := utf16.DecodeRune(rune(high), rune(low))
+		if r == unicode.ReplacementChar {
+			return match
+		}
+		return string(r)
+	})
+
+	// Decode standalone \uXXXX (BMP codepoints, skip surrogates)
+	s = reUnicodeEscape4.ReplaceAllStringFunc(s, func(match string) string {
+		codepoint, err := strconv.ParseUint(match[2:], 16, 16)
+		if err != nil || (codepoint >= 0xD800 && codepoint <= 0xDFFF) {
+			return match
+		}
+		if !utf8.ValidRune(rune(codepoint)) {
+			return match
+		}
+		return string(rune(codepoint))
+	})
+
+	return s
+}
+
+// reNonBMP matches any Unicode character above U+FFFF (non-BMP codepoints).
+var reNonBMP = regexp.MustCompile(`[\x{10000}-\x{10FFFF}]`)
+
+// normalizeTemplateStyles ensures YAML strings containing template expressions
+// (repl{{ or {{repl) are not double-quoted. The go.yaml.in/yaml/v3 library considers
+// non-BMP Unicode characters (> U+FFFF) non-printable, forcing double-quoted style
+// with \UXXXXXXXX escapes. This also introduces \" for any " in the value, which
+// breaks Go's text/template parser when \" appears inside template delimiters.
+//
+// The approach: temporarily replace non-BMP characters with ASCII placeholders so
+// the YAML encoder chooses single-quoted (or literal block) style, then restore
+// the original UTF-8 characters in the encoded output.
+func normalizeTemplateStyles(yamlBytes []byte) ([]byte, error) {
+	var doc goyaml.Node
+	if err := goyaml.Unmarshal(yamlBytes, &doc); err != nil {
+		return nil, err
+	}
+
+	// Track placeholder→original mappings
+	placeholders := map[string]string{}
+	walkYAMLNodes(&doc, func(node *goyaml.Node) {
+		if node.Kind != goyaml.ScalarNode {
+			return
+		}
+		if !strings.Contains(node.Value, "repl{{") && !strings.Contains(node.Value, "{{repl") {
+			return
+		}
+		// Replace non-BMP characters with ASCII placeholders
+		node.Value = reNonBMP.ReplaceAllStringFunc(node.Value, func(ch string) string {
+			r := []rune(ch)[0]
+			placeholder := fmt.Sprintf("__KOTS_U%08X__", r)
+			placeholders[placeholder] = ch
+			return placeholder
+		})
+		// Now the value is BMP-only, so the encoder can use non-double-quoted styles
+		if strings.Contains(node.Value, "\n") {
+			node.Style = goyaml.LiteralStyle
+		} else {
+			node.Style = goyaml.SingleQuotedStyle
+		}
+	})
+
+	var buf bytes.Buffer
+	enc := goyaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(&doc); err != nil {
+		return nil, err
+	}
+
+	// Restore original UTF-8 characters
+	result := buf.String()
+	for placeholder, original := range placeholders {
+		result = strings.ReplaceAll(result, placeholder, original)
+	}
+
+	return []byte(result), nil
+}
+
+func walkYAMLNodes(node *goyaml.Node, fn func(*goyaml.Node)) {
+	if node == nil {
+		return
+	}
+	fn(node)
+	for _, child := range node.Content {
+		walkYAMLNodes(child, fn)
+	}
 }
 
 func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {

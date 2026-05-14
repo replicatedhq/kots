@@ -344,6 +344,163 @@ spec:
 `,
 			expectOldFail: false,
 		},
+		{
+			name: "non-BMP unicode in help_text with template function",
+			configSpecData: `
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: test-app
+spec:
+  groups:
+    - name: example_settings
+      title: My Example Config
+      items:
+        - name: other_field
+          title: Other Field
+          type: text
+          default: "hello"
+        - name: a_field
+          title: A Field
+          type: bool
+          default: "1"
+          help_text: "🔏 This field is locked repl{{ ConfigOption \"other_field\" }}"`,
+			configValuesData: map[string]template.ItemValue{
+				"other_field": {
+					Value: "world",
+				},
+			},
+			useAppSpec: false,
+			want: `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: test-app
+spec:
+  groups:
+  - items:
+    - default: "hello"
+      name: other_field
+      title: Other Field
+      type: text
+      value: world
+    - default: "1"
+      help_text: "🔏 This field is locked world"
+      name: a_field
+      title: A Field
+      type: bool
+      value: ""
+    name: example_settings
+    title: My Example Config
+status: {}
+`,
+			expectOldFail: true,
+		},
+		{
+			name: "non-BMP unicode in multi-line block-scalar help_text with repl template (SC-135815)",
+			configSpecData: `
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: test-app
+spec:
+  groups:
+    - name: test_group
+      title: Test
+      items:
+        - name: other_field
+          title: Other Field
+          type: bool
+          default: "1"
+        - name: test_field
+          title: Test Field
+          type: bool
+          default: "1"
+          help_text: |-
+            Some description text
+
+            🔏 **This field may not be edited once set**
+
+            repl{{ if (ne Sequence 0) }}
+            repl{{- if ConfigOptionEquals "other_field" "1" }}
+            ℹ️ A conditional note
+            repl{{- end }}
+            repl{{- end }}`,
+			configValuesData: map[string]template.ItemValue{
+				"other_field": {
+					Value: "1",
+				},
+			},
+			useAppSpec: false,
+			want: `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: test-app
+spec:
+  groups:
+  - items:
+    - default: "1"
+      name: other_field
+      title: Other Field
+      type: bool
+      value: "1"
+    - default: "1"
+      help_text: |-
+        Some description text
+
+        🔏 **This field may not be edited once set**
+      name: test_field
+      title: Test Field
+      type: bool
+      value: ""
+    name: test_group
+    title: Test
+status: {}
+`,
+			expectOldFail: true,
+		},
+		{
+			name: "customer workaround: printf escape in repl template renders to non-BMP emoji",
+			configSpecData: `
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sample-app
+spec:
+  groups:
+    - name: sample-group
+      title: Sample Title
+      description: |
+        sample description
+      items:
+        - name: dns_support_choice
+          title: DNS Support
+          type: text
+          required: true
+          help_text: |
+             repl{{printf "\U0001F512"}}`,
+			configValuesData: map[string]template.ItemValue{},
+			useAppSpec:       false,
+			want: `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sample-app
+spec:
+  groups:
+  - description: |
+      sample description
+    items:
+    - help_text: "🔒"
+      name: dns_support_choice
+      required: true
+      title: DNS Support
+      type: text
+      value: ""
+    name: sample-group
+    title: Sample Title
+status: {}
+`,
+			expectOldFail: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -490,6 +647,61 @@ func TestApplyValuesToConfig(t *testing.T) {
 			resultConfig := ApplyValuesToConfig(&test.config, test.values)
 
 			req.Equal(test.want, *resultConfig)
+		})
+	}
+}
+
+func TestDecodeUnicodeEscapes(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "8-digit non-BMP escape",
+			input: `\U0001F510`,
+			want:  "\U0001F510",
+		},
+		{
+			name:  "surrogate pair",
+			input: `\uD83D\uDD10`,
+			want:  "\U0001F510",
+		},
+		{
+			name:  "4-digit BMP escape",
+			input: `\u00E9`,
+			want:  "\u00E9",
+		},
+		{
+			name:  "no escapes unchanged",
+			input: "hello world",
+			want:  "hello world",
+		},
+		{
+			name:  "invalid codepoint left unchanged",
+			input: `\UFFFFFFFF`,
+			want:  `\UFFFFFFFF`,
+		},
+		{
+			name:  "lone surrogate left unchanged",
+			input: `\uD800`,
+			want:  `\uD800`,
+		},
+		{
+			name:  "mixed content preserved",
+			input: "text before \\U0001F510 text after",
+			want:  "text before \U0001F510 text after",
+		},
+		{
+			name:  "multiple escapes decoded",
+			input: `\U0001F510 and \U0001F512`,
+			want:  "\U0001F510 and \U0001F512",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := decodeUnicodeEscapes(tt.input)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
