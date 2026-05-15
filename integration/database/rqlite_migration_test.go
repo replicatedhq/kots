@@ -1,19 +1,24 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	_ "embed"
 	"fmt"
 	"log"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/user"
 	"path"
 	"testing"
+	"time"
 
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/network"
+	mobyclient "github.com/moby/moby/client"
 	_ "github.com/lib/pq"
-	dockertest "github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
+	dockertest "github.com/ory/dockertest/v4"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/imageutil"
@@ -27,42 +32,70 @@ const (
 	RQLITE_AUTH_CONFIG  = `[{"username": "kotsadm", "password": "password", "perms": ["all"]}, {"username": "*", "perms": ["status", "ready"]}]`
 )
 
+func removeContainerByName(ctx context.Context, pool dockertest.ClosablePool, name string) error {
+	c := pool.Client()
+	result, err := c.ContainerList(ctx, mobyclient.ContainerListOptions{All: true})
+	if err != nil {
+		return err
+	}
+	for _, ctr := range result.Items {
+		for _, n := range ctr.Names {
+			if n == "/"+name {
+				_, err := c.ContainerRemove(ctx, ctr.ID, mobyclient.ContainerRemoveOptions{Force: true})
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func TestMigrateFromPostgresToRqlite(t *testing.T) {
-	pool, err := dockertest.NewPool("")
+	ctx := context.Background()
+
+	pool, err := dockertest.NewPool(ctx, "")
 	if err != nil {
 		log.Fatalf("Failed to connect to docker: %s", err)
 	}
+	defer pool.Close(ctx)
 
 	// remove containers if present
-	if err := pool.RemoveContainerByName("postgres"); err != nil {
+	if err := removeContainerByName(ctx, pool, "postgres"); err != nil {
 		t.Fatalf("Failed to remove postgres container: %v", err)
 	}
-	if err := pool.RemoveContainerByName("rqlite"); err != nil {
+	if err := removeContainerByName(ctx, pool, "rqlite"); err != nil {
 		t.Fatalf("Failed to remove rqlite container: %v", err)
 	}
 
 	// start postgres db
-	pgRunOptions := &dockertest.RunOptions{
-		Name:       "postgres",
-		Repository: "postgres",
-		Tag:        "14.5-alpine",
-		Env: []string{
+	postgresPort, err := network.ParsePort("5432/tcp")
+	if err != nil {
+		t.Fatalf("Failed to parse port: %s", err)
+	}
+	postgres, err := pool.Run(ctx, "postgres",
+		dockertest.WithName("postgres"),
+		dockertest.WithTag("14.5-alpine"),
+		dockertest.WithEnv([]string{
 			"POSTGRES_USER=kotsadm",
 			"POSTGRES_PASSWORD=password",
 			"POSTGRES_DB=kotsadm",
 			"POSTGRES_HOST_AUTH_METHOD=md5",
-		},
-	}
-	pgHostConfig := func(config *docker.HostConfig) {
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{
-			Name: "no",
-		}
-	}
-	postgres, err := pool.RunWithOptions(pgRunOptions, pgHostConfig)
+		}),
+		dockertest.WithContainerConfig(func(config *container.Config) {
+			config.ExposedPorts = network.PortSet{
+				postgresPort: {},
+			}
+		}),
+		dockertest.WithHostConfig(func(config *container.HostConfig) {
+			config.AutoRemove = true
+			config.RestartPolicy = container.RestartPolicy{
+				Name: "no",
+			}
+		}),
+	)
 	if err != nil {
 		t.Fatalf("Failed to start postgres: %s", err)
 	}
+	defer postgres.Close(ctx)
 
 	// start rqlite db
 	currentUser, err := user.Current()
@@ -74,42 +107,53 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 		t.Fatalf("Failed to write to file %s", rqliteAuthConfigPath)
 	}
 	rqliteTag, _ := imageutil.GetTag(image.Rqlite)
-	rqliteRunOptions := &dockertest.RunOptions{
-		Name:       "rqlite",
-		Repository: "kotsadm/rqlite",
-		Tag:        rqliteTag,
-		Mounts: []string{
+
+	rqlitePort, err := network.ParsePort("4001/tcp")
+	if err != nil {
+		t.Fatalf("Failed to parse port: %s", err)
+	}
+	rqliteRaftPort, err := network.ParsePort("4002/tcp")
+	if err != nil {
+		t.Fatalf("Failed to parse port: %s", err)
+	}
+
+	rqlite, err := pool.Run(ctx, "kotsadm/rqlite",
+		dockertest.WithName("rqlite"),
+		dockertest.WithTag(rqliteTag),
+		dockertest.WithMounts([]string{
 			fmt.Sprintf("%s:/rqlite/file", t.TempDir()),
 			fmt.Sprintf("%s:/auth/config.json", rqliteAuthConfigPath),
-		},
-		ExposedPorts: []string{
-			"4001/tcp",
-			"4002/tcp",
-		},
-		PortBindings: map[docker.Port][]docker.PortBinding{
-			"4001/tcp": {
+		}),
+		dockertest.WithContainerConfig(func(config *container.Config) {
+			config.ExposedPorts = network.PortSet{
+				rqlitePort:      {},
+				rqliteRaftPort: {},
+			}
+		}),
+		dockertest.WithPortBindings(network.PortMap{
+			rqlitePort: []network.PortBinding{
 				{
-					HostIP:   "localhost",
+					HostIP:   netip.AddrFrom4([4]byte{127, 0, 0, 1}),
 					HostPort: "14001",
 				},
 			},
-		},
-		Cmd: []string{
+		}),
+		dockertest.WithCmd([]string{
 			"-http-adv-addr=localhost:14001",
 			"-auth=/auth/config.json",
-		},
-		User: currentUser.Uid,
-	}
-	rqliteHostConfig := func(config *docker.HostConfig) {
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{
-			Name: "no",
-		}
-	}
-	rqlite, err := pool.RunWithOptions(rqliteRunOptions, rqliteHostConfig)
+		}),
+		dockertest.WithUser(currentUser.Uid),
+		dockertest.WithHostConfig(func(config *container.HostConfig) {
+			config.AutoRemove = true
+			config.RestartPolicy = container.RestartPolicy{
+				Name: "no",
+			}
+		}),
+	)
 	if err != nil {
 		t.Fatalf("Failed to start rqlite: %s", err)
 	}
+	defer rqlite.Close(ctx)
 
 	// connection strings
 	pgURI := fmt.Sprintf("postgres://kotsadm:password@localhost:%s/kotsadm?connect_timeout=10&sslmode=disable", postgres.GetPort("5432/tcp"))
@@ -117,7 +161,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 
 	// wait for postgres to be ready
 	var pgDB *sql.DB
-	if err := pool.Retry(func() error {
+	if err := pool.Retry(ctx, 60*time.Second, func() error {
 		var err error
 		pgDB, err = sql.Open("postgres", pgURI)
 		if err != nil {
@@ -130,7 +174,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 
 	// wait for rqlite to be ready
 	var rqliteDB gorqlite.Connection
-	if err := pool.Retry(func() error {
+	if err := pool.Retry(ctx, 60*time.Second, func() error {
 		url := fmt.Sprintf("http://localhost:%s/readyz", rqlite.GetPort("4001/tcp"))
 		newRequest, err := http.NewRequest("GET", url, nil)
 		if err != nil {
@@ -184,15 +228,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 	if err := validateDataInRqlite(&rqliteDB); err != nil {
 		t.Fatalf("Failed to validate data in rqlite: %s", err)
 	}
-
-	if err := pool.Purge(postgres); err != nil {
-		log.Fatalf("Failed to purge postgres: %s", err)
-	}
-	if err := pool.Purge(rqlite); err != nil {
-		log.Fatalf("Failed to purge rqlite: %s", err)
-	}
 }
-
 func insertDataIntoPostgres(pgDB *sql.DB) error {
 	tx, err := pgDB.Begin()
 	if err != nil {
