@@ -706,7 +706,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -901,7 +901,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -926,7 +926,7 @@ jobs:
 
       - name: Create Cluster
         id: create-cluster
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1121,7 +1121,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -1146,7 +1146,7 @@ jobs:
 
       - name: Create Cluster
         id: create-cluster
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1364,7 +1364,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -1463,7 +1463,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1592,7 +1592,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -1768,7 +1768,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1915,7 +1915,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -1943,7 +1943,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2033,7 +2033,7 @@ jobs:
   
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -2058,7 +2058,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2142,7 +2142,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -2169,7 +2169,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2299,7 +2299,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -2324,7 +2324,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2396,7 +2396,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -2421,7 +2421,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2517,7 +2517,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -2541,7 +2541,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2646,7 +2646,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -2722,7 +2722,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2861,7 +2861,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -2925,7 +2925,7 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -2979,7 +2979,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -3041,7 +3041,7 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -3093,7 +3093,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -3155,7 +3155,7 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -3207,7 +3207,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -3235,7 +3235,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -3350,7 +3350,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -3378,7 +3378,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -3536,7 +3536,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -3635,7 +3635,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -3788,7 +3788,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -3811,7 +3811,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -3882,7 +3882,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -3913,7 +3913,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -4107,7 +4107,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -4136,7 +4136,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -4274,7 +4274,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -4300,7 +4300,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -4583,7 +4583,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -4682,7 +4682,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -4919,7 +4919,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
@@ -4943,7 +4943,7 @@ jobs:
 
       - name: Create Cluster
         id: create-cluster
-        uses: replicatedhq/replicated-actions/create-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -5033,7 +5033,7 @@ jobs:
 
       - name: Remove Cluster
         id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1.20.0
+        uses: replicatedhq/replicated-actions/remove-cluster@v1.26.0
         if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
