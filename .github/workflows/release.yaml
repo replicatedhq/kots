@@ -447,13 +447,13 @@ jobs:
       run: tar -czvf ../kotsadm-nominio.tar.gz -- *
 
     - name: Upload airgap archive
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ needs.generate-tag.outputs.tag }}
         files: ./kotsadm.tar.gz
 
     - name: Upload airgap archive without minio
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ needs.generate-tag.outputs.tag }}
         files: ./kotsadm-nominio.tar.gz
