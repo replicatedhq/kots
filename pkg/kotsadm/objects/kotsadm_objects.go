@@ -198,15 +198,17 @@ func updateKotsadmDeploymentScriptsPath(existing *appsv1.Deployment) {
 // waitForRqliteInitContainer returns an init container that polls the rqlite
 // readiness endpoint before schemahero-plan runs. This prevents CrashLoopBackOff
 // when kotsadm and rqlite restart simultaneously (e.g., during EC upgrades).
-// See: https://github.com/replicated-collab/netbox-replicated/issues/148
+// Times out after 5 minutes so rqlite failures surface as a clear init error
+// rather than an indefinite hang.
+// Ref: https://app.shortcut.com/replicated/story/138103
 func waitForRqliteInitContainer(deployOptions types.DeployOptions) corev1.Container {
 	return corev1.Container{
-		Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
+		Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Name:            "wait-for-rqlite",
 		Command:         []string{"sh", "-c"},
 		Args: []string{
-			`until wget -qO- http://kotsadm-rqlite:4001/readyz 2>/dev/null | grep -q "ok"; do echo "Waiting for rqlite to be ready..."; sleep 2; done; echo "rqlite is ready"`,
+			`elapsed=0; timeout=300; while [ $elapsed -lt $timeout ]; do if wget -qO- http://kotsadm-rqlite:4001/readyz 2>/dev/null | grep -q "ok"; then echo "rqlite is ready (${elapsed}s)"; exit 0; fi; echo "Waiting for rqlite... (${elapsed}s/${timeout}s)"; sleep 2; elapsed=$((elapsed+2)); done; echo "ERROR: rqlite not ready after ${timeout}s"; exit 1`,
 		},
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{

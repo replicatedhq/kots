@@ -1,9 +1,12 @@
 package kotsadm
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -225,4 +228,45 @@ func Test_updateKotsadmDeploymentScriptsPath(t *testing.T) {
 			assert.Equal(t, tt.want, tt.args.existing)
 		})
 	}
+}
+
+func Test_waitForRqliteInitContainer(t *testing.T) {
+	opts := types.DeployOptions{
+		Namespace:              "default",
+		StrictSecurityContext:  true,
+	}
+	c := waitForRqliteInitContainer(opts)
+
+	assert.Equal(t, "wait-for-rqlite", c.Name)
+	assert.Equal(t, corev1.PullIfNotPresent, c.ImagePullPolicy)
+	assert.Equal(t, []string{"sh", "-c"}, c.Command)
+	require.Len(t, c.Args, 1)
+
+	// Polls /readyz
+	assert.Contains(t, c.Args[0], "kotsadm-rqlite:4001/readyz")
+	// Has a timeout (not an infinite loop)
+	assert.Contains(t, c.Args[0], "timeout=300")
+	// Exits non-zero on timeout
+	assert.True(t, strings.HasSuffix(c.Args[0], "exit 1"))
+
+	// Resource requests are set
+	assert.NotNil(t, c.Resources.Requests.Cpu())
+	assert.NotNil(t, c.Resources.Requests.Memory())
+	assert.NotNil(t, c.Resources.Limits.Memory())
+
+	// Security context is set
+	assert.NotNil(t, c.SecurityContext)
+}
+
+func Test_kotsadmDeploymentHasWaitForRqlite(t *testing.T) {
+	opts := types.DeployOptions{
+		Namespace: "default",
+	}
+	dep, err := KotsadmDeployment(opts)
+	require.NoError(t, err)
+
+	initContainers := dep.Spec.Template.Spec.InitContainers
+	require.True(t, len(initContainers) >= 4, "expected at least 4 init containers, got %d", len(initContainers))
+	assert.Equal(t, "wait-for-rqlite", initContainers[0].Name, "wait-for-rqlite should be the first init container")
+	assert.Equal(t, "schemahero-plan", initContainers[1].Name, "schemahero-plan should follow wait-for-rqlite")
 }
