@@ -1,8 +1,10 @@
 package kotsadm
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/ingress"
@@ -19,6 +21,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
+
+//go:embed scripts/wait-for-rqlite.sh
+var waitForRqliteScript string
 
 func KotsadmClusterRole() *rbacv1.ClusterRole {
 	clusterRole := &rbacv1.ClusterRole{
@@ -207,9 +212,7 @@ func waitForRqliteInitContainer(deployOptions types.DeployOptions) corev1.Contai
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Name:            "wait-for-rqlite",
 		Command:         []string{"sh", "-c"},
-		Args: []string{
-			`elapsed=0; timeout=300; while [ $elapsed -lt $timeout ]; do if wget -qO- http://kotsadm-rqlite:4001/readyz 2>/dev/null | grep -q "ok"; then echo "rqlite is ready (${elapsed}s)"; exit 0; fi; echo "Waiting for rqlite... (${elapsed}s/${timeout}s)"; sleep 2; elapsed=$((elapsed+2)); done; echo "ERROR: rqlite not ready after ${timeout}s"; exit 1`,
-		},
+		Args:            []string{strings.TrimSpace(waitForRqliteScript)},
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				"memory": resource.MustParse("50Mi"),
