@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/archives"
+	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/identity"
@@ -232,6 +233,15 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 		if err := ensureWaitForAirgapConfig(deployOptions, clientset, "kotsadm-airgap-app"); err != nil {
 			return errors.Wrap(err, "failed to create config from app.tar.gz")
 		}
+	}
+
+	// Ensure kotsadm-authstring exists before the kotsadm pod is created so
+	// that resources templated by the application's Helm chart can read it
+	// on startup. Without this, application pods that authenticate against
+	// the KOTS Admin API race the lazy creation of this secret later in the
+	// install flow.
+	if _, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm-authstring secret")
 	}
 
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
