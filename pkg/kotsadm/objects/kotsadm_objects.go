@@ -1,8 +1,10 @@
 package kotsadm
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/ingress"
@@ -19,6 +21,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
+
+//go:embed scripts/wait-for-rqlite.sh
+var waitForRqliteScript string
 
 func KotsadmClusterRole() *rbacv1.ClusterRole {
 	clusterRole := &rbacv1.ClusterRole{
@@ -192,6 +197,32 @@ func updateKotsadmDeploymentScriptsPath(existing *appsv1.Deployment) {
 				"/scripts/restore-s3.sh",
 			}
 		}
+	}
+}
+
+// waitForRqliteInitContainer returns an init container that polls the rqlite
+// readiness endpoint before schemahero-plan runs. This prevents CrashLoopBackOff
+// when kotsadm and rqlite restart simultaneously (e.g., during EC upgrades).
+// Times out after 5 minutes so rqlite failures surface as a clear init error
+// rather than an indefinite hang.
+// Ref: https://app.shortcut.com/replicated/story/138103
+func waitForRqliteInitContainer(deployOptions types.DeployOptions) corev1.Container {
+	return corev1.Container{
+		Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		Name:            "wait-for-rqlite",
+		Command:         []string{"sh", "-c"},
+		Args:            []string{strings.TrimSpace(waitForRqliteScript)},
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				"memory": resource.MustParse("50Mi"),
+			},
+			Requests: corev1.ResourceList{
+				"cpu":    resource.MustParse("10m"),
+				"memory": resource.MustParse("10Mi"),
+			},
+		},
+		SecurityContext: k8sutil.SecureContainerContext(deployOptions.StrictSecurityContext),
 	}
 }
 
@@ -493,6 +524,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					ImagePullSecrets:   pullSecrets,
 					InitContainers: []corev1.Container{
+						waitForRqliteInitContainer(deployOptions),
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
@@ -1086,6 +1118,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					ImagePullSecrets:   pullSecrets,
 					InitContainers: []corev1.Container{
+						waitForRqliteInitContainer(deployOptions),
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
