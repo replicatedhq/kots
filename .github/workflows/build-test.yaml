@@ -3625,7 +3625,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.33, instance_type: r1.large}
+          {distribution: kind, version: v1.33.7, instance_type: r1.medium}
         ]
     env:
       APP_SLUG: remove-app
@@ -3680,14 +3680,11 @@ jobs:
           COUNTER=1
           while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
             ((COUNTER += 1))
-            if [ $COUNTER -gt 300 ]; then
+            if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
               ./bin/kots get apps --namespace "$APP_SLUG"
-              echo ""
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=300 --namespace "$APP_SLUG"
-              echo ""
-              kubectl events -n rabbitmq-system
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
               exit 1
             fi
             sleep 1
