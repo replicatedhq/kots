@@ -1942,7 +1942,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Cluster 
-        id: create-cluster 
+        id: create-cluster
         uses: replicatedhq/replicated-actions/create-cluster@v1.26.0
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1951,6 +1951,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
+          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -3679,7 +3680,7 @@ jobs:
           COUNTER=1
           while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
             ((COUNTER += 1))
-            if [ $COUNTER -gt 300 ]; then
+            if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
@@ -3733,7 +3734,7 @@ jobs:
           COUNTER=1
           while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
             ((COUNTER += 1))
-            if [ $COUNTER -gt 300 ]; then
+            if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
@@ -3818,7 +3819,6 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -3828,11 +3828,6 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
-
-      - name: create namespace and dockerhub secret
-        run: |
-          kubectl create ns "$APP_SLUG"
-          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
