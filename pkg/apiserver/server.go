@@ -148,6 +148,7 @@ func Start(params *APIServerParams) {
 
 	r := mux.NewRouter()
 
+	r.Use(handlers.SecurityHeadersMiddleware)
 	r.Use(handlers.CorsMiddleware)
 	r.Methods("OPTIONS").HandlerFunc(handlers.CORS)
 
