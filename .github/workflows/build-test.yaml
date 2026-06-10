@@ -3680,11 +3680,14 @@ jobs:
           COUNTER=1
           while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
             ((COUNTER += 1))
-            if [ $COUNTER -gt 120 ]; then
+            if [ $COUNTER -gt 300 ]; then
               echo "Timed out waiting for app to be ready"
               ./bin/kots get apps --namespace "$APP_SLUG"
+              echo ""
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              kubectl logs -l app=kotsadm --tail=300 --namespace "$APP_SLUG"
+              echo ""
+              kubectl events -n rabbitmq-system
               exit 1
             fi
             sleep 1
