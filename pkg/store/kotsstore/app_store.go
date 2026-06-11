@@ -572,14 +572,24 @@ func (s *KOTSStore) GetAppInstanceID(appID string) (string, []string, error) {
 		resolvedInstanceID = appID
 	}
 
-	var lineage []string
-	if lineageJSON.String != "" {
-		if err := json.Unmarshal([]byte(lineageJSON.String), &lineage); err != nil {
-			return "", nil, errors.Wrap(err, "failed to unmarshal instance id lineage")
-		}
+	return resolvedInstanceID, parseInstanceIDLineage(appID, lineageJSON.String), nil
+}
+
+// parseInstanceIDLineage treats an unparseable lineage as empty instead of erroring:
+// the lineage is diagnostic data, and a hard error here would abort restore detection
+// on every startup while reports silently pin to the app ID.
+func parseInstanceIDLineage(appID string, lineageJSON string) []string {
+	if lineageJSON == "" {
+		return nil
 	}
 
-	return resolvedInstanceID, lineage, nil
+	var lineage []string
+	if err := json.Unmarshal([]byte(lineageJSON), &lineage); err != nil {
+		logger.Warnf("instance id lineage for app %s is not parseable, treating as empty: %v", appID, err)
+		return nil
+	}
+
+	return lineage
 }
 
 func (s *KOTSStore) SetAppInstanceID(appID string, instanceID string, lineage []string) error {
@@ -600,6 +610,10 @@ func (s *KOTSStore) SetAppInstanceID(appID string, instanceID string, lineage []
 	})
 	if err != nil {
 		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
+	}
+
+	if wr.RowsAffected == 0 {
+		logger.Warnf("instance id for app %s was not updated: app no longer exists", appID)
 	}
 
 	return nil

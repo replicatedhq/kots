@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -160,14 +161,90 @@ func Test_checkForEnvironmentRestore(t *testing.T) {
 		mockStore := mock_store.NewMockStore(ctrl)
 
 		stored := `{"kubeSystemUID":"kube-system-uid-old","podNamespaceUID":"pod-ns-uid-old"}`
+		// the fingerprint must only be persisted after all apps were regenerated, so a
+		// mid-flight crash re-runs detection on the next startup
+		gomock.InOrder(
+			mockStore.EXPECT().GetEnvironmentFingerprint().Return(stored, nil),
+			mockStore.EXPECT().ListInstalledApps().Return([]*apptypes.App{{ID: "app-1"}}, nil),
+			mockStore.EXPECT().GetAppInstanceID("app-1").Return("instance-old", []string{"instance-ancient"}, nil),
+			mockStore.EXPECT().SetAppInstanceID("app-1", gomock.Not(gomock.Eq("instance-old")), []string{"instance-ancient", "instance-old"}).Return(nil),
+			mockStore.EXPECT().SetEnvironmentFingerprint(currentFingerprintJSON).Return(nil),
+		)
+
+		err := checkForEnvironmentRestore(newClientset(), mockStore)
+		req.NoError(err)
+	})
+
+	t.Run("regenerates every installed app", func(t *testing.T) {
+		req := require.New(t)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockStore := mock_store.NewMockStore(ctrl)
+
+		stored := `{"kubeSystemUID":"kube-system-uid-old"}`
 		mockStore.EXPECT().GetEnvironmentFingerprint().Return(stored, nil)
-		mockStore.EXPECT().ListInstalledApps().Return([]*apptypes.App{{ID: "app-1"}}, nil)
-		mockStore.EXPECT().GetAppInstanceID("app-1").Return("instance-old", []string{"instance-ancient"}, nil)
-		mockStore.EXPECT().SetAppInstanceID("app-1", gomock.Not(gomock.Eq("instance-old")), []string{"instance-ancient", "instance-old"}).Return(nil)
-		// fingerprint is only persisted after all apps were regenerated
+		mockStore.EXPECT().ListInstalledApps().Return([]*apptypes.App{{ID: "app-1"}, {ID: "app-2"}}, nil)
+		mockStore.EXPECT().GetAppInstanceID("app-1").Return("app-1", nil, nil)
+		mockStore.EXPECT().SetAppInstanceID("app-1", gomock.Not(gomock.Eq("app-1")), []string{"app-1"}).Return(nil)
+		mockStore.EXPECT().GetAppInstanceID("app-2").Return("app-2", nil, nil)
+		mockStore.EXPECT().SetAppInstanceID("app-2", gomock.Not(gomock.Eq("app-2")), []string{"app-2"}).Return(nil)
 		mockStore.EXPECT().SetEnvironmentFingerprint(currentFingerprintJSON).Return(nil)
 
 		err := checkForEnvironmentRestore(newClientset(), mockStore)
+		req.NoError(err)
+	})
+
+	t.Run("fingerprint is not persisted when regeneration fails", func(t *testing.T) {
+		req := require.New(t)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockStore := mock_store.NewMockStore(ctrl)
+
+		stored := `{"kubeSystemUID":"kube-system-uid-old"}`
+		mockStore.EXPECT().GetEnvironmentFingerprint().Return(stored, nil)
+		mockStore.EXPECT().ListInstalledApps().Return([]*apptypes.App{{ID: "app-1"}}, nil)
+		mockStore.EXPECT().GetAppInstanceID("app-1").Return("app-1", nil, nil)
+		mockStore.EXPECT().SetAppInstanceID("app-1", gomock.Any(), gomock.Any()).Return(errors.New("write failed"))
+		// SetEnvironmentFingerprint must NOT be called: detection re-runs on next startup
+
+		err := checkForEnvironmentRestore(newClientset(), mockStore)
+		req.Error(err)
+	})
+
+	t.Run("unparseable stored fingerprint re-adopts current without regenerating", func(t *testing.T) {
+		req := require.New(t)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockStore := mock_store.NewMockStore(ctrl)
+
+		mockStore.EXPECT().GetEnvironmentFingerprint().Return("{not json", nil)
+		mockStore.EXPECT().SetEnvironmentFingerprint(currentFingerprintJSON).Return(nil)
+
+		err := checkForEnvironmentRestore(newClientset(), mockStore)
+		req.NoError(err)
+	})
+
+	t.Run("transient kube-system read failure does not weaken the stored fingerprint", func(t *testing.T) {
+		req := require.New(t)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockStore := mock_store.NewMockStore(ctrl)
+
+		// kube-system is unreadable this boot; only the pod namespace is visible
+		clientset := fake.NewSimpleClientset(&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: podNamespace,
+				UID:  k8stypes.UID(podNSUID),
+			},
+		})
+
+		stored := `{"kubeSystemUID":"` + kubeSystemUID + `","podNamespaceUID":"` + podNSUID + `"}`
+		mockStore.EXPECT().GetEnvironmentFingerprint().Return(stored, nil)
+		// the refresh must not drop the stored kubeSystemUID: merged fingerprint equals
+		// the stored one, so nothing is written and a later same-cluster DR still
+		// classifies as "same environment"
+
+		err := checkForEnvironmentRestore(clientset, mockStore)
 		req.NoError(err)
 	})
 

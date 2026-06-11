@@ -3,6 +3,7 @@ package reporting
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -55,14 +56,19 @@ func compareEnvironmentFingerprints(stored environmentFingerprint, current envir
 func getCurrentEnvironmentFingerprint(clientset kubernetes.Interface) environmentFingerprint {
 	fingerprint := environmentFingerprint{}
 
-	if ns, err := clientset.CoreV1().Namespaces().Get(context.TODO(), metav1.NamespaceSystem, metav1.GetOptions{}); err == nil {
+	// this runs synchronously during startup; bound it so an unresponsive API server
+	// cannot block kotsadm from coming up
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if ns, err := clientset.CoreV1().Namespaces().Get(ctx, metav1.NamespaceSystem, metav1.GetOptions{}); err == nil {
 		fingerprint.KubeSystemUID = string(ns.UID)
 	} else {
 		logger.Debugf("failed to get kube-system namespace for environment fingerprint: %v", err)
 	}
 
 	if util.PodNamespace != "" {
-		if ns, err := clientset.CoreV1().Namespaces().Get(context.TODO(), util.PodNamespace, metav1.GetOptions{}); err == nil {
+		if ns, err := clientset.CoreV1().Namespaces().Get(ctx, util.PodNamespace, metav1.GetOptions{}); err == nil {
 			fingerprint.PodNamespaceUID = string(ns.UID)
 		} else {
 			logger.Debugf("failed to get pod namespace for environment fingerprint: %v", err)
@@ -78,7 +84,7 @@ func getCurrentEnvironmentFingerprint(clientset kubernetes.Interface) environmen
 func resolveAppInstanceID(kotsStore store.Store, appID string) (instanceID string, restoredFrom string) {
 	instanceID, lineage, err := kotsStore.GetAppInstanceID(appID)
 	if err != nil {
-		logger.Debugf("failed to get instance id for app %s, falling back to app id: %v", appID, err)
+		logger.Warnf("failed to get instance id for app %s, falling back to app id: %v", appID, err)
 		return appID, ""
 	}
 
@@ -122,8 +128,22 @@ func checkForEnvironmentRestore(clientset kubernetes.Interface, kotsStore store.
 	}
 
 	if compareEnvironmentFingerprints(stored, current) == decisionKeep {
-		if storedJSON != string(currentJSON) {
-			return errors.Wrap(kotsStore.SetEnvironmentFingerprint(string(currentJSON)), "failed to refresh environment fingerprint")
+		// refresh with merged values: a transiently unreadable field (e.g. an RBAC or
+		// API hiccup on kube-system) must not weaken the stored fingerprint, or a later
+		// same-cluster DR would misclassify as a restore into a new environment
+		merged := current
+		if merged.KubeSystemUID == "" {
+			merged.KubeSystemUID = stored.KubeSystemUID
+		}
+		if merged.PodNamespaceUID == "" {
+			merged.PodNamespaceUID = stored.PodNamespaceUID
+		}
+		mergedJSON, err := json.Marshal(merged)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal merged environment fingerprint")
+		}
+		if storedJSON != string(mergedJSON) {
+			return errors.Wrap(kotsStore.SetEnvironmentFingerprint(string(mergedJSON)), "failed to refresh environment fingerprint")
 		}
 		return nil
 	}
