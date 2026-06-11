@@ -98,8 +98,9 @@ immediate parent, so the full chain is reconstructable server-side.
   UID as the original. No in-cluster signal distinguishes such clones (IP/MAC
   changes are explicitly not safe signals — normal IP changes must not trigger
   regeneration). Deduplicating identical clones requires server-side
-  correlation (e.g., detecting interleaved reports against the monotonic
-  event timeline) and is out of scope for this repo.
+  correlation (e.g., detecting interleaved or regressing report timelines for
+  a single `instance_id`) and is out of scope for this repo. Tracked as
+  follow-up issue ko-z28.
 - **DR onto a rebuilt cluster regenerates the ID.** "Same environment" is
   defined as "same Kubernetes cluster" (`kube-system` UID). If a cluster is
   destroyed and rebuilt for DR, the restored install is a new instance whose
