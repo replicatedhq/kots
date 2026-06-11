@@ -461,6 +461,22 @@ func (mr *MockStoreMockRecorder) GetAppIDsFromRegistry(hostname interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDsFromRegistry", reflect.TypeOf((*MockStore)(nil).GetAppIDsFromRegistry), hostname)
 }
 
+// GetAppInstanceID mocks base method.
+func (m *MockStore) GetAppInstanceID(appID string) (string, []string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppInstanceID", appID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].([]string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAppInstanceID indicates an expected call of GetAppInstanceID.
+func (mr *MockStoreMockRecorder) GetAppInstanceID(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppInstanceID", reflect.TypeOf((*MockStore)(nil).GetAppInstanceID), appID)
+}
+
 // GetAppStatus mocks base method.
 func (m *MockStore) GetAppStatus(appID string) (*types4.AppStatus, error) {
 	m.ctrl.T.Helper()
@@ -773,6 +789,21 @@ func (m *MockStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]strin
 func (mr *MockStoreMockRecorder) GetEmbeddedClusterInstallCommandRoles(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterInstallCommandRoles", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterInstallCommandRoles), token)
+}
+
+// GetEnvironmentFingerprint mocks base method.
+func (m *MockStore) GetEnvironmentFingerprint() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEnvironmentFingerprint")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEnvironmentFingerprint indicates an expected call of GetEnvironmentFingerprint.
+func (mr *MockStoreMockRecorder) GetEnvironmentFingerprint() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnvironmentFingerprint", reflect.TypeOf((*MockStore)(nil).GetEnvironmentFingerprint))
 }
 
 // GetIgnoreRBACErrors mocks base method.
@@ -1547,6 +1578,20 @@ func (mr *MockStoreMockRecorder) SetAppInstallState(appID, state interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppInstallState", reflect.TypeOf((*MockStore)(nil).SetAppInstallState), appID, state)
 }
 
+// SetAppInstanceID mocks base method.
+func (m *MockStore) SetAppInstanceID(appID, instanceID string, lineage []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppInstanceID", appID, instanceID, lineage)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppInstanceID indicates an expected call of SetAppInstanceID.
+func (mr *MockStoreMockRecorder) SetAppInstanceID(appID, instanceID, lineage interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppInstanceID", reflect.TypeOf((*MockStore)(nil).SetAppInstanceID), appID, instanceID, lineage)
+}
+
 // SetAppIsAirgap mocks base method.
 func (m *MockStore) SetAppIsAirgap(appID string, isAirgap bool) error {
 	m.ctrl.T.Helper()
@@ -1644,6 +1689,20 @@ func (m *MockStore) SetEmbeddedClusterInstallCommandRoles(roles []string) (strin
 func (mr *MockStoreMockRecorder) SetEmbeddedClusterInstallCommandRoles(roles interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterInstallCommandRoles", reflect.TypeOf((*MockStore)(nil).SetEmbeddedClusterInstallCommandRoles), roles)
+}
+
+// SetEnvironmentFingerprint mocks base method.
+func (m *MockStore) SetEnvironmentFingerprint(fingerprint string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetEnvironmentFingerprint", fingerprint)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetEnvironmentFingerprint indicates an expected call of SetEnvironmentFingerprint.
+func (mr *MockStoreMockRecorder) SetEnvironmentFingerprint(fingerprint interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEnvironmentFingerprint", reflect.TypeOf((*MockStore)(nil).SetEnvironmentFingerprint), fingerprint)
 }
 
 // SetIgnorePreflightPermissionErrors mocks base method.
@@ -2796,6 +2855,22 @@ func (mr *MockAppStoreMockRecorder) GetAppIDFromSlug(slug interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDFromSlug", reflect.TypeOf((*MockAppStore)(nil).GetAppIDFromSlug), slug)
 }
 
+// GetAppInstanceID mocks base method.
+func (m *MockAppStore) GetAppInstanceID(appID string) (string, []string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppInstanceID", appID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].([]string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAppInstanceID indicates an expected call of GetAppInstanceID.
+func (mr *MockAppStoreMockRecorder) GetAppInstanceID(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppInstanceID", reflect.TypeOf((*MockAppStore)(nil).GetAppInstanceID), appID)
+}
+
 // GetDownstream mocks base method.
 func (m *MockAppStore) GetDownstream(clusterID string) (*types0.Downstream, error) {
 	m.ctrl.T.Helper()
@@ -2941,6 +3016,20 @@ func (m *MockAppStore) SetAppInstallState(appID, state string) error {
 func (mr *MockAppStoreMockRecorder) SetAppInstallState(appID, state interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppInstallState", reflect.TypeOf((*MockAppStore)(nil).SetAppInstallState), appID, state)
+}
+
+// SetAppInstanceID mocks base method.
+func (m *MockAppStore) SetAppInstanceID(appID, instanceID string, lineage []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppInstanceID", appID, instanceID, lineage)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppInstanceID indicates an expected call of SetAppInstanceID.
+func (mr *MockAppStoreMockRecorder) SetAppInstanceID(appID, instanceID, lineage interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppInstanceID", reflect.TypeOf((*MockAppStore)(nil).SetAppInstanceID), appID, instanceID, lineage)
 }
 
 // SetAppSelectedChannelID mocks base method.
@@ -4168,6 +4257,21 @@ func (m *MockKotsadmParamsStore) EXPECT() *MockKotsadmParamsStoreMockRecorder {
 	return m.recorder
 }
 
+// GetEnvironmentFingerprint mocks base method.
+func (m *MockKotsadmParamsStore) GetEnvironmentFingerprint() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEnvironmentFingerprint")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEnvironmentFingerprint indicates an expected call of GetEnvironmentFingerprint.
+func (mr *MockKotsadmParamsStoreMockRecorder) GetEnvironmentFingerprint() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnvironmentFingerprint", reflect.TypeOf((*MockKotsadmParamsStore)(nil).GetEnvironmentFingerprint))
+}
+
 // IsKotsadmIDGenerated mocks base method.
 func (m *MockKotsadmParamsStore) IsKotsadmIDGenerated() (bool, error) {
 	m.ctrl.T.Helper()
@@ -4181,6 +4285,20 @@ func (m *MockKotsadmParamsStore) IsKotsadmIDGenerated() (bool, error) {
 func (mr *MockKotsadmParamsStoreMockRecorder) IsKotsadmIDGenerated() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKotsadmIDGenerated", reflect.TypeOf((*MockKotsadmParamsStore)(nil).IsKotsadmIDGenerated))
+}
+
+// SetEnvironmentFingerprint mocks base method.
+func (m *MockKotsadmParamsStore) SetEnvironmentFingerprint(fingerprint string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetEnvironmentFingerprint", fingerprint)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetEnvironmentFingerprint indicates an expected call of SetEnvironmentFingerprint.
+func (mr *MockKotsadmParamsStoreMockRecorder) SetEnvironmentFingerprint(fingerprint interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEnvironmentFingerprint", reflect.TypeOf((*MockKotsadmParamsStore)(nil).SetEnvironmentFingerprint), fingerprint)
 }
 
 // SetIsKotsadmIDGenerated mocks base method.
