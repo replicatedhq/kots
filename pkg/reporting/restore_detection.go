@@ -16,8 +16,9 @@ import (
 
 // environmentFingerprint identifies the environment a kotsadm installation is running in.
 // It is stored in the kotsadm database so that it is included in snapshots; after a
-// restore, the stored fingerprint describes the environment the backup was taken in.
-// See RESTORE_DETECTION.md for the full design.
+// restore, the stored fingerprint describes the environment the backup was taken in,
+// and a mismatch with the live environment means the backup landed in a different
+// cluster: the reported instance ID is regenerated and the old one recorded as lineage.
 type environmentFingerprint struct {
 	KubeSystemUID   string `json:"kubeSystemUID,omitempty"`
 	PodNamespaceUID string `json:"podNamespaceUID,omitempty"`
