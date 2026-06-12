@@ -2,7 +2,7 @@ package types
 
 type ReportingInfo struct {
 	InstanceID              string         `json:"instance_id" yaml:"instance_id"`
-	RestoredFromInstanceID  string         `json:"restored_from_instance_id" yaml:"restored_from_instance_id"`
+	RestoredFromInstanceID  string         `json:"restored_from_instance_id,omitempty" yaml:"restored_from_instance_id,omitempty"`
 	ClusterID               string         `json:"cluster_id" yaml:"cluster_id"`
 	Downstream              DownstreamInfo `json:"downstream" yaml:"downstream"`
 	AppStatus               string         `json:"app_status" yaml:"app_status"`

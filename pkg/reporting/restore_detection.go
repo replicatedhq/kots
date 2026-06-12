@@ -138,11 +138,13 @@ func checkForEnvironmentRestore(clientset kubernetes.Interface, kotsStore store.
 		if merged.PodNamespaceUID == "" {
 			merged.PodNamespaceUID = stored.PodNamespaceUID
 		}
-		mergedJSON, err := json.Marshal(merged)
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal merged environment fingerprint")
-		}
-		if storedJSON != string(mergedJSON) {
+		// compare structurally, not byte-wise: the stored JSON may differ in key order
+		// or whitespace from what json.Marshal produces without being a real change
+		if merged != stored {
+			mergedJSON, err := json.Marshal(merged)
+			if err != nil {
+				return errors.Wrap(err, "failed to marshal merged environment fingerprint")
+			}
 			return errors.Wrap(kotsStore.SetEnvironmentFingerprint(string(mergedJSON)), "failed to refresh environment fingerprint")
 		}
 		return nil

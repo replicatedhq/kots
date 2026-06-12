@@ -248,6 +248,23 @@ func Test_checkForEnvironmentRestore(t *testing.T) {
 		req.NoError(err)
 	})
 
+	t.Run("semantically equal stored fingerprint with different serialization does not write", func(t *testing.T) {
+		req := require.New(t)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockStore := mock_store.NewMockStore(ctrl)
+
+		// same values as the current environment, but reordered keys and extra
+		// whitespace: the no-write-when-unchanged guard must compare structurally,
+		// not byte-wise, so it survives serialization changes
+		stored := `{ "podNamespaceUID": "` + podNSUID + `", "kubeSystemUID": "` + kubeSystemUID + `" }`
+		mockStore.EXPECT().GetEnvironmentFingerprint().Return(stored, nil)
+		// SetEnvironmentFingerprint must NOT be called
+
+		err := checkForEnvironmentRestore(newClientset(), mockStore)
+		req.NoError(err)
+	})
+
 	t.Run("sequential restores extend the lineage chain", func(t *testing.T) {
 		req := require.New(t)
 		ctrl := gomock.NewController(t)
