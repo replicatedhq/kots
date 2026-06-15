@@ -462,25 +462,24 @@ func getPolicyContext() (*signature.PolicyContext, error) {
 }
 
 // destinationManifestMatches reports whether the destination tag already holds a
-// manifest whose digest matches the source manifest. When true, the push can be
-// skipped — this makes the copy idempotent against registries that enforce tag
+// manifest equivalent to the source. When true, the push can be skipped —
+// this makes the copy idempotent against registries that enforce tag
 // immutability (Artifactory, Harbor, JFrog, Quay, WORM-backed OCI registries),
 // which reject overwrite regardless of digest equality.
+//
+// Equivalence is checked in two passes:
+//  1. Raw bytes equal — covers PreserveDigests=true and the pushSourceManifestList
+//     fallback path, where destination bytes match source bytes verbatim.
+//  2. Canonical bytes equal — both manifests are parsed and re-serialized
+//     through the copy library's own parser. Two manifests with the same
+//     image content but different on-the-wire form (whitespace, field order,
+//     small library-normalization differences) round-trip to identical bytes.
+//     This catches the case where a prior push wrote a library-normalized
+//     form to the destination so the raw source bytes no longer match.
 //
 // If the destination is unreachable or the tag does not exist, returns (false, nil)
 // so the caller proceeds with the normal push. Only source-side failures surface as
 // errors, since a missing or unreadable destination should not block the push.
-//
-// Known gap: the comparison is byte-level, so if a prior push succeeded through
-// CopyImageWithGC and the copy library mutated the manifest bytes during write
-// (e.g. the nil→empty-map annotation bug that triggers pushSourceManifestList,
-// or any future re-serialization quirk), the destination's stored bytes will
-// not match the source's raw bytes here. The precheck returns false, and the
-// caller will attempt the push again — failing on tag-immutable destinations.
-// The fallback path in CopyImage writes raw source bytes, so once a release
-// has been pushed once successfully via the fallback, subsequent pushes will
-// match. A robust fix requires either an upstream library fix or a deeper
-// equivalence check (e.g. parse and compare semantic manifest contents).
 func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions, srcCtx, destCtx *containerstypes.SystemContext) (bool, error) {
 	destImg, err := opts.DestRef.NewImageSource(ctx, destCtx)
 	if err != nil {
@@ -493,7 +492,7 @@ func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions
 	}
 	defer destImg.Close()
 
-	destManifest, _, err := destImg.GetManifest(ctx, nil)
+	destManifest, destMIME, err := destImg.GetManifest(ctx, nil)
 	if err != nil {
 		// Destination manifest unreadable; fall through to the normal push.
 		logger.Debugf("manifest precheck: reading destination manifest failed, falling through to push: %v", err)
@@ -506,12 +505,51 @@ func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions
 	}
 	defer srcImg.Close()
 
-	srcManifest, _, err := srcImg.GetManifest(ctx, nil)
+	srcManifest, srcMIME, err := srcImg.GetManifest(ctx, nil)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get source manifest for precheck")
 	}
 
-	return bytes.Equal(destManifest, srcManifest), nil
+	if bytes.Equal(destManifest, srcManifest) {
+		return true, nil
+	}
+
+	// Second pass: round-trip both manifests through the library's parser+serializer.
+	// If they describe the same image content, the canonical forms are identical
+	// even when the raw bytes differ.
+	canonicalSrc, srcErr := canonicalManifestBytes(srcManifest, srcMIME)
+	canonicalDest, destErr := canonicalManifestBytes(destManifest, destMIME)
+	if srcErr == nil && destErr == nil && bytes.Equal(canonicalSrc, canonicalDest) {
+		logger.Debugf("manifest precheck: raw bytes differ but canonical forms match (dest=%s)", opts.DestRef.DockerReference())
+		return true, nil
+	}
+	if srcErr != nil {
+		logger.Debugf("manifest precheck: canonicalizing source failed: %v", srcErr)
+	}
+	if destErr != nil {
+		logger.Debugf("manifest precheck: canonicalizing destination failed: %v", destErr)
+	}
+
+	return false, nil
+}
+
+// canonicalManifestBytes returns the manifest bytes after round-tripping
+// through the copy library's parser and serializer. Two semantically equivalent
+// manifests with different raw bytes (different whitespace, field order, etc.)
+// produce identical canonical bytes.
+func canonicalManifestBytes(b []byte, mime string) ([]byte, error) {
+	if manifest.MIMETypeIsMultiImage(mime) {
+		list, err := manifest.ListFromBlob(b, mime)
+		if err != nil {
+			return nil, err
+		}
+		return list.Serialize()
+	}
+	m, err := manifest.FromBlob(b, mime)
+	if err != nil {
+		return nil, err
+	}
+	return m.Serialize()
 }
 
 // pushSourceManifestList fetches the raw manifest list from the source and pushes it

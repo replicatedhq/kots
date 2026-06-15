@@ -1,6 +1,7 @@
 package image
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -213,6 +214,64 @@ func Test_destinationManifestMatches(t *testing.T) {
 			assert.Equal(t, tt.wantMatches, got)
 		})
 	}
+}
+
+// Test_destinationManifestMatches_CanonicalForm verifies the second-pass
+// canonical-bytes check: two manifests that describe the same image but were
+// stored on the wire with different formatting (e.g. extra whitespace or
+// reordered fields) should be recognized as equivalent. This is the case that
+// triggers in the wild — the copy library re-serializes the manifest during a
+// successful first push, so the destination's stored bytes no longer match
+// the source's raw bytes on the second push.
+func Test_destinationManifestMatches_CanonicalForm(t *testing.T) {
+	const (
+		mimeDockerV2  = "application/vnd.docker.distribution.manifest.v2+json"
+		mimeDockerCfg = "application/vnd.docker.container.image.v1+json"
+		mimeDockerLyr = "application/vnd.docker.image.rootfs.diff.tar.gzip"
+	)
+	cfgDigest := "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+	layerDigest := "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+
+	// Source: compact form (no extra whitespace).
+	srcBody := []byte(fmt.Sprintf(
+		`{"schemaVersion":2,"mediaType":%q,"config":{"mediaType":%q,"digest":%q,"size":1},"layers":[{"mediaType":%q,"digest":%q,"size":1}]}`,
+		mimeDockerV2, mimeDockerCfg, cfgDigest, mimeDockerLyr, layerDigest,
+	))
+	// Destination: same image, fields in reversed order with extra whitespace
+	// — what a registry / library might store after parse+serialize round-trip.
+	destBody := []byte(fmt.Sprintf(
+		"{\n  \"schemaVersion\": 2,\n  \"mediaType\": %q,\n  \"config\": {\n    \"size\": 1,\n    \"digest\": %q,\n    \"mediaType\": %q\n  },\n  \"layers\": [\n    {\n      \"size\": 1,\n      \"digest\": %q,\n      \"mediaType\": %q\n    }\n  ]\n}",
+		mimeDockerV2, cfgDigest, mimeDockerCfg, layerDigest, mimeDockerLyr,
+	))
+	require.False(t, bytes.Equal(srcBody, destBody), "test setup: bodies must differ at the byte level for this to exercise the canonical pass")
+
+	srv := newMockManifestRegistry(map[string]mockManifest{
+		"src/app:v1": {body: srcBody, contentType: mimeDockerV2},
+		"dst/app:v1": {body: destBody, contentType: mimeDockerV2},
+	})
+	defer srv.Close()
+	host := hostFromServer(t, srv)
+
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s/src/app:v1", host))
+	require.NoError(t, err)
+	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s/dst/app:v1", host))
+	require.NoError(t, err)
+
+	srcCtx := &containerstypes.SystemContext{
+		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
+	}
+	destCtx := &containerstypes.SystemContext{
+		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
+	}
+
+	got, err := destinationManifestMatches(context.Background(), imagetypes.CopyImageOptions{
+		SrcRef:  srcRef,
+		DestRef: destRef,
+	}, srcCtx, destCtx)
+	require.NoError(t, err)
+	assert.True(t, got, "byte-different but semantically-identical manifests must match via canonical pass")
 }
 
 // Test_destinationManifestMatches_SourceUnreachable verifies the precheck returns
