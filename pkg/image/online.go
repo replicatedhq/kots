@@ -1,6 +1,7 @@
 package image
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -334,7 +335,8 @@ func CopyImage(opts types.CopyImageOptions) error {
 		// The precheck above handles the parent manifest list; this covers individual
 		// child images and any case where the parent differs but children are already
 		// present. The upstream library skips this for the parent manifest-list write
-		// in the multi-arch path (known bug), so the precheck is still required.
+		// in the multi-arch path, so the precheck is still required.
+		// known bug: https://github.com/podman-container-tools/container-libs/issues/918
 		OptimizeDestinationImageAlreadyExists: true,
 	})
 	if err != nil {
@@ -509,7 +511,7 @@ func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions
 		return false, errors.Wrap(err, "failed to get source manifest for precheck")
 	}
 
-	return godigest.FromBytes(destManifest) == godigest.FromBytes(srcManifest), nil
+	return bytes.Equal(destManifest, srcManifest), nil
 }
 
 // pushSourceManifestList fetches the raw manifest list from the source and pushes it
