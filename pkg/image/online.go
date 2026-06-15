@@ -491,7 +491,7 @@ func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions
 		// Most commonly this is a 404 on first push, but it also masks transient network
 		// errors, 401/403 from misconfigured destination auth, and 429 rate limits — log
 		// at debug to leave a trail when the optimization isn't firing as expected.
-		logger.Debugf("manifest precheck: opening destination failed, falling through to push: %v", err)
+		logger.Errorf("manifest precheck: opening destination failed, falling through to push: %v", err)
 		return false, nil
 	}
 	defer destImg.Close()
@@ -499,7 +499,7 @@ func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions
 	destManifest, destMIME, err := destImg.GetManifest(ctx, nil)
 	if err != nil {
 		// Destination manifest unreadable; fall through to the normal push.
-		logger.Debugf("manifest precheck: reading destination manifest failed, falling through to push: %v", err)
+		logger.Errorf("manifest precheck: reading destination manifest failed, falling through to push: %v", err)
 		return false, nil
 	}
 
@@ -524,14 +524,14 @@ func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions
 	canonicalSrc, srcErr := canonicalManifestBytes(srcManifest, srcMIME)
 	canonicalDest, destErr := canonicalManifestBytes(destManifest, destMIME)
 	if srcErr == nil && destErr == nil && bytes.Equal(canonicalSrc, canonicalDest) {
-		logger.Debugf("manifest precheck: raw bytes differ but canonical forms match (dest=%s)", opts.DestRef.DockerReference())
+		logger.Infof("manifest precheck: raw bytes differ but canonical forms match (dest=%s)", opts.DestRef.DockerReference())
 		return true, nil
 	}
 	if srcErr != nil {
-		logger.Debugf("manifest precheck: canonicalizing source failed: %v", srcErr)
+		logger.Errorf("manifest precheck: canonicalizing source failed: %v", srcErr)
 	}
 	if destErr != nil {
-		logger.Debugf("manifest precheck: canonicalizing destination failed: %v", destErr)
+		logger.Errorf("manifest precheck: canonicalizing destination failed: %v", destErr)
 	}
 
 	return false, nil
