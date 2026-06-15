@@ -307,9 +307,7 @@ func CopyImage(opts types.CopyImageOptions) error {
 	}
 
 	// Idempotency precheck: if the destination tag already holds a manifest matching
-	// the source, skip the copy. Avoids re-pushing manifests to tag-immutable registries
-	// (Artifactory "Block Pushing Existing Tags", Harbor Tag Immutability, JFrog
-	// "Disable Re-Deployment") that reject overwrite even when the digest is unchanged.
+	// the source, skip the copy. Avoids re-pushing manifests to tag-immutable registries.
 	matches, err := destinationManifestMatches(context.Background(), opts, srcCtx, destCtx)
 	if err != nil {
 		return errors.Wrap(err, "failed manifest precheck")
@@ -470,10 +468,25 @@ func getPolicyContext() (*signature.PolicyContext, error) {
 // If the destination is unreachable or the tag does not exist, returns (false, nil)
 // so the caller proceeds with the normal push. Only source-side failures surface as
 // errors, since a missing or unreadable destination should not block the push.
+//
+// Known gap: the comparison is byte-level, so if a prior push succeeded through
+// CopyImageWithGC and the copy library mutated the manifest bytes during write
+// (e.g. the nil→empty-map annotation bug that triggers pushSourceManifestList,
+// or any future re-serialization quirk), the destination's stored bytes will
+// not match the source's raw bytes here. The precheck returns false, and the
+// caller will attempt the push again — failing on tag-immutable destinations.
+// The fallback path in CopyImage writes raw source bytes, so once a release
+// has been pushed once successfully via the fallback, subsequent pushes will
+// match. A robust fix requires either an upstream library fix or a deeper
+// equivalence check (e.g. parse and compare semantic manifest contents).
 func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions, srcCtx, destCtx *containerstypes.SystemContext) (bool, error) {
 	destImg, err := opts.DestRef.NewImageSource(ctx, destCtx)
 	if err != nil {
 		// Destination does not exist or is unreachable; fall through to the normal push.
+		// Most commonly this is a 404 on first push, but it also masks transient network
+		// errors, 401/403 from misconfigured destination auth, and 429 rate limits — log
+		// at debug to leave a trail when the optimization isn't firing as expected.
+		logger.Debugf("manifest precheck: opening destination failed, falling through to push: %v", err)
 		return false, nil
 	}
 	defer destImg.Close()
@@ -481,6 +494,7 @@ func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions
 	destManifest, _, err := destImg.GetManifest(ctx, nil)
 	if err != nil {
 		// Destination manifest unreadable; fall through to the normal push.
+		logger.Debugf("manifest precheck: reading destination manifest failed, falling through to push: %v", err)
 		return false, nil
 	}
 
