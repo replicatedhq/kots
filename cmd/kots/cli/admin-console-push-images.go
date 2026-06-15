@@ -69,7 +69,7 @@ func AdminPushImagesCmd() *cobra.Command {
 	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
 	cmd.Flags().Bool("skip-registry-check", false, "skip the connectivity test and validation of the provided registry information")
-	cmd.Flags().Bool("skip-existing-images", false, "skip pushing images whose manifest is already present at the destination tag. Required when re-pushing to registries that enforce tag immutability (Artifactory, Harbor, JFrog, Quay, WORM-backed OCI).")
+	cmd.Flags().Bool("skip-existing-images", false, "skip pushing images whose manifest is already present at the destination tag. Required when re-pushing to registries that enforce tag immutability.")
 
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().MarkHidden("kotsadm-tag")

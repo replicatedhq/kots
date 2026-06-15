@@ -667,8 +667,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                     </p>
                     <p className="u-lineHeight--normal u-fontSize--small help-text-color u-fontWeight--medium">
                       Enable this when the destination registry enforces tag
-                      immutability (Artifactory, Harbor, JFrog, Quay, WORM-backed
-                      OCI). Before each push, KOTS checks whether the
+                      immutability. Before each push, KOTS checks whether the
                       destination tag already holds the same image; if so, the
                       push is skipped instead of being rejected by the registry.
                     </p>

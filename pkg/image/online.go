@@ -469,8 +469,7 @@ func getPolicyContext() (*signature.PolicyContext, error) {
 // destinationManifestMatches reports whether the destination tag already holds a
 // manifest equivalent to the source. When true, the push can be skipped —
 // this makes the copy idempotent against registries that enforce tag
-// immutability (Artifactory, Harbor, JFrog, Quay, WORM-backed OCI registries),
-// which reject overwrite regardless of digest equality.
+// immutability and reject overwrite regardless of digest equality.
 //
 // Equivalence is checked in two passes:
 //  1. Raw bytes equal — covers PreserveDigests=true and the pushSourceManifestList

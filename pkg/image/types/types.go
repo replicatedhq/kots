@@ -53,7 +53,7 @@ type CopyImageOptions struct {
 	// against the source. If they match (byte-equal or canonically equal), the
 	// copy is skipped. Also enables OptimizeDestinationImageAlreadyExists on the
 	// copy library for per-child coverage. Required for re-pushing to registries
-	// that enforce tag immutability (Artifactory, Harbor, JFrog, Quay, WORM).
+	// that enforce tag immutability.
 	SkipExistingImages bool
 }
 
