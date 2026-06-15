@@ -1,6 +1,7 @@
 package kotsstore
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -537,6 +538,82 @@ func (s *KOTSStore) SetSnapshotSchedule(appID string, snapshotSchedule string) e
 	})
 	if err != nil {
 		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
+	}
+
+	return nil
+}
+
+// GetAppInstanceID returns the instance ID reported for the app and the restore lineage
+// (previous instance IDs, oldest first). Apps that have never been regenerated after a
+// snapshot restore have no instance_id of their own and report the app ID, preserving
+// the reporting identity of pre-existing installations.
+func (s *KOTSStore) GetAppInstanceID(appID string) (string, []string, error) {
+	db := persistence.MustGetDBSession()
+	query := `select instance_id, instance_id_lineage from app where id = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", nil, ErrNotFound
+	}
+
+	var instanceID gorqlite.NullString
+	var lineageJSON gorqlite.NullString
+	if err := rows.Scan(&instanceID, &lineageJSON); err != nil {
+		return "", nil, errors.Wrap(err, "failed to scan")
+	}
+
+	resolvedInstanceID := instanceID.String
+	if resolvedInstanceID == "" {
+		resolvedInstanceID = appID
+	}
+
+	return resolvedInstanceID, parseInstanceIDLineage(appID, lineageJSON.String), nil
+}
+
+// parseInstanceIDLineage treats an unparseable lineage as empty instead of erroring:
+// the lineage is diagnostic data, and a hard error here would abort restore detection
+// on every startup while reports silently pin to the app ID.
+func parseInstanceIDLineage(appID string, lineageJSON string) []string {
+	if lineageJSON == "" {
+		return nil
+	}
+
+	var lineage []string
+	if err := json.Unmarshal([]byte(lineageJSON), &lineage); err != nil {
+		logger.Warnf("instance id lineage for app %s is not parseable, treating as empty: %v", appID, err)
+		return nil
+	}
+
+	return lineage
+}
+
+func (s *KOTSStore) SetAppInstanceID(appID string, instanceID string, lineage []string) error {
+	logger.Debug("Setting app instance ID",
+		zap.String("appID", appID),
+		zap.String("instanceID", instanceID))
+
+	lineageJSON, err := json.Marshal(lineage)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal instance id lineage")
+	}
+
+	db := persistence.MustGetDBSession()
+	query := `update app set instance_id = ?, instance_id_lineage = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{instanceID, string(lineageJSON), appID},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
+	}
+
+	if wr.RowsAffected == 0 {
+		logger.Warnf("instance id for app %s was not updated: app no longer exists", appID)
 	}
 
 	return nil
