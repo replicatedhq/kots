@@ -306,7 +306,24 @@ func CopyImage(opts types.CopyImageOptions) error {
 		imageListSelection = copy.CopyAllImages
 	}
 
-	_, err := CopyImageWithGC(context.Background(), opts.DestRef, opts.SrcRef, &copy.Options{
+	// Idempotency precheck: if the destination tag already holds a manifest matching
+	// the source, skip the copy. Avoids re-pushing manifests to tag-immutable registries
+	// (Artifactory "Block Pushing Existing Tags", Harbor Tag Immutability, JFrog
+	// "Disable Re-Deployment") that reject overwrite even when the digest is unchanged.
+	matches, err := destinationManifestMatches(context.Background(), opts, srcCtx, destCtx)
+	if err != nil {
+		return errors.Wrap(err, "failed manifest precheck")
+	}
+	if matches {
+		destRefName := ""
+		if opts.DestRef.DockerReference() != nil {
+			destRefName = opts.DestRef.DockerReference().String()
+		}
+		logger.Infof("Skipping push: destination manifest already matches source (dest=%s)", destRefName)
+		return nil
+	}
+
+	_, err = CopyImageWithGC(context.Background(), opts.DestRef, opts.SrcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          opts.ReportWriter,
@@ -315,6 +332,12 @@ func CopyImage(opts types.CopyImageOptions) error {
 		ForceManifestMIMEType: "",
 		ImageListSelection:    imageListSelection,
 		PreserveDigests:       opts.PreserveDigests,
+		// Skip per-child copies when the destination already has the same manifest.
+		// The precheck above handles the parent manifest list; this covers individual
+		// child images and any case where the parent differs but children are already
+		// present. The upstream library skips this for the parent manifest-list write
+		// in the multi-arch path (known bug), so the precheck is still required.
+		OptimizeDestinationImageAlreadyExists: true,
 	})
 	if err != nil {
 		// When copying multi-arch images with PreserveDigests, the library may fail to write
@@ -436,6 +459,43 @@ func getPolicyContext() (*signature.PolicyContext, error) {
 		return nil, errors.Wrap(err, "failed to create policy")
 	}
 	return policyContext, nil
+}
+
+// destinationManifestMatches reports whether the destination tag already holds a
+// manifest whose digest matches the source manifest. When true, the push can be
+// skipped — this makes the copy idempotent against registries that enforce tag
+// immutability (Artifactory, Harbor, JFrog, Quay, WORM-backed OCI registries),
+// which reject overwrite regardless of digest equality.
+//
+// If the destination is unreachable or the tag does not exist, returns (false, nil)
+// so the caller proceeds with the normal push. Only source-side failures surface as
+// errors, since a missing or unreadable destination should not block the push.
+func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions, srcCtx, destCtx *containerstypes.SystemContext) (bool, error) {
+	destImg, err := opts.DestRef.NewImageSource(ctx, destCtx)
+	if err != nil {
+		// Destination does not exist or is unreachable; fall through to the normal push.
+		return false, nil
+	}
+	defer destImg.Close()
+
+	destManifest, _, err := destImg.GetManifest(ctx, nil)
+	if err != nil {
+		// Destination manifest unreadable; fall through to the normal push.
+		return false, nil
+	}
+
+	srcImg, err := opts.SrcRef.NewImageSource(ctx, srcCtx)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to open source for manifest precheck")
+	}
+	defer srcImg.Close()
+
+	srcManifest, _, err := srcImg.GetManifest(ctx, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get source manifest for precheck")
+	}
+
+	return godigest.FromBytes(destManifest) == godigest.FromBytes(srcManifest), nil
 }
 
 // pushSourceManifestList fetches the raw manifest list from the source and pushes it
