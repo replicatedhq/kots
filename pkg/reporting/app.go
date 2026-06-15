@@ -41,6 +41,14 @@ func Init() error {
 		return errors.Wrap(err, "failed to init from downstream")
 	}
 
+	if clientset, err := k8sutil.GetClientset(); err != nil {
+		logger.Errorf("failed to get clientset for snapshot restore detection: %v", err)
+	} else if err := checkForEnvironmentRestore(clientset, store.GetStore()); err != nil {
+		// reporting must keep working even if restore detection fails; detection re-runs
+		// on the next startup
+		logger.Errorf("failed to check for snapshot restore: %v", err)
+	}
+
 	if kotsadm.IsAirgap() {
 		clientset, err := k8sutil.GetClientset()
 		if err != nil {
@@ -106,8 +114,11 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		}
 	}
 
+	instanceID, restoredFromInstanceID := resolveAppInstanceID(store.GetStore(), appID)
+
 	r := types.ReportingInfo{
-		InstanceID:             appID,
+		InstanceID:             instanceID,
+		RestoredFromInstanceID: restoredFromInstanceID,
 		KOTSInstallID:          os.Getenv("KOTS_INSTALL_ID"),
 		KURLInstallID:          os.Getenv("KURL_INSTALL_ID"),
 		EmbeddedClusterID:      util.EmbeddedClusterID(),

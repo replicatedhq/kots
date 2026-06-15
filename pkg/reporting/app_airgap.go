@@ -57,6 +57,7 @@ func BuildInstanceReport(licenseID string, reportingInfo *types.ReportingInfo) *
 				ReportedAt:                time.Now().UTC().UnixMilli(),
 				LicenseID:                 licenseID,
 				InstanceID:                reportingInfo.InstanceID,
+				RestoredFromInstanceID:    reportingInfo.RestoredFromInstanceID,
 				ClusterID:                 reportingInfo.ClusterID,
 				AppStatus:                 reportingInfo.AppStatus,
 				IsKurl:                    reportingInfo.IsKurl,

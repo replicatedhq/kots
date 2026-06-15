@@ -28,6 +28,9 @@ func GetReportingInfoHeaders(reportingInfo *types.ReportingInfo) map[string]stri
 	headers["X-Replicated-AppStatus"] = reportingInfo.AppStatus
 	headers["X-Replicated-ClusterID"] = reportingInfo.ClusterID
 	headers["X-Replicated-InstanceID"] = reportingInfo.InstanceID
+	if reportingInfo.RestoredFromInstanceID != "" {
+		headers["X-Replicated-RestoredFromInstanceID"] = reportingInfo.RestoredFromInstanceID
+	}
 	headers["X-Replicated-ReplHelmInstalls"] = strconv.Itoa(reportingInfo.Downstream.ReplHelmInstalls)
 	headers["X-Replicated-NativeHelmInstalls"] = strconv.Itoa(reportingInfo.Downstream.NativeHelmInstalls)
 
