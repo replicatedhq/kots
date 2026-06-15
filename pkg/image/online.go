@@ -183,7 +183,7 @@ func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kots
 		if _, copied := copiedImages[img]; copied {
 			continue
 		}
-		if err := copyOnlineImage(sourceRegistry, destRegistry, img, opts.AppSlug, opts.ReportWriter, log, installationImages, dockerHubRegistry); err != nil {
+		if err := copyOnlineImage(sourceRegistry, destRegistry, img, opts.AppSlug, opts.SkipExistingImages, opts.ReportWriter, log, installationImages, dockerHubRegistry); err != nil {
 			return errors.Wrapf(err, "failed to copy online image %s", img)
 		}
 		copiedImages[img] = true
@@ -192,7 +192,7 @@ func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kots
 	return nil
 }
 
-func copyOnlineImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, installationImages map[string]types.InstallationImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) error {
+func copyOnlineImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, image string, appSlug string, skipExistingImages bool, reportWriter io.Writer, log *logger.CLILogger, installationImages map[string]types.InstallationImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) error {
 	// TODO: This reaches out to internet in airgap installs. It shouldn't.
 	sourceImage := image
 	srcAuth := imagetypes.RegistryAuth{}
@@ -244,13 +244,14 @@ func copyOnlineImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 			Username: destRegistry.Username,
 			Password: destRegistry.Password,
 		},
-		CopyAll:           copyAll,
-		PreserveDigests:   copyAll,
-		SrcDisableV1Ping:  true,
-		SrcSkipTLSVerify:  os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true",
-		DestDisableV1Ping: true,
-		DestSkipTLSVerify: true,
-		ReportWriter:      reportWriter,
+		CopyAll:            copyAll,
+		PreserveDigests:    copyAll,
+		SrcDisableV1Ping:   true,
+		SrcSkipTLSVerify:   os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true",
+		DestDisableV1Ping:  true,
+		DestSkipTLSVerify:  true,
+		ReportWriter:       reportWriter,
+		SkipExistingImages: skipExistingImages,
 	}
 	if err := CopyImage(copyImageOpts); err != nil {
 		return errors.Wrapf(err, "failed to copy %s to %s", sourceImage, destImage)
@@ -307,22 +308,26 @@ func CopyImage(opts types.CopyImageOptions) error {
 		imageListSelection = copy.CopyAllImages
 	}
 
-	// Idempotency precheck: if the destination tag already holds a manifest matching
-	// the source, skip the copy. Avoids re-pushing manifests to tag-immutable registries.
-	matches, err := destinationManifestMatches(context.Background(), opts, srcCtx, destCtx)
-	if err != nil {
-		return errors.Wrap(err, "failed manifest precheck")
-	}
-	if matches {
-		destRefName := ""
-		if opts.DestRef.DockerReference() != nil {
-			destRefName = opts.DestRef.DockerReference().String()
+	// Opt-in idempotency precheck: if the destination tag already holds a manifest
+	// matching the source, skip the copy. Avoids re-pushing manifests to tag-immutable
+	// registries. Off by default — callers (CLI flag, admin-console checkbox) enable
+	// it when targeting registries that enforce tag immutability.
+	if opts.SkipExistingImages {
+		matches, err := destinationManifestMatches(context.Background(), opts, srcCtx, destCtx)
+		if err != nil {
+			return errors.Wrap(err, "failed manifest precheck")
 		}
-		logger.Infof("Skipping push: destination manifest already matches source (dest=%s)", destRefName)
-		return nil
+		if matches {
+			destRefName := ""
+			if opts.DestRef.DockerReference() != nil {
+				destRefName = opts.DestRef.DockerReference().String()
+			}
+			logger.Infof("Skipping push: destination manifest already matches source (dest=%s)", destRefName)
+			return nil
+		}
 	}
 
-	_, err = CopyImageWithGC(context.Background(), opts.DestRef, opts.SrcRef, &copy.Options{
+	_, err := CopyImageWithGC(context.Background(), opts.DestRef, opts.SrcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          opts.ReportWriter,
@@ -337,7 +342,7 @@ func CopyImage(opts types.CopyImageOptions) error {
 		// present. The upstream library skips this for the parent manifest-list write
 		// in the multi-arch path, so the precheck is still required.
 		// known bug: https://github.com/podman-container-tools/container-libs/issues/918
-		OptimizeDestinationImageAlreadyExists: true,
+		OptimizeDestinationImageAlreadyExists: opts.SkipExistingImages,
 	})
 	if err != nil {
 		// When copying multi-arch images with PreserveDigests, the library may fail to write

@@ -27,7 +27,7 @@ import (
 // RewriteImages will use the app (a) and send the images to the registry specified. It will create patches for these
 // and create a new version of the application
 // the caller is responsible for deleting the appDir returned
-func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, isReadOnly bool) (appDir string, finalError error) {
+func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, isReadOnly bool, skipExistingImages bool) (appDir string, finalError error) {
 	if err := tasks.SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
 		return "", errors.Wrap(err, "failed to set task status")
 	}
@@ -152,6 +152,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		IsGitOps:             a.IsGitOps,
 		AppSequence:          nextAppSequence,
 		ReportingInfo:        reporting.GetReportingInfo(a.ID),
+		SkipExistingImages:   skipExistingImages,
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:   os.Getenv("HTTP_PROXY"),
