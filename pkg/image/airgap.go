@@ -124,9 +124,10 @@ func CopyAirgapImages(opts imagetypes.ProcessImageOptions, log *logger.CLILogger
 			Username:  opts.RegistrySettings.Username,
 			Password:  opts.RegistrySettings.Password,
 		},
-		Log:            log,
-		ProgressWriter: opts.ReportWriter,
-		LogForUI:       true,
+		Log:                log,
+		ProgressWriter:     opts.ReportWriter,
+		LogForUI:           true,
+		SkipExistingImages: opts.SkipExistingImages,
 	}
 
 	err := TagAndPushImagesFromBundle(opts.AirgapBundle, pushOpts)
@@ -270,13 +271,14 @@ func PushECImagesFromTempRegistry(airgapRootDir string, airgap *kotsv1beta1.Airg
 					Username: options.Registry.Username,
 					Password: options.Registry.Password,
 				},
-				CopyAll:           true,
-				PreserveDigests:   isDigestPinned,
-				SrcDisableV1Ping:  true,
-				SrcSkipTLSVerify:  true,
-				DestDisableV1Ping: true,
-				DestSkipTLSVerify: true,
-				ReportWriter:      reportWriter,
+				CopyAll:            true,
+				PreserveDigests:    isDigestPinned,
+				SrcDisableV1Ping:   true,
+				SrcSkipTLSVerify:   true,
+				DestDisableV1Ping:  true,
+				DestSkipTLSVerify:  true,
+				ReportWriter:       reportWriter,
+				SkipExistingImages: options.SkipExistingImages,
 			},
 		}
 		imageCounter++
@@ -387,13 +389,14 @@ func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, option
 					Username: options.Registry.Username,
 					Password: options.Registry.Password,
 				},
-				CopyAll:           copyAll,
-				PreserveDigests:   isDigestPinned,
-				SrcDisableV1Ping:  true,
-				SrcSkipTLSVerify:  true,
-				DestDisableV1Ping: true,
-				DestSkipTLSVerify: true,
-				ReportWriter:      reportWriter,
+				CopyAll:            copyAll,
+				PreserveDigests:    isDigestPinned,
+				SrcDisableV1Ping:   true,
+				SrcSkipTLSVerify:   true,
+				DestDisableV1Ping:  true,
+				DestSkipTLSVerify:  true,
+				ReportWriter:       reportWriter,
+				SkipExistingImages: options.SkipExistingImages,
 			},
 		}
 		imageCounter++
@@ -488,10 +491,11 @@ func PushImagesFromDockerArchivePath(airgapRootDir string, options imagetypes.Pu
 					Username: options.Registry.Username,
 					Password: options.Registry.Password,
 				},
-				CopyAll:           false, // docker-archive format does not support multi-arch images
-				DestSkipTLSVerify: true,
-				DestDisableV1Ping: true,
-				ReportWriter:      reportWriter,
+				CopyAll:            false, // docker-archive format does not support multi-arch images
+				DestSkipTLSVerify:  true,
+				DestDisableV1Ping:  true,
+				ReportWriter:       reportWriter,
+				SkipExistingImages: options.SkipExistingImages,
 			},
 		}
 		if err := pushImage(pushImageOpts); err != nil {
@@ -614,10 +618,11 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 					Username: options.Registry.Username,
 					Password: options.Registry.Password,
 				},
-				CopyAll:           false, // docker-archive format does not support multi-arch images
-				DestSkipTLSVerify: true,
-				DestDisableV1Ping: true,
-				ReportWriter:      reportWriter,
+				CopyAll:            false, // docker-archive format does not support multi-arch images
+				DestSkipTLSVerify:  true,
+				DestDisableV1Ping:  true,
+				ReportWriter:       reportWriter,
+				SkipExistingImages: options.SkipExistingImages,
 			},
 		}
 		if err := pushImage(pushImageOpts); err != nil {

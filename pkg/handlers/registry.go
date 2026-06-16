@@ -27,11 +27,12 @@ import (
 )
 
 type UpdateAppRegistryRequest struct {
-	Hostname   string `json:"hostname"`
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	Namespace  string `json:"namespace"`
-	IsReadOnly bool   `json:"isReadOnly"`
+	Hostname           string `json:"hostname"`
+	Username           string `json:"username"`
+	Password           string `json:"password"`
+	Namespace          string `json:"namespace"`
+	IsReadOnly         bool   `json:"isReadOnly"`
+	SkipExistingImages bool   `json:"skipExistingImages"`
 }
 
 type UpdateAppRegistryResponse struct {
@@ -237,7 +238,8 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		appDir, err := registry.RewriteImages(
 			foundApp.ID, latestSequence, updateAppRegistryRequest.Hostname,
 			updateAppRegistryRequest.Username, registryPassword,
-			updateAppRegistryRequest.Namespace, skipImagePush)
+			updateAppRegistryRequest.Namespace, skipImagePush,
+			updateAppRegistryRequest.SkipExistingImages)
 		if err != nil {
 			// log credential errors at info level
 			causeErr := errors.Cause(err)

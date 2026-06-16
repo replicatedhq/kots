@@ -22,6 +22,9 @@ type ProcessImageOptions struct {
 	AirgapBundle     string
 	CreateAppDir     bool
 	ReportWriter     io.Writer
+	// SkipExistingImages, when true, makes each image push idempotent — see
+	// CopyImageOptions.SkipExistingImages.
+	SkipExistingImages bool
 }
 
 type RegistryAuth struct {
@@ -45,6 +48,13 @@ type CopyImageOptions struct {
 	DestDisableV1Ping bool
 	DestSkipTLSVerify bool
 	ReportWriter      io.Writer
+	// SkipExistingImages enables an opt-in idempotency precheck: before invoking
+	// the copy library, the destination tag's manifest is fetched and compared
+	// against the source. If they match (byte-equal or canonically equal), the
+	// copy is skipped. Also enables OptimizeDestinationImageAlreadyExists on the
+	// copy library for per-child coverage. Required for re-pushing to registries
+	// that enforce tag immutability.
+	SkipExistingImages bool
 }
 
 type CopyAirgapImagesResult struct {
@@ -57,6 +67,9 @@ type PushImagesOptions struct {
 	Log            *logger.CLILogger
 	ProgressWriter io.Writer
 	LogForUI       bool
+	// SkipExistingImages, when true, makes each image push idempotent — see the
+	// matching field on CopyImageOptions for details.
+	SkipExistingImages bool
 }
 
 type PushImageOptions struct {

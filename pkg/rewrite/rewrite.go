@@ -55,6 +55,9 @@ type RewriteOptions struct {
 	HTTPSProxyEnvValue   string
 	NoProxyEnvValue      string
 	PrivateCAsConfigmap  string
+	// SkipExistingImages — opt-in idempotent push behavior. See
+	// imagetypes.CopyImageOptions.SkipExistingImages.
+	SkipExistingImages bool
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -254,16 +257,17 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	processImageOptions := imagetypes.ProcessImageOptions{
-		AppSlug:          rewriteOptions.AppSlug,
-		Namespace:        rewriteOptions.K8sNamespace,
-		RewriteImages:    rewriteOptions.RegistrySettings.Hostname != "",
-		RegistrySettings: rewriteOptions.RegistrySettings,
-		CopyImages:       rewriteOptions.CopyImages,
-		RootDir:          rewriteOptions.RootDir,
-		IsAirgap:         rewriteOptions.IsAirgap,
-		AirgapBundle:     "",
-		CreateAppDir:     false,
-		ReportWriter:     rewriteOptions.ReportWriter,
+		AppSlug:            rewriteOptions.AppSlug,
+		Namespace:          rewriteOptions.K8sNamespace,
+		RewriteImages:      rewriteOptions.RegistrySettings.Hostname != "",
+		RegistrySettings:   rewriteOptions.RegistrySettings,
+		CopyImages:         rewriteOptions.CopyImages,
+		RootDir:            rewriteOptions.RootDir,
+		IsAirgap:           rewriteOptions.IsAirgap,
+		AirgapBundle:       "",
+		CreateAppDir:       false,
+		ReportWriter:       rewriteOptions.ReportWriter,
+		SkipExistingImages: rewriteOptions.SkipExistingImages,
 	}
 
 	writeMidstreamOptions := commonWriteMidstreamOptions

@@ -1,12 +1,23 @@
 package image
 
 import (
+	"bytes"
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"regexp"
 	"testing"
 
+	godigest "github.com/opencontainers/go-digest"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.podman.io/image/v5/transports/alltransports"
+	containerstypes "go.podman.io/image/v5/types"
 )
 
 func Test_IsPrivateImages(t *testing.T) {
@@ -73,3 +84,264 @@ func Test_IsPrivateImages(t *testing.T) {
 		})
 	}
 }
+
+// mockManifest holds the raw bytes and MIME type a fake registry returns for a
+// /v2/<name>/manifests/<reference> request.
+type mockManifest struct {
+	body        []byte
+	contentType string
+}
+
+// newMockManifestRegistry builds an httptest.Server that responds to the small
+// subset of the v2 registry protocol exercised by destinationManifestMatches:
+//   - GET /v2/                            → 200 (registry version probe)
+//   - GET|HEAD /v2/<name>/manifests/<ref> → manifest body, or 404 if absent
+//
+// Manifests are keyed by `"<name>:<ref>"`. The server uses TLS so the docker
+// transport accepts it; tests must set DestSkipTLSVerify/SrcSkipTLSVerify.
+func newMockManifestRegistry(manifests map[string]mockManifest) *httptest.Server {
+	manifestsRegex := regexp.MustCompile(`^/v2/(.+)/manifests/(.+)$`)
+
+	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v2/" || r.URL.Path == "/v2" {
+			w.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		m := manifestsRegex.FindStringSubmatch(r.URL.Path)
+		if m == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		key := fmt.Sprintf("%s:%s", m[1], m[2])
+		entry, ok := manifests[key]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", entry.contentType)
+		w.Header().Set("Docker-Content-Digest", godigest.FromBytes(entry.body).String())
+		w.WriteHeader(http.StatusOK)
+		if r.Method != http.MethodHead {
+			_, _ = w.Write(entry.body)
+		}
+	}))
+}
+
+// hostFromServer strips the scheme from an httptest server URL so it can be
+// embedded in a docker:// image reference.
+func hostFromServer(t *testing.T, srv *httptest.Server) string {
+	t.Helper()
+	u, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+	return u.Host
+}
+
+func Test_destinationManifestMatches(t *testing.T) {
+	// Two distinct manifest bodies — same media type — produce different digests.
+	srcBody := []byte(`{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","size":1},"layers":[]}`)
+	otherBody := []byte(`{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","digest":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","size":1},"layers":[]}`)
+	contentType := "application/vnd.docker.distribution.manifest.v2+json"
+
+	tests := []struct {
+		name        string
+		manifests   map[string]mockManifest
+		destPath    string // "<name>:<tag>" path on the mock
+		wantMatches bool
+		wantErr     bool
+	}{
+		{
+			name: "destination matches source — skip push",
+			manifests: map[string]mockManifest{
+				"src/app:v1": {body: srcBody, contentType: contentType},
+				"dst/app:v1": {body: srcBody, contentType: contentType},
+			},
+			destPath:    "dst/app:v1",
+			wantMatches: true,
+		},
+		{
+			name: "destination differs from source — proceed with push",
+			manifests: map[string]mockManifest{
+				"src/app:v1": {body: srcBody, contentType: contentType},
+				"dst/app:v1": {body: otherBody, contentType: contentType},
+			},
+			destPath:    "dst/app:v1",
+			wantMatches: false,
+		},
+		{
+			name: "destination tag missing — proceed with push",
+			manifests: map[string]mockManifest{
+				"src/app:v1": {body: srcBody, contentType: contentType},
+				// dst/app:v1 intentionally absent → 404
+			},
+			destPath:    "dst/app:v1",
+			wantMatches: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv := newMockManifestRegistry(tt.manifests)
+			defer srv.Close()
+			host := hostFromServer(t, srv)
+
+			srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s/src/app:v1", host))
+			require.NoError(t, err)
+			destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s/%s", host, tt.destPath))
+			require.NoError(t, err)
+
+			opts := imagetypes.CopyImageOptions{
+				SrcRef:  srcRef,
+				DestRef: destRef,
+			}
+			srcCtx := &containerstypes.SystemContext{
+				DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+				DockerDisableV1Ping:         true,
+			}
+			destCtx := &containerstypes.SystemContext{
+				DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+				DockerDisableV1Ping:         true,
+			}
+
+			got, err := destinationManifestMatches(context.Background(), opts, srcCtx, destCtx)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantMatches, got)
+		})
+	}
+}
+
+// Test_destinationManifestMatches_CanonicalForm verifies the second-pass
+// canonical-bytes check: two manifests that describe the same image but were
+// stored on the wire with different formatting (e.g. extra whitespace or
+// reordered fields) should be recognized as equivalent. This is the case that
+// triggers in the wild — the copy library re-serializes the manifest during a
+// successful first push, so the destination's stored bytes no longer match
+// the source's raw bytes on the second push.
+func Test_destinationManifestMatches_CanonicalForm(t *testing.T) {
+	const (
+		mimeDockerV2  = "application/vnd.docker.distribution.manifest.v2+json"
+		mimeDockerCfg = "application/vnd.docker.container.image.v1+json"
+		mimeDockerLyr = "application/vnd.docker.image.rootfs.diff.tar.gzip"
+	)
+	cfgDigest := "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+	layerDigest := "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+
+	// Source: compact form (no extra whitespace).
+	srcBody := []byte(fmt.Sprintf(
+		`{"schemaVersion":2,"mediaType":%q,"config":{"mediaType":%q,"digest":%q,"size":1},"layers":[{"mediaType":%q,"digest":%q,"size":1}]}`,
+		mimeDockerV2, mimeDockerCfg, cfgDigest, mimeDockerLyr, layerDigest,
+	))
+	// Destination: same image, fields in reversed order with extra whitespace
+	// — what a registry / library might store after parse+serialize round-trip.
+	destBody := []byte(fmt.Sprintf(
+		"{\n  \"schemaVersion\": 2,\n  \"mediaType\": %q,\n  \"config\": {\n    \"size\": 1,\n    \"digest\": %q,\n    \"mediaType\": %q\n  },\n  \"layers\": [\n    {\n      \"size\": 1,\n      \"digest\": %q,\n      \"mediaType\": %q\n    }\n  ]\n}",
+		mimeDockerV2, cfgDigest, mimeDockerCfg, layerDigest, mimeDockerLyr,
+	))
+	require.False(t, bytes.Equal(srcBody, destBody), "test setup: bodies must differ at the byte level for this to exercise the canonical pass")
+
+	srv := newMockManifestRegistry(map[string]mockManifest{
+		"src/app:v1": {body: srcBody, contentType: mimeDockerV2},
+		"dst/app:v1": {body: destBody, contentType: mimeDockerV2},
+	})
+	defer srv.Close()
+	host := hostFromServer(t, srv)
+
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s/src/app:v1", host))
+	require.NoError(t, err)
+	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s/dst/app:v1", host))
+	require.NoError(t, err)
+
+	srcCtx := &containerstypes.SystemContext{
+		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
+	}
+	destCtx := &containerstypes.SystemContext{
+		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
+	}
+
+	got, err := destinationManifestMatches(context.Background(), imagetypes.CopyImageOptions{
+		SrcRef:  srcRef,
+		DestRef: destRef,
+	}, srcCtx, destCtx)
+	require.NoError(t, err)
+	assert.True(t, got, "byte-different but semantically-identical manifests must match via canonical pass")
+}
+
+// Test_destinationManifestMatches_SourceUnreachable verifies the precheck returns
+// an error when the source registry cannot serve the manifest, since the caller
+// cannot proceed with a copy without a readable source either.
+func Test_destinationManifestMatches_SourceUnreachable(t *testing.T) {
+	body := []byte(`{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","digest":"sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","size":1},"layers":[]}`)
+	// Mock holds dest only — source ref will point at a closed port to force
+	// NewImageSource to fail.
+	srv := newMockManifestRegistry(map[string]mockManifest{
+		"dst/app:v1": {body: body, contentType: "application/vnd.docker.distribution.manifest.v2+json"},
+	})
+	defer srv.Close()
+	host := hostFromServer(t, srv)
+
+	srcRef, err := alltransports.ParseImageName("docker://127.0.0.1:1/src/app:v1")
+	require.NoError(t, err)
+	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s/dst/app:v1", host))
+	require.NoError(t, err)
+
+	srcCtx := &containerstypes.SystemContext{
+		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
+	}
+	destCtx := &containerstypes.SystemContext{
+		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
+	}
+
+	_, err = destinationManifestMatches(context.Background(), imagetypes.CopyImageOptions{
+		SrcRef:  srcRef,
+		DestRef: destRef,
+	}, srcCtx, destCtx)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "source")
+}
+
+// Test_destinationManifestMatches_DestUnreachable verifies the precheck returns
+// (false, nil) — not an error — when the destination registry is not reachable.
+// The caller should always fall back to a normal push in that case.
+func Test_destinationManifestMatches_DestUnreachable(t *testing.T) {
+	srv := newMockManifestRegistry(map[string]mockManifest{
+		"src/app:v1": {
+			body:        []byte(`{"schemaVersion":2}`),
+			contentType: "application/vnd.docker.distribution.manifest.v2+json",
+		},
+	})
+	defer srv.Close()
+	host := hostFromServer(t, srv)
+
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s/src/app:v1", host))
+	require.NoError(t, err)
+	// Point dest at a port that won't accept connections.
+	destRef, err := alltransports.ParseImageName("docker://127.0.0.1:1/dst/app:v1")
+	require.NoError(t, err)
+
+	srcCtx := &containerstypes.SystemContext{
+		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
+	}
+	destCtx := &containerstypes.SystemContext{
+		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
+	}
+
+	got, err := destinationManifestMatches(context.Background(), imagetypes.CopyImageOptions{
+		SrcRef:  srcRef,
+		DestRef: destRef,
+	}, srcCtx, destCtx)
+	require.NoError(t, err)
+	assert.False(t, got)
+}
+

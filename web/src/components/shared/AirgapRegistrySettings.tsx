@@ -50,6 +50,7 @@ type State = {
   fetchRegistryErrMsg: string;
   displayErrorModal: boolean;
   isReadOnly: boolean;
+  skipExistingImages: boolean;
   originalRegistry: RegistryDetails | null;
   pingedEndpoint: string;
   showStopUsingWarning: boolean;
@@ -84,6 +85,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       displayErrorModal: false,
       //newly added
       isReadOnly: false,
+      skipExistingImages: false,
       originalRegistry: null,
       pingedEndpoint: "",
       showStopUsingWarning: false,
@@ -101,7 +103,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
   };
 
   onSaveRegistrySettings = async (stopUsingRegistry: boolean) => {
-    let { hostname, username, password, namespace, isReadOnly } = this.state;
+    let { hostname, username, password, namespace, isReadOnly, skipExistingImages } = this.state;
     const { slug } = this.props.params;
 
     if (stopUsingRegistry) {
@@ -110,6 +112,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       password = "";
       namespace = "";
       isReadOnly = false;
+      skipExistingImages = false;
     }
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/registry`, {
@@ -124,6 +127,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
         password,
         namespace,
         isReadOnly,
+        skipExistingImages,
       }),
     })
       .then(async (res) => {
@@ -146,6 +150,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
             password: password,
             namespace: namespace,
             isReadOnly: isReadOnly,
+            skipExistingImages: skipExistingImages,
             isFirstPasswordChange: false,
           });
           this.state.updateChecker.start(this.updateStatus, 1000);
@@ -402,6 +407,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       username,
       namespace,
       isReadOnly,
+      skipExistingImages,
       lastSync,
       testInProgress,
       testFailed,
@@ -623,6 +629,47 @@ class AirgapRegistrySettings extends Component<Props, State> {
                     </p>
                     <p className="u-lineHeight--normal u-fontSize--small help-text-color u-fontWeight--medium">
                       {imagePushSubtext}
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div className="flex u-marginBottom--5">
+            <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
+              <div
+                className={`flex-auto flex ${
+                  skipExistingImages ? "is-active" : ""
+                } ${isReadOnly ? "is-disabled" : ""}`}
+              >
+                <input
+                  type="checkbox"
+                  className="u-cursor--pointer"
+                  data-testid="skip-existing-images-checkbox"
+                  id="skipExistingImages"
+                  checked={skipExistingImages}
+                  disabled={isReadOnly}
+                  onChange={(e) => {
+                    this.handleFormChange(
+                      "skipExistingImages",
+                      e.target.checked
+                    );
+                  }}
+                />
+                <label
+                  htmlFor="skipExistingImages"
+                  className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                  style={{ marginTop: "2px" }}
+                >
+                  <div className="flex flex-column u-marginLeft--5 justifyContent--center">
+                    <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-marginBottom--5">
+                      Skip Pushing Images That Already Exist
+                    </p>
+                    <p className="u-lineHeight--normal u-fontSize--small help-text-color u-fontWeight--medium">
+                      Enable this when the destination registry enforces tag
+                      immutability. Before each push, KOTS checks whether the
+                      destination tag already holds the same image; if so, the
+                      push is skipped instead of being rejected by the registry.
                     </p>
                   </div>
                 </label>
