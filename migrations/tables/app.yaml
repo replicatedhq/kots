@@ -87,3 +87,7 @@ spec:
           notNull: true
       - name: selected_channel_id
         type: text
+      - name: instance_id
+        type: text
+      - name: instance_id_lineage
+        type: text

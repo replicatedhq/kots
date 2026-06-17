@@ -4,9 +4,9 @@ set -e
 
 . dev/scripts/common.sh
 
-# Ensure kubectl context is docker-desktop
-if [ $(kubectl config current-context) != "docker-desktop" ]; then
-    echo "Error: kubectl context is not set to docker-desktop"
+# Ensure kubectl context is orbstack
+if [ $(kubectl config current-context) != "orbstack" ]; then
+    echo "Error: kubectl context is not set to orbstack"
     exit 1
 fi
 

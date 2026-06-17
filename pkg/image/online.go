@@ -1,6 +1,7 @@
 package image
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -182,7 +183,7 @@ func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kots
 		if _, copied := copiedImages[img]; copied {
 			continue
 		}
-		if err := copyOnlineImage(sourceRegistry, destRegistry, img, opts.AppSlug, opts.ReportWriter, log, installationImages, dockerHubRegistry); err != nil {
+		if err := copyOnlineImage(sourceRegistry, destRegistry, img, opts.AppSlug, opts.SkipExistingImages, opts.ReportWriter, log, installationImages, dockerHubRegistry); err != nil {
 			return errors.Wrapf(err, "failed to copy online image %s", img)
 		}
 		copiedImages[img] = true
@@ -191,7 +192,7 @@ func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kots
 	return nil
 }
 
-func copyOnlineImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, installationImages map[string]types.InstallationImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) error {
+func copyOnlineImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, image string, appSlug string, skipExistingImages bool, reportWriter io.Writer, log *logger.CLILogger, installationImages map[string]types.InstallationImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) error {
 	// TODO: This reaches out to internet in airgap installs. It shouldn't.
 	sourceImage := image
 	srcAuth := imagetypes.RegistryAuth{}
@@ -243,13 +244,14 @@ func copyOnlineImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 			Username: destRegistry.Username,
 			Password: destRegistry.Password,
 		},
-		CopyAll:           copyAll,
-		PreserveDigests:   copyAll,
-		SrcDisableV1Ping:  true,
-		SrcSkipTLSVerify:  os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true",
-		DestDisableV1Ping: true,
-		DestSkipTLSVerify: true,
-		ReportWriter:      reportWriter,
+		CopyAll:            copyAll,
+		PreserveDigests:    copyAll,
+		SrcDisableV1Ping:   true,
+		SrcSkipTLSVerify:   os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true",
+		DestDisableV1Ping:  true,
+		DestSkipTLSVerify:  true,
+		ReportWriter:       reportWriter,
+		SkipExistingImages: skipExistingImages,
 	}
 	if err := CopyImage(copyImageOpts); err != nil {
 		return errors.Wrapf(err, "failed to copy %s to %s", sourceImage, destImage)
@@ -306,6 +308,25 @@ func CopyImage(opts types.CopyImageOptions) error {
 		imageListSelection = copy.CopyAllImages
 	}
 
+	// Opt-in idempotency precheck: if the destination tag already holds a manifest
+	// matching the source, skip the copy. Avoids re-pushing manifests to tag-immutable
+	// registries. Off by default — callers (CLI flag, admin-console checkbox) enable
+	// it when targeting registries that enforce tag immutability.
+	if opts.SkipExistingImages {
+		matches, err := destinationManifestMatches(context.Background(), opts, srcCtx, destCtx)
+		if err != nil {
+			return errors.Wrap(err, "failed manifest precheck")
+		}
+		if matches {
+			destRefName := ""
+			if opts.DestRef.DockerReference() != nil {
+				destRefName = opts.DestRef.DockerReference().String()
+			}
+			logger.Infof("Skipping push: destination manifest already matches source (dest=%s)", destRefName)
+			return nil
+		}
+	}
+
 	_, err := CopyImageWithGC(context.Background(), opts.DestRef, opts.SrcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
@@ -315,6 +336,13 @@ func CopyImage(opts types.CopyImageOptions) error {
 		ForceManifestMIMEType: "",
 		ImageListSelection:    imageListSelection,
 		PreserveDigests:       opts.PreserveDigests,
+		// Skip per-child copies when the destination already has the same manifest.
+		// The precheck above handles the parent manifest list; this covers individual
+		// child images and any case where the parent differs but children are already
+		// present. The upstream library skips this for the parent manifest-list write
+		// in the multi-arch path, so the precheck is still required.
+		// known bug: https://github.com/podman-container-tools/container-libs/issues/918
+		OptimizeDestinationImageAlreadyExists: opts.SkipExistingImages,
 	})
 	if err != nil {
 		// When copying multi-arch images with PreserveDigests, the library may fail to write
@@ -436,6 +464,96 @@ func getPolicyContext() (*signature.PolicyContext, error) {
 		return nil, errors.Wrap(err, "failed to create policy")
 	}
 	return policyContext, nil
+}
+
+// destinationManifestMatches reports whether the destination tag already holds a
+// manifest equivalent to the source. When true, the push can be skipped —
+// this makes the copy idempotent against registries that enforce tag
+// immutability and reject overwrite regardless of digest equality.
+//
+// Equivalence is checked in two passes:
+//  1. Raw bytes equal — covers PreserveDigests=true and the pushSourceManifestList
+//     fallback path, where destination bytes match source bytes verbatim.
+//  2. Canonical bytes equal — both manifests are parsed and re-serialized
+//     through the copy library's own parser. Two manifests with the same
+//     image content but different on-the-wire form (whitespace, field order,
+//     small library-normalization differences) round-trip to identical bytes.
+//     This catches the case where a prior push wrote a library-normalized
+//     form to the destination so the raw source bytes no longer match.
+//
+// If the destination is unreachable or the tag does not exist, returns (false, nil)
+// so the caller proceeds with the normal push. Only source-side failures surface as
+// errors, since a missing or unreadable destination should not block the push.
+func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions, srcCtx, destCtx *containerstypes.SystemContext) (bool, error) {
+	destImg, err := opts.DestRef.NewImageSource(ctx, destCtx)
+	if err != nil {
+		// Destination does not exist or is unreachable; fall through to the normal push.
+		// Most commonly this is a 404 on first push, but it also masks transient network
+		// errors, 401/403 from misconfigured destination auth, and 429 rate limits — log
+		// at debug to leave a trail when the optimization isn't firing as expected.
+		logger.Errorf("manifest precheck: opening destination failed, falling through to push: %v", err)
+		return false, nil
+	}
+	defer destImg.Close()
+
+	destManifest, destMIME, err := destImg.GetManifest(ctx, nil)
+	if err != nil {
+		// Destination manifest unreadable; fall through to the normal push.
+		logger.Errorf("manifest precheck: reading destination manifest failed, falling through to push: %v", err)
+		return false, nil
+	}
+
+	srcImg, err := opts.SrcRef.NewImageSource(ctx, srcCtx)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to open source for manifest precheck")
+	}
+	defer srcImg.Close()
+
+	srcManifest, srcMIME, err := srcImg.GetManifest(ctx, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get source manifest for precheck")
+	}
+
+	if bytes.Equal(destManifest, srcManifest) {
+		return true, nil
+	}
+
+	// Second pass: round-trip both manifests through the library's parser+serializer.
+	// If they describe the same image content, the canonical forms are identical
+	// even when the raw bytes differ.
+	canonicalSrc, srcErr := canonicalManifestBytes(srcManifest, srcMIME)
+	canonicalDest, destErr := canonicalManifestBytes(destManifest, destMIME)
+	if srcErr == nil && destErr == nil && bytes.Equal(canonicalSrc, canonicalDest) {
+		logger.Infof("manifest precheck: raw bytes differ but canonical forms match (dest=%s)", opts.DestRef.DockerReference())
+		return true, nil
+	}
+	if srcErr != nil {
+		logger.Errorf("manifest precheck: canonicalizing source failed: %v", srcErr)
+	}
+	if destErr != nil {
+		logger.Errorf("manifest precheck: canonicalizing destination failed: %v", destErr)
+	}
+
+	return false, nil
+}
+
+// canonicalManifestBytes returns the manifest bytes after round-tripping
+// through the copy library's parser and serializer. Two semantically equivalent
+// manifests with different raw bytes (different whitespace, field order, etc.)
+// produce identical canonical bytes.
+func canonicalManifestBytes(b []byte, mime string) ([]byte, error) {
+	if manifest.MIMETypeIsMultiImage(mime) {
+		list, err := manifest.ListFromBlob(b, mime)
+		if err != nil {
+			return nil, err
+		}
+		return list.Serialize()
+	}
+	m, err := manifest.FromBlob(b, mime)
+	if err != nil {
+		return nil, err
+	}
+	return m.Serialize()
 }
 
 // pushSourceManifestList fetches the raw manifest list from the source and pushes it

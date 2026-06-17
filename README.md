@@ -31,7 +31,7 @@ cosign verify-blob --key sbom/key.pub --bundle sbom/kots-sbom.tgz.bundle sbom/ko
 ### Requirements
 
 - MacOS
-- Docker Desktop with Kubernetes enabled
+- OrbStack with Kubernetes enabled
 - Homebrew
 
 ### Running the Development Environment

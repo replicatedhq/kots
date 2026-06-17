@@ -17,6 +17,7 @@ type InstanceReportEvent struct {
 	ReportedAt                int64  `json:"reported_at"`
 	LicenseID                 string `json:"license_id"`
 	InstanceID                string `json:"instance_id"`
+	RestoredFromInstanceID    string `json:"restored_from_instance_id,omitempty"`
 	ClusterID                 string `json:"cluster_id"`
 	AppStatus                 string `json:"app_status"`
 	IsKurl                    bool   `json:"is_kurl"`

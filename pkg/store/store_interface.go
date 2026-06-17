@@ -133,6 +133,11 @@ type AppStore interface {
 	RemoveApp(appID string) error
 	SetAppChannelChanged(appID string, channelChanged bool) error
 	SetAppSelectedChannelID(appID string, channelID string) error
+	// GetAppInstanceID returns the instance ID reported for the app and the restore lineage
+	// (previous instance IDs, oldest first). Falls back to the app ID when no instance ID
+	// has been generated for the app.
+	GetAppInstanceID(appID string) (instanceID string, lineage []string, err error)
+	SetAppInstanceID(appID string, instanceID string, lineage []string) error
 }
 
 type DownstreamStore interface {
@@ -231,6 +236,10 @@ type InstallationStore interface {
 type KotsadmParamsStore interface {
 	IsKotsadmIDGenerated() (bool, error)
 	SetIsKotsadmIDGenerated() error
+	// GetEnvironmentFingerprint returns the stored environment fingerprint, or an empty
+	// string if one has not been recorded yet.
+	GetEnvironmentFingerprint() (string, error)
+	SetEnvironmentFingerprint(fingerprint string) error
 }
 
 type EmbeddedStore interface {

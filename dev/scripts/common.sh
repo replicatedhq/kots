@@ -64,11 +64,9 @@ function restart() {
   fi
 }
 
-# The /host_mnt directory on Docker Desktop for macOS is a virtualized path that represents
-# the mounted directories from the macOS host filesystem into the Docker Desktop VM.
-# This is required for using HostPath volumes in Kubernetes.
+# OrbStack mounts the macOS host filesystem directly into the VM at the same path.
 function render() {
-  PROJECT_DIR="/host_mnt$(pwd)" gomplate --missing-key zero -f "$1"
+  PROJECT_DIR="$(pwd)" gomplate --missing-key zero -f "$1"
 }
 
 # The embedded-cluster container mounts the KOTS project at /replicatedhq/kots
