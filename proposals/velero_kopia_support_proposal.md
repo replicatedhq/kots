@@ -1,6 +1,6 @@
-# Proposal: Velero Kopia Support (with Restic preserved)
-
 ## Executive Summary
+
+kURL and KOTS supports Velero up to version 1.16, which supports Kubernetes below 1.34.  Customers with Kubernetes versions 1.34+ do not have a tested, supported version of Velero to use with KOTS/kURL.  Replicated will stop support for Kubernetes 1.33 at the end of June 2026\.
 
 Velero **1.17 made Kopia the only file-system backup (FSB) uploader** and removed the `--uploader-type=restic` install flag. KOTS currently hard-codes Restic in its install instructions, e2e tests, and generated `BackupStorageLocation` configs. Without changes, customers who install or upgrade to Velero 1.17+ will receive invalid install commands and snapshots will fail.
 
@@ -10,33 +10,36 @@ This proposal recommends making KOTS **version-aware** so that it emits the corr
 
 ## Scope
 
-- **Velero versions:** 1.5.1 through **1.18.x** (the currently supported range). Velero **1.19 is out of scope** for now.  
+- **Velero versions:** 1.10.1 through **1.18.x** (the currently supported range). Velero **1.19 is out of scope** for now.  
+  - 1.19 will remove customer's ability to restore Restic backups, and is out of scope for this reason.  
+  -   
 - **KOTS, kURL, LVP plugin, and docs** are all in scope because each touches the install experience or compatibility claims.  
 - **No migration** of existing Restic backups.  
 - We do not enforce Velero and Kubernetes version coordination, it remains possible to install unsupported combinations.
 
 ## Customer problem and why this matters
 
-- A customer on Velero 1.16 who later upgrades to 1.17 will find that KOTS-generated install instructions no longer work (`--uploader-type=restic` is rejected), and if they are successful they will fail to make backups.  
+- A customer on Velero 1.16 who later upgrades to 1.17 will find that KOTS-generated install instructions no longer work (`--uploader-type=restic` is rejected), and if they upgrade disregarding the instructions, they will fail to make backups.  
 - A customer on kURL cannot select Velero 1.17 or 1.18 because those add-on versions are not available.  
-- Our public docs still say KOTS supports only Restic, which is no longer true for Velero 1.17+.  
+- Our public docs still say KOTS supports only Restic  
 - Without this work, KOTS appears to lag behind a supported upstream dependency, blocking security and bug-fix upgrades for customers who rely on snapshots.  
   - Velero 1.16 is only tested up to Kubernetes 1.33
 
 ## Customer interaction and upgrade path
 
-### Existing customers with Restic backups
+### Customers upgrading KOTS but not Velero
 
 - **No action is required** when upgrading KOTS alone. KOTS will continue to detect the installed Velero version and generate the correct flags for that version.  
+- **Restic support is not planned for removal.** Because customers keep older installations running for a long time, KOTS will keep the Restic fallback code and documentation.  
+- Kubernetes version limitations will be documented on the docs site.
+
+### Customers who upgrade Velero to 1.17+
+
 - **Restic backups remain restorable.** Velero 1.17 and 1.18 can still restore from Restic repositories, and KOTS will preserve the `resticRepoPrefix` config on existing Restic-era `BackupStorageLocation` objects.  
 - **KOTS does not delete or migrate Restic repositories.** New backups on Velero 1.17+ will use Kopia repositories alongside the existing Restic data.  
 - **New backups use Kopia automatically.** The first scheduled or manually triggered backup after the Velero upgrade will create Kopia repositories. There is no need to force a new backup.  
-- **Restic support is not planned for removal.** Because customers keep older installations running for a long time, KOTS will keep the Restic fallback code and documentation.  
-- **Customer communication:** Show a non-blocking informational banner in the Admin Console when Velero 1.17+ is detected and Restic snapshots exist, explaining that new backups will use Kopia and that existing Restic backups are still restorable. Also document the behavior in the upgrade and snapshot docs.
-- **Pod volume discovery is unchanged.** KOTS already uses the `backup.velero.io/backup-volumes` annotation to opt volumes into file-system backup. This annotation is uploader-agnostic and works for both Restic and Kopia.
-
-### Customers who upgrade Velero
-
+- **Customer communication:** Show a non-blocking informational banner in the Admin Console when Velero 1.17+ is detected and Restic snapshots exist, explaining that new backups will use Kopia and that existing Restic backups are still restorable. Also document the behavior in the upgrade and snapshot docs.  
+- **Pod volume discovery is unchanged.** KOTS already uses the `backup.velero.io/backup-volumes` annotation to opt volumes into file-system backup. This annotation is uploader-agnostic and works for both Restic and Kopia.  
 - Velero upgrades are only supported one minor version at a time. A customer on 1.16 can go to 1.17, then 1.18, using KOTS guidance.  
 - KOTS will show the correct install command for each version:  
   - **Velero \< 1.10:** `--use-restic --use-volume-snapshots=false`  
@@ -45,7 +48,7 @@ This proposal recommends making KOTS **version-aware** so that it emits the corr
 - For customers who want Kopia on 1.10–1.16, the `--uploader-type=kopia` flag can be used explicitly, but KOTS will default to the upstream default for each version to avoid surprises.  
 - To display the right instructions, we will need to know the version to be installed.  We provide instructions prior to the installation, so will have to just **ask an additional question** in order to get the correct configuration.
 
-### Customers upgrading an existing Velero 1.16 installation to 1.17+
+### Upgrade process from a customer point of view
 
 KOTS detects whether Velero is already installed by checking for the `velero` Deployment and the node-agent DaemonSet in the `velero` namespace. When an existing installation is detected, KOTS shows **upgrade instructions** instead of a fresh-install command.
 
@@ -53,17 +56,21 @@ For a customer on 1.16 who wants to upgrade to 1.17+:
 
 1. **Install the Velero 1.17+ CLI.**  
 2. **Update the Velero CRDs:**
-   ```bash
-   velero install --crds-only --dry-run -o yaml | kubectl apply -f -
-   ```
+
+```shell
+velero install --crds-only --dry-run -o yaml | kubectl apply -f -
+```
+
 3. **Remove or change the stale `--uploader-type=restic` flag** in the Velero deployment and node-agent DaemonSet. The official Velero docs suggest replacing it with `--uploader-type=kopia`:
-   ```bash
-   kubectl get deploy -n velero -ojson \
-     | sed 's/"--uploader-type=restic"/"--uploader-type=kopia"/g' \
-     | kubectl apply -f -
-   ```
-4. **Update the Velero and plugin images** to the target 1.17.x/1.18.x version.
-5. **Confirm the upgrade** with `velero version`.
+
+```shell
+kubectl get deploy -n velero -ojson \
+  | sed 's/"--uploader-type=restic"/"--uploader-type=kopia"/g' \
+  | kubectl apply -f -
+```
+
+4. **Update the Velero and plugin images** to the target 1.17.x/1.18.x version.  
+5. **Confirm the upgrade** using the `velero version` command.
 
 KOTS will not automate these steps, but it will surface the correct version-aware instructions and a link to the official Velero upgrade docs. **No BSL reconfiguration is required**: existing Restic backups remain restorable, and new backups will use Kopia automatically.
 
@@ -73,16 +80,17 @@ After the upgrade, if the customer re-configures the storage destination through
 
 - New installs will use whatever Velero version they provide. KOTS will generate the correct command and storage config for that version.  
 - The Admin Console destination picker (AWS, GCP, Azure, S3-compatible, Internal, NFS, HostPath) does not change; it only drives the backend config differently based on the Velero version.
-
 ## What needs to change, and where
 
 ### What is the Replicated LVP plugin and how is it installed?
 
-The `replicated/local-volume-provider` Velero plugin is an object-store plugin that lets Velero use a local filesystem path as a `BackupStorageLocation`. KOTS installs it by adding the plugin image to the `velero install` command via the `--plugins` flag, for example:
+The `replicated/local-volume-provider` Velero plugin is an object-store plugin that lets Velero use a local filesystem path as a `BackupStorageLocation`.
 
-```bash
-velero install ... --plugins docker.io/replicated/local-volume-provider:0.6.14
-```
+**How it is installed:**
+
+When KOTS (or the user) runs `velero install --plugins docker.io/replicated/local-volume-provider:<tag>`, Velero adds the plugin image as an **init container** to the Velero deployment. The init container copies the plugin binary into the `/plugins` emptyDir volume. The Velero server container then loads it at startup. This is the same mechanism used for all Velero plugins (AWS, GCP, Azure, etc.).
+
+**Where it is used:**
 
 It is used **only** for internal storage destinations chosen in the Admin Console:
 
@@ -144,12 +152,75 @@ The LVP plugin is a filesystem ObjectStore. Kopia can store repository data thro
 
 | Limitation | Why it can break Kopia | Why it didn't break Restic |
 | :---- | :---- | :---- |
+| **Kopia does not recognize LVP provider names** | Velero's Kopia backend mapping only accepts `velero.io/aws`, `velero.io/azure`, `velero.io/gcp`, and `velero.io/fs`. The LVP plugin registers `replicated.com/hostpath`, `replicated.com/nfs`, and `replicated.com/pvc`, which Velero's `GetBackendType` treats as invalid for Kopia. | Restic used the LVP object-store plugin directly via `resticRepoPrefix`; it did not need a Kopia backend mapping. |
 | **Read-only root filesystem** | Kopia needs writable `/home/cnb/udmrepo` and `/home/cnb/.cache` in the Velero/node-agent/data mover pods. | Restic did not require writable pod-local directories. |
 | **Data mover pods may not inherit node-agent security context** | The LVP plugin sets `fsGroup`/`runAsUser` only on the node-agent DaemonSet; Kopia data mover pods are created separately and may not get the same context. | Restic ran inside the node-agent container itself, so it inherited the context. |
 | **`ListObjects` returns directories** | `ListObjects` in `pkg/plugin/plugin.go` returns both files and directories. Kopia's blob layer expects a flat list of objects; receiving directory names like `kopia/ns1/q` can cause it to try to read a directory as an object. | Restic apparently tolerated directory entries in listings. |
 | **Multi-node HostPath scheduling** | Kopia data mover pods inherit node-agent volumes; if Velero schedules them on a different node, the HostPath mount points to the wrong filesystem. | Restic ran in-process in the node-agent, so it was always on the same node. |
 | **PVC requires RWX** | The plugin creates PVCs with `ReadWriteMany`. | Same limitation for Restic. |
 | **No file locking / concurrency support** | `PutObject`/`GetObject`/`DeleteObject` are simple file operations. Multiple Kopia data mover pods could race on repository files. | Restic ran serially in the node-agent. |
+
+#### Kopia backend compatibility with the LVP plugin
+
+This is the most important finding from the Velero 1.17 code review.
+
+**Velero's Kopia repository does not use the object-store plugin interface.** It has its own built-in backends: `s3`, `azure`, `gcs`, and `filesystem`. The BSL provider is mapped to one of these backends in `pkg/repository/config/config.go` and `pkg/repository/provider/unified_repo.go`:
+
+```go
+// pkg/repository/config/config.go
+const (
+    AWSBackend   BackendType = "velero.io/aws"
+    AzureBackend BackendType = "velero.io/azure"
+    GCPBackend   BackendType = "velero.io/gcp"
+    FSBackend    BackendType = "velero.io/fs"
+)
+
+func GetBackendType(provider string, config map[string]string) BackendType {
+    ...
+    if IsBackendTypeValid(bt) {
+        return bt
+    } else if config != nil && config["s3Url"] != "" {
+        return AWSBackend  // S3-compatible stores are treated as AWS
+    } else {
+        return bt
+    }
+}
+
+func IsBackendTypeValid(backendType BackendType) bool {
+    return (backendType == AWSBackend || backendType == AzureBackend || backendType == GCPBackend || backendType == FSBackend)
+}
+```
+
+If the BSL provider is not one of those four recognized types and there is no `s3Url`, Kopia returns an **"invalid storage provider"** error when it tries to initialize or connect to the repository.
+
+The LVP plugin registers these providers:
+
+```go
+// replicatedhq/local-volume-provider/cmd/local-volume-provider/main.go
+RegisterObjectStore("replicated.com/hostpath", newHostPathObjectStorePlugin).
+RegisterObjectStore("replicated.com/nfs", newNFSObjectStorePlugin).
+RegisterObjectStore("replicated.com/pvc", newPVCObjectStorePlugin).
+```
+
+None of these are recognized by Kopia. Therefore, with the current LVP plugin and current Velero 1.17 code, **Kopia cannot create a repository against a BSL that uses `replicated.com/hostpath`, `replicated.com/nfs`, or `replicated.com/pvc`. File-system backups using HostPath/NFS/PVC will fail on Velero 1.17+.**
+
+**What still works:**
+
+- The LVP plugin is still installed as an init container and is still loaded by Velero.
+- Backups that do not use file-system backup (i.e., backups that store only Kubernetes metadata and CSI/native volume snapshots) can still use the LVP object-store plugin for metadata storage, because those operations use the object-store interface, not Kopia.
+
+**What does not work:**
+
+- Kopia FSB backups against HostPath/NFS/PVC destinations, because Kopia cannot map the LVP provider to a supported backend.
+
+**What would need to change to make it work:**
+
+There are a few options, listed from least to most invasive:
+
+1. **For KOTS internal storage, keep the S3-compatible Minio path when Kopia is used.** KOTS already uses the Minio path (`provider: aws`, `s3Url: ...`) unless the user has explicitly disabled filesystem Minio. Kopia recognizes `aws`+`s3Url` as S3, so FSB works. This means we should not automatically migrate Minio-backed internal storage to LVP when upgrading to Velero 1.17+.
+2. **Make the LVP plugin register a `velero.io/fs` provider** (or alias) and configure the BSL with `provider: velero.io/fs`. Kopia would then map it to `FSBackend` and use Kopia's own filesystem backend to write to the mounted path. The LVP plugin would still be needed to mount the path, but the object-store provider name would change.
+3. **Modify Velero's `GetBackendType`** to map `replicated.com/hostpath`, `replicated.com/nfs`, and `replicated.com/pvc` to `FSBackend`. This requires a change to upstream Velero and is outside KOTS's control.
+4. **Deprecate LVP-backed HostPath/NFS/PVC for FSB on Velero 1.17+** and direct customers to S3-compatible storage (Minio) for local storage. This is a product decision with support and docs implications.
 
 #### Read-only root filesystem workaround
 
@@ -251,12 +322,16 @@ These changes are safe for existing Restic installations and can be released in 
 
 A minimal description of the required changes:
 
-- Update `docs/partials/snapshots/_velero-compatibility.mdx` to list Velero 1.17.x and 1.18.x as supported.  
+- Update `docs/partials/snapshots/_velero-compatibility.mdx` to list Velero 1.17.x and 1.18.x as supported and against which Kubernetes versions of both KOTS and Kubernetes.  
 - Update `docs/enterprise/snapshots-overview.mdx` to replace "Replicated supports only the restic backup program for pod volume data" with a statement that KOTS supports Velero's file-system backup uploader (Restic for Velero 1.16 and earlier, Kopia for Velero 1.17 and later).  
 - Update `docs/enterprise/snapshots-storage-destinations.md` to show the version-aware install flags and to remove the hard-coded `--uploader-type=restic` from Velero 1.17+ examples.  
 - Update `docs/enterprise/snapshots-velero-cli-installing.md` and `docs/enterprise/snapshots-velero-installing-config.mdx` to mention Kopia for 1.17+ and to update node-agent memory/timeout guidance.  
 - Update `docs/enterprise/snapshots-troubleshooting-backup-restore.md` to add a Kopia troubleshooting section (e.g., data mover pods, BackupRepository, read-only root filesystem) and keep the Restic section for older versions.  
-- Update kURL Velero add-on docs to list the new add-on versions and clarify the `disableRestic` / `resticTimeout` semantics.
+- Update kURL Velero add-on docs to list the new add-on versions and clarify the `disableRestic` / `resticTimeout` semantics.  
+- Add a section describing the appropriate way to upgrade Velero  
+  - one version at a time (kURL manages this but KOTS with existing cluster relies on the cluster admin)  
+  - when backups need to be made  
+  - when backups made with versions 1.16 and below are abe to be restored up to 1.18.
 
 ## High-level release plan
 
@@ -281,8 +356,12 @@ The work can be delivered as four independent, backward-compatible releases. Eac
 
 1. **Release notes:** Clearly state that KOTS now supports Velero 1.17 and 1.18 (Kopia) while preserving Restic support for earlier versions. Include a note that customers can upgrade Velero at their own pace and that existing Restic backups are not migrated or deleted.  
 2. **Docs:** Publish updated install, storage-destination, and troubleshooting topics before or alongside the release. Include a short migration/upgrade page explaining the version-by-version upgrade path.  
+   - Ensure that it is clear that upgrading from 1.16 or earlier means that the existing backups made with Restic are able to be restored until 1.19 is installed.  
+   - Explain that new backups are made using Kopia.  
+   - State explicitly that Restic restore support will be removed in a future Velero version, so they should not rely on pre-migration backups as their only DR safety net long-term  
 3. **In-product messages:** The Admin Console "Install Velero" instructions will automatically show the correct command for the detected Velero version, so no manual customer action is required. No new banner or warning is needed unless we want to proactively tell customers on Restic that they are on a supported path.  
-4. **Support enablement:** Provide support with a short internal note on Kopia vs Restic repository paths, the `resticRepoPrefix` behavior, and the read-only-root-filesystem workaround.
+   - Ensure that the message in the instructions includes a warning that a backup should be taken immediately even if there are existing backups, in order to consider the DR functional.  
+4. **Support enablement:** Provide a Community article with a short note on Kopia vs Restic repository paths, the `resticRepoPrefix` behavior, and the read-only-root-filesystem workaround.
 
 ## How we will be confident the result works for both Velero 1.16 and 1.17/1.18
 
