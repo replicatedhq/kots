@@ -8,7 +8,10 @@ import Loader from "../shared/Loader";
 import SnapshotStorageDestination from "./SnapshotStorageDestination";
 
 import "../../scss/components/shared/SnapshotForm.scss";
-import { isVeleroCorrectVersion } from "../../utilities/utilities";
+import {
+  isVeleroCorrectVersion,
+  isVelero117OrNewer,
+} from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import { App } from "@types";
 import Icon from "../Icon";
@@ -25,6 +28,9 @@ type State = {
     veleroVersion: string;
     veleroPod?: object;
     nodeAgentPods?: object[];
+    store?: {
+      hasResticRepoPrefix?: boolean;
+    };
   };
   isLoadingSnapshotSettings: boolean;
   snapshotSettingsErr: boolean;
@@ -359,13 +365,29 @@ class SnapshotSettings extends Component<Props, State> {
     return (
       <div className="flex1 flex-column u-overflow--auto">
         <KotsPageTitle pageName="Snapshot Settings" />
-        {!isVeleroCorrectVersion(snapshotSettings) &&
-        !checkForVeleroAndNodeAgent ? (
+        {isVelero117OrNewer(snapshotSettings) &&
+        snapshotSettings?.store?.hasResticRepoPrefix ? (
+          <div className="VeleroWarningBlock">
+            <Icon icon={"warning"} size={24} className="warning-color" />
+            <div>
+              <p>
+                Warning: backup locations need to be reconfigured for backups to
+                be successful
+              </p>
+              <button
+                className="btn primary blue u-marginTop--10"
+                onClick={this.toggleConfigureSnapshotsModal}
+              >
+                Reconfigure backup location
+              </button>
+            </div>
+          </div>
+        ) : !isVeleroCorrectVersion(snapshotSettings) &&
+          !checkForVeleroAndNodeAgent ? (
           <div className="VeleroWarningBlock">
             <Icon icon={"warning"} size={24} className="warning-color" />
             <p>
-              {" "}
-              To use snapshots reliably, install Velero version 1.5.1 or greater{" "}
+              To use snapshots reliably, install Velero version 1.5.1 or greater
             </p>
           </div>
         ) : null}
