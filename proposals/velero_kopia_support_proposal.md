@@ -36,8 +36,9 @@ This proposal recommends making KOTS **version-aware** so that it emits the corr
 ### Customers who upgrade Velero to 1.17+
 
 - **Restic backups remain restorable.** Velero 1.17 and 1.18 can still restore from Restic repositories, and KOTS will preserve the `resticRepoPrefix` config on existing Restic-era `BackupStorageLocation` objects.  
-- **KOTS does not delete or migrate Restic repositories.** New backups on Velero 1.17+ will use Kopia repositories alongside the existing Restic data.  
+- **KOTS does not delete or migrate Restic repositories.** New backups on Velero 1.17+ will use Kopia repositories alongside the existing Restic data, **provided the BackupStorageLocation is compatible with Kopia**.  
 - **New backups use Kopia automatically.** The first scheduled or manually triggered backup after the Velero upgrade will create Kopia repositories. There is no need to force a new backup.  
+- **LVP BSLs are an exception.** If the existing BSL uses the LVP plugin (`replicated.com/hostpath`, `replicated.com/nfs`, or `replicated.com/pvc`), Kopia cannot create a repository against it. The customer must reconfigure to a Kopia-compatible BSL (e.g., S3-compatible storage) for new FSB backups. Existing Restic backups remain restorable.  
 - **Customer communication:** Show a non-blocking informational banner in the Admin Console when Velero 1.17+ is detected and Restic snapshots exist, explaining that new backups will use Kopia and that existing Restic backups are still restorable. Also document the behavior in the upgrade and snapshot docs.  
 - **Pod volume discovery is unchanged.** KOTS already uses the `backup.velero.io/backup-volumes` annotation to opt volumes into file-system backup. This annotation is uploader-agnostic and works for both Restic and Kopia.  
 - Velero upgrades are only supported one minor version at a time. A customer on 1.16 can go to 1.17, then 1.18, using KOTS guidance.  
@@ -72,14 +73,15 @@ kubectl get deploy -n velero -ojson \
 4. **Update the Velero and plugin images** to the target 1.17.x/1.18.x version.  
 5. **Confirm the upgrade** using the `velero version` command.
 
-KOTS will not automate these steps, but it will surface the correct version-aware instructions and a link to the official Velero upgrade docs. **No BSL reconfiguration is required**: existing Restic backups remain restorable, and new backups will use Kopia automatically.
+KOTS will not automate these steps, but it will surface the correct version-aware instructions and a link to the official Velero upgrade docs. **No BSL reconfiguration is required for Restic restores**: existing Restic backups remain restorable. **If the existing BSL uses LVP (HostPath/NFS/PVC), a new Kopia-compatible BSL is required for new FSB backups** because Kopia cannot use the LVP plugin.
 
-After the upgrade, if the customer re-configures the storage destination through KOTS (e.g., `kubectl kots velero configure-hostpath`), KOTS will generate a Kopia-compatible BSL config (Release 3).
+After the upgrade, if the customer re-configures the storage destination through KOTS for Velero 1.17+, KOTS will generate an S3-compatible BSL config (e.g., the internal Minio path) instead of an LVP-backed config.
 
 ### New customers
 
 - New installs will use whatever Velero version they provide. KOTS will generate the correct command and storage config for that version.  
-- The Admin Console destination picker (AWS, GCP, Azure, S3-compatible, Internal, NFS, HostPath) does not change; it only drives the backend config differently based on the Velero version.
+- The Admin Console destination picker (AWS, GCP, Azure, S3-compatible, Internal, NFS, HostPath) does not change for destination selection, but for Velero 1.17+ the HostPath/NFS/PVC options are not available for new file-system backups because the LVP plugin is not compatible with Kopia. KOTS should warn or disable those options when Velero 1.17+ is selected and route the customer to S3-compatible storage for local FSB.  
+- For Velero 1.17+, KOTS will use the S3-compatible Minio internal-storage path (`provider: aws` with `s3Url`) for local/internal FSB instead of LVP.
 ## What needs to change, and where
 
 ### What is the Replicated LVP plugin and how is it installed?
@@ -111,7 +113,7 @@ When the customer selects one of these internal destinations, KOTS generates the
 | `e2e/velero/cli.go` | Remove the hard-coded `--uploader-type=restic`; use the version-appropriate flag. |
 | `e2e/playwright/regression/shared/cli.ts` | Replace the single `isVelero10OrNewer` flag branch with a version-aware helper. |
 | `e2e/scripts/deps.sh` | Move from a hard pin to `v1.16.2` to a parameterized/matrix approach so CI can run against both `v1.16.x` and `v1.18.x`. |
-| `pkg/snapshot/store.go` | Preserve `resticRepoPrefix` on existing Restic-era LVP/PVC stores; omit it for new Kopia-era stores. See the explicit detection rule below. |
+| `pkg/snapshot/store.go` | For Velero 1.17+, do not create new BSLs with LVP providers (`replicated.com/hostpath`, `replicated.com/nfs`, `replicated.com/pvc`). Use S3-compatible storage for local/internal FSB. Preserve `resticRepoPrefix` on existing Restic-era BSLs. See the explicit detection rule below. |
 | `cmd/kots/cli/velero.go` | Remove the unused `resticRepoBase` constant. |
 | `pkg/kotsadmsnapshot/logparser_test.go` | Add Kopia/Velero 1.17 log fixtures; keep Restic fixtures for regression coverage. |
 
@@ -146,25 +148,20 @@ A minimal description of the required changes:
 
 ### 3\. LVP plugin repo (`replicatedhq/local-volume-provider`)
 
-The LVP plugin is a filesystem ObjectStore. Kopia can store repository data through the same interface, but Restic-era assumptions in the plugin create operational gaps for Kopia.
+**What the LVP plugin supports:**
 
-#### LVP limitations found in code review
+The LVP plugin is an object-store plugin for Velero. It supports:
 
-| Limitation | Why it can break Kopia | Why it didn't break Restic |
-| :---- | :---- | :---- |
-| **Kopia does not recognize LVP provider names** | Velero's Kopia backend mapping only accepts `velero.io/aws`, `velero.io/azure`, `velero.io/gcp`, and `velero.io/fs`. The LVP plugin registers `replicated.com/hostpath`, `replicated.com/nfs`, and `replicated.com/pvc`, which Velero's `GetBackendType` treats as invalid for Kopia. | Restic used the LVP object-store plugin directly via `resticRepoPrefix`; it did not need a Kopia backend mapping. |
-| **Read-only root filesystem** | Kopia needs writable `/home/cnb/udmrepo` and `/home/cnb/.cache` in the Velero/node-agent/data mover pods. | Restic did not require writable pod-local directories. |
-| **Data mover pods may not inherit node-agent security context** | The LVP plugin sets `fsGroup`/`runAsUser` only on the node-agent DaemonSet; Kopia data mover pods are created separately and may not get the same context. | Restic ran inside the node-agent container itself, so it inherited the context. |
-| **`ListObjects` returns directories** | `ListObjects` in `pkg/plugin/plugin.go` returns both files and directories. Kopia's blob layer expects a flat list of objects; receiving directory names like `kopia/ns1/q` can cause it to try to read a directory as an object. | Restic apparently tolerated directory entries in listings. |
-| **Multi-node HostPath scheduling** | Kopia data mover pods inherit node-agent volumes; if Velero schedules them on a different node, the HostPath mount points to the wrong filesystem. | Restic ran in-process in the node-agent, so it was always on the same node. |
-| **PVC requires RWX** | The plugin creates PVCs with `ReadWriteMany`. | Same limitation for Restic. |
-| **No file locking / concurrency support** | `PutObject`/`GetObject`/`DeleteObject` are simple file operations. Multiple Kopia data mover pods could race on repository files. | Restic ran serially in the node-agent. |
+- **Restic-based file-system backups** on Velero 1.16 and earlier.
+- **Metadata-only backups** on any Velero version where the BSL provider is one of the LVP providers (`replicated.com/hostpath`, `replicated.com/nfs`, or `replicated.com/pvc`). These operations use the object-store interface, not Kopia.
 
-#### Kopia backend compatibility with the LVP plugin
+**What it does not support:**
 
-This is the most important finding from the Velero 1.17 code review.
+- **Kopia file-system backups on Velero 1.17+.** This is a fundamental incompatibility, not a bug in the LVP plugin.
 
-**Velero's Kopia repository does not use the object-store plugin interface.** It has its own built-in backends: `s3`, `azure`, `gcs`, and `filesystem`. The BSL provider is mapped to one of these backends in `pkg/repository/config/config.go` and `pkg/repository/provider/unified_repo.go`:
+**Why Kopia cannot use the LVP plugin:**
+
+Velero 1.17’s Kopia integration does not use the object-store plugin interface. It has its own built-in backends: `s3`, `azure`, `gcs`, and `filesystem`. Velero maps the BSL provider to one of these backends in `pkg/repository/config/config.go` and `pkg/repository/provider/unified_repo.go`. Only these providers are recognized:
 
 ```go
 // pkg/repository/config/config.go
@@ -175,23 +172,10 @@ const (
     FSBackend    BackendType = "velero.io/fs"
 )
 
-func GetBackendType(provider string, config map[string]string) BackendType {
-    ...
-    if IsBackendTypeValid(bt) {
-        return bt
-    } else if config != nil && config["s3Url"] != "" {
-        return AWSBackend  // S3-compatible stores are treated as AWS
-    } else {
-        return bt
-    }
-}
-
 func IsBackendTypeValid(backendType BackendType) bool {
     return (backendType == AWSBackend || backendType == AzureBackend || backendType == GCPBackend || backendType == FSBackend)
 }
 ```
-
-If the BSL provider is not one of those four recognized types and there is no `s3Url`, Kopia returns an **"invalid storage provider"** error when it tries to initialize or connect to the repository.
 
 The LVP plugin registers these providers:
 
@@ -202,121 +186,41 @@ RegisterObjectStore("replicated.com/nfs", newNFSObjectStorePlugin).
 RegisterObjectStore("replicated.com/pvc", newPVCObjectStorePlugin).
 ```
 
-None of these are recognized by Kopia. Therefore, with the current LVP plugin and current Velero 1.17 code, **Kopia cannot create a repository against a BSL that uses `replicated.com/hostpath`, `replicated.com/nfs`, or `replicated.com/pvc`. File-system backups using HostPath/NFS/PVC will fail on Velero 1.17+.**
+None of these are recognized by Kopia. When Kopia tries to initialize or connect to a repository against an LVP BSL, Velero returns an **"invalid storage provider"** error.
 
-**What still works:**
+**Why a custom object-store plugin is not enough for Kopia**
 
-- The LVP plugin is still installed as an init container and is still loaded by Velero.
-- Backups that do not use file-system backup (i.e., backups that store only Kubernetes metadata and CSI/native volume snapshots) can still use the LVP object-store plugin for metadata storage, because those operations use the object-store interface, not Kopia.
+The Velero docs you linked are correct that custom plugins can supply object-store backup locations. The LVP plugin does exactly that: it implements Velero’s `ObjectStore` interface and serves backup metadata, logs, and restore logs. That part works fine.
 
-**What does not work:**
+The missing piece is that **Velero’s Kopia repository layer does not use the object-store plugin interface.** Kopia’s repository is handled by a separate, non-pluggable layer in Velero (the Unified Repository / Kopia integration). It has its own built-in backends (`s3`, `azure`, `gcs`, `filesystem`) and chooses the backend by looking up the BSL provider name in a hardcoded map. The LVP plugin’s object-store implementation is never invoked for Kopia repository operations.
 
-- Kopia FSB backups against HostPath/NFS/PVC destinations, because Kopia cannot map the LVP provider to a supported backend.
+So the issue is not “can we write a custom object-store plugin?” — we already did that. The issue is “can Kopia use a custom object-store plugin as its repository backend?” — and the answer in Velero 1.17/1.18 is no. It can only use the four built-in backends, and it only recognizes the four provider names above.
 
-**What would need to change to make it work:**
+**What about `velero.io/fs`?**
 
-There are a few options, listed from least to most invasive:
+`velero.io/fs` is one of the four recognized Kopia backend types, so it would allow Kopia to use its own filesystem blob storage backend. However, `velero.io/fs` is **not** a built-in Velero object-store plugin. Velero's `pkg/cmd/server/plugin/plugin.go` registers internal item-action plugins, but it does not register an object-store plugin for `velero.io/fs`. If the BSL provider were set to `velero.io/fs`, Velero would fail to load the object-store plugin that handles backup metadata (the tarball, JSON files, logs, etc.).
 
-1. **For KOTS internal storage, keep the S3-compatible Minio path when Kopia is used.** KOTS already uses the Minio path (`provider: aws`, `s3Url: ...`) unless the user has explicitly disabled filesystem Minio. Kopia recognizes `aws`+`s3Url` as S3, so FSB works. This means we should not automatically migrate Minio-backed internal storage to LVP when upgrading to Velero 1.17+.
-2. **Make the LVP plugin register a `velero.io/fs` provider** (or alias) and configure the BSL with `provider: velero.io/fs`. Kopia would then map it to `FSBackend` and use Kopia's own filesystem backend to write to the mounted path. The LVP plugin would still be needed to mount the path, but the object-store provider name would change.
-3. **Modify Velero's `GetBackendType`** to map `replicated.com/hostpath`, `replicated.com/nfs`, and `replicated.com/pvc` to `FSBackend`. This requires a change to upstream Velero and is outside KOTS's control.
-4. **Deprecate LVP-backed HostPath/NFS/PVC for FSB on Velero 1.17+** and direct customers to S3-compatible storage (Minio) for local storage. This is a product decision with support and docs implications.
+In other words, `velero.io/fs` alone does not let you use a local filesystem path for full backups. You would still need an object-store plugin that:
 
-#### Read-only root filesystem workaround
+1. Registers as `velero.io/fs` (or a provider that Kopia maps to `FSBackend`).
+2. Implements the object-store interface on a local filesystem path (mounting the path, serving PutObject/GetObject/ListObjects, etc.).
 
-When a Velero pod (server, node-agent, or Kopia data mover pod) runs with `readOnlyRootFilesystem: true`, Kopia cannot write its repository config or cache because those paths live on the root filesystem. Velero 1.17+ runs as the `cnb` user by default, so the affected paths are:
+The LVP plugin could theoretically be extended to register `velero.io/fs` in addition to its existing providers, but that is a code change in the LVP plugin and is not part of this proposal.
 
-- `/home/cnb/udmrepo` — Kopia unified repository config directory
-- `/home/cnb/.cache` — Kopia cache directory
+**Code changes needed in the LVP repo:**
 
-Kopia fails with an error such as:
+- **None for Kopia support.** The LVP plugin does not need code changes to support Kopia because the incompatibility is at the Velero/Kopia backend mapping layer.
+- **Documentation changes only:** Update the `README.md` and `examples/hostPath.yaml`, `examples/nfs.yaml`, and `examples/pvc.yaml` to state that LVP is not compatible with Kopia file-system backups. Keep the existing Restic examples for Velero 1.16 and earlier. Optionally, recommend S3-compatible storage (e.g., Minio) for local file-system backups on Velero 1.17+.
 
-```
-failed to wait BackupRepository: backup repository is not ready: error to connect to backup repo: error to connect repo with storage: error to connect to repository: unable to write config file: unable to create config directory: mkdir /home/cnb/udmrepo: read-only file system
-```
+**What KOTS and kURL should do:**
 
-The workaround is to mount writable `emptyDir` volumes at those paths so Kopia writes to ephemeral pod storage instead of the read-only root filesystem:
+- For **new** Kopia-era BSLs (Velero >= 1.17), do **not** use LVP providers (`replicated.com/hostpath`, `replicated.com/nfs`, `replicated.com/pvc`) for file-system backups. Use an S3-compatible object store instead. KOTS already uses the S3-compatible Minio internal-storage path (`provider: aws` with `s3Url`) when filesystem Minio is enabled; Kopia maps that to S3 and it works.
+- For **existing** LVP BSLs created before the upgrade, preserve them for Restic restores. Warn the customer that the BSL cannot be used for new Kopia file-system backups; a Kopia-compatible BSL (e.g., S3-compatible storage) is required for new FSB backups.
+- For **Velero < 1.17**, LVP can still be used with Restic as it is today.
 
-```yaml
-volumeMounts:
-  - mountPath: /home/cnb/udmrepo
-    name: udmrepo
-  - mountPath: /home/cnb/.cache
-    name: cache
-volumes:
-  - emptyDir: {}
-    name: udmrepo
-  - emptyDir: {}
-    name: cache
-```
+**Read-only root filesystem note:**
 
-**Where the workaround must be applied:**
-
-| Component | Who can apply the workaround | Notes |
-| :---- | :---- | :---- |
-| **Velero deployment** | LVP plugin, KOTS, or kURL install template | The Velero server needs `/home/cnb/udmrepo` to initialize the `BackupRepository` CR. |
-| **node-agent DaemonSet** | LVP plugin, KOTS, or kURL install template | The node-agent pod needs `/home/cnb/.cache` for Kopia cache. |
-| **Kopia data mover pods** | Velero node-agent configmap or data-mover pod template | These pods are created dynamically by Velero; the LVP plugin cannot patch them after creation. They need the same `emptyDir` mounts. |
-
-For KOTS and kURL, the safest approach is to add the `emptyDir` mounts in the install template when Velero 1.17+ is selected. The LVP plugin can also add them as a fallback when it patches the deployment and DaemonSet, but the data-mover pod mounts must come from the node-agent configmap that Velero reads.
-
-#### Backward-compatible changes LVP can make now, independently of KOTS
-
-These changes are safe for existing Restic installations and can be released in the LVP plugin before the KOTS work is ready:
-
-1. **Add runtime Restic/Kopia detection** — `pkg/plugin/kubernetes.go`. Inspect the Velero deployment image tag and node-agent args to decide whether to operate in Restic or Kopia mode. Add a ConfigMap override for clusters with non-standard images.  
-2. **Fix `ListObjects` to exclude directories** — `pkg/plugin/plugin.go:182-203`. Filter out `dirEntry.IsDir()` from the returned list. This is more correct for any uploader and should not break Restic.  
-3. **Add `"kopia"` to `getSubDirectoryLayout()`** — `pkg/plugin/util.go:28-36`. Pre-create the `kopia` directory alongside `restic`. Safe for Restic.  
-4. **Add volume mounts to all node-agent containers, not just `Containers[0]`** — `pkg/plugin/kubernetes.go:208-209`. Safer if the node-agent ever has sidecars.  
-5. **Fix `sliceContainsString` to use exact matching** — `pkg/plugin/util.go:38-45`. Avoids accidental substring matches (e.g., matching `lost+found` inside another directory name).  
-6. **Fix `DeleteObject` cleanup to recurse beyond two key levels** — `pkg/plugin/plugin.go:221-238`. Kopia keys can be deeper than Restic keys, so empty directories may be left behind.  
-7. **Add a ConfigMap option to inject Kopia cache `emptyDir` volumes** — `pkg/plugin/kubernetes.go`. Add an opt-in or detection-based setting (e.g., `kopiaCacheVolumes: true` or `uploader: kopia`) that mounts writable `emptyDir` volumes at the Kopia cache paths for the Velero deployment and node-agent DaemonSet. This is independent of KOTS and can be consumed by kURL or KOTS later.  
-8. **Preserve Kopia cache volume names in `preserveVolumes` cleanup** — `pkg/plugin/kubernetes.go:227-256`. If Kopia cache volumes are added, make sure `removeUnusedVolumes` does not strip them.
-
-#### Can a single LVP release support both Restic and Kopia?
-
-**Yes.** The LVP plugin is a single Go binary that can detect the active uploader at runtime and branch its behavior. This means one LVP release can support both Restic and Kopia clusters without requiring KOTS to release in lockstep.
-
-**How LVP can detect which uploader is active:**
-
-| Detection method | Where it comes from | Reliability |
-| :---- | :---- | :---- |
-| **Velero version from deployment image tag** | The LVP plugin already reads the Velero deployment to patch it; it can parse the image tag (e.g., `velero/velero:v1.17.1`). | High for standard images. Fragile for custom/private images with non-standard tags. |
-| **Node-agent DaemonSet args** | The plugin already reads the node-agent DaemonSet; it can look for `--uploader-type=restic` or `--uploader-type=kopia`. | High for Velero 1.10–1.16. For 1.17+ the flag is usually omitted because Kopia is the default. |
-| **BSL config `resticRepoPrefix`** | The BSL config is passed to `Init()`. If the key is present and the Velero version is \< 1.17, Restic is likely in use. | Low as a standalone signal, because KOTS may still send `resticRepoPrefix` for Kopia-era BSLs. |
-| **Existing repository CRs** | The plugin can list `BackupRepository` (Kopia) vs `ResticRepository` (Restic) CRs in the Velero namespace. | Useful for transition clusters, but not available before the first backup. |
-
-**Recommended detection strategy:**
-
-1. Parse the Velero deployment image tag.  
-   - `< 1.10` → Restic.  
-   - `1.10–1.16` → check node-agent args for `--uploader-type`; default to Restic if absent.  
-   - `>= 1.17` → Kopia.  
-2. Allow a ConfigMap override (e.g., `uploader: restic` or `uploader: kopia`) so vendors can force a mode if image-tag parsing fails.  
-3. If detection is ambiguous, default to the current Restic-safe behavior.
-
-**What LVP can do differently based on detection:**
-
-- **Kopia mode:** add `kopia` cache `emptyDir` volumes, pre-create the `kopia` subdirectory, and ensure `ListObjects` filters directories.  
-- **Restic mode:** keep current behavior, including `restic` subdirectory creation and no Kopia cache mounts.  
-- **Both modes:** the `ListObjects` directory fix and `sliceContainsString` exact-match fix are safe to apply universally.
-
-**Why this is valuable:**
-
-- KOTS and kURL can consume the same LVP image regardless of the Velero version they are paired with.  
-- The LVP plugin can be released on its own schedule, which aligns with the decision to tag the LVP plugin with doc changes.  
-- It reduces the risk that a KOTS upgrade inadvertently breaks an older Restic cluster by pulling in a Kopia-only plugin.
-
-#### LVP changes that require coordination with KOTS/kURL
-
-- Making the Kopia cache `emptyDir` mounts **default-on** rather than opt-in or detection-based, because the cache path depends on the Velero image user (default `cnb` for Velero 1.17+, but custom images may differ).  
-- Handling read-only root filesystem in the kURL/KOTS install templates themselves (the LVP plugin can only patch what the templates give it).  
-- Deciding whether the LVP plugin should also detect the Velero version from the deployment image tag to auto-enable Kopia cache mounts, or rely on the ConfigMap override.
-
-#### Documentation and release changes
-
-- Tag a new plugin release (e.g. `v0.6.0`) with the code and README updates.  
-- Update `README.md` and `examples/hostPath.yaml`, `examples/nfs.yaml`, `examples/pvc.yaml` to show Kopia-compatible install commands and to remove `resticRepoPrefix` from default examples, while keeping it in legacy Restic examples.
+Kopia requires writable directories (`/home/cnb/udmrepo`, `/home/cnb/.cache`) regardless of the storage backend. This is not specific to LVP and must be handled in the KOTS/kURL Velero install templates for Kopia. See the KOTS and kURL sections above.
 
 ### 4\. Docs repo (`replicated-docs`)
 
@@ -339,18 +243,18 @@ The work can be delivered as four independent, backward-compatible releases. Eac
 
 | \# | Repo | Goal | What changes | Depends on | Backward compatibility | Rollback |
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
-| 1 | `local-volume-provider` | LVP supports both Restic and Kopia in one image | Runtime uploader detection, `ListObjects` directory fix, `kopia` subdir, opt-in Kopia cache `emptyDir` volumes, docs/examples | None | Restic behavior is unchanged; Kopia features are opt-in or detection-based | Revert to previous LVP image tag |
-| 2 | `kots` | KOTS emits correct install flags for any Velero version | Version-aware instructions in `pkg/print`, `ConfigureSnapshots.jsx`, and e2e helpers | None | Keeps Restic flags for Velero \< 1.17 | Roll back KOTS binary |
-| 3 | `kots` \+ docs | KOTS generates Kopia-compatible LVP/PVC BSL config | Conditional `resticRepoPrefix` in `pkg/snapshot/store.go`, updated docs | Release 1 (Kopia LVP stores need the new plugin) | Existing Restic BSLs are untouched | Roll back KOTS binary |
-| 4 | `kURL` | kURL offers and installs Velero 1.17/1.18 | New Velero add-on versions, version-aware template flags, config screen, timeout flag mapping | Release 1 (new add-on versions reference the new LVP image) | Older Velero add-on versions remain available | Pin installer to a previous Velero add-on version |
+| 1 | `kots` | KOTS emits correct install flags for any Velero version | Version-aware instructions in `pkg/print`, `ConfigureSnapshots.jsx`, and e2e helpers | None | Keeps Restic flags for Velero \< 1.17 | Roll back KOTS binary |
+| 2 | `kots` \+ docs | KOTS generates Kopia-compatible BSL config and documents the LVP limitation | Conditional `resticRepoPrefix` in `pkg/snapshot/store.go`; docs update stating LVP is not supported for Kopia FSB; no new LVP BSLs for Kopia | None | Existing Restic BSLs are untouched | Roll back KOTS binary |
+| 3 | `kURL` | kURL offers and installs Velero 1.17/1.18 | New Velero add-on versions, version-aware template flags, config screen, timeout flag mapping | None | Older Velero add-on versions remain available | Pin installer to a previous Velero add-on version |
+| 4 | `local-volume-provider` | Document Kopia incompatibility | README/examples updates stating LVP is not supported for Kopia FSB; no code changes | None | Restic behavior unchanged | Revert docs |
 
 **Notes on independence:**
 
-- Release 1 (LVP) can ship first and is safe for existing Restic clusters on its own.  
-- Release 2 (KOTS install flags) can ship before or after Release 1; it only changes the commands KOTS shows to users.  
-- Release 3 (KOTS BSL config) should ship after Release 1 so Kopia-backed LVP/PVC stores actually work end-to-end.  
-- Release 4 (kURL) should ship after Release 1 so the new Velero add-on versions reference a Kopia-capable LVP image.  
-- Releases 2 and 3 can be combined into a single KOTS release if that is simpler for the team.
+- Release 1 (KOTS install flags) can ship first.  
+- Release 2 (KOTS BSL config + docs) can ship independently of the LVP docs release.  
+- Release 3 (kURL) can ship independently of the LVP docs release.  
+- Release 4 (LVP docs) is documentation-only and can ship at any time.  
+- Releases 1 and 2 can be combined into a single KOTS release if that is simpler for the team.
 
 ## Communication plan
 
@@ -361,7 +265,7 @@ The work can be delivered as four independent, backward-compatible releases. Eac
    - State explicitly that Restic restore support will be removed in a future Velero version, so they should not rely on pre-migration backups as their only DR safety net long-term  
 3. **In-product messages:** The Admin Console "Install Velero" instructions will automatically show the correct command for the detected Velero version, so no manual customer action is required. No new banner or warning is needed unless we want to proactively tell customers on Restic that they are on a supported path.  
    - Ensure that the message in the instructions includes a warning that a backup should be taken immediately even if there are existing backups, in order to consider the DR functional.  
-4. **Support enablement:** Provide a Community article with a short note on Kopia vs Restic repository paths, the `resticRepoPrefix` behavior, and the read-only-root-filesystem workaround.
+4. **Support enablement:** Provide a Community article with a short note on Kopia vs Restic repository paths, the `resticRepoPrefix` behavior, the read-only-root-filesystem workaround, and the fact that the LVP plugin is not compatible with Kopia FSB.
 
 ## How we will be confident the result works for both Velero 1.16 and 1.17/1.18
 
@@ -369,10 +273,10 @@ The work can be delivered as four independent, backward-compatible releases. Eac
 | :---- | :---- |
 | **Install flag correctness** | Run the e2e smoke test with Velero `v1.16.x` and `v1.18.x`. Verify `velero install` exits 0 in both cases. |
 | **AWS S3 snapshots** | Run regression backup/restore with the AWS plugin on 1.16 and 1.18. |
-| **LVP HostPath / NFS snapshots** | Run backup/restore with the LVP plugin on 1.16 and 1.18. Confirm `PodVolumeBackup` and `BackupRepository` (or `ResticRepository`) objects are created. |
-| **LVP data mover pods** | On Velero 1.17+, verify that Kopia data mover pods are spawned and inherit the LVP volume from the node-agent DaemonSet. |
-| **LVP plugin fixes** | After applying the LVP `ListObjects` fix and Kopia cache `emptyDir` option, run HostPath/NFS/PVC backup/restore on Velero 1.18 and confirm the prior failure is resolved. |
-| **LVP read-only root filesystem** | Run LVP HostPath with a strict security context and verify that Kopia cache `emptyDir` mounts allow backups to succeed. |
+| **LVP HostPath / NFS snapshots with Restic** | Run backup/restore with the LVP plugin on Velero 1.16. Confirm `PodVolumeBackup` and `ResticRepository` objects are created. |
+| **Kopia FSB on S3-compatible storage** | Run backup/restore on Velero 1.18 with `provider: aws` and `s3Url`. Confirm `PodVolumeBackup` and `BackupRepository` objects are created. |
+| **Kopia read-only root filesystem** | Run Kopia backup/restore on Velero 1.18 with a strict security context and verify that `emptyDir` mounts at `/home/cnb/udmrepo` and `/home/cnb/.cache` allow backups to succeed. |
+| **KOTS BSL config for LVP** | Verify that KOTS does not create new LVP-backed BSLs for Velero 1.17+ and that existing LVP BSLs preserve `resticRepoPrefix`. |
 | **Backward compatibility** | Create a backup with Velero 1.16, upgrade Velero to 1.17 (without deleting the BSL), and restore the backup. |
 | **kURL add-on versions** | Add 1.17.x and 1.18.x to the kURL testgrid and run at least one install smoke test per version. |
 | **Airgap image list** | Verify that the e2e image-prep helper pushes all images needed for both versions (velero, AWS plugin, LVP plugin, restore-helper). |
@@ -384,8 +288,7 @@ The work can be delivered as four independent, backward-compatible releases. Eac
 | :---- | :---- |
 | Removing `resticRepoPrefix` from existing BSLs breaks Restic restores. | Only omit it for new Kopia-era stores; preserve the existing key on Restic-era stores. |
 | Kopia data mover pods fail with read-only root filesystem. | Add `emptyDir` volumes for Kopia cache/config when strict security contexts are used. Document the workaround. |
-| LVP `ListObjects` returns directories, confusing Kopia's blob layer. | Fix `ListObjects` in the LVP plugin to filter out directories; this is backward-compatible and can ship before KOTS. |
-| Kopia data mover pods cannot access the LVP volume due to security context or node scheduling. | Test with the LVP plugin fixes in place; use NFS/PVC to avoid multi-node HostPath issues. |
+| Customers try to use LVP HostPath/NFS/PVC for Kopia FSB and backups fail. | Document clearly that LVP is not compatible with Kopia FSB; ensure KOTS does not create new LVP-backed BSLs for Velero 1.17+; direct customers to S3-compatible storage for local FSB. |
 | kURL install template still emits `--uploader-type=restic` for 1.17+. | Update the template to branch on `VELERO_VERSION`. |
 | Customers are confused by “Restic” vs “Kopia” terminology. | Docs and in-product text use generic “file-system backup” language, with version-specific notes. |
 | e2e matrix doubles runtime. | Run the full dual-version matrix only on snapshot-related changes; keep the default PR pin on a recent version. |
