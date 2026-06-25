@@ -38,9 +38,10 @@ No action is required. KOTS detects the installed Velero version and generates t
 | :---- | :---- | :---- |
 | **Minio/S3-compatible** (`provider: aws` with `s3Url`) | **No** | Kopia uses the S3 backend. A new Kopia repo is created alongside Restic data. |
 | **AWS S3 / other S3-compatible** | **No** | Same as above. |
-| **LVP HostPath/NFS/PVC** (`replicated.com/hostpath`, `replicated.com/nfs`, `replicated.com/pvc`) | **Yes** | Kopia cannot use the LVP plugin. Reconfigure to the S3-compatible filesystem Minio path. |
+| **LVP HostPath/NFS/PVC** (`replicated.com/hostpath`, `replicated.com/nfs`, `replicated.com/pvc`) | **Yes** | Kopia cannot use the LVP plugin. Reconfigure to the S3-compatible filesystem Minio path. Note: these customers are a minority because they explicitly disabled Minio, which is the default for HostPath/NFS. |
 | **kURL internal PVC** (`replicated.com/pvc`) | **Yes** | Reconfigure to the kURL S3-compatible internal store. |
 
+- **Minio is the default for HostPath/NFS.** The Local Volume Provider (LVP) is only used when a customer has explicitly disabled Minio. Therefore, the set of customers affected by the LVP incompatibility is a minority, but they are also the customers least likely to want to migrate to Minio.
 - **In-product guidance:** KOTS shows an informational banner when an LVP-backed Restic BSL is detected on Velero 1.17+, explaining that new FSB backups require a Kopia-compatible BSL while existing Restic backups remain restorable.
 - **Install command changes:** KOTS shows the correct command for the detected Velero version.
 
@@ -52,11 +53,11 @@ No action is required. KOTS detects the installed Velero version and generates t
 
 ### New customers
 
-The destination picker stays the same (AWS, GCP, Azure, S3-compatible, Internal, NFS, HostPath) but becomes **Velero-version-aware**. For Velero 1.17+, HostPath/NFS are routed to the S3-compatible filesystem Minio path instead of the LVP plugin. Customers who choose to exclude Minio due to its AGPL license will lose HostPath/NFS support and must use an object-store destination instead.
+The destination picker stays the same (AWS, GCP, Azure, S3-compatible, Internal, NFS, HostPath) but becomes **Velero-version-aware**. For Velero 1.17+, HostPath/NFS use the S3-compatible filesystem Minio path by default. The LVP plugin is never used for new Kopia-era BSLs. Customers who choose to exclude Minio due to its AGPL license will lose HostPath/NFS support and must use an object-store destination instead.
 
 ## What we will change
 
-The core change is to make KOTS **Velero-version-aware**: install instructions, the destination picker, and the generated BackupStorageLocation config must all adapt to the installed Velero version. The LVP plugin is not used for new Kopia-era file-system backups; HostPath/NFS/PVC on Velero 1.17+ are served by the S3-compatible filesystem Minio path.
+The core change is to make KOTS **Velero-version-aware**: install instructions, the destination picker, and the generated BackupStorageLocation config must all adapt to the installed Velero version. Minio is the default path for HostPath/NFS; the LVP plugin is only used when Minio has been explicitly disabled. For Velero 1.17+, HostPath/NFS/PVC are served by the S3-compatible filesystem Minio path, not the LVP plugin.
 
 ### 1\. KOTS repo (`replicatedhq/kots`)
 
@@ -89,6 +90,21 @@ No code changes. Update the README and examples to state that LVP is not compati
 ### 4\. Docs repo (`replicated-docs`)
 
 Update Velero compatibility, install, storage-destination, troubleshooting, and upgrade docs to reflect Kopia support for 1.17+, Restic preservation for older versions, and the Minio requirement for HostPath/NFS on 1.17+.
+
+- Update `docs/partials/snapshots/_velero-compatibility.mdx` to list Velero 1.17.x and 1.18.x as supported and against which Kubernetes versions of both KOTS and Kubernetes.  
+- Update `docs/enterprise/snapshots-overview.mdx` to replace "Replicated supports only the restic backup program for pod volume data" with a statement that KOTS supports Velero's file-system backup uploader (Restic for Velero 1.16 and earlier, Kopia for Velero 1.17 and later).  
+- Update `docs/enterprise/snapshots-storage-destinations.md` to show the version-aware install flags and to remove the hard-coded `--uploader-type=restic` from Velero 1.17+ examples.  
+- Update `docs/enterprise/snapshots-velero-cli-installing.md` and `docs/enterprise/snapshots-velero-installing-config.mdx` to mention Kopia for 1.17+ and to update node-agent memory/timeout guidance.  
+- Update `docs/enterprise/snapshots-troubleshooting-backup-restore.md` to add a Kopia troubleshooting section (e.g., data mover pods, BackupRepository, read-only root filesystem) and keep the Restic section for older versions.  
+- Update kURL Velero add-on docs to list the new add-on versions and clarify the `disableRestic` / `resticTimeout` semantics.  
+- Add a section describing the appropriate way to upgrade Velero  
+  - one version at a time (kURL manages this but KOTS with existing cluster relies on the cluster admin)  
+  - when backups need to be made  
+  - when backups made with versions 1.16 and below are abe to be restored up to 1.18.
+- Add a section describing how to move from LVP-based backup storage locations to Minio. Clarify that:
+  - Minio is the default path for HostPath/NFS; LVP is only used when Minio has been explicitly disabled.
+  - LVP-backed HostPath/NFS customers are therefore a minority.
+  - These customers are also the least likely to want to migrate to Minio (e.g., due to AGPL licensing concerns), so the migration guide should emphasize alternative object-store destinations (S3, GCP, Azure, S3-compatible) rather than treating Minio as the only option.
 
 ## High-level release plan
 
@@ -160,6 +176,8 @@ KOTS uses the existing BSL object as the source of truth:
 On Velero 1.17+, KOTS deploys `kotsadm-fs-minio` on the selected HostPath or NFS mount and configures the BSL as `provider: aws` with `s3Url`. Kopia maps this to its S3 backend.
 
 **Filesystem Minio default today**
+
+Minio is the default path for HostPath/NFS backups. The LVP plugin is only used when Minio has been explicitly disabled. Because of this, LVP-backed HostPath/NFS customers are a minority, but they are also the customers least likely to accept migrating to Minio (for example, due to AGPL licensing concerns).
 
 | Scenario | Default state |
 | :---- | :---- |
