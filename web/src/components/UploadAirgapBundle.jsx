@@ -181,6 +181,7 @@ class UploadAirgapBundle extends Component {
       username: this.state.registryDetails.username,
       password: this.state.registryDetails.password,
       isReadOnly: this.state.registryDetails.isReadOnly,
+      skipExistingImages: this.state.registryDetails.skipExistingImages,
       simultaneousUploads: this.state.simultaneousUploads,
     };
     this.state.airgapUploader.upload(
@@ -217,6 +218,7 @@ class UploadAirgapBundle extends Component {
         password: fields.password,
         namespace: fields.namespace,
         isReadOnly: fields.isReadOnly,
+        skipExistingImages: fields.skipExistingImages,
       },
     });
   };

@@ -39,6 +39,7 @@ type CreateAirgapAppOpts struct {
 	RegistryUsername       string
 	RegistryPassword       string
 	RegistryIsReadOnly     bool
+	SkipExistingImages     bool
 	IsAutomated            bool
 	ConfigValues           string
 	SkipPreflights         bool
@@ -217,6 +218,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 			Password:   opts.RegistryPassword,
 			IsReadOnly: opts.RegistryIsReadOnly,
 		},
+		SkipExistingImages:     opts.SkipExistingImages,
 		AppID:                  opts.PendingApp.ID,
 		AppSlug:                opts.PendingApp.Slug,
 		AppSequence:            0,

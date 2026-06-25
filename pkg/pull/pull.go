@@ -63,22 +63,25 @@ type PullOptions struct {
 	Silent                  bool
 	RewriteImages           bool
 	RewriteImageOptions     registrytypes.RegistrySettings
-	SkipHelmChartCheck      bool
-	ReportWriter            io.Writer
-	AppID                   string
-	AppSlug                 string
-	AppSequence             int64
-	AppVersionLabel         string
-	AppSelectedChannelID    string
-	IsGitOps                bool
-	StorageClassName        string
-	HTTPProxyEnvValue       string
-	HTTPSProxyEnvValue      string
-	NoProxyEnvValue         string
-	PrivateCAsConfigmap     string
-	ReportingInfo           *reportingtypes.ReportingInfo
-	SkipCompatibilityCheck  bool
-	KotsKinds               *kotsutil.KotsKinds
+	// SkipExistingImages, when true, makes each image push idempotent — see
+	// imagetypes.CopyImageOptions.SkipExistingImages.
+	SkipExistingImages     bool
+	SkipHelmChartCheck     bool
+	ReportWriter           io.Writer
+	AppID                  string
+	AppSlug                string
+	AppSequence            int64
+	AppVersionLabel        string
+	AppSelectedChannelID   string
+	IsGitOps               bool
+	StorageClassName       string
+	HTTPProxyEnvValue      string
+	HTTPSProxyEnvValue     string
+	NoProxyEnvValue        string
+	PrivateCAsConfigmap    string
+	ReportingInfo          *reportingtypes.ReportingInfo
+	SkipCompatibilityCheck bool
+	KotsKinds              *kotsutil.KotsKinds
 }
 
 var (
@@ -365,16 +368,17 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	processImageOptions := imagetypes.ProcessImageOptions{
-		AppSlug:          pullOptions.AppSlug,
-		Namespace:        pullOptions.Namespace,
-		RewriteImages:    pullOptions.RewriteImages,
-		RegistrySettings: pullOptions.RewriteImageOptions,
-		CopyImages:       !pullOptions.RewriteImageOptions.IsReadOnly,
-		RootDir:          pullOptions.RootDir,
-		IsAirgap:         pullOptions.IsAirgap,
-		AirgapBundle:     pullOptions.AirgapBundle,
-		CreateAppDir:     pullOptions.CreateAppDir,
-		ReportWriter:     pullOptions.ReportWriter,
+		AppSlug:            pullOptions.AppSlug,
+		Namespace:          pullOptions.Namespace,
+		RewriteImages:      pullOptions.RewriteImages,
+		RegistrySettings:   pullOptions.RewriteImageOptions,
+		CopyImages:         !pullOptions.RewriteImageOptions.IsReadOnly,
+		RootDir:            pullOptions.RootDir,
+		IsAirgap:           pullOptions.IsAirgap,
+		AirgapBundle:       pullOptions.AirgapBundle,
+		CreateAppDir:       pullOptions.CreateAppDir,
+		ReportWriter:       pullOptions.ReportWriter,
+		SkipExistingImages: pullOptions.SkipExistingImages,
 	}
 
 	if needsConfig {
