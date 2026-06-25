@@ -531,7 +531,11 @@ export function isVelero117OrNewer(snapshotSettings) {
     const majorVer = parseInt(semVer[0].slice(1));
     const minorVer = parseInt(semVer[1]);
 
-    if (majorVer !== 1) {
+    if (majorVer > 1) {
+      return true; // any major version > 1 is necessarily >= 1.17
+    }
+
+    if (majorVer < 1) {
       return false;
     }
 

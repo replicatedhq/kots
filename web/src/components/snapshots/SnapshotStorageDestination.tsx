@@ -174,7 +174,7 @@ type StoreMetadata = {
   hasResticRepoPrefix?: boolean;
 };
 
-type StoreProvider =
+export type StoreProvider =
   | StoreMetadata
   | AWSStoreProvider
   | GCPStoreProvider

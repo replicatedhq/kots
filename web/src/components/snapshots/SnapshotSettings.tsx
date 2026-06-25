@@ -5,7 +5,9 @@ import isEmpty from "lodash/isEmpty";
 import isEqual from "lodash/isEqual";
 
 import Loader from "../shared/Loader";
-import SnapshotStorageDestination from "./SnapshotStorageDestination";
+import SnapshotStorageDestination, {
+  StoreProvider,
+} from "./SnapshotStorageDestination";
 
 import "../../scss/components/shared/SnapshotForm.scss";
 import {
@@ -28,9 +30,7 @@ type State = {
     veleroVersion: string;
     veleroPod?: object;
     nodeAgentPods?: object[];
-    store?: {
-      hasResticRepoPrefix?: boolean;
-    };
+    store?: StoreProvider;
   };
   isLoadingSnapshotSettings: boolean;
   snapshotSettingsErr: boolean;
