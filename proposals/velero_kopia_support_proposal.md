@@ -4,7 +4,7 @@
 
 **Problem.** KOTS supports Velero only up to version 1.16, which is tested only through Kubernetes 1.33. Replicated drops Kubernetes 1.33 support at the end of June 2026, so customers on Kubernetes 1.34+ will have no supported Velero option. In addition, Velero 1.17 made Kopia the default file-system backup uploader and removed the `--uploader-type=restic` flag. KOTS still hard-codes Restic in install instructions, tests, and generated configs, so customers on Velero 1.17+ get invalid install commands and failing backups.
 
-**Proposal.** Make KOTS version-aware so it emits the correct Velero install flags and `BackupStorageLocation` configuration for Velero 1.10 through 1.18. Restic support is preserved; customers can upgrade Velero at their own pace and existing Restic backups remain restorable.
+**Proposal.** Make KOTS version-aware so it emits the correct Velero install flags and `BackupStorageLocation` configuration for Velero 1.10 through 1.18. Restic support is preserved; customers can upgrade Velero at their own pace and existing Restic backups remain restorable. Customers using the Local Volume Provider (LVP) for HostPath/NFS/PVC backups must migrate to a Kopia-compatible destination before upgrading to Velero 1.17+, because LVP is not compatible with Kopia and existing LVP backups cannot be restored after the upgrade.
 
 **Value.** Unblocks Velero 1.17/1.18 (and Kubernetes 1.34+) support, prevents silent backup failures, and protects existing restore investments without forcing a backup migration.
 
@@ -41,8 +41,10 @@ No action is required. KOTS detects the installed Velero version and generates t
 | **LVP HostPath/NFS/PVC** (`replicated.com/hostpath`, `replicated.com/nfs`, `replicated.com/pvc`) | **Yes** | Kopia cannot use the LVP plugin. Reconfigure to the S3-compatible filesystem Minio path. Note: these customers are a minority because they explicitly disabled Minio, which is the default for HostPath/NFS. |
 | **kURL internal PVC** (`replicated.com/pvc`) | **Yes** | Reconfigure to the kURL S3-compatible internal store. |
 
+> **LVP backups cannot be restored after upgrading to Velero 1.17+.** Customers who use the Local Volume Provider (LVP) for HostPath/NFS/PVC backups on Velero 1.16 must migrate their backup storage location to a Kopia-compatible destination (Minio, S3, S3-compatible, GCP, or Azure) **before** upgrading Velero. Backups created with LVP on Velero 1.16 are not restorable after the upgrade because Kopia cannot read LVP repositories. Existing Restic backups from non-LVP destinations remain restorable on Velero 1.17+.
+
 - **Minio is the default for HostPath/NFS.** The Local Volume Provider (LVP) is only used when a customer has explicitly disabled Minio. Therefore, the set of customers affected by the LVP incompatibility is a minority, but they are also the customers least likely to want to migrate to Minio.
-- **In-product guidance:** KOTS shows an informational banner when an LVP-backed Restic BSL is detected on Velero 1.17+, explaining that new FSB backups require a Kopia-compatible BSL while existing Restic backups remain restorable.
+- **In-product guidance:** KOTS shows an informational banner when an LVP-backed Restic BSL is detected on Velero 1.17+, explaining that new FSB backups require a Kopia-compatible BSL and that existing LVP backups cannot be restored.
 - **Install command changes:** KOTS shows the correct command for the detected Velero version.
 
 | Velero version | Install command |
@@ -97,11 +99,12 @@ Update Velero compatibility, install, storage-destination, troubleshooting, and 
 - Update `docs/enterprise/snapshots-velero-cli-installing.md` and `docs/enterprise/snapshots-velero-installing-config.mdx` to mention Kopia for 1.17+ and to update node-agent memory/timeout guidance.  
 - Update `docs/enterprise/snapshots-troubleshooting-backup-restore.md` to add a Kopia troubleshooting section (e.g., data mover pods, BackupRepository, read-only root filesystem) and keep the Restic section for older versions.  
 - Update kURL Velero add-on docs to list the new add-on versions and clarify the `disableRestic` / `resticTimeout` semantics.  
-- Add a section describing the appropriate way to upgrade Velero  
-  - one version at a time (kURL manages this but KOTS with existing cluster relies on the cluster admin)  
-  - when backups need to be made  
-  - when backups made with versions 1.16 and below are abe to be restored up to 1.18.
+- Add a section describing the appropriate way to upgrade Velero:
+  - Upgrade one version at a time (kURL manages this, but KOTS with an existing cluster relies on the cluster admin).
+  - When backups should be made.
+  - That backups made with Velero 1.16 and below can be restored up to Velero 1.18.
 - Add a section describing how to move from LVP-based backup storage locations to Minio. Clarify that:
+  - **LVP backups created on Velero 1.16 are not restorable after upgrading to Velero 1.17+**, so the migration must be performed **before** the Velero upgrade.
   - Minio is the default path for HostPath/NFS; LVP is only used when Minio has been explicitly disabled.
   - LVP-backed HostPath/NFS customers are therefore a minority.
   - These customers are also the least likely to want to migrate to Minio (e.g., due to AGPL licensing concerns), so the migration guide should emphasize alternative object-store destinations (S3, GCP, Azure, S3-compatible) rather than treating Minio as the only option.
@@ -128,7 +131,7 @@ The work can be delivered as four independent, backward-compatible releases. Eac
 ## Communication plan
 
 1. **Release notes:** Announce Velero 1.17/1.18 (Kopia) support, Restic preservation, and the LVP/Minio trade-off.
-2. **Docs:** Update compatibility, install, storage-destination, troubleshooting, and upgrade docs. Include a migration page explaining version-by-version upgrades and the Minio requirement for HostPath/NFS on 1.17+.
+2. **Docs:** Update compatibility, install, storage-destination, troubleshooting, and upgrade docs. Include a migration page explaining version-by-version upgrades, the Minio requirement for HostPath/NFS on 1.17+, and the fact that LVP backups from Velero 1.16 cannot be restored after upgrading to 1.17+.
 3. **In-product messages:** The Admin Console automatically shows the correct Velero install command. Show an informational banner for LVP-backed Restic BSLs on 1.17+.
 4. **Support enablement:** Provide a Community article covering Kopia vs Restic, `resticRepoPrefix`, the read-only-root-filesystem workaround, and LVP incompatibility.
 
@@ -149,7 +152,7 @@ The work can be delivered as four independent, backward-compatible releases. Eac
 | :---- | :---- |
 | Removing `resticRepoPrefix` from existing BSLs breaks Restic restores. | Only omit it for new Kopia-era stores; preserve the existing key on Restic-era stores. |
 | Kopia data mover pods fail with read-only root filesystem. | Add `emptyDir` volumes for Kopia cache/config when strict security contexts are used. Document the workaround. |
-| Customers try to use LVP HostPath/NFS/PVC for Kopia FSB and backups fail. | Document clearly that LVP is not compatible with Kopia FSB; ensure KOTS does not create new LVP-backed BSLs for Velero 1.17+; route HostPath/NFS/PVC destinations to the S3-compatible filesystem Minio path. |
+| Customers try to use LVP HostPath/NFS/PVC for Kopia FSB or attempt to restore 1.16 LVP backups on 1.17+. | Document clearly that LVP is not compatible with Kopia FSB and that existing LVP backups from Velero 1.16 are not restorable after upgrading; ensure KOTS does not create new LVP-backed BSLs for Velero 1.17+; route HostPath/NFS/PVC destinations to the S3-compatible filesystem Minio path. |
 | HostPath/NFS on 1.17+ fails because the filesystem Minio image is not available. | Include the Minio image in the KOTS/airgap bundle; ensure `ConfigureStore` deploys or validates Minio is present before creating a Minio-backed BSL on Velero 1.17+. |
 | Customers exclude Minio due to AGPL licensing concerns and lose HostPath/NFS backup support. | Document clearly that Minio is required for HostPath/NFS on Velero 1.17+; provide alternative storage options (S3, GCP, Azure, S3-compatible); consider an opt-in/opt-out flag for filesystem Minio. |
 | kURL install template still emits `--uploader-type=restic` for 1.17+. | Update the template to branch on `VELERO_VERSION`. |
@@ -193,13 +196,14 @@ For Velero 1.17+, KOTS must ensure the Minio image is available when a HostPath/
 
 For customers on 1.16 upgrading to 1.17+:
 
-1. Install the Velero 1.17+ CLI.
-2. Update CRDs: `velero install --crds-only --dry-run -o yaml | kubectl apply -f -`
-3. Replace the stale `--uploader-type=restic` flag with `--uploader-type=kopia` in the Velero deployment and node-agent DaemonSet.
-4. Update Velero and plugin images to the target 1.17.x/1.18.x version.
-5. Confirm with `velero version`.
+1. **If the current backup storage location uses LVP** (`replicated.com/hostpath`, `replicated.com/nfs`, or `replicated.com/pvc`), **reconfigure it to a Kopia-compatible destination before upgrading.** Backups created with LVP on Velero 1.16 cannot be restored after the upgrade. Migrate to Minio, S3, S3-compatible, GCP, or Azure.
+2. Install the Velero 1.17+ CLI.
+3. Update CRDs: `velero install --crds-only --dry-run -o yaml | kubectl apply -f -`
+4. Replace the stale `--uploader-type=restic` flag with `--uploader-type=kopia` in the Velero deployment and node-agent DaemonSet.
+5. Update Velero and plugin images to the target 1.17.x/1.18.x version.
+6. Confirm with `velero version`.
 
-KOTS surfaces these instructions in the Admin Console but does not automate them.
+KOTS provides install instructions in the Admin Console for new Velero installations. It does not provide upgrade instructions in the Admin Console. The Velero upgrade procedure is documented on the Replicated docs site and is performed by the cluster administrator.
 
 ## References
 
