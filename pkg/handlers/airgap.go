@@ -26,11 +26,12 @@ import (
 )
 
 type CreateAppFromAirgapRequest struct {
-	RegistryHost string `json:"registryHost"`
-	Namespace    string `json:"namespace"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-	IsReadOnly   bool   `json:"isReadOnly"`
+	RegistryHost       string `json:"registryHost"`
+	Namespace          string `json:"namespace"`
+	Username           string `json:"username"`
+	Password           string `json:"password"`
+	IsReadOnly         bool   `json:"isReadOnly"`
+	SkipExistingImages bool   `json:"skipExistingImages"`
 }
 type CreateAppFromAirgapResponse struct {
 }
@@ -415,6 +416,7 @@ func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 			RegistryUsername:   username,
 			RegistryPassword:   password,
 			RegistryIsReadOnly: isReadOnly,
+			SkipExistingImages: createAppFromAirgapRequest.SkipExistingImages,
 		}
 		if err := airgap.CreateAppFromAirgap(createAppOpts); err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app from airgap bundle"))

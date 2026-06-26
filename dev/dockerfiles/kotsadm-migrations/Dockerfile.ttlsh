@@ -12,6 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ca-certificates \
+    wget \
   && apt-get install -y --only-upgrade --no-install-recommends \
     passwd login \
   && apt-get clean \

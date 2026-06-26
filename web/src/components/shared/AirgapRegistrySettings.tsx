@@ -32,6 +32,7 @@ interface RegistryDetails {
 
 interface GatherDetails extends RegistryDetails {
   isReadOnly: boolean;
+  skipExistingImages: boolean;
 }
 
 type State = {
@@ -235,14 +236,21 @@ class AirgapRegistrySettings extends Component<Props, State> {
     // @ts-expect-error
     this.setState(nextState, () => {
       if (this.props.gatherDetails) {
-        const { hostname, username, password, namespace, isReadOnly } =
-          this.state;
+        const {
+          hostname,
+          username,
+          password,
+          namespace,
+          isReadOnly,
+          skipExistingImages,
+        } = this.state;
         this.props.gatherDetails({
           hostname,
           username,
           password,
           namespace,
           isReadOnly,
+          skipExistingImages,
         });
       }
     });
@@ -286,6 +294,9 @@ class AirgapRegistrySettings extends Component<Props, State> {
             password: result.password,
             namespace: result.namespace,
             isReadOnly: result.isReadOnly,
+            // skipExistingImages is not persisted/returned by the registry GET
+            // endpoint, so default to false to keep the checkbox controlled.
+            skipExistingImages: result.skipExistingImages ?? false,
             loading: false,
             fetchRegistryErrMsg: "",
             displayErrorModal: false,
@@ -294,12 +305,14 @@ class AirgapRegistrySettings extends Component<Props, State> {
           if (this.props.gatherDetails) {
             const { hostname, username, password, namespace, isReadOnly } =
               result;
+            const skipExistingImages = result.skipExistingImages ?? false;
             this.props.gatherDetails({
               hostname,
               username,
               password,
               namespace,
               isReadOnly,
+              skipExistingImages,
             });
           }
         } else {

@@ -8,6 +8,11 @@
 timeout=300
 elapsed=0
 
+if ! command -v wget >/dev/null 2>&1; then
+  echo "ERROR: wget is not installed in this image; cannot probe rqlite readiness" >&2
+  exit 1
+fi
+
 while [ $elapsed -lt $timeout ]; do
   if wget -qO- http://kotsadm-rqlite:4001/readyz 2>/dev/null | grep -q "ok"; then
     echo "rqlite is ready (${elapsed}s)"
