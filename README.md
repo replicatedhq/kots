@@ -51,6 +51,20 @@ cosign verify-blob --key sbom/key.pub --bundle sbom/kots-sbom.tgz.bundle sbom/ko
    - Directly at http://localhost:30808
    - Via kURL proxy at http://localhost:30880
 
+### Snapshot storage backends
+
+By default, `make dev` deploys a local Minio instance (`kotsadm-minio`) that is used both as an object store for application archives and support bundles and as the snapshot storage backend.
+
+To test the Local Volume Provider (LVP) path for snapshots, set `WITH_MINIO=false` when running the dev environment:
+
+```bash
+WITH_MINIO=false make dev
+```
+
+This creates the `kotsadm-confg` ConfigMap with `minio-enabled-snapshots: "false"`, so KOTS will use the LVP path for HostPath/NFS snapshot destinations. The Minio StatefulSet is still deployed because the dev environment also uses it as an object store for application archives and support bundles.
+
+**Note:** This does **not** fully replicate a `kots install --with-minio=false` installation. In production, `--with-minio=false` deploys KOTS as a StatefulSet with a `kotsadmdata` PersistentVolume and uses `BlobStore` (local filesystem) instead of Minio for application archives and support bundles. The dev environment remains a Deployment with S3 env vars; the `WITH_MINIO` toggle only affects the snapshot storage path.
+
 ### Developing kotsadm web
 
 Changes to the kotsadm web component are reflected in real-time; no manual steps are required.
