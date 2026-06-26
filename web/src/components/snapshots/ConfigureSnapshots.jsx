@@ -40,13 +40,34 @@ class ConfigureSnapshots extends Component {
     return semverjs.gte(actualVeleroSemver, velero10Semver);
   };
 
+  // Velero 1.17 removed the restic uploader; kopia is the only valid uploader
+  // type from this version on. Invalid/empty (install tab, no Velero detected)
+  // resolves to true so we render the newest behavior, matching the backend.
+  isVelero17OrNewer = (
+    veleroVersion = this.props.snapshotSettings?.veleroVersion
+  ) => {
+    if (!semverjs.valid(veleroVersion)) {
+      return true;
+    }
+
+    const velero17Semver = semverjs.coerce("1.17");
+    const actualVeleroSemver = semverjs.coerce(veleroVersion);
+
+    return semverjs.gte(actualVeleroSemver, velero17Semver);
+  };
+
   getFSBackupComponentName = () =>
     this.isVelero10OrNewer() ? "Node Agent" : "Restic";
 
-  getFSBackupComponentFlags = () =>
-    this.isVelero10OrNewer()
-      ? ["--use-node-agent", "--uploader-type=restic"]
-      : ["--use-restic"];
+  // Mirrors backend VeleroFSBackupFlags: <1.10 -> restic daemonset;
+  // 1.10-1.16 -> node-agent + restic uploader; >=1.17/unknown -> node-agent + kopia.
+  getFSBackupComponentFlags = () => {
+    if (!this.isVelero10OrNewer()) {
+      return ["--use-restic"];
+    }
+    const uploader = this.isVelero17OrNewer() ? "kopia" : "restic";
+    return ["--use-node-agent", `--uploader-type=${uploader}`];
+  };
 
   render() {
     const { activeTab } = this.state;

@@ -211,6 +211,12 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 				return
 			}
 		} else {
+			// LVP (NFS/Host Path) filesystem snapshots are unsupported on Velero 1.17+.
+			if !kotssnapshottypes.VeleroSupportsLVP(veleroStatus.Version) {
+				globalSnapshotSettingsResponse.Error = kotssnapshottypes.ErrLVPUnsupportedOnVelero117
+				JSON(w, http.StatusBadRequest, globalSnapshotSettingsResponse)
+				return
+			}
 			if err := configureLvpFileSystemProvider(r.Context(), clientset, kotsadmNamespace, registryConfig, *updateGlobalSnapshotSettingsRequest.FileSystem); err != nil {
 				globalSnapshotSettingsResponse.Error = err.Error()
 				JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)

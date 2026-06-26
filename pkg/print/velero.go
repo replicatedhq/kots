@@ -16,15 +16,18 @@ func VeleroInstallationInstructionsForCLI(log *logger.CLILogger, plugin snapshot
 	blue := color.New(color.FgHiBlue).SprintFunc()
 	red := color.New(color.FgHiRed).SprintFunc()
 
+	// No Velero is installed when install instructions are shown, so the target
+	// version is unknown; resolve to the newest (>= 1.17) flags.
+	fsBackupFlags := strings.Join(snapshottypes.VeleroFSBackupFlags(""), " ")
+
 	if registryConfig.OverrideRegistry == "" {
 		// this is an online installation
 		veleroOnlineCommand := fmt.Sprintf(`velero install \
 		--no-default-backup-location \
 		--no-secret \
-		--use-node-agent \
-		--uploader-type=restic \
+		%s \
 		--use-volume-snapshots=false \
-		--plugins %s`, plugin)
+		--plugins %s`, fsBackupFlags, plugin)
 
 		log.ActionWithoutSpinner("No Velero installation has been detected.")
 		log.ActionWithoutSpinner("Follow these instructions to set up Velero:\n")
@@ -44,11 +47,10 @@ func VeleroInstallationInstructionsForCLI(log *logger.CLILogger, plugin snapshot
 	veleroAirgapCommand := fmt.Sprintf(`velero install \
 	--no-default-backup-location \
 	--no-secret \
-	--use-node-agent \
-	--uploader-type=restic \
+	%s \
 	--use-volume-snapshots=false \
 	--image %s/velero:%s \
-	--plugins %s/%s:%s`, registry, red("<velero-version>"), registry, pluginName, pluginTag)
+	--plugins %s/%s:%s`, fsBackupFlags, registry, red("<velero-version>"), registry, pluginName, pluginTag)
 
 	log.ActionWithoutSpinner("No Velero installation has been detected.")
 	log.ActionWithoutSpinner("Follow these instructions to set up Velero:\n")
@@ -76,9 +78,13 @@ const (
 )
 
 func VeleroInstallationInstructionsForUI(plugin snapshottypes.VeleroPlugin, registryConfig *kotsadmtypes.RegistryConfig, kotsConfigureCommand string) []VeleroInstallationInstruction {
+	// No Velero is installed when install instructions are shown, so the target
+	// version is unknown; resolve to the newest (>= 1.17) flags.
+	fsBackupFlags := strings.Join(snapshottypes.VeleroFSBackupFlags(""), " ")
+
 	if registryConfig.OverrideRegistry == "" {
 		// this is an online installation
-		veleroOnlineCommand := fmt.Sprintf(`velero install --no-default-backup-location --no-secret --use-node-agent --uploader-type=restic --use-volume-snapshots=false --plugins %s`, plugin)
+		veleroOnlineCommand := fmt.Sprintf(`velero install --no-default-backup-location --no-secret %s --use-volume-snapshots=false --plugins %s`, fsBackupFlags, plugin)
 
 		return []VeleroInstallationInstruction{
 			{
@@ -104,7 +110,7 @@ func VeleroInstallationInstructionsForUI(plugin snapshottypes.VeleroPlugin, regi
 	pluginName := strings.Split(strings.Split(string(plugin), "/")[1], ":")[0]
 	pluginTag, _ := imageutil.GetTag(string(plugin))
 
-	veleroAirgapCommand := fmt.Sprintf(`velero install --no-default-backup-location --no-secret --use-node-agent --uploader-type=restic --use-volume-snapshots=false --image %s/velero:%s --plugins %s/%s:%s`, registry, "<velero-version>", registry, pluginName, pluginTag)
+	veleroAirgapCommand := fmt.Sprintf(`velero install --no-default-backup-location --no-secret %s --use-volume-snapshots=false --image %s/velero:%s --plugins %s/%s:%s`, fsBackupFlags, registry, "<velero-version>", registry, pluginName, pluginTag)
 
 	return []VeleroInstallationInstruction{
 		{

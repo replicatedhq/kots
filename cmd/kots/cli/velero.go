@@ -138,6 +138,11 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 				return errors.New("velero does not have the 'velero-plugin-for-aws' plugin installed")
 			}
 
+			// --with-minio=false uses the LVP internal store, unsupported on Velero 1.17+.
+			if !v.GetBool("with-minio") && !snapshottypes.VeleroSupportsLVP(veleroStatus.Version) {
+				return errors.New(snapshottypes.ErrLVPUnsupportedOnVelero117)
+			}
+
 			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
@@ -899,6 +904,9 @@ func veleroConfigureFileSystem(ctx context.Context, clientset kubernetes.Interfa
 	}
 
 	if opts.IsMinioDisabled {
+		if veleroStatus != nil && !snapshottypes.VeleroSupportsLVP(veleroStatus.Version) {
+			return errors.New(snapshottypes.ErrLVPUnsupportedOnVelero117)
+		}
 		if veleroStatus == nil || !veleroStatus.ContainsPlugin("local-volume-provider") {
 			print.VeleroInstallationInstructionsForCLI(log, image.Lvp, opts.RegistryConfig, strings.Join(os.Args, " "))
 			return nil
