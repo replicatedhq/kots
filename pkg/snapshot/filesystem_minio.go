@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/image"
-	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -262,19 +261,12 @@ func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.I
 }
 
 func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChecksum string, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (*appsv1.Deployment, error) {
-	existingImage, err := image.GetMinioImage(clientset, deployOptions.Namespace)
+	minioImage, err := image.GetMinioImage(clientset, deployOptions.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find minio image")
 	}
-
-	minioTag, err := imageutil.GetTag(existingImage)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get minio image tag")
-	}
-
-	minioImage := fmt.Sprintf("kotsadm/minio:%s", minioTag)
-	if strings.HasPrefix(minioTag, "RELEASE.") {
-		minioImage = fmt.Sprintf("docker.io/minio/minio:%s", minioTag)
+	if minioImage == "" {
+		minioImage = image.Minio
 	}
 
 	imagePullSecrets := []corev1.LocalObjectReference{}
