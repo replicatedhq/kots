@@ -52,6 +52,9 @@ packages/*
 # worktrees
 .worktrees/
 
+# local tooling
+.tools/
+
 # dev cache
 dev/.gocache
 dev/.gomodcache
