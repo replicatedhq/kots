@@ -9,7 +9,7 @@ Understand how KOTS integrates with Velero for the snapshot/backup feature, iden
 * The KOTS repo is currently hard-coded to the **Restic** path: install instructions, e2e setup, and the local-volume-provider filesystem store all use `--uploader-type=restic` / `resticRepoPrefix`.
 * Velero **v1.17 removed `--uploader-type=restic`** and made **Kopia** the default/only FSB uploader. Restic backups can still be restored in v1.17/v1.18, but v1.19 will remove even that.
 * Updating KOTS to support current Velero versions is therefore not a simple version bump: the install command, the filesystem/LVP storage configuration, repository reset logic, and the e2e test harness all need changes.
-* The **Replicated local-volume-provider plugin** is currently documented as Restic-only, but the plugin code itself is a format-agnostic filesystem object-store plugin. It will likely work with Kopia once the README/examples drop the Restic-specific install flags and `resticRepoPrefix`, and KOTS stops sending that config key.
+* The **Replicated local-volume-provider plugin** is currently documented as Restic-only. It is **not compatible with Kopia** because Velero 1.17+ does not use object-store plugins for Kopia repository operations; Kopia uses its own built-in backends (`s3`, `azure`, `gcs`, `filesystem`). The plugin README/examples should be updated to state this incompatibility and recommend S3-compatible storage (e.g., Minio) for local file-system backups on Velero 1.17+.
 
 ## Current Velero versions in the repo
 
@@ -126,14 +126,16 @@ The parser will continue to work with Kopia logs, but the tests should be update
 
 So the restore-helper image logic is **already fine** for a Kopia move; only the install command needs to change.
 
-### 7. Local-volume-provider plugin is documented as Restic-only
+### 7. Local-volume-provider plugin is documented as Restic-only and is incompatible with Kopia
 
 The Replicated `local-volume-provider` plugin (used for HostPath/NFS/PVC snapshot stores) is documented as Restic-only:
 
 > *“It also supports volume snapshots with Restic.”*
 > *“Must be provided if you're using Restic; [default mount] + [bucket] + [prefix] + 'restic'”*
 
-However, the plugin code itself is a generic filesystem-backed ObjectStore plugin (see the deep dive below). It does not actually read `resticRepoPrefix` or contain Restic-specific logic. The real work for Kopia support is therefore in KOTS (stop sending `resticRepoPrefix`) and in the plugin's README/examples (update install commands).
+In practice, the plugin is a generic filesystem-backed ObjectStore plugin that implements the Velero ObjectStore interface. However, **Velero 1.17+ does not use ObjectStore plugins for Kopia repositories** — Kopia is invoked directly by Velero and reads/writes its repository through its own backends (`s3`, `azure`, `gcs`, `filesystem`). Because the plugin's `replicated.com/hostpath`, `replicated.com/nfs`, and `replicated.com/pvc` providers are not valid Kopia backends, the plugin cannot be used for Kopia file-system backups.
+
+For local file-system backups on Velero 1.17+, customers should use an S3-compatible object store such as **Minio** (e.g., provider `aws` with `s3Url` pointing to the local Minio instance). The plugin README and example manifests should be updated to state this incompatibility and migration path.
 
 ### 8. Velero documentation links point to v1.10
 
@@ -188,29 +190,29 @@ I cloned `replicatedhq/local-volume-provider` into `/var/folders/4r/xl9dbxjd7m58
 | `--uploader-type=restic` | `README.md` | Install instructions only. |
 | `getSubDirectoryLayout()` includes `"restic"` | `pkg/plugin/util.go:28-36` | Pre-creates a `restic` directory; Velero's layout also includes `kopia`, but Kopia will create it on demand. |
 
-### Why the plugin should work with Kopia
+### Why the plugin cannot work with Kopia
 
-The plugin is **storage-format agnostic**. It only implements the Velero ObjectStore interface: `Init`, `PutObject`, `GetObject`, `ListObjects`, `DeleteObject`, `ObjectExists`, `CreateSignedURL`. Kopia's repository data is handled by Velero's `BackupRepository` controller, which reads and writes opaque keys through that same object-store interface. Therefore, Kopia can store its repository files on the local volume via the plugin.
+Although the plugin is **storage-format agnostic** and implements the Velero ObjectStore interface (`Init`, `PutObject`, `GetObject`, `ListObjects`, `DeleteObject`, `ObjectExists`, `CreateSignedURL`), Velero 1.17+ does **not** route Kopia repository data through the ObjectStore plugin layer. Instead, Velero's `BackupRepository` controller invokes Kopia directly, and Kopia uses its own backends (`s3`, `azure`, `gcs`, `filesystem`) to manage the repository. The `replicated.com/hostpath`, `replicated.com/nfs`, and `replicated.com/pvc` providers are not valid Kopia backends, so a BackupStorageLocation using any of those providers cannot be used for Kopia file-system backups.
 
-In Velero 1.17+, the node-agent spawns separate **data mover pods** to run the Kopia modules. Those pods inherit the node-agent pod's volumes and environment (see `velero/pkg/exposer/pod_volume.go#createHostingPod`). Because the LVP plugin already mounts the volume into the node-agent DaemonSet, the Kopia data mover pods will also receive the mount and can read/write the repository.
+This has been confirmed by the customer-facing symptom: LVP-based BackupStorageLocations become `Unavailable` on Velero 1.17+ with errors such as `Backup store contains invalid top-level directories`. The plugin's volume mounts into the node-agent DaemonSet are also irrelevant because the Kopia data mover pods do not call the ObjectStore plugin.
 
 ### What needs to change in the plugin
 
-1. **README and examples**: remove `--uploader-type=restic` and `resticRepoPrefix` from all install commands and BackupStorageLocation YAML.
-2. **Optional**: add `"kopia"` to `getSubDirectoryLayout()` in `pkg/plugin/util.go` so the directory is pre-created (cosmetic; Kopia creates it on demand).
-3. **Compatibility table**: update to claim support for Velero 1.17+ / Kopia.
-4. **No Go API changes are required**: the plugin's `go.mod` is already on `github.com/vmware-tanzu/velero v1.18.0`.
+1. **README and examples**: explicitly state that the plugin is **not compatible with Kopia** and is only supported on Velero 1.16 or lower (with Restic). Update the compatibility table and install commands to reflect this.
+2. **Example manifests**: add a header comment to `examples/hostPath.yaml`, `examples/nfs.yaml`, and `examples/pvc.yaml` warning about the Kopia incompatibility and pointing customers to S3-compatible storage (e.g., Minio) for Velero 1.17+.
+3. **No Go API changes are required**: the plugin code itself is not broken; it is simply incompatible with the Kopia path by design.
 
-### What needs to change in KOTS
+### What needs to change in KOTS for local file-system backups on Velero 1.17+
 
-- Stop sending `resticRepoPrefix` in `BackupStorageLocation.Spec.Config` for HostPath/NFS/PVC stores in `pkg/snapshot/store.go`.
+- For HostPath/NFS/PVC stores on Velero 1.17+, KOTS should switch to the **filesystem Minio** path (`provider: aws` with `s3Url` pointing to the local KOTS-managed Minio instance) instead of using the LVP plugin.
+- The existing `pkg/snapshot/store.go` `ConfigureStore` path may already create an LVP BackupStorageLocation on non-kURL clusters when `minio-enabled-snapshots` is false. This must be gating or redirected to filesystem Minio for Velero 1.17+.
 - Remove the unused `resticRepoBase` constant from `cmd/kots/cli/velero.go`.
 - Update install instructions to use `--use-node-agent` (without `--uploader-type=restic`).
 
-### LVP/Kopia risks that still need validation
+### LVP/Kopia validation status
 
-- This conclusion is based on code inspection; it should be validated by running an actual HostPath/NFS/PVC snapshot backup with Velero 1.17+.
-- The plugin has no Kopia-specific tests or documentation.
+- The incompatibility is now considered **confirmed** by Velero/Kopia architecture and customer reports. The PR documenting this is at https://github.com/replicatedhq/local-volume-provider/pull/121.
+- End-to-end Kopia validation for LVP is no longer needed because the plugin cannot be used with Kopia; validation effort should shift to the filesystem Minio path.
 - Kopia data mover pods require writable cache/config directories. If KOTS sets `ReadOnlyRootFilesystem` on Velero/node-agent pods, emptyDir volumes may need to be added.
 
 ## Impact assessment
@@ -246,11 +248,11 @@ In Velero 1.17+, the node-agent spawns separate **data mover pods** to run the K
 | `cmd/kots/cli/velero.go` | Remove unused `resticRepoBase` constant. |
 | `pkg/kotsadmsnapshot/logparser_test.go` | Update test fixtures to Kopia/Velero 1.17+ log lines. |
 | `go.mod` | Already on `v1.18.0`, so no bump required; but ensure no deprecated API usage. |
-| External: `replicatedhq/local-volume-provider` | Update README/examples to remove `--uploader-type=restic` and `resticRepoPrefix`. Optionally add `"kopia"` to `getSubDirectoryLayout()`. No Go code changes required for basic Kopia support. |
+| External: `replicatedhq/local-volume-provider` | Update README/examples to state that the plugin is **not compatible with Kopia** and is only supported on Velero 1.16 or lower with Restic. Point customers to S3-compatible storage such as Minio for Velero 1.17+. No Go code changes required. |
 
 ## Risks and open questions
 
-1. **LVP plugin support** – The plugin code is likely compatible, but it is documented and tested as Restic-only. The biggest risk is missing validation: HostPath/NFS/PVC stores must be tested end-to-end with Velero 1.17+ and Kopia before we claim support. The plugin README/examples also need to drop Restic-specific flags.
+1. **LVP plugin support** – The local-volume-provider plugin is **not compatible with Kopia** because Velero 1.17+ does not use ObjectStore plugins for Kopia repositories. LVP-based stores must be migrated to an S3-compatible destination (e.g., Minio) before upgrading to Velero 1.17+. The plugin README/examples have been updated to document this in PR https://github.com/replicatedhq/local-volume-provider/pull/121.
 2. **Backward compatibility** – Existing customer Restic backups must still be restorable. Velero 1.17/1.18 allows restores from Restic; KOTS should not force customers to delete old Restic repositories. The `resetResticRepositories` path may be needed for older stores.
 3. **Airgap image list** – Velero 1.17+ uses data mover pods for Kopia. In airgap scenarios all required images (velero, plugin, restore-helper, and potentially LVP plugin) must be pre-pushed. The current e2e helper already pushes `velero-restore-helper`; verify no additional image is required.
 4. **Node-agent config maps** – Velero 1.17+ introduces a `node-agent` ConfigMap for concurrency/priority/queue settings. KOTS may need to document or configure this for large clusters, but it is not a hard requirement.
@@ -259,9 +261,9 @@ In Velero 1.17+, the node-agent spawns separate **data mover pods** to run the K
 
 ## Recommended next steps
 
-1. **Validate LVP plugin Kopia support** by running a HostPath/NFS/PVC snapshot backup with Velero 1.17+ and the current plugin; then update the plugin README/examples to remove Restic-specific flags.
+1. **Update LVP plugin documentation** – Done in PR https://github.com/replicatedhq/local-volume-provider/pull/121. The README and examples now state that LVP is not compatible with Kopia and recommend S3-compatible storage (e.g., Minio) for Velero 1.17+.
 2. **Create a feature branch** and update the install flags in `pkg/print/velero.go`, `ConfigureSnapshots.jsx`, and the e2e helpers to use `--use-node-agent` without Restic.
-3. **Update `pkg/snapshot/store.go`** to stop injecting `resticRepoPrefix` for Kopia-backed BackupStorageLocations, while preserving it for legacy Restic restores if needed.
+3. **Update `pkg/snapshot/store.go`** to redirect HostPath/NFS/PVC stores on Velero 1.17+ to filesystem Minio (S3-compatible) instead of the LVP plugin. Stop injecting `resticRepoPrefix` for new Kopia-backed BackupStorageLocations; preserve it only for legacy Restic restores if needed.
 4. **Bump the e2e Velero pin** to `v1.17.x` or `v1.18.x` and run the snapshot regression tests.
 5. **Update test fixtures** and doc links to match the new Velero version.
 6. **Add a version-gate helper** (e.g. `isVelero17OrNewer`) so the UI/CLI can still support older Restic-based installs during a transition window.
@@ -272,6 +274,7 @@ In Velero 1.17+, the node-agent spawns separate **data mover pods** to run the K
 * Velero 1.17 file-system backup docs: https://velero.io/docs/v1.17/file-system-backup/
 * Velero Restic deprecation docs (v1.17): https://velero.io/docs/v1.17/file-system-backup/#restic-deprecation
 * Replicated local-volume-provider README: https://github.com/replicatedhq/local-volume-provider
+* LVP documentation PR (Kopia incompatibility): https://github.com/replicatedhq/local-volume-provider/pull/121
 * Cloned local-volume-provider repo for this analysis: `/var/folders/4r/xl9dbxjd7m583dm3ppmk0lqh0000gn/T/opencode/local-volume-provider`
 * Velero data mover pod creation (inherits node-agent volumes): `velero/pkg/exposer/pod_volume.go`
 * KOTS snapshot packages: `pkg/snapshot`, `pkg/kotsadmsnapshot`
