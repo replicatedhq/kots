@@ -1006,6 +1006,8 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, bsl *velerov1.
 		store.Internal = &types.StoreInternal{}
 	}
 
+	store.HasResticRepoPrefix = bsl.Spec.Config["resticRepoPrefix"] != ""
+
 	return &store, nil
 }
 

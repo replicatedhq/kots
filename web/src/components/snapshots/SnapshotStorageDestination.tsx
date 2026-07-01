@@ -105,6 +105,7 @@ type AWSStoreProvider = {
   bucket?: string;
   internal?: undefined;
   fileSystem?: undefined;
+  hasResticRepoPrefix?: boolean;
 };
 
 type GCPStoreProvider = {
@@ -120,6 +121,7 @@ type GCPStoreProvider = {
   path?: undefined;
   internal?: undefined;
   fileSystem?: undefined;
+  hasResticRepoPrefix?: boolean;
 };
 
 type AzureStoreProvider = {
@@ -139,6 +141,7 @@ type AzureStoreProvider = {
   path?: undefined;
   internal?: undefined;
   fileSystem?: undefined;
+  hasResticRepoPrefix?: boolean;
 };
 
 type OtherStoreProvider = {
@@ -156,6 +159,7 @@ type OtherStoreProvider = {
   path?: undefined;
   internal?: undefined;
   fileSystem?: undefined;
+  hasResticRepoPrefix?: boolean;
 };
 
 type StoreMetadata = {
@@ -167,9 +171,10 @@ type StoreMetadata = {
   internal?: boolean;
   fileSystem?: string;
   path?: string;
+  hasResticRepoPrefix?: boolean;
 };
 
-type StoreProvider =
+export type StoreProvider =
   | StoreMetadata
   | AWSStoreProvider
   | GCPStoreProvider

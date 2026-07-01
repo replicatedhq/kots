@@ -55,16 +55,17 @@ type StoreFileSystem struct {
 }
 
 type Store struct {
-	Provider   string           `json:"provider"`
-	Bucket     string           `json:"bucket"`
-	Path       string           `json:"path"`
-	CACertData []byte           `json:"caCert,omitempty"`
-	AWS        *StoreAWS        `json:"aws,omitempty"`
-	Azure      *StoreAzure      `json:"azure,omitempty"`
-	Google     *StoreGoogle     `json:"gcp,omitempty"`
-	Other      *StoreOther      `json:"other,omitempty"`
-	Internal   *StoreInternal   `json:"internal,omitempty"`
-	FileSystem *StoreFileSystem `json:"fileSystem,omitempty"`
+	Provider            string           `json:"provider"`
+	Bucket              string           `json:"bucket"`
+	Path                string           `json:"path"`
+	CACertData          []byte           `json:"caCert,omitempty"`
+	AWS                 *StoreAWS        `json:"aws,omitempty"`
+	Azure               *StoreAzure      `json:"azure,omitempty"`
+	Google              *StoreGoogle     `json:"gcp,omitempty"`
+	Other               *StoreOther      `json:"other,omitempty"`
+	Internal            *StoreInternal   `json:"internal,omitempty"`
+	FileSystem          *StoreFileSystem `json:"fileSystem,omitempty"`
+	HasResticRepoPrefix bool             `json:"hasResticRepoPrefix,omitempty"`
 }
 
 type FileSystemConfig struct {

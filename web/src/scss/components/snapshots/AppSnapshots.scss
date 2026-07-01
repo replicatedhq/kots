@@ -198,6 +198,19 @@
     color: var(--warning-color);
     margin-left: 10px;
   }
+
+  // Actionable variant: warning text stacked above a button, kept left-aligned
+  // so the button lines up with the text and the icon sits beside the block.
+  .VeleroWarningBlock--action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: 10px;
+
+    p {
+      margin-left: 0;
+    }
+  }
 }
 
 .InfoSnapshots--wrapper {
