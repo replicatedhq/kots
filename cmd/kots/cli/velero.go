@@ -29,10 +29,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	resticRepoBase = "/var/velero-local-volume-provider"
-)
-
 func VeleroCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "velero",
