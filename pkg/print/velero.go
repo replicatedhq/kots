@@ -16,21 +16,24 @@ func VeleroInstallationInstructionsForCLI(log *logger.CLILogger, plugin snapshot
 	blue := color.New(color.FgHiBlue).SprintFunc()
 	red := color.New(color.FgHiRed).SprintFunc()
 
+	// No Velero is installed when install instructions are shown, so the target
+	// version is unknown; resolve to the newest (>= 1.17) flags.
+	fsBackupFlags := strings.Join(snapshottypes.VeleroFSBackupFlags(""), " ")
+
 	if registryConfig.OverrideRegistry == "" {
 		// this is an online installation
 		veleroOnlineCommand := fmt.Sprintf(`velero install \
 		--no-default-backup-location \
 		--no-secret \
-		--use-node-agent \
-		--uploader-type=restic \
+		%s \
 		--use-volume-snapshots=false \
-		--plugins %s`, plugin)
+		--plugins %s`, fsBackupFlags, plugin)
 
 		log.ActionWithoutSpinner("No Velero installation has been detected.")
 		log.ActionWithoutSpinner("Follow these instructions to set up Velero:\n")
-		log.Info("[1] Install the latest Velero CLI: %s", blue("https://velero.io/docs/v1.10/basic-install/#install-the-cli"))
+		log.Info("[1] Install the latest Velero CLI: %s", blue("https://velero.io/docs/v1.17/basic-install/#install-the-cli"))
 		log.Info("[2] Install Velero: \n\n%s", veleroOnlineCommand)
-		log.Info("[3] If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete node agent configuration: %s", blue("https://velero.io/docs/v1.10/file-system-backup/#configure-node-agent-daemonset-spec"))
+		log.Info("[3] If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete node agent configuration: %s", blue("https://velero.io/docs/v1.17/file-system-backup/#configure-node-agent-daemonset-spec"))
 		log.Info("[4] Configure the backup storage location: \n\n%s", kotsConfigureCommand)
 		log.ActionWithoutSpinner("")
 		return
@@ -44,20 +47,19 @@ func VeleroInstallationInstructionsForCLI(log *logger.CLILogger, plugin snapshot
 	veleroAirgapCommand := fmt.Sprintf(`velero install \
 	--no-default-backup-location \
 	--no-secret \
-	--use-node-agent \
-	--uploader-type=restic \
+	%s \
 	--use-volume-snapshots=false \
 	--image %s/velero:%s \
-	--plugins %s/%s:%s`, registry, red("<velero-version>"), registry, pluginName, pluginTag)
+	--plugins %s/%s:%s`, fsBackupFlags, registry, red("<velero-version>"), registry, pluginName, pluginTag)
 
 	log.ActionWithoutSpinner("No Velero installation has been detected.")
 	log.ActionWithoutSpinner("Follow these instructions to set up Velero:\n")
-	log.Info("[1] Install the latest Velero CLI: %s", blue("https://velero.io/docs/v1.10/basic-install/#install-the-cli"))
+	log.Info("[1] Install the latest Velero CLI: %s", blue("https://velero.io/docs/v1.17/basic-install/#install-the-cli"))
 	log.Info("[2] Install Velero")
-	log.Info("	* Prepare velero images (you will need %s for plugins): %s", red(plugin), blue("https://velero.io/docs/v1.10/on-premises/#air-gapped-deployments"))
+	log.Info("	* Prepare velero images (you will need %s for plugins): %s", red(plugin), blue("https://velero.io/docs/v1.17/on-premises/#air-gapped-deployments"))
 	log.Info("	* Install velero (replace <velero-version> with actual version): \n\n%s", veleroAirgapCommand)
-	log.Info("	* Configure the restore helper to use the prepared image: %s", blue("https://velero.io/docs/v1.10/file-system-backup/#customize-restore-helper-container"))
-	log.Info("[3] If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete node agent configuration: %s", blue("https://velero.io/docs/v1.10/file-system-backup/#configure-node-agent-daemonset-spec"))
+	log.Info("	* Configure the restore helper to use the prepared image: %s", blue("https://velero.io/docs/v1.17/file-system-backup/#customize-restore-helper-container"))
+	log.Info("[3] If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete node agent configuration: %s", blue("https://velero.io/docs/v1.17/file-system-backup/#configure-node-agent-daemonset-spec"))
 	log.Info("[4] Configure the backup storage location: \n\n%s", kotsConfigureCommand)
 	log.ActionWithoutSpinner("")
 }
@@ -76,9 +78,13 @@ const (
 )
 
 func VeleroInstallationInstructionsForUI(plugin snapshottypes.VeleroPlugin, registryConfig *kotsadmtypes.RegistryConfig, kotsConfigureCommand string) []VeleroInstallationInstruction {
+	// No Velero is installed when install instructions are shown, so the target
+	// version is unknown; resolve to the newest (>= 1.17) flags.
+	fsBackupFlags := strings.Join(snapshottypes.VeleroFSBackupFlags(""), " ")
+
 	if registryConfig.OverrideRegistry == "" {
 		// this is an online installation
-		veleroOnlineCommand := fmt.Sprintf(`velero install --no-default-backup-location --no-secret --use-node-agent --uploader-type=restic --use-volume-snapshots=false --plugins %s`, plugin)
+		veleroOnlineCommand := fmt.Sprintf(`velero install --no-default-backup-location --no-secret %s --use-volume-snapshots=false --plugins %s`, fsBackupFlags, plugin)
 
 		return []VeleroInstallationInstruction{
 			{
@@ -88,7 +94,7 @@ func VeleroInstallationInstructionsForUI(plugin snapshottypes.VeleroPlugin, regi
 			},
 			{
 				Title:  "If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete node agent configuration",
-				Action: "https://velero.io/docs/v1.10/file-system-backup/#configure-node-agent-daemonset-spec",
+				Action: "https://velero.io/docs/v1.17/file-system-backup/#configure-node-agent-daemonset-spec",
 				Type:   "link",
 			},
 			{
@@ -104,12 +110,12 @@ func VeleroInstallationInstructionsForUI(plugin snapshottypes.VeleroPlugin, regi
 	pluginName := strings.Split(strings.Split(string(plugin), "/")[1], ":")[0]
 	pluginTag, _ := imageutil.GetTag(string(plugin))
 
-	veleroAirgapCommand := fmt.Sprintf(`velero install --no-default-backup-location --no-secret --use-node-agent --uploader-type=restic --use-volume-snapshots=false --image %s/velero:%s --plugins %s/%s:%s`, registry, "<velero-version>", registry, pluginName, pluginTag)
+	veleroAirgapCommand := fmt.Sprintf(`velero install --no-default-backup-location --no-secret %s --use-volume-snapshots=false --image %s/velero:%s --plugins %s/%s:%s`, fsBackupFlags, registry, "<velero-version>", registry, pluginName, pluginTag)
 
 	return []VeleroInstallationInstruction{
 		{
 			Title:  fmt.Sprintf("Prepare velero images (you will need %s for plugins)", plugin),
-			Action: "https://velero.io/docs/v1.10/on-premises/#air-gapped-deployments",
+			Action: "https://velero.io/docs/v1.17/on-premises/#air-gapped-deployments",
 			Type:   "link",
 		},
 		{
@@ -119,12 +125,12 @@ func VeleroInstallationInstructionsForUI(plugin snapshottypes.VeleroPlugin, regi
 		},
 		{
 			Title:  "Configure the restore helper to use the prepared image",
-			Action: "https://velero.io/docs/v1.10/file-system-backup/#customize-restore-helper-container",
+			Action: "https://velero.io/docs/v1.17/file-system-backup/#customize-restore-helper-container",
 			Type:   "link",
 		},
 		{
 			Title:  "If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete node agent configuration",
-			Action: "https://velero.io/docs/v1.10/file-system-backup/#configure-node-agent-daemonset-spec",
+			Action: "https://velero.io/docs/v1.17/file-system-backup/#configure-node-agent-daemonset-spec",
 			Type:   "link",
 		},
 		{

@@ -29,10 +29,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	resticRepoBase = "/var/velero-local-volume-provider"
-)
-
 func VeleroCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "velero",
@@ -136,6 +132,11 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 			}
 			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
 				return errors.New("velero does not have the 'velero-plugin-for-aws' plugin installed")
+			}
+
+			// --with-minio=false uses the LVP internal store, unsupported on Velero 1.17+.
+			if !v.GetBool("with-minio") && !snapshottypes.VeleroSupportsLVP(veleroStatus.Version) {
+				return errors.New(snapshottypes.ErrLVPUnsupportedOnVelero117)
 			}
 
 			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
@@ -899,6 +900,9 @@ func veleroConfigureFileSystem(ctx context.Context, clientset kubernetes.Interfa
 	}
 
 	if opts.IsMinioDisabled {
+		if veleroStatus != nil && !snapshottypes.VeleroSupportsLVP(veleroStatus.Version) {
+			return errors.New(snapshottypes.ErrLVPUnsupportedOnVelero117)
+		}
 		if veleroStatus == nil || !veleroStatus.ContainsPlugin("local-volume-provider") {
 			print.VeleroInstallationInstructionsForCLI(log, image.Lvp, opts.RegistryConfig, strings.Join(os.Args, " "))
 			return nil

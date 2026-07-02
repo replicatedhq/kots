@@ -16,6 +16,22 @@ export const deleteKurlConfigMap = () => {
   runCommand(`kubectl delete configmap kurl-config --namespace kube-system --ignore-not-found`);
 };
 
+// veleroFSBackupFlags mirrors the backend VeleroFSBackupFlags matrix:
+//   <1.10          -> --use-restic
+//   1.10-1.16      -> --use-node-agent --uploader-type=restic
+//   >=1.17/unknown -> --use-node-agent (kopia is the implicit default uploader)
+// Velero 1.17 removed the restic uploader; kopia is the only valid value.
+export const veleroFSBackupFlags = (veleroVersion: string): string => {
+  const v = semverjs.coerce(veleroVersion);
+  if (v && semverjs.lt(v, semverjs.coerce("1.10")!)) {
+    return "--use-restic";
+  }
+  if (!v || semverjs.gte(v, semverjs.coerce("1.17")!)) {
+    return "--use-node-agent";
+  }
+  return "--use-node-agent --uploader-type=restic";
+};
+
 export type RegistryInfo = {
   ip: string;
   username: string;
@@ -57,7 +73,7 @@ export const getRegistryInfo = (isExistingCluster: boolean): RegistryInfo => {
 };
 
 export const installVeleroAWS = (veleroVersion: string, veleroAwsPluginVersion: string) => {
-  const isVelero10OrNewer = semverjs.gte(semverjs.coerce(veleroVersion), semverjs.coerce("1.10"));
+  const fsBackupFlags = veleroFSBackupFlags(veleroVersion);
 
   // delete velero namespace
   runCommand(`kubectl delete namespace velero --ignore-not-found`);
@@ -85,7 +101,7 @@ sudo mv velero-${veleroVersion}-linux-amd64/velero /usr/local/bin/velero`);
     --snapshot-location-config region=${AWS_REGION} \
     --secret-file ${credsFileName} \
     --prefix ${prefix} \
-    ${isVelero10OrNewer ? "--use-node-agent --uploader-type=restic" : "--use-restic"}`);
+    ${fsBackupFlags}`);
 };
 
 export const installVeleroHostPath = async (
@@ -106,7 +122,7 @@ export const installVeleroHostPath = async (
   runCommand(`mkdir -p ${SNAPSHOTS_HOST_PATH}`);
   runCommand(`chmod a+rwx ${SNAPSHOTS_HOST_PATH}`);
 
-  const isVelero10OrNewer = semverjs.gte(semverjs.coerce(veleroVersion), semverjs.coerce("1.10"));
+  const fsBackupFlags = veleroFSBackupFlags(veleroVersion);
 
   // Download velero binary
   const veleroBinURL = `https://github.com/vmware-tanzu/velero/releases/download/${veleroVersion}/velero-${veleroVersion}-linux-amd64.tar.gz`;
@@ -123,7 +139,7 @@ export const installVeleroHostPath = async (
   let installCommand = `./velero install \
     --no-default-backup-location \
     --no-secret \
-    ${isVelero10OrNewer ? "--use-node-agent --uploader-type=restic" : "--use-restic"} \
+    ${fsBackupFlags} \
     --use-volume-snapshots=false`;
   if (isAirgapped) {
     installCommand += ` \

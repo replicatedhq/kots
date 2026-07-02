@@ -13,6 +13,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/replicatedhq/kots/e2e/minio"
 	"github.com/replicatedhq/kots/e2e/util"
+	snapshottypes "github.com/replicatedhq/kots/pkg/snapshot/types"
 )
 
 type CLI struct {
@@ -41,24 +42,25 @@ func (v *CLI) Install(workspace, kubeconfig string, minio minio.Minio) {
 }
 
 func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Session, error) {
-	// Get the velero CLI version to construct the fully-qualified image for OpenShift compatibility
-	veleroImage, err := getVeleroImageWithRegistry()
+	// Get the velero CLI version to construct the fully-qualified image for OpenShift
+	// compatibility and to select the version-correct file-system-backup flags.
+	veleroVersion, err := getVeleroCLIVersion()
 	if err != nil {
-		return nil, fmt.Errorf("get velero image: %w", err)
+		return nil, fmt.Errorf("get velero version: %w", err)
 	}
+	veleroImage := fmt.Sprintf("docker.io/velero/velero:%s", veleroVersion)
+	fsBackupFlags := snapshottypes.VeleroFSBackupFlags(veleroVersion)
 
 	args := []string{
 		"install",
 		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 		"--provider=aws",
 		fmt.Sprintf("--image=%s", veleroImage),
-		"--plugins=docker.io/velero/velero-plugin-for-aws:v1.6.1",
+		"--plugins=docker.io/velero/velero-plugin-for-aws:v1.14.2",
 		fmt.Sprintf("--bucket=%s", bucket),
 		fmt.Sprintf("--backup-location-config=region=minio,s3ForcePathStyle=true,s3Url=%s", s3Url),
 		fmt.Sprintf("--secret-file=%s", filepath.Join(workspace, "aws-credentials")),
 		fmt.Sprintf("--prefix=%s", "/smoke-test-velero"),
-		"--use-node-agent",
-		"--uploader-type=restic",
 		"--use-volume-snapshots=false",
 		"--velero-pod-cpu-request=250m",
 		"--velero-pod-mem-request=128Mi",
@@ -70,13 +72,15 @@ func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Sessi
 		"--node-agent-pod-mem-limit=512Mi",
 		"--wait",
 	}
+	args = append(args, fsBackupFlags...)
 	return util.RunCommand(exec.Command("velero", args...))
 }
 
-// getVeleroImageWithRegistry returns the fully-qualified velero image by querying the CLI version.
-// This matches velero's default behavior but adds the docker.io registry for OpenShift CRI-O K8s 1.34+ compatibility.
-// Returns: "docker.io/velero/velero:v1.16.2" (example)
-func getVeleroImageWithRegistry() (string, error) {
+// getVeleroCLIVersion returns the installed velero CLI version (e.g. "v1.16.2")
+// by querying the CLI. The version drives both the fully-qualified image (for
+// OpenShift CRI-O K8s 1.34+ compatibility) and the version-correct
+// file-system-backup flags.
+func getVeleroCLIVersion() (string, error) {
 	cmd := exec.Command("velero", "version", "--client-only")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -89,8 +93,7 @@ func getVeleroImageWithRegistry() (string, error) {
 		if strings.HasPrefix(line, "Version:") {
 			version := strings.TrimSpace(strings.TrimPrefix(line, "Version:"))
 			if version != "" {
-				// Construct the fully-qualified image (same as velero's default but with registry prefix)
-				return fmt.Sprintf("docker.io/velero/velero:%s", version), nil
+				return version, nil
 			}
 		}
 	}

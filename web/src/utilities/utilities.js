@@ -520,6 +520,31 @@ export function isVeleroCorrectVersion(snapshotSettings) {
 }
 
 /**
+ * Calculate if the version of Velero is 1.17 or newer
+ * @param {SnapshotSettings} snapshotSettings - snapshot configuration object
+ * @return {Boolean}
+ */
+export function isVelero117OrNewer(snapshotSettings) {
+  if (snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion) {
+    const semVer = snapshotSettings.veleroVersion.split(".");
+
+    const majorVer = parseInt(semVer[0].slice(1));
+    const minorVer = parseInt(semVer[1]);
+
+    if (majorVer > 1) {
+      return true; // any major version > 1 is necessarily >= 1.17
+    }
+
+    if (majorVer < 1) {
+      return false;
+    }
+
+    return minorVer >= 17;
+  }
+  return false;
+}
+
+/**
  * Checks if a license ID is in service account token format (base64-encoded JSON with 'i' and 's' keys)
  * @param {string} licenseId - The license ID to check
  * @returns {boolean} - True if it's a service account token format, false otherwise

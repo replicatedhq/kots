@@ -5,10 +5,15 @@ import isEmpty from "lodash/isEmpty";
 import isEqual from "lodash/isEqual";
 
 import Loader from "../shared/Loader";
-import SnapshotStorageDestination from "./SnapshotStorageDestination";
+import SnapshotStorageDestination, {
+  StoreProvider,
+} from "./SnapshotStorageDestination";
 
 import "../../scss/components/shared/SnapshotForm.scss";
-import { isVeleroCorrectVersion } from "../../utilities/utilities";
+import {
+  isVeleroCorrectVersion,
+  isVelero117OrNewer,
+} from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import { App } from "@types";
 import Icon from "../Icon";
@@ -25,6 +30,7 @@ type State = {
     veleroVersion: string;
     veleroPod?: object;
     nodeAgentPods?: object[];
+    store?: StoreProvider;
   };
   isLoadingSnapshotSettings: boolean;
   snapshotSettingsErr: boolean;
@@ -359,13 +365,31 @@ class SnapshotSettings extends Component<Props, State> {
     return (
       <div className="flex1 flex-column u-overflow--auto">
         <KotsPageTitle pageName="Snapshot Settings" />
-        {!isVeleroCorrectVersion(snapshotSettings) &&
-        !checkForVeleroAndNodeAgent ? (
+        {isVelero117OrNewer(snapshotSettings) &&
+        snapshotSettings?.store?.hasResticRepoPrefix ? (
+          <div className="VeleroWarningBlock">
+            <Icon icon={"warning"} size={24} className="warning-color" />
+            <div className="VeleroWarningBlock--action">
+              <p>
+                Warning: Velero 1.17+ removed the restic uploader that the Local
+                Volume Provider (NFS / Host Path) backend relies on, so your
+                current backup location will no longer work. Reconfigure it to
+                use an object store for backups to succeed.
+              </p>
+              <button
+                className="btn primary blue u-marginTop--10"
+                onClick={this.toggleConfigureSnapshotsModal}
+              >
+                Reconfigure backup location
+              </button>
+            </div>
+          </div>
+        ) : !isVeleroCorrectVersion(snapshotSettings) &&
+          !checkForVeleroAndNodeAgent ? (
           <div className="VeleroWarningBlock">
             <Icon icon={"warning"} size={24} className="warning-color" />
             <p>
-              {" "}
-              To use snapshots reliably, install Velero version 1.5.1 or greater{" "}
+              To use snapshots reliably, install Velero version 1.5.1 or greater
             </p>
           </div>
         ) : null}
