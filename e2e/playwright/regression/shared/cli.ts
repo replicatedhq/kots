@@ -19,15 +19,17 @@ export const deleteKurlConfigMap = () => {
 // veleroFSBackupFlags mirrors the backend VeleroFSBackupFlags matrix:
 //   <1.10          -> --use-restic
 //   1.10-1.16      -> --use-node-agent --uploader-type=restic
-//   >=1.17/unknown -> --use-node-agent --uploader-type=kopia
+//   >=1.17/unknown -> --use-node-agent (kopia is the implicit default uploader)
 // Velero 1.17 removed the restic uploader; kopia is the only valid value.
 export const veleroFSBackupFlags = (veleroVersion: string): string => {
   const v = semverjs.coerce(veleroVersion);
   if (v && semverjs.lt(v, semverjs.coerce("1.10")!)) {
     return "--use-restic";
   }
-  const uploader = !v || semverjs.gte(v, semverjs.coerce("1.17")!) ? "kopia" : "restic";
-  return `--use-node-agent --uploader-type=${uploader}`;
+  if (!v || semverjs.gte(v, semverjs.coerce("1.17")!)) {
+    return "--use-node-agent";
+  }
+  return "--use-node-agent --uploader-type=restic";
 };
 
 export type RegistryInfo = {

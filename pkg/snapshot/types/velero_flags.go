@@ -25,7 +25,7 @@ var (
 //
 //	< 1.10            -> --use-restic (no node-agent/uploader-type)
 //	>= 1.10, < 1.17   -> --use-node-agent --uploader-type=restic
-//	>= 1.17           -> --use-node-agent --uploader-type=kopia
+//	>= 1.17           -> --use-node-agent (kopia is the implicit default uploader)
 //
 // An empty or unparseable version is treated as a current (>= 1.17) release,
 // since install instructions are shown before Velero exists in the cluster and
@@ -33,7 +33,7 @@ var (
 func VeleroFSBackupFlags(veleroVersion string) []string {
 	v, err := parseVeleroVersion(veleroVersion)
 	if err != nil { // empty or unparseable -> newest behavior
-		return []string{"--use-node-agent", "--uploader-type=kopia"}
+		return []string{"--use-node-agent"}
 	}
 	switch {
 	case v.LessThan(velero110):
@@ -41,7 +41,7 @@ func VeleroFSBackupFlags(veleroVersion string) []string {
 	case v.LessThan(velero117):
 		return []string{"--use-node-agent", "--uploader-type=restic"}
 	default:
-		return []string{"--use-node-agent", "--uploader-type=kopia"}
+		return []string{"--use-node-agent"}
 	}
 }
 

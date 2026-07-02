@@ -11,10 +11,11 @@ import (
 )
 
 // Install instructions are emitted before Velero exists in the cluster, so the
-// version is unknown and the flags must resolve to the newest behavior (kopia).
+// version is unknown and the flags must resolve to the newest behavior: node
+// agent with the implicit (kopia) default uploader, i.e. no --uploader-type.
 // These guard against re-introducing a hardcoded restic uploader literal.
 
-func TestVeleroInstallationInstructionsForUI_usesKopia(t *testing.T) {
+func TestVeleroInstallationInstructionsForUI_usesNodeAgent(t *testing.T) {
 	cases := []struct {
 		name           string
 		registryConfig kotsadmtypes.RegistryConfig
@@ -35,12 +36,12 @@ func TestVeleroInstallationInstructionsForUI_usesKopia(t *testing.T) {
 			if installCmd == "" {
 				t.Fatalf("no velero install command found in instructions: %+v", instructions)
 			}
-			assertKopiaFlags(t, installCmd)
+			assertNodeAgentFlags(t, installCmd)
 		})
 	}
 }
 
-func TestVeleroInstallationInstructionsForCLI_usesKopia(t *testing.T) {
+func TestVeleroInstallationInstructionsForCLI_usesNodeAgent(t *testing.T) {
 	cases := []struct {
 		name           string
 		registryConfig kotsadmtypes.RegistryConfig
@@ -53,20 +54,18 @@ func TestVeleroInstallationInstructionsForCLI_usesKopia(t *testing.T) {
 			var buf bytes.Buffer
 			log := logger.NewCLILogger(&buf)
 			VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, &tc.registryConfig, "kots-configure-cmd")
-			assertKopiaFlags(t, buf.String())
+			assertNodeAgentFlags(t, buf.String())
 		})
 	}
 }
 
-func assertKopiaFlags(t *testing.T, out string) {
+func assertNodeAgentFlags(t *testing.T, out string) {
 	t.Helper()
 	if !strings.Contains(out, "--use-node-agent") {
 		t.Errorf("expected --use-node-agent in output: %s", out)
 	}
-	if !strings.Contains(out, "--uploader-type=kopia") {
-		t.Errorf("expected --uploader-type=kopia in output: %s", out)
-	}
-	if strings.Contains(out, "--uploader-type=restic") {
-		t.Errorf("unexpected --uploader-type=restic in output: %s", out)
+	// kopia is the implicit default uploader, so no --uploader-type should be set.
+	if strings.Contains(out, "--uploader-type") {
+		t.Errorf("unexpected --uploader-type in output: %s", out)
 	}
 }

@@ -86,7 +86,7 @@ export default class SnapshotInstallationBox extends Component {
               continue configuring and using snapshots,{" "}
               {this.props.fsBackupComponentName} has to be running reliably.
               <a
-                href="https://velero.io/docs/v1.10/file-system-backup/#troubleshooting"
+                href="https://velero.io/docs/v1.17/file-system-backup/#troubleshooting"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="link u-marginLeft--5"

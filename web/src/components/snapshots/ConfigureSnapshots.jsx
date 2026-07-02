@@ -289,7 +289,7 @@ class ConfigureSnapshots extends Component {
                           />
                         </a>
                         <a
-                          href="https://velero.io/docs/v1.10/supported-providers/"
+                          href="https://velero.io/docs/v1.17/supported-providers/"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="snapshotOptions"

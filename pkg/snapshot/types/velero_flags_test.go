@@ -10,17 +10,17 @@ func TestVeleroFSBackupFlags(t *testing.T) {
 		in   string
 		want []string
 	}{
-		{"", []string{"--use-node-agent", "--uploader-type=kopia"}},
-		{"garbage", []string{"--use-node-agent", "--uploader-type=kopia"}},
+		{"", []string{"--use-node-agent"}},
+		{"garbage", []string{"--use-node-agent"}},
 		{"1.9.0", []string{"--use-restic"}},
 		{"1.9.9", []string{"--use-restic"}},
 		{"1.10.0", []string{"--use-node-agent", "--uploader-type=restic"}},
 		{"1.16.2", []string{"--use-node-agent", "--uploader-type=restic"}},
 		{"1.16.99", []string{"--use-node-agent", "--uploader-type=restic"}},
-		{"1.17.0", []string{"--use-node-agent", "--uploader-type=kopia"}},
-		{"v1.17.2", []string{"--use-node-agent", "--uploader-type=kopia"}},
-		{"1.17.0-rc.1", []string{"--use-node-agent", "--uploader-type=kopia"}},
-		{"2.0.0", []string{"--use-node-agent", "--uploader-type=kopia"}},
+		{"1.17.0", []string{"--use-node-agent"}},
+		{"v1.17.2", []string{"--use-node-agent"}},
+		{"1.17.0-rc.1", []string{"--use-node-agent"}},
+		{"2.0.0", []string{"--use-node-agent"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.in, func(t *testing.T) {
