@@ -56,7 +56,7 @@ func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Sessi
 		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 		"--provider=aws",
 		fmt.Sprintf("--image=%s", veleroImage),
-		"--plugins=docker.io/velero/velero-plugin-for-aws:v1.6.1",
+		"--plugins=docker.io/velero/velero-plugin-for-aws:v1.14.2",
 		fmt.Sprintf("--bucket=%s", bucket),
 		fmt.Sprintf("--backup-location-config=region=minio,s3ForcePathStyle=true,s3Url=%s", s3Url),
 		fmt.Sprintf("--secret-file=%s", filepath.Join(workspace, "aws-credentials")),
