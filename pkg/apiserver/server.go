@@ -194,7 +194,17 @@ func Start(params *APIServerParams) {
 
 	// Serve the upgrade UI from the upgrade service
 	// CAUTION: modifying this route WILL break backwards compatibility
-	r.PathPrefix("/upgrade-service/app/{appSlug}").Methods("GET").HandlerFunc(upgradeservice.Proxy)
+	upgradeServiceRouter := r.PathPrefix("/upgrade-service/app/{appSlug}").Subrouter()
+	upgradeServiceRouter.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// The upgrade service UI is rendered inside an iframe in the admin console.
+			// The parent router's SecurityHeadersMiddleware sets X-Frame-Options: DENY,
+			// which would block the iframe. Override it to allow same-origin framing.
+			w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+			next.ServeHTTP(w, r)
+		})
+	})
+	upgradeServiceRouter.Methods("GET").HandlerFunc(upgradeservice.Proxy)
 
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" { // we don't serve this in the dev env
 		spa := handlers.SPAHandler{}
