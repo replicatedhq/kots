@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 )
 
 // todo, figure out why this doesn't use the mholt tgz archiver that we
@@ -146,10 +147,13 @@ func ExtractTGZArchiveFromReader(tgzReader io.Reader, destDir string) error {
 		}
 
 		err = func() error {
-			fileName := filepath.Join(destDir, hdr.Name)
+			fileName, err := archiveutil.SafeArchivePath(destDir, hdr.Name)
+			if err != nil {
+				return errors.Wrapf(err, "invalid archive entry %q", hdr.Name)
+			}
 
 			filePath, _ := filepath.Split(fileName)
-			err := os.MkdirAll(filePath, 0755)
+			err = os.MkdirAll(filePath, 0755)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create directory %q", filePath)
 			}

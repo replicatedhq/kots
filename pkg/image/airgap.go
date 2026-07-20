@@ -20,6 +20,7 @@ import (
 	imagespecsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/archives"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	dockerarchive "github.com/replicatedhq/kots/pkg/docker/archive"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
@@ -79,7 +80,10 @@ func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool,
 			continue
 		}
 
-		dstFileName := filepath.Join(destDir, header.Name)
+		dstFileName, err := archiveutil.SafeArchivePath(destDir, header.Name)
+		if err != nil {
+			return errors.Wrapf(err, "invalid archive entry %q", header.Name)
+		}
 		if err := os.MkdirAll(filepath.Dir(dstFileName), 0755); err != nil {
 			return errors.Wrap(err, "failed to create path")
 		}
@@ -842,7 +846,10 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, artifactsToPush *kotsv1be
 			continue
 		}
 
-		dstFilePath := filepath.Join(tmpDir, header.Name)
+		dstFilePath, err := archiveutil.SafeArchivePath(tmpDir, header.Name)
+		if err != nil {
+			return errors.Wrapf(err, "invalid archive entry %q", header.Name)
+		}
 		if err := os.MkdirAll(filepath.Dir(dstFilePath), 0755); err != nil {
 			return errors.Wrap(err, "failed to create path")
 		}
