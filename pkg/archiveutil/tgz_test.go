@@ -138,3 +138,40 @@ func TestExtractTGZ_TarSlip(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractTGZ_TarSlip_SymlinkBypass(t *testing.T) {
+	dir := t.TempDir()
+	destDir := filepath.Join(dir, "dest")
+	outsideDir := filepath.Join(dir, "outside")
+	require.NoError(t, os.MkdirAll(destDir, 0755))
+	require.NoError(t, os.MkdirAll(outsideDir, 0755))
+
+	linkPath := filepath.Join(destDir, "link")
+	if err := os.Symlink(outsideDir, linkPath); err != nil {
+		t.Skipf("unable to create symlink for test: %v", err)
+	}
+
+	src := filepath.Join(dir, "test.tar.gz")
+	f, err := os.Create(src)
+	require.NoError(t, err)
+	defer f.Close()
+
+	gw := gzip.NewWriter(f)
+	tw := tar.NewWriter(gw)
+	err = tw.WriteHeader(&tar.Header{
+		Typeflag: tar.TypeReg,
+		Name:     "link/pwned",
+		Size:     4,
+		Mode:     0644,
+	})
+	require.NoError(t, err)
+	_, err = tw.Write([]byte("data"))
+	require.NoError(t, err)
+	require.NoError(t, tw.Close())
+	require.NoError(t, gw.Close())
+
+	err = ExtractTGZ(t.Context(), src, destDir)
+	require.Error(t, err)
+	_, err = os.Stat(filepath.Join(outsideDir, "pwned"))
+	require.True(t, os.IsNotExist(err), "symlink bypass wrote file outside dest dir")
+}

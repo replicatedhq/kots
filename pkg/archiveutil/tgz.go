@@ -129,7 +129,9 @@ func extractFileToDisk(fi archives.FileInfo, dest string, stripComponents int) e
 
 // SafeArchivePath returns the absolute path within destDir where an archive
 // entry named hdrName should be written, or an error if hdrName attempts to
-// escape destDir.
+// escape destDir. Existing symlinks in the destination are treated as escapes
+// so that an entry whose parent path is a symlink cannot be written outside
+// the extraction root.
 func SafeArchivePath(destDir, hdrName string) (string, error) {
 	if filepath.IsAbs(hdrName) {
 		return "", errors.Errorf("illegal absolute path in archive: %q", hdrName)
@@ -145,10 +147,42 @@ func SafeArchivePath(destDir, hdrName string) (string, error) {
 	if err != nil {
 		return "", errors.Errorf("illegal path in archive: %q", hdrName)
 	}
-
 	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return "", errors.Errorf("illegal path in archive: %q", hdrName)
 	}
 
+	if err := checkSymlinkEscape(destDir, fileName); err != nil {
+		return "", err
+	}
+
 	return fileName, nil
+}
+
+// checkSymlinkEscape verifies that no existing component of fileName below
+// destDir is a symbolic link. This prevents an archive entry whose parent path
+// is a symlink from being written outside the extraction root.
+func checkSymlinkEscape(destDir, fileName string) error {
+	rel, err := filepath.Rel(destDir, fileName)
+	if err != nil {
+		return err
+	}
+
+	current := destDir
+	for _, part := range strings.Split(rel, string(filepath.Separator)) {
+		if part == "" || part == "." {
+			continue
+		}
+		current = filepath.Join(current, part)
+		fi, err := os.Lstat(current)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return err
+		}
+		if fi.Mode()&os.ModeSymlink != 0 {
+			return errors.Errorf("symlink escape attempt in archive path: %q", current)
+		}
+	}
+	return nil
 }
