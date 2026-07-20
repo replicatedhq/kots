@@ -1258,7 +1258,18 @@ type InstallationParams struct {
 	RequestedChannelSlug   string
 	AdditionalAnnotations  map[string]string
 	AdditionalLabels       map[string]string
+
+	// Prune is an operator-controlled escape hatch (set directly on the kotsadm-confg
+	// ConfigMap) for cleaning up old support bundle and app version archives.
+	PruneEnabled            bool
+	PruneSupportBundleCount int // Max support bundle archives retained per app
+	PruneAppVersionCount    int // Max app version archives retained per app
 }
+
+const (
+	defaultPruneSupportBundleCount = 25
+	defaultPruneAppVersionCount    = 50
+)
 
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig := InstallationParams{}
@@ -1272,7 +1283,10 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 }
 
 func GetInstallationParamsWithClientset(clientset kubernetes.Interface, configMapName string, namespace string) (InstallationParams, error) {
-	autoConfig := InstallationParams{}
+	autoConfig := InstallationParams{
+		PruneSupportBundleCount: defaultPruneSupportBundleCount,
+		PruneAppVersionCount:    defaultPruneAppVersionCount,
+	}
 
 	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
@@ -1300,6 +1314,18 @@ func GetInstallationParamsWithClientset(clientset kubernetes.Interface, configMa
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
 	autoConfig.RequestedChannelSlug = kotsadmConfigMap.Data["requested-channel-slug"]
+
+	autoConfig.PruneEnabled, _ = strconv.ParseBool(kotsadmConfigMap.Data["prune-enabled"])
+	if v, ok := kotsadmConfigMap.Data["prune-support-bundle-count"]; ok {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			autoConfig.PruneSupportBundleCount = n
+		}
+	}
+	if v, ok := kotsadmConfigMap.Data["prune-app-version-count"]; ok {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			autoConfig.PruneAppVersionCount = n
+		}
+	}
 
 	if enableImageDeletion, ok := kotsadmConfigMap.Data["enable-image-deletion"]; ok {
 		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)

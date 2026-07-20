@@ -101,10 +101,14 @@ func (s *RqliteStore) ReadArchive(path string) (string, error) {
 func (s *RqliteStore) DeleteArchive(path string) error {
 	db := persistence.MustGetDBSession()
 
-	query := `DELETE FROM object_store WHERE filepath = ?`
+	// Match the exact object as well as any object nested under this path, so a
+	// directory-style prefix (e.g. "supportbundles/<id>") deletes every object beneath
+	// it. This mirrors the prefix semantics of the S3 and blob backends; without it,
+	// callers that pass a prefix (such as DeleteSupportBundle) orphan their archives.
+	query := `DELETE FROM object_store WHERE filepath = ? OR filepath LIKE ?`
 	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
-		Arguments: []interface{}{path},
+		Arguments: []interface{}{path, path + "/%"},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to delete: %v: %v", err, wr.Err)

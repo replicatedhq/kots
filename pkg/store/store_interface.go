@@ -192,6 +192,7 @@ type VersionStore interface {
 	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool) error
 	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, isInstall bool, isAutomated bool, skipPreflights bool) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
+	DeleteAppVersion(appID string, sequence int64) error
 	GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
 	GetNextAppSequence(appID string) (int64, error)

@@ -244,6 +244,20 @@ func (mr *MockStoreMockRecorder) CreateSupportBundle(bundleID, appID, archivePat
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSupportBundle", reflect.TypeOf((*MockStore)(nil).CreateSupportBundle), bundleID, appID, archivePath, marshalledTree)
 }
 
+// DeleteAppVersion mocks base method.
+func (m *MockStore) DeleteAppVersion(appID string, sequence int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAppVersion", appID, sequence)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAppVersion indicates an expected call of DeleteAppVersion.
+func (mr *MockStoreMockRecorder) DeleteAppVersion(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAppVersion", reflect.TypeOf((*MockStore)(nil).DeleteAppVersion), appID, sequence)
+}
+
 // DeleteDownstreamDeployStatus mocks base method.
 func (m *MockStore) DeleteDownstreamDeployStatus(appID, clusterID string, sequence int64) error {
 	m.ctrl.T.Helper()
@@ -3640,6 +3654,20 @@ func (m *MockVersionStore) CreatePendingDownloadAppVersion(appID string, update 
 func (mr *MockVersionStoreMockRecorder) CreatePendingDownloadAppVersion(appID, update, kotsApplication, license interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePendingDownloadAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreatePendingDownloadAppVersion), appID, update, kotsApplication, license)
+}
+
+// DeleteAppVersion mocks base method.
+func (m *MockVersionStore) DeleteAppVersion(appID string, sequence int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAppVersion", appID, sequence)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAppVersion indicates an expected call of DeleteAppVersion.
+func (mr *MockVersionStoreMockRecorder) DeleteAppVersion(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAppVersion", reflect.TypeOf((*MockVersionStore)(nil).DeleteAppVersion), appID, sequence)
 }
 
 // GetAppVersion mocks base method.

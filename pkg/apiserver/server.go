@@ -20,6 +20,7 @@ import (
 	operatorclient "github.com/replicatedhq/kots/pkg/operator/client"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/policy"
+	"github.com/replicatedhq/kots/pkg/prune"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/session"
@@ -134,6 +135,10 @@ func Start(params *APIServerParams) {
 
 	if err := session.StartSessionPurgeCronJob(); err != nil {
 		log.Println("Failed to start session purge cron job:", err)
+	}
+
+	if err := prune.Start(); err != nil {
+		log.Println("Failed to start prune job:", err)
 	}
 
 	waitForAirgap, err := automation.NeedToWaitForAirgapApp()
