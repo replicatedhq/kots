@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archiveutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -80,10 +81,10 @@ func findReplicatedChart(chartArchive io.Reader, replicatedChartNames []string) 
 	}
 
 	type chartFile struct {
-		path     string
-		parts    []string
+		path      string
+		parts     []string
 		chartName string
-		deps     []struct {
+		deps      []struct {
 			Name  string `json:"name" yaml:"name"`
 			Alias string `json:"alias" yaml:"alias"`
 		}
@@ -200,33 +201,49 @@ func findTopLevelChartValues(r io.Reader) (valuesYaml []byte, pathInArchive stri
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.Mkdir(filepath.Join(workspace, header.Name), fs.FileMode(header.Mode)); err != nil {
+			dirPath, err := archiveutil.SafeArchivePath(workspace, header.Name)
+			if err != nil {
+				finalErr = errors.Wrapf(err, "invalid archive entry %q", header.Name)
+				return
+			}
+			if err := os.MkdirAll(dirPath, fs.FileMode(header.Mode)); err != nil {
 				finalErr = errors.Wrap(err, "failed to create directory from archive")
 				return
 			}
 		case tar.TypeReg:
+			filePath, err := archiveutil.SafeArchivePath(workspace, header.Name)
+			if err != nil {
+				finalErr = errors.Wrapf(err, "invalid archive entry %q", header.Name)
+				return
+			}
+
 			content, err := io.ReadAll(tarReader)
 			if err != nil {
 				finalErr = errors.Wrap(err, "failed to read file")
 				return
 			}
 
-			if filepath.Base(header.Name) == "values.yaml" {
+			relPath, err := filepath.Rel(workspace, filePath)
+			if err != nil {
+				finalErr = errors.Wrapf(err, "invalid archive entry %q", header.Name)
+				return
+			}
+			if filepath.Base(relPath) == "values.yaml" {
 				// only get the values.yaml from the top level chart
-				p := filepath.Dir(header.Name)
+				p := filepath.Dir(relPath)
 				if !strings.Contains(p, string(os.PathSeparator)) {
-					pathInArchive = header.Name
+					pathInArchive = relPath
 					valuesYaml = content
 				}
 			}
 
-			dir := filepath.Dir(filepath.Join(workspace, header.Name))
+			dir := filepath.Dir(filePath)
 			if err := os.MkdirAll(dir, 0700); err != nil {
 				finalErr = errors.Wrap(err, "failed to create directory from filename")
 				return
 			}
 
-			outFile, err := os.Create(filepath.Join(workspace, header.Name))
+			outFile, err := os.Create(filePath)
 			if err != nil {
 				finalErr = errors.Wrap(err, "failed to create file")
 				return

@@ -61,10 +61,13 @@ func ExtractTGZArchive(tgzFile string, destDir string) error {
 		}
 
 		err = func() error {
-			fileName := filepath.Join(destDir, hdr.Name)
+			fileName, err := archiveutil.SafeArchivePath(destDir, hdr.Name)
+			if err != nil {
+				return errors.Wrapf(err, "invalid archive entry %q", hdr.Name)
+			}
 
 			filePath, _ := filepath.Split(fileName)
-			err := os.MkdirAll(filePath, 0755)
+			err = os.MkdirAll(filePath, 0755)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create directory %q", filePath)
 			}

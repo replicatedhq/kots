@@ -95,7 +95,11 @@ func extractFileToDisk(fi archives.FileInfo, dest string, stripComponents int) e
 		}
 	}
 
-	destPath := filepath.Join(dest, name)
+	destPath, err := SafeArchivePath(dest, name)
+	if err != nil {
+		return err
+	}
+
 	if fi.IsDir() {
 		return os.MkdirAll(destPath, os.ModePerm)
 	}
@@ -106,8 +110,7 @@ func extractFileToDisk(fi archives.FileInfo, dest string, stripComponents int) e
 	}
 	defer src.Close()
 
-	err = os.MkdirAll(filepath.Dir(destPath), os.ModePerm)
-	if err != nil {
+	if err = os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -122,4 +125,30 @@ func extractFileToDisk(fi archives.FileInfo, dest string, stripComponents int) e
 	}
 
 	return os.Chmod(destPath, fi.Mode().Perm())
+}
+
+// SafeArchivePath returns the absolute path within destDir where an archive
+// entry named hdrName should be written, or an error if hdrName attempts to
+// escape destDir.
+func SafeArchivePath(destDir, hdrName string) (string, error) {
+	if filepath.IsAbs(hdrName) {
+		return "", errors.Errorf("illegal absolute path in archive: %q", hdrName)
+	}
+
+	destDir, err := filepath.Abs(destDir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to resolve destination directory")
+	}
+
+	fileName := filepath.Join(destDir, hdrName)
+	rel, err := filepath.Rel(destDir, fileName)
+	if err != nil {
+		return "", errors.Errorf("illegal path in archive: %q", hdrName)
+	}
+
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", errors.Errorf("illegal path in archive: %q", hdrName)
+	}
+
+	return fileName, nil
 }
