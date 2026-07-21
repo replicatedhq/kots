@@ -1319,11 +1319,15 @@ func GetInstallationParamsWithClientset(clientset kubernetes.Interface, configMa
 	if v, ok := kotsadmConfigMap.Data["prune-support-bundle-count"]; ok {
 		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
 			autoConfig.PruneSupportBundleCount = n
+		} else {
+			logger.Warnf("invalid prune-support-bundle-count %q in kotsadm config map, ignoring", v)
 		}
 	}
 	if v, ok := kotsadmConfigMap.Data["prune-app-version-count"]; ok {
 		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
 			autoConfig.PruneAppVersionCount = n
+		} else {
+			logger.Warnf("invalid prune-app-version-count %q in kotsadm config map, ignoring", v)
 		}
 	}
 
