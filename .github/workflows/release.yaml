@@ -121,7 +121,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v7
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@v7
       with:
         go-version-file: go.mod
     - name: Cache Go modules
@@ -189,7 +189,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v7
 
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@v7
       with:
         go-version-file: go.mod
 
@@ -245,7 +245,7 @@ jobs:
         docker-images: true
         swap-storage: true
 
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@v7
       with:
         go-version-file: go.mod
 
@@ -298,7 +298,7 @@ jobs:
     needs: [ generate-tag, goreleaser ]
     steps:
     - uses: actions/checkout@v7
-    - uses: actions/setup-go@v6
+    - uses: actions/setup-go@v7
       with:
         go-version-file: go.mod
     - uses: replicatedhq/action-install-pact@main
