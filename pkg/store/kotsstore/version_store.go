@@ -816,6 +816,39 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 	return v, nil
 }
 
+// DeleteAppVersion removes the metadata for a single app version (identified by its
+// parent app_version sequence) from the database. It does not touch the object-store
+// archive; callers are responsible for deleting <appID>/<sequence>.tar.gz separately.
+// Deletes are batched in a single transaction, mirroring RemoveApp, and remove the
+// version's downstream output and downstream version rows before the app_version row.
+func (s *KOTSStore) DeleteAppVersion(appID string, sequence int64) error {
+	db := persistence.MustGetDBSession()
+	statements := []gorqlite.ParameterizedStatement{
+		{
+			Query:     "delete from app_downstream_output where app_id = ? and downstream_sequence in (select sequence from app_downstream_version where app_id = ? and parent_sequence = ?)",
+			Arguments: []interface{}{appID, appID, sequence},
+		},
+		{
+			Query:     "delete from app_downstream_version where app_id = ? and parent_sequence = ?",
+			Arguments: []interface{}{appID, sequence},
+		},
+		{
+			Query:     "delete from app_version where app_id = ? and sequence = ?",
+			Arguments: []interface{}{appID, sequence},
+		},
+	}
+
+	if wrs, err := db.WriteParameterized(statements); err != nil {
+		wrErrs := []error{}
+		for _, wr := range wrs {
+			wrErrs = append(wrErrs, wr.Err)
+		}
+		return fmt.Errorf("failed to delete app version %d: %v: %v", sequence, err, wrErrs)
+	}
+
+	return nil
+}
+
 // GetLatestAppSequence returns the sequence of the latest app version.
 // This function handles both semantic and non-semantic versions.
 // If downloadedOnly param is set to true, the sequence of the latest downloaded app version will be returned.

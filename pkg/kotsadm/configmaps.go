@@ -72,8 +72,17 @@ func EnsureConfigMaps(deployOptions types.DeployOptions, clientset *kubernetes.C
 	return nil
 }
 
+// updateConfigMap merges the desired keys into the existing config map, leaving any
+// unrecognized keys untouched. This is what allows operator-set keys (e.g. the prune-*
+// settings) to survive install/upgrade: KOTS updates only the keys it emits rather than
+// replacing the whole .Data.
 func updateConfigMap(existingConfigMap, desiredConfigMap *corev1.ConfigMap) *corev1.ConfigMap {
-	existingConfigMap.Data = desiredConfigMap.Data
+	if existingConfigMap.Data == nil {
+		existingConfigMap.Data = map[string]string{}
+	}
+	for k, v := range desiredConfigMap.Data {
+		existingConfigMap.Data[k] = v
+	}
 	return existingConfigMap
 }
 
@@ -181,6 +190,8 @@ func ensureMinioXlMigrationScriptsConfigmap(namespace string, clientset kubernet
 		return nil
 	}
 
+	// nil managedKeys: pure additive merge — this internal config map has no operator
+	// keys and no conditionally-omitted managed keys, so there is nothing to prune.
 	existingConfigMap = updateConfigMap(existingConfigMap, desiredConfigMap)
 
 	_, err = clientset.CoreV1().ConfigMaps(namespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
