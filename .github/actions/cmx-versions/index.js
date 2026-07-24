@@ -44,9 +44,6 @@ async function getClusterVersions() {
         openshift: {
             // filtering out all versions except 4.20.0-okd for now
             versions: new Set(["4.20.0-okd"])
-        },
-        oke: {
-            versions: new Set(["1.34.0"])
         }
     }
 
