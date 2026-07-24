@@ -1,34 +1,24 @@
 /**
  * Test file for cmx-versions functions
- * 
- * Before running this test, make sure to install the required dependencies:
- * cd .github/actions/cmx-versions
- * npm install semver
- * 
- * Then run the test from the repository root:
+ *
+ * Run from the action directory:
+ * npm test
+ *
+ * Or from the repository root:
  * node .github/actions/cmx-versions/test.js
- * 
- * Make sure you're in the root directory of the repository when running the test.
  */
 
-try {
-    var semverCoerce = require('semver/functions/coerce');
-    var semverMajor = require('semver/functions/major');
-    var semverMinor = require('semver/functions/minor');
-    var semverGt = require('semver/functions/gt');
-    var semverRSort = require('semver/functions/rsort');
-} catch (error) {
-    console.error('Error: The semver package is not installed.');
-    console.error('Please run the following commands to install it:');
-    console.error('cd .github/actions/cmx-versions');
-    console.error('npm install semver');
-    console.error('\nThen run this test again.');
-    process.exit(1);
-}
+import assert from 'assert';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import semverCoerce from 'semver/functions/coerce.js';
+import semverMajor from 'semver/functions/major.js';
+import semverMinor from 'semver/functions/minor.js';
+import semverGt from 'semver/functions/gt.js';
+import semverRSort from 'semver/functions/rsort.js';
 
-const assert = require('assert');
-const path = require('path');
-const fs = require('fs');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Import the functions from index.js
 // We need to disable the actual execution of getClusterVersions
@@ -113,7 +103,7 @@ function runTests() {
 
     // Test getLatestVersion
     testGetLatestVersion();
-    
+
     // Test getLastMajorMinorVersions
     testGetLastMajorMinorVersions();
 
@@ -153,7 +143,7 @@ function testGetLastMajorMinorVersions() {
     console.log("\nTesting getLastMajorMinorVersions...");
 
     const k3s = apiResponse["cluster-versions"].find(d => d.short_name === "k3s");
-    
+
     // Test with different numbers of latest versions
     const top3Versions = getLastMajorMinorVersions(k3s, 3);
     console.log("Top 3 major.minor versions:", top3Versions);
@@ -161,21 +151,21 @@ function testGetLastMajorMinorVersions() {
     assert.strictEqual(top3Versions[0], "1.32", "First version should be 1.32");
     assert.strictEqual(top3Versions[1], "1.31", "Second version should be 1.31");
     assert.strictEqual(top3Versions[2], "1.30", "Third version should be 1.30");
-    
+
     // Test with 5 versions
     const top5Versions = getLastMajorMinorVersions(k3s, 5);
     console.log("Top 5 major.minor versions:", top5Versions);
     assert.strictEqual(top5Versions.length, 5, "Should return exactly 5 versions");
     assert.strictEqual(top5Versions[0], "1.32", "First version should be 1.32");
     assert.strictEqual(top5Versions[4], "1.28", "Fifth version should be 1.28");
-    
+
     // Test with more versions than available
     const allVersions = getLastMajorMinorVersions(k3s, 20);
     console.log("All major.minor versions (requested 20):", allVersions);
     assert.strictEqual(allVersions.length, 9, "Should return all 9 available major.minor versions");
     assert.strictEqual(allVersions[0], "1.32", "First version should be 1.32");
     assert.strictEqual(allVersions[8], "1.24", "Last version should be 1.24");
-    
+
     // Test with 0 versions
     const noVersions = getLastMajorMinorVersions(k3s, 0);
     console.log("No versions (requested 0):", noVersions);
@@ -185,7 +175,7 @@ function testGetLastMajorMinorVersions() {
     const undefinedVersions = getLastMajorMinorVersions(k3s);
     console.log("Undefined versions (requested undefined):", undefinedVersions);
     assert.strictEqual(allVersions.length, 9, "Should return all 9 available major.minor versions");
-    
+
     console.log("getLastMajorMinorVersions tests passed!");
 }
 
@@ -200,7 +190,7 @@ function testGetLatestMinorVersionsWithSpecificMajors() {
     const latestMinorVersions = getLatestMinorVersions(k3s, majorMinorVersionFilter);
 
     console.log("Latest minor versions for majors 1.30, 1.31, 1.32:");
-    
+
     assert.strictEqual(Object.keys(latestMinorVersions).length, 3, "Should find the correct number of minor versions");
     assert.strictEqual(latestMinorVersions["1.30"], "1.30.10", "Should find latest 1.30.x version");
     assert.strictEqual(latestMinorVersions["1.31"], "1.31.6", "Should find latest 1.31.x version");
@@ -253,4 +243,4 @@ function testGetLatestMinorVersionsWithEmptyMajors() {
 }
 
 // Run the tests
-runTests(); 
+runTests();
