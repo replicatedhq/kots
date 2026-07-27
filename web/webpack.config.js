@@ -29,6 +29,13 @@ module.exports = function (env) {
   }
 
   const common = {
+    // webpack 5.109+ defaults experiments.typescript to "auto" on Node >= 22.6,
+    // enabling a built-in TypeScript plugin that does not support TSX/JSX.
+    // The project already compiles .ts/.tsx files with babel-loader + preset-typescript,
+    // so disable the built-in plugin to avoid "experiments.typescript does not support .tsx/JSX".
+    experiments: {
+      typescript: false,
+    },
     output: {
       path: distPath,
       publicPath: "/",
