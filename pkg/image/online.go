@@ -372,7 +372,10 @@ func IsPrivateImage(image string, dockerHubRegistry dockerregistrytypes.Registry
 			return false, errors.Wrapf(err, "failed to parse docker ref %q", image)
 		}
 
-		sysCtx := containerstypes.SystemContext{DockerDisableV1Ping: true}
+		sysCtx := containerstypes.SystemContext{
+			DockerDisableV1Ping:      true,
+			SystemRegistriesConfPath: "", // do not load /etc/containers/registries.conf (v1 format is rejected by newer podman image libraries)
+		}
 
 		registryHost := reference.Domain(dockerRef)
 		isDockerIO := registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io")
