@@ -12,10 +12,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^3.0.1",
     "@vercel/ncc": "^0.38.4"
   },
   "overrides": {
-    "@actions/http-client": "^4.0.0"
+    "@actions/http-client": "^4.0.0",
+    "undici": "^6.27.0"
   }
 }
