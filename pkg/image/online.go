@@ -374,7 +374,7 @@ func IsPrivateImage(image string, dockerHubRegistry dockerregistrytypes.Registry
 
 		sysCtx := containerstypes.SystemContext{
 			DockerDisableV1Ping:      true,
-			SystemRegistriesConfPath: "", // do not load /etc/containers/registries.conf (v1 format is rejected by newer podman image libraries)
+			SystemRegistriesConfPath: os.DevNull, // do not load /etc/containers/registries.conf (v1 format is rejected by newer podman image libraries)
 		}
 
 		registryHost := reference.Domain(dockerRef)
