@@ -66,6 +66,7 @@ func CopyImages(options imagetypes.PushImagesOptions, kotsNamespace string) erro
 		destCtx := &imagev5types.SystemContext{
 			DockerInsecureSkipTLSVerify: imagev5types.OptionalBoolTrue,
 			DockerDisableV1Ping:         true,
+			SystemRegistriesConfPath:    os.DevNull,
 		}
 
 		username, password := options.Registry.Username, options.Registry.Password
@@ -104,7 +105,10 @@ func CopyImages(options imagetypes.PushImagesOptions, kotsNamespace string) erro
 }
 
 func getCopyImagesSourceContext(clientset kubernetes.Interface, kotsNamespace string) (*imagev5types.SystemContext, error) {
-	sourceCtx := &imagev5types.SystemContext{DockerDisableV1Ping: true}
+	sourceCtx := &imagev5types.SystemContext{
+		DockerDisableV1Ping:      true,
+		SystemRegistriesConfPath: os.DevNull,
+	}
 
 	// allow pulling images from http/invalid https docker repos
 	// intended for development only, _THIS MAKES THINGS INSECURE_

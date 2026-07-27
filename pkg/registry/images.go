@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -224,6 +225,7 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 	sysCtx := &imagetypes.SystemContext{
 		DockerInsecureSkipTLSVerify: imagetypes.OptionalBoolTrue,
 		DockerDisableV1Ping:         true,
+		SystemRegistriesConfPath:    os.DevNull,
 	}
 	if registry.Username != "" && registry.Password != "" {
 		sysCtx.DockerAuthConfig = &imagetypes.DockerAuthConfig{

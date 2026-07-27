@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
@@ -57,7 +58,10 @@ func DockerEnsureSecretCmd() *cobra.Command {
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			// validate credentials
-			sysCtx := &types.SystemContext{DockerDisableV1Ping: true}
+			sysCtx := &types.SystemContext{
+				DockerDisableV1Ping:      true,
+				SystemRegistriesConfPath: os.DevNull,
+			}
 			if err := docker.CheckAuth(cmd.Context(), sysCtx, dockerHubUsername, dockerHubPassword, registry.DockerHubRegistryName); err != nil {
 				return errors.Wrap(err, "failed to authenticate to docker")
 			}

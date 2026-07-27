@@ -261,8 +261,8 @@ func copyOnlineImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 }
 
 func CopyImage(opts types.CopyImageOptions) error {
-	srcCtx := &containerstypes.SystemContext{}
-	destCtx := &containerstypes.SystemContext{}
+	srcCtx := &containerstypes.SystemContext{SystemRegistriesConfPath: os.DevNull}
+	destCtx := &containerstypes.SystemContext{SystemRegistriesConfPath: os.DevNull}
 
 	if opts.SrcDisableV1Ping {
 		srcCtx.DockerDisableV1Ping = true

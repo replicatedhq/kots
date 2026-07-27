@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -29,7 +30,10 @@ var (
 )
 
 func LoadAuthForRegistry(endpoint string) (string, string, error) {
-	sys := &types.SystemContext{DockerDisableV1Ping: true}
+	sys := &types.SystemContext{
+		DockerDisableV1Ping:      true,
+		SystemRegistriesConfPath: os.DevNull,
+	}
 	username, password, err := config.GetAuthentication(sys, endpoint)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "error loading username and password")
