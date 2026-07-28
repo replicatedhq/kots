@@ -298,7 +298,7 @@ func (ctx StaticCtx) isUint(val reflect.Value) bool {
 }
 
 // kubeSeal will use the same encryption techniques as the kubeseal application found at
-// https://github.com/bitnami-labs/sealed-secrets
+// https://github.com/bitnami/sealed-secrets
 // This function simply returns the encrypted value that can be written into a kind: SealedSecret
 // resource, but it does not create the entire resource. That's left to the application developer.
 func (ctx StaticCtx) kubeSeal(certData string, namespace string, name string, value string) (string, error) {

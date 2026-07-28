@@ -8,8 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	sealedsecretsv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealedsecrets/v1alpha1"
-	sealedsecretsscheme "github.com/bitnami-labs/sealed-secrets/pkg/client/clientset/versioned/scheme"
+	sealedsecretsv1alpha1 "github.com/bitnami/sealed-secrets/pkg/apis/sealedsecrets/v1alpha1"
+	sealedsecretsscheme "github.com/bitnami/sealed-secrets/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 	v1 "k8s.io/api/core/v1"
