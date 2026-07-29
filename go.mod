@@ -59,7 +59,7 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rqlite/gorqlite v0.0.0-20221028154453-256f31831ff3
-	github.com/schemahero/schemahero v0.25.1
+	github.com/schemahero/schemahero v0.22.1
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.4.0
 	github.com/spf13/cobra v1.10.2
@@ -68,7 +68,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/tj/go-spin v1.1.0
 	github.com/vmware-tanzu/velero v1.18.2
-	go.podman.io/image/v5 v5.40.0
+	go.podman.io/image/v5 v5.38.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.28.0
 	go.yaml.in/yaml/v2 v2.4.4
@@ -80,7 +80,7 @@ require (
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.67.3
 	gopkg.in/yaml.v2 v2.4.0
-	helm.sh/helm/v4 v4.2.3
+	helm.sh/helm/v4 v4.1.4
 	k8s.io/api v0.36.3
 	k8s.io/apimachinery v0.36.3
 	k8s.io/cli-runtime v0.36.3
@@ -374,6 +374,7 @@ require (
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
+	github.com/docker/docker v28.5.1+incompatible // indirect
 	github.com/dylibso/observe-sdk/go v0.0.0-20240819160327-2d926c5d788a // indirect
 	github.com/ebitengine/purego v0.10.1 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0 // indirect
@@ -399,17 +400,23 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
+	github.com/gocql/gocql v1.7.0 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
+	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/cadvisor v0.56.2 // indirect
 	github.com/google/cel-go v0.29.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3 // indirect
+	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 	github.com/hashicorp/aws-sdk-go-base/v2 v2.0.0-beta.73 // indirect
-	github.com/hashicorp/go-hclog v1.6.3 // indirect
-	github.com/hashicorp/go-plugin v1.8.0 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
-	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b // indirect
+	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
+	github.com/jackc/pgconn v1.14.3 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
+	github.com/jackc/pgtype v1.14.0 // indirect
+	github.com/jackc/pgx/v4 v4.18.3 // indirect
 	github.com/k0sproject/dig v0.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.4.0 // indirect
@@ -426,11 +433,12 @@ require (
 	github.com/minio/minlz v1.0.1 // indirect
 	github.com/mistifyio/go-zfs/v4 v4.0.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
+	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/moby/sys/capability v0.4.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
+	github.com/morikuni/aec v1.1.0 // indirect
 	github.com/nwaples/rardecode/v2 v2.2.0 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
-	github.com/oklog/run v1.1.0 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/opencontainers/cgroups v0.0.6 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
@@ -453,6 +461,7 @@ require (
 	github.com/vishvananda/netlink v1.3.1 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/xo/dburl v0.23.8 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.11 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.11 // indirect
 	go.etcd.io/etcd/client/v3 v3.6.11 // indirect
