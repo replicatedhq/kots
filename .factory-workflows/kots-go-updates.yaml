@@ -122,17 +122,9 @@ stages:
           bash -lc '
             set +e
             tmpdir="$(mktemp -d)"
-
-            cd kots
-
-            make kots >"$tmpdir/build.log" 2>&1
-            build_status=$?
-
-            make vet >"$tmpdir/vet.log" 2>&1
-            vet_status=$?
-
-            make test >"$tmpdir/unit_tests.log" 2>&1
-            unit_tests_status=$?
+            ( cd kots && make kots  >"$tmpdir/build.log" 2>&1 ); build_status=$?
+            ( cd kots && make vet >"$tmpdir/vet.log" 2>&1 ); vet_status=$?
+            ( cd kots && make test >"$tmpdir/unit_tests.log" 2>&1 ); unit_tests_status=$?
 
             python3 scripts/summarize_local_checks.py "$tmpdir" build "$build_status" vet "$vet_status" unit_tests "$unit_tests_status"
           '
