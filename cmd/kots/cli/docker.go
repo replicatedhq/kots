@@ -58,6 +58,9 @@ func DockerEnsureSecretCmd() *cobra.Command {
 
 			// validate credentials
 			sysCtx := &types.SystemContext{DockerDisableV1Ping: true}
+			if err := registry.SetSystemRegistriesConfPath(sysCtx); err != nil {
+				return errors.Wrap(err, "failed to set system registries conf path")
+			}
 			if err := docker.CheckAuth(cmd.Context(), sysCtx, dockerHubUsername, dockerHubPassword, registry.DockerHubRegistryName); err != nil {
 				return errors.Wrap(err, "failed to authenticate to docker")
 			}

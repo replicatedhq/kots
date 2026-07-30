@@ -30,6 +30,9 @@ var (
 
 func LoadAuthForRegistry(endpoint string) (string, string, error) {
 	sys := &types.SystemContext{DockerDisableV1Ping: true}
+	if err := SetSystemRegistriesConfPath(sys); err != nil {
+		return "", "", errors.Wrap(err, "failed to set system registries conf path")
+	}
 	username, password, err := config.GetAuthentication(sys, endpoint)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "error loading username and password")

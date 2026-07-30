@@ -264,6 +264,13 @@ func CopyImage(opts types.CopyImageOptions) error {
 	srcCtx := &containerstypes.SystemContext{}
 	destCtx := &containerstypes.SystemContext{}
 
+	if err := registry.SetSystemRegistriesConfPath(srcCtx); err != nil {
+		return errors.Wrap(err, "failed to set source registries conf path")
+	}
+	if err := registry.SetSystemRegistriesConfPath(destCtx); err != nil {
+		return errors.Wrap(err, "failed to set destination registries conf path")
+	}
+
 	if opts.SrcDisableV1Ping {
 		srcCtx.DockerDisableV1Ping = true
 	}
@@ -373,6 +380,9 @@ func IsPrivateImage(image string, dockerHubRegistry dockerregistrytypes.Registry
 		}
 
 		sysCtx := containerstypes.SystemContext{DockerDisableV1Ping: true}
+		if err := registry.SetSystemRegistriesConfPath(&sysCtx); err != nil {
+			return false, errors.Wrap(err, "failed to set system registries conf path")
+		}
 
 		registryHost := reference.Domain(dockerRef)
 		isDockerIO := registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io")
