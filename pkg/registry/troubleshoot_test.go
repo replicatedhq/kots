@@ -109,6 +109,38 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 			},
 		},
 		{
+			name:         "run collector, image already targets local registry, not re-flattened",
+			installation: kotsv1beta1.Installation{},
+			localRegistryInfo: registrytypes.RegistrySettings{
+				Hostname:  "host.docker.internal:8082",
+				Namespace: "abc",
+				Username:  "user",
+				Password:  "pass",
+			},
+			license: nil,
+			collectors: []*troubleshootv1beta2.Collect{
+				{
+					Run: &troubleshootv1beta2.Run{
+						Image:           "host.docker.internal:8082/perimeter/proxy/itrs-analytics/docker.itrsgroup.com/replicated/replicated-tools:2.5.2",
+						ImagePullSecret: nil,
+					},
+				},
+			},
+			expectedCollectors: []*troubleshootv1beta2.Collect{
+				{
+					Run: &troubleshootv1beta2.Run{
+						Image: "host.docker.internal:8082/perimeter/proxy/itrs-analytics/docker.itrsgroup.com/replicated/replicated-tools:2.5.2",
+						ImagePullSecret: &troubleshootv1beta2.ImagePullSecrets{
+							SecretType: "kubernetes.io/dockerconfigjson",
+							Data: map[string]string{
+								".dockerconfigjson": "eyJhdXRocyI6eyJob3N0LmRvY2tlci5pbnRlcm5hbDo4MDgyIjp7ImF1dGgiOiJkWE5sY2pwd1lYTnoifX19",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "run collector, replicated registry image, no private local registry",
 			installation: kotsv1beta1.Installation{
 				Spec: kotsv1beta1.InstallationSpec{

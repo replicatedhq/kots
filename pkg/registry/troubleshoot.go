@@ -59,6 +59,16 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 		return imagePullSecret, nil
 	}
 
+	rewrite := func(image string) string {
+		// if the image already targets the configured local registry, it was set explicitly
+		// (e.g. via a config override pointing at a pull-through mirror) and re-flattening it
+		// would corrupt the path the vendor intended to pull from.
+		if strings.HasPrefix(image, localRegistryInfo.Hostname+"/") {
+			return image
+		}
+		return rewriteImage(localRegistryInfo.Hostname, localRegistryInfo.Namespace, image)
+	}
+
 	for _, c := range collectors {
 		collector := troubleshootv1beta2.GetCollector(c)
 		if collector == nil {
@@ -66,7 +76,7 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 		}
 
 		if imageRunner, ok := collector.(collect.ImageRunner); ok {
-			newImage := rewriteImage(localRegistryInfo.Hostname, localRegistryInfo.Namespace, imageRunner.GetImage())
+			newImage := rewrite(imageRunner.GetImage())
 			imageRunner.SetImage(newImage)
 
 			imagePullSecret, err := makeImagePullSecret(imageRunner.GetNamespace())
@@ -83,10 +93,10 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 
 			podSpec := podSpecRunner.GetPodSpec()
 			for i := range podSpec.InitContainers {
-				podSpec.InitContainers[i].Image = rewriteImage(localRegistryInfo.Hostname, localRegistryInfo.Namespace, podSpec.InitContainers[i].Image)
+				podSpec.InitContainers[i].Image = rewrite(podSpec.InitContainers[i].Image)
 			}
 			for i := range podSpec.Containers {
-				podSpec.Containers[i].Image = rewriteImage(localRegistryInfo.Hostname, localRegistryInfo.Namespace, podSpec.Containers[i].Image)
+				podSpec.Containers[i].Image = rewrite(podSpec.Containers[i].Image)
 			}
 		} else if c.RegistryImages != nil {
 			imagePullSecret, err := makeImagePullSecret(c.RegistryImages.Namespace)
@@ -97,8 +107,7 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 
 			images := []string{}
 			for _, knownImage := range installation.Spec.KnownImages {
-				image := rewriteImage(localRegistryInfo.Hostname, localRegistryInfo.Namespace, knownImage.Image)
-				images = append(images, image)
+				images = append(images, rewrite(knownImage.Image))
 			}
 			c.RegistryImages.Images = images
 		}
