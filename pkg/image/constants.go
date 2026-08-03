@@ -9,5 +9,5 @@ const (
 	Rqlite     = "docker.io/kotsadm/rqlite:10.2.7"
 	Dex        = "docker.io/kotsadm/dex:2.44.0"
 	Schemahero = "docker.io/schemahero/schemahero:0.25.1"
-	Lvp        = "docker.io/replicated/local-volume-provider:0.6.14"
+	Lvp        = "docker.io/replicated/local-volume-provider:0.6.15"
 )
