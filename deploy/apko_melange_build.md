@@ -1,54 +1,56 @@
-# Building KOTS with apko + melange
+# Building KOTS packages and images
 
-## What?
+## Spec files
 
-This doc describes a non-production-ready process for building a minimal `kots` image using `melange` and `apko`:
+| Component | Melange | Apko |
+|---|---|---|
+| kotsadm (+ kotsadm-migrations, kurl-proxy subpackages) | `deploy/melange.yaml` | `deploy/apko.yaml` |
+| kotsadm-migrations image | — | `migrations/deploy/apko.yaml` |
+| kurl-proxy image | — | `kurl_proxy/deploy/apko.yaml` |
 
-- [`melange`](https://github.com/chainguard-dev/melange) is a tool for reproducibly building APK packages from source
-- [`apko`](https://github.com/chainguard-dev/apko) is a tool for reproducibly building container images from APK packages
+A single melange spec (`deploy/melange.yaml`) builds three APK packages: `kotsadm`, `kotsadm-migrations`, and `kurl-proxy` (the latter two as subpackages). Three separate apko specs build the corresponding container images from those packages.
 
-## Why?
+## Production builds (SecureBuild)
 
-Building with `melange` and `apko` produces smaller, more reproducible images, which can be easier to operate and easier to keep free of vulnerabilities.
+Production builds are triggered by pushing a semver tag (`v*.*.*`). The `release.yaml` workflow calls the SecureBuild CLI to build and publish packages, then images:
 
-## How?
-
-First, build the package from source, using `melange`.
-
-To start, if there isn't already a signing key for the package, we need to generate one:
-
-```sh
-melange keygen
+```
+securebuild build package --package-family-name kotsadm --tag <version>
+securebuild build image   --image-name kotsadm             --tag <version>
+securebuild build image   --image-name kotsadm-migrations  --tag <version>
+securebuild build image   --image-name kurl-proxy          --tag <version>
 ```
 
-We only need to build for x86_64, which is faster than building for arm64 since it doesn't require qemu.
+The melange spec's `git-checkout` step clones the tagged commit, and SecureBuild overrides `package.version` with the `--tag` value. Packages are published to `https://apk.cve0.io` and images are pushed to Docker Hub.
+
+A standalone `publish-securebuild.yml` workflow is also available for manual rebuilds via `workflow_dispatch`.
+
+## Pre-release builds (local melange + apko)
+
+Nightly, alpha, and PR builds run melange and apko locally in GitHub Actions. Since there is no tag to check out, the `git-checkout` pipeline step is stripped from the melange spec at runtime (using `yq`), and melange builds from the local checkout via `--source-dir`.
+
+The local build flow (automated in `build-custom-melange-package` and `build-custom-image-with-apko` composite actions):
 
 ```sh
-melange build melange.yaml --arch=x86_64
+# 1. Strip git-checkout from melange spec and set package.version to the git tag
+yq 'del(.pipeline[] | select(.uses == "git-checkout"))' deploy/melange.yaml > melange-local.yaml
+yq -i ".package.version = \"$(echo $GIT_TAG | sed 's/^v//')\"" melange-local.yaml
+
+# 2. Build all packages (per arch)
+melange build melange-local.yaml --arch=x86_64 --source-dir . --signing-key melange.rsa
+
+# 3. Add local packages repo + keyring to apko spec
+yq '.contents.repositories += ["./packages/"]' deploy/apko.yaml > apko-local.yaml
+yq '.contents.keyring += ["./melange-amd64.rsa.pub", "./melange-arm64.rsa.pub"]' -i apko-local.yaml
+
+# 4. Build and push image
+apko publish apko-local.yaml <registry>/<image>:<tag> --arch=x86_64,arm64
 ```
 
-> 💡 Only building for your local platform makes builds faster, since it doesn't have to emulate with qemu.
-> If you're on an arm64 machine (e.g., Apple Silicon), use `--arch=aarch64` here and below.
+Repeat step 3-4 for each apko spec (`deploy/apko.yaml`, `migrations/deploy/apko.yaml`, `kurl_proxy/deploy/apko.yaml`).
 
-Then, build the image from the newly built `kotsadm` package, and the other packages needed by the image, using `apko`:
+### Workflows
 
-```sh
-apko publish apko.yaml ttl.sh/kotsadm --arch=x86_64
-```
-
-This will print the image to stdout, so you can run it:
-
-```sh
-docker run $(apko publish ...)
-```
-
-### Presubmit GitHub Actions
-
-The above steps are automated in [GitHub Actions](./.github/actions/build-kotsadm-image/action.yml) as a presubmit check for PRs.
-
-The image this workflow produces is only meant for validation, and not meant for production use cases at this time.
-
-## Further Reading
-
-- https://edu.chainguard.dev/open-source/melange/overview/
-- https://edu.chainguard.dev/open-source/apko/overview/
+- **`alpha.yaml`** — nightly builds on `main` branch push; pushes images with `:alpha` tag
+- **`build-test.yaml`** — PR builds; pushes images to `ttl.sh` for validation
+- **`release.yaml`** — tag pushes use SecureBuild; branch pushes use local melange/apko with nightly tags

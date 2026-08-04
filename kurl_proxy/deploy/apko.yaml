@@ -1,20 +1,27 @@
 contents:
   repositories:
     - https://apk.cve0.io
-    - ./packages/
   keyring:
     - https://apk.cve0.io/key/cve0-signing.rsa.pub
-    - ./melange-arm64.rsa.pub
-    - ./melange-amd64.rsa.pub
   packages:
-    - kurl-proxy-head  # This is expected to be built locally by `melange`.
+    - kurl-proxy
     - bash
     - busybox
     - curl
     - git
+    - ca-certificates
     - securebuild-baselayout
 
+work-dir: /
+
+paths:
+  - path: /kurl_proxy
+    type: symlink
+    source: /usr/local/bin/kurl_proxy
+    permissions: 0o755
+
 accounts:
+  run-as: 1001
   groups:
     - groupname: kotsadm
       gid: 1001
@@ -22,9 +29,5 @@ accounts:
     - username: kotsadm
       uid: 1001
       gid: 1001
-  run-as: kotsadm
-
-environment:
-  VERSION: ${GIT_TAG}
 
 cmd: /kurl_proxy
