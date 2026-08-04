@@ -11,6 +11,11 @@ permissions:
   contents: read
   pull-requests: read
 
+# The runner's /etc/containers/registries.conf is v1 format, which
+# podman/image v5+ rejects. Override with a v2 config via env var.
+env:
+  CONTAINERS_REGISTRIES_CONF: /tmp/registries-v2.conf
+
 jobs:
   can-run-ci:
     runs-on: ubuntu-24.04
@@ -212,7 +217,9 @@ jobs:
           cache: true
 
       - name: test
-        run: make ci-test
+        run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          make ci-test
 
 
   build-kots:
@@ -722,7 +729,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -942,7 +951,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -1162,7 +1173,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: download airgap bundles
         env:
@@ -1479,7 +1492,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -1784,7 +1799,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -1960,7 +1977,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: set default storage class for eks
         if: ${{ matrix.cluster.distribution == 'eks' }}
@@ -2075,7 +2094,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -2185,7 +2206,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -2340,7 +2363,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -2437,7 +2462,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -2557,7 +2584,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -2667,7 +2696,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: run kots admin-console push-images
         run: |
@@ -2698,7 +2729,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: run kots admin-console generate-manifests without k8s context
         run: |
@@ -3258,7 +3291,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -3400,7 +3435,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -3652,7 +3689,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -3827,7 +3866,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: run the test
         run: |
@@ -3929,7 +3970,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -4152,7 +4195,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -4316,7 +4361,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -4698,7 +4745,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
@@ -4959,7 +5008,9 @@ jobs:
           name: kots
           path: bin/
 
-      - run: chmod +x bin/kots
+      - run: |
+          echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
+          chmod +x bin/kots
 
       - name: create namespace and dockerhub secret
         run: |
