@@ -1,0 +1,34 @@
+contents:
+  repositories:
+    - https://apk.cve0.io
+  keyring:
+    - https://apk.cve0.io/key/cve0-signing.rsa.pub
+  packages:
+    - kotsadm-migrations
+    - bash
+    - busybox
+    - securebuild-baselayout
+    - curl
+    - git
+    - ca-certificates-bundle
+
+paths:
+  - path: /schemahero
+    type: symlink
+    source: /usr/local/bin/schemahero
+    permissions: 0o755
+
+accounts:
+  groups:
+    - groupname: schemahero
+      gid: 1001
+  users:
+    - username: schemahero
+      uid: 1001
+      gid: 1001
+  run-as: schemahero
+
+entrypoint:
+  command: /schemahero
+
+cmd: apply
