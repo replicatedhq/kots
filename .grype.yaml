@@ -3,8 +3,13 @@
 
 # Ignore rules for vulnerabilities
 # Each rule can specify criteria for vulnerabilities to ignore
-# ignore:
-#   - vulnerability: CVE-xxxx-xxxx
+ignore:
+  # react-router@7.18.2 is already patched for GHSA-qwww-vcr4-c8h2 pending GitHub advisory update:
+  # https://github.com/github/advisory-database/pull/8868
+  - vulnerability: GHSA-qwww-vcr4-c8h2
+    package:
+      name: react-router
+      version: 7.18.2
 
 # Vulnerability scan configuration
 fail-on-severity: medium  # Equivalent to CRITICAL,HIGH,MEDIUM setting
