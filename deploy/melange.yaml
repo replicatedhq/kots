@@ -1,0 +1,161 @@
+package:
+  name: kotsadm-head
+  version: "1000.0.0"
+  epoch: 0
+  description: KOTS Admin Console for managing Kubernetes Off-The-Shelf software applications v${{vars.major-minor-version}}
+  copyright:
+    - license: Apache-2.0
+  dependencies:
+    runtime:
+      - glibc-posix-utils
+    provides:
+      - kotsadm=${{package.full-version}}
+
+var-transforms:
+  - from: ${{package.version}}
+    match: ^(\d+\.\d+)\.\d+$
+    replace: "$1"
+    to: major-minor-version
+  - from: ${{package.version}}
+    match: ^(\d+).*
+    replace: $1
+    to: major-version
+
+environment:
+  contents:
+    repositories:
+      - https://apk.cve0.io
+    keyring:
+      - https://apk.cve0.io/key/cve0-signing.rsa.pub
+    packages:
+      - busybox
+      - build-base
+      - ca-certificates-bundle
+      - go
+      - gcc-15.1
+      - libgcc
+      - libstdc++
+      - libstdc++-dev
+      - make-bootstrap-4.4
+      - binutils
+      - bash
+      - git
+      - curl
+      - nodejs-22.16
+      - yarn-1.22
+      - py3.12-dateutil
+      - py3.12-s3cmd
+      - schemahero-0.22
+      - wget
+
+  environment:
+    GOPROXY: 'https://proxy.golang.org,direct'
+    GOSUMDB: 'sum.golang.org'
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/replicatedhq/kots
+      tag: v${{package.version}}
+
+  - name: Build kotsadm and kots binaries
+    runs: |
+      export PATH="/usr/bin:$PATH"
+      export GOSUMDB=off
+      export GOPROXY=direct
+      export CGO_ENABLED=1
+      export CC=gcc
+      export VERSION="${VERSION:-v${{package.version}}}"
+      export GIT_TAG="${GIT_TAG:-v${{package.version}}}"
+      
+      mkdir -p ${{targets.destdir}}/usr/bin
+      mkdir -p ${{targets.destdir}}/scripts
+      
+      # Copy scripts
+      cp -r deploy/assets/* ${{targets.destdir}}/scripts/
+      
+      # Set environment from .image.env (use . instead of source for POSIX compatibility)
+      . ./.image.env
+      
+      # Install web dependencies and build
+      export PACT_SKIP_BINARY_INSTALL=true
+      cd web
+      yarn install --production --frozen-lockfile
+      # Install webpack-cli separately to avoid interactive prompt
+      yarn add -D webpack-cli
+      make build-kotsadm
+      cd ..
+      
+      # Build binaries
+      make kots build
+      
+      # Copy binaries to /usr/local/bin
+      mkdir -p ${{targets.destdir}}/usr/local/bin
+      cp bin/kotsadm ${{targets.destdir}}/usr/local/bin/kotsadm
+      cp bin/kots ${{targets.destdir}}/usr/local/bin/kots
+
+  - uses: strip
+
+data:
+  - name: "Main repository"
+    items:
+      version: ${{package.version}}
+
+subpackages:
+  - name: ${{package.name}}-migrations
+    description: KOTS Admin Console migration tables and schemahero binary v${{vars.major-minor-version}}
+    dependencies:
+      provides:
+        - kotsadm-migrations=${{package.full-version}}
+    pipeline:
+      - runs: |
+          export DESTDIR="${{targets.subpkgdir}}"
+          mkdir -p "${DESTDIR}"
+          mkdir -p "${DESTDIR}/usr/local/bin"
+
+          # Copy migration tables (matches reference template)
+          mv migrations/tables "${DESTDIR}/tables"
+
+          # Copy schemahero binary from schemahero-0.22 package to /usr/local/bin
+          cp /usr/bin/schemahero "${DESTDIR}/usr/local/bin/schemahero"
+
+  - name: ${{package.name}}-kurl-proxy
+    description: KOTS kurl-proxy service for managing Kubernetes application deployments v${{vars.major-minor-version}}
+    dependencies:
+      provides:
+        - kurl-proxy=${{package.full-version}}
+    pipeline:
+      - runs: |
+          export PATH="/usr/bin:$PATH"
+          export GOSUMDB=off
+          export GOPROXY=direct
+          export CGO_ENABLED=1
+          export CC=gcc
+          mkdir -p ${{targets.subpkgdir}}/usr/local/bin
+          mkdir -p ${{targets.subpkgdir}}/assets
+          cp -r kurl_proxy/assets/* ${{targets.subpkgdir}}/assets/
+
+          # Build kurl_proxy to /usr/local/bin
+          cd kurl_proxy
+          go build -ldflags="-w -s" -o ${{targets.subpkgdir}}/usr/local/bin/kurl_proxy ./cmd
+      - uses: strip
+    test:
+      environment:
+        contents:
+          packages:
+            - kurl-proxy=${{package.full-version}}
+      pipeline:
+        - runs: |
+            # Test that binary exists and is executable as running kurl_proxy 
+            # without a valid KUBERNETES_SERVICE_HOST will cause it to panic
+            test -x /usr/local/bin/kurl_proxy
+
+test:
+  environment:
+    contents:
+      packages:
+        - ${{package.name}}=${{package.full-version}}
+  pipeline:
+    - runs: |
+        /usr/local/bin/kotsadm --help
+        /usr/local/bin/kots --help

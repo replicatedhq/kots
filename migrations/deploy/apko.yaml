@@ -1,21 +1,22 @@
 contents:
   repositories:
     - https://apk.cve0.io
-    - ./packages/
   keyring:
     - https://apk.cve0.io/key/cve0-signing.rsa.pub
-    - ./melange-arm64.rsa.pub
-    - ./melange-amd64.rsa.pub
   packages:
-    - kotsadm-migrations-head  # This is expected to be built locally by `melange`.
+    - kotsadm-migrations
     - bash
     - busybox
+    - securebuild-baselayout
     - curl
     - git
-    - ca-certificates
-    - securebuild-baselayout
-    - schemahero
-    - schemahero-rqlite
+    - ca-certificates-bundle
+
+paths:
+  - path: /schemahero
+    type: symlink
+    source: /usr/local/bin/schemahero
+    permissions: 0o755
 
 accounts:
   groups:
@@ -27,10 +28,7 @@ accounts:
       gid: 1001
   run-as: schemahero
 
-environment:
-  VERSION: ${GIT_TAG}
-
 entrypoint:
-  command: /usr/bin/schemahero
+  command: /schemahero
 
 cmd: apply

@@ -254,7 +254,7 @@ jobs:
           path: ./bin/kots
 
 
-  build-kotsadm-melange-packages:
+  build-melange-packages:
     needs: [ can-run-ci, generate-tag ]
     strategy:
       fail-fast: false
@@ -271,14 +271,13 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: ./.github/actions/build-custom-melange-package
         with:
-          context: deploy
-          component: kotsadm
+          melange-config: deploy/melange.yaml
           git-tag: ${{ needs.generate-tag.outputs.tag }}
           arch: ${{ matrix.runner.arch }}
 
   build-kotsadm:
     runs-on: ubuntu-24.04
-    needs: [ can-run-ci, generate-tag, build-kotsadm-melange-packages ]
+    needs: [ can-run-ci, generate-tag, build-melange-packages ]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -286,9 +285,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: ./.github/actions/build-custom-image-with-apko
         with:
-          context: deploy
-          component: kotsadm
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          apko-config: deploy/apko.yaml
           image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
 
 
@@ -352,31 +349,9 @@ jobs:
           path: e2e/bin/
 
 
-  build-kurl-proxy-melange-packages:
-    needs: [ can-run-ci, generate-tag ]
-    strategy:
-      fail-fast: true
-      matrix:
-        runner: [
-          {name: ubuntu-24.04, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
-    runs-on: ${{ matrix.runner.name }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: ./.github/actions/build-custom-melange-package
-        with:
-          context: kurl_proxy/deploy
-          component: kurl-proxy
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
-          arch: ${{ matrix.runner.arch }}
-
   build-kurl-proxy:
     runs-on: ubuntu-24.04
-    needs: [ can-run-ci, generate-tag, build-kurl-proxy-melange-packages ]
+    needs: [ can-run-ci, generate-tag, build-melange-packages ]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -384,37 +359,13 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: ./.github/actions/build-custom-image-with-apko
         with:
-          context: kurl_proxy/deploy
-          component: kurl-proxy
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          apko-config: kurl_proxy/deploy/apko.yaml
           image-name: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
 
 
-  build-migrations-melange-packages:
-    needs: [ can-run-ci, generate-tag ]
-    strategy:
-      fail-fast: true
-      matrix:
-        runner: [
-          {name: ubuntu-24.04, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
-    runs-on: ${{ matrix.runner.name }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: ./.github/actions/build-custom-melange-package
-        with:
-          context: migrations/deploy
-          component: kotsadm-migrations
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
-          arch: ${{ matrix.runner.arch }}
-
   build-migrations:
     runs-on: ubuntu-24.04
-    needs: [ can-run-ci, generate-tag, build-migrations-melange-packages ]
+    needs: [ can-run-ci, generate-tag, build-melange-packages ]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -422,9 +373,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: ./.github/actions/build-custom-image-with-apko
         with:
-          context: migrations/deploy
-          component: kotsadm-migrations
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          apko-config: migrations/deploy/apko.yaml
           image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
 
   push-minio:

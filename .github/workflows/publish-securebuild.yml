@@ -1,0 +1,78 @@
+name: publish-securebuild
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to build (e.g. v1.19.6)'
+        required: true
+        type: string
+
+jobs:
+  build-package:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+
+      - name: Install securebuild CLI
+        run: |
+          LATEST_TAG=$(curl -s https://api.github.com/repos/securebuildhq/securebuild/releases/latest | jq -r .tag_name)
+          curl -sL "https://github.com/securebuildhq/securebuild/releases/download/${LATEST_TAG}/securebuild-cli-linux-amd64" -o securebuild
+          chmod +x securebuild
+
+      - name: Build package
+        run: |
+          ./securebuild build package \
+            --package-family-name kotsadm \
+            --tag ${{ steps.version.outputs.version }} \
+            --api-token "${{ secrets.SECUREBUILD_API_TOKEN }}"
+
+  build-image:
+    needs: build-package
+    strategy:
+      fail-fast: false
+      matrix:
+        image-name:
+          - kotsadm
+          - kotsadm-migrations
+          - kurl-proxy
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install securebuild CLI
+        run: |
+          LATEST_TAG=$(curl -s https://api.github.com/repos/securebuildhq/securebuild/releases/latest | jq -r .tag_name)
+          curl -sL "https://github.com/securebuildhq/securebuild/releases/download/${LATEST_TAG}/securebuild-cli-linux-amd64" -o securebuild
+          chmod +x securebuild
+
+      - name: Build image
+        run: |
+          ./securebuild build image \
+            --image-name ${{ matrix.image-name }} \
+            --tag ${{ needs.build-package.outputs.version }} \
+            --api-token "${{ secrets.SECUREBUILD_API_TOKEN }}"
+
+  copy-to-dockerhub:
+    needs: [build-package, build-image]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - source-image: kotsadm
+            dest-image: kotsadm
+          - source-image: kotsadm-migrations
+            dest-image: kotsadm-migrations
+          - source-image: kurl-proxy
+            dest-image: kurl-proxy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copy image to Docker Hub
+        run: |
+          skopeo copy --all \
+            docker://registry.replicated.com/library/${{ matrix.source-image }}:${{ needs.build-package.outputs.version }} \
+            docker://index.docker.io/kotsadm/${{ matrix.dest-image }}:${{ needs.build-package.outputs.version }} \
+            --dest-creds "${{ secrets.DOCKERHUB_USER }}:${{ secrets.DOCKERHUB_PASSWORD }}"

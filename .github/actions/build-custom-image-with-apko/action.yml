@@ -1,16 +1,8 @@
 name: 'Build and push a custom image with apko'
-description: 'Composite action for building and pushing a custom image with apko'
+description: 'Composite action for building and pushing a custom image with apko from locally built packages'
 inputs:
-  context:
-    description: 'Path to the context directory'
-    required: true
-
-  component:
-    description: 'Name of the component (e.g. kotsadm, kurl-proxy, etc...)'
-    required: true
-
-  git-tag:
-    description: 'Git tag'
+  apko-config:
+    description: 'Path to the apko config file'
     required: true
 
   image-name:
@@ -32,24 +24,31 @@ runs:
   steps:
     - uses: actions/download-artifact@v8
       with:
-        pattern: ${{ inputs.component }}-melange-packages-*
+        pattern: melange-packages-*
         path: ./packages/
         merge-multiple: true
 
     - uses: actions/download-artifact@v8
       with:
-        pattern: ${{ inputs.component }}-melange-rsa-pub-*
+        pattern: melange-rsa-pub-*
         merge-multiple: true
 
-    - name: template apko config
+    - name: Prepare apko config for local build
       shell: bash
       run: |
-        export GIT_TAG=${{ inputs.git-tag }}
-        envsubst '${GIT_TAG}' < ${{ inputs.context }}/apko.yaml.tmpl > ${{ inputs.context }}/apko.yaml
+        # Install yq
+        curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_"$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')" -o /tmp/yq
+        sudo mv /tmp/yq /usr/local/bin/yq
+        sudo chmod +x /usr/local/bin/yq
+
+        # Copy the apko config and add local packages repository and keyring
+        cp ${{ inputs.apko-config }} apko-local.yaml
+        yq -i '.contents.repositories += ["./packages/"]' apko-local.yaml
+        yq -i '.contents.keyring += ["./melange-amd64.rsa.pub", "./melange-arm64.rsa.pub"]' apko-local.yaml
 
     - uses: chainguard-images/actions/apko-publish@v1.0.37
       with:
-        config: ${{ inputs.context }}/apko.yaml
+        config: apko-local.yaml
         archs: amd64,arm64
         tag: ${{ inputs.image-name }}
         vcs-url: true
