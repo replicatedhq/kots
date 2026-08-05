@@ -1,0 +1,52 @@
+contents:
+  repositories:
+    - https://apk.cve0.io
+  keyring:
+    - https://apk.cve0.io/key/cve0-signing.rsa.pub
+  packages:
+    - kotsadm
+    - kubectl
+    - bash
+    - busybox
+    - securebuild-baselayout
+    - curl
+    - git
+    - helm
+    - kustomize
+    - py3.12-dateutil
+    - py3.12-s3cmd
+    - yarn-1.22
+    - ca-certificates-bundle
+
+accounts:
+  groups:
+    - groupname: kotsadm
+      gid: 1001
+  users:
+    - username: kotsadm
+      uid: 1001
+      gid: 1001
+  run-as: kotsadm
+
+paths:
+  - path: /kotsadm
+    type: symlink
+    source: /usr/local/bin/kotsadm
+    permissions: 0o755
+  - path: /kots
+    type: symlink
+    source: /usr/local/bin/kots
+    permissions: 0o755
+  - path: /usr/local/bin/helm
+    type: symlink
+    source: /usr/bin/helm
+    permissions: 0o755
+  - path: /usr/local/bin/kustomize
+    type: symlink
+    source: /usr/bin/kustomize
+    permissions: 0o755
+
+entrypoint:
+  command: /kotsadm
+
+cmd: api
