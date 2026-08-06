@@ -730,6 +730,71 @@ var _ = Describe("Kots", func() {
 	})
 })
 
+func TestIsV1Beta3Doc(t *testing.T) {
+	tests := []struct {
+		name string
+		doc  []byte
+		want bool
+	}{
+		{
+			name: "v1beta2 preflight",
+			doc:  []byte("apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\n"),
+			want: false,
+		},
+		{
+			name: "v1beta3 preflight",
+			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\n"),
+			want: true,
+		},
+		{
+			name: "v1beta3 host preflight",
+			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: HostPreflight\n"),
+			want: true,
+		},
+		{
+			name: "v1beta3 doc, any other kind",
+			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: SupportBundle\n"),
+			want: true,
+		},
+		{
+			name: "v1beta3 with quoted apiVersion",
+			doc:  []byte("apiVersion: \"troubleshoot.sh/v1beta3\"\nkind: 'Preflight'\n"),
+			want: true,
+		},
+		{
+			name: "v1beta3 doc whose spec breaks yaml parsing via unrendered helm template syntax",
+			doc: []byte(
+				"apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nmetadata:\n  name: vendorflow\nspec:\n" +
+					"  collectors:\n    {{- if eq .Chart.Name \"vendorflow\" }}\n    - clusterInfo: {}\n    {{- end }}\n",
+			),
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, kotsutil.IsV1Beta3Doc(tt.doc))
+		})
+	}
+}
+
+func TestFilterOutV1Beta3Docs(t *testing.T) {
+	content := []byte(
+		"apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: v2\n" +
+			"\n---\n" +
+			"apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nmetadata:\n  name: v3\n" +
+			"\n---\n" +
+			"apiVersion: troubleshoot.sh/v1beta3\nkind: HostPreflight\nmetadata:\n  name: hp3\n",
+	)
+
+	filtered := kotsutil.FilterOutV1Beta3Docs(content)
+	assert.Equal(t, "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: v2\n", string(filtered))
+
+	assert.Nil(t, kotsutil.FilterOutV1Beta3Docs([]byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\n")))
+
+	unchanged := []byte("apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\n")
+	assert.Equal(t, unchanged, kotsutil.FilterOutV1Beta3Docs(unchanged))
+}
+
 func TestIsKotsKind(t *testing.T) {
 	type args struct {
 		apiVersion string

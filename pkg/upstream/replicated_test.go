@@ -105,6 +105,66 @@ func Test_releaseToFiles(t *testing.T) {
 	}
 }
 
+func Test_filterV1Beta3(t *testing.T) {
+	tests := []struct {
+		name        string
+		filename    string
+		content     []byte
+		wantOk      bool
+		wantContent []byte
+	}{
+		{
+			name:        "not a v1beta3 doc",
+			filename:    "manifests/deployment.yaml",
+			content:     []byte("a: b"),
+			wantOk:      true,
+			wantContent: []byte("a: b"),
+		},
+		{
+			name:        "v1beta3 doc, any kind, is dropped entirely",
+			filename:    "manifests/preflight.yaml",
+			content:     []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\n"),
+			wantOk:      false,
+			wantContent: nil,
+		},
+		{
+			name:     "only the v1beta3 doc is stripped from a multi-doc file mixing v1beta2 and v1beta3",
+			filename: "manifests/preflight.yaml",
+			content: []byte(
+				"apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: v2\n" +
+					"\n---\n" +
+					"apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nmetadata:\n  name: v3\n",
+			),
+			wantOk:      true,
+			wantContent: []byte("apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: v2\n"),
+		},
+		{
+			name:     "v1beta3 doc is dropped even when a template breaks yaml parsing of the rest of the doc",
+			filename: "manifests/preflight.yaml",
+			content: []byte(
+				"apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nmetadata:\n  name: vendorflow\nspec:\n" +
+					"  collectors:\n    {{- if eq .Chart.Name \"vendorflow\" }}\n    - clusterInfo: {}\n    {{- end }}\n",
+			),
+			wantOk:      false,
+			wantContent: nil,
+		},
+		{
+			name:        "packaged helm chart archives are left untouched",
+			filename:    "manifests/vendorflow-0.1.0.tgz",
+			content:     []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\n"), // not real tgz content, but proves content is never inspected
+			wantOk:      true,
+			wantContent: []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\n"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			content, ok := filterV1Beta3(tt.filename, tt.content)
+			require.Equal(t, tt.wantOk, ok)
+			require.Equal(t, tt.wantContent, content)
+		})
+	}
+}
+
 func Test_createConfigValues(t *testing.T) {
 	applicationName := "Test App"
 	appInfo := &template.ApplicationInfo{Slug: "app-slug"}
@@ -733,6 +793,42 @@ spec:
 			require.True(t, ok, "Expected manifest %s to be present", name)
 			require.Equal(t, content, manifestContent)
 		}
+	})
+
+	t.Run("drops v1beta3 docs from the release's manifests", func(t *testing.T) {
+		v1beta3Files := map[string][]byte{
+			"manifests/app.yaml":       testFiles["manifests/app.yaml"],
+			"manifests/preflight.yaml": []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\n"),
+		}
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var buf bytes.Buffer
+			gzipWriter := gzip.NewWriter(&buf)
+			tarWriter := tar.NewWriter(gzipWriter)
+
+			for name, content := range v1beta3Files {
+				header := &tar.Header{Name: name, Mode: 0600, Size: int64(len(content))}
+				require.NoError(t, tarWriter.WriteHeader(header))
+				_, err := tarWriter.Write(content)
+				require.NoError(t, err)
+			}
+
+			require.NoError(t, tarWriter.Close())
+			require.NoError(t, gzipWriter.Close())
+
+			w.WriteHeader(http.StatusOK)
+			w.Write(buf.Bytes())
+		}))
+		defer server.Close()
+
+		license.V1.Spec.Endpoint = server.URL
+
+		release, err := downloadReplicatedApp(upstr, license, cursor, nil, "")
+		require.NoError(t, err)
+
+		_, ok := release.Manifests["manifests/preflight.yaml"]
+		require.False(t, ok, "expected the v1beta3 preflight to be dropped from the release's manifests")
+		require.Equal(t, testFiles["manifests/app.yaml"], release.Manifests["manifests/app.yaml"])
 	})
 
 	// Test error cases
