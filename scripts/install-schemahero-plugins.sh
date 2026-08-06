@@ -39,6 +39,18 @@ DRIVERS=(postgres rqlite)
 # sync automatically when the dependency is bumped.
 SCHEMAHERO_VERSION="$(go list -m -f '{{.Version}}' github.com/schemahero/schemahero)"
 
+# The `git clone --branch` below needs a real release tag. If schemahero is ever
+# pinned to a Go pseudo-version (v0.0.0-<timestamp>-<commit>) or redirected via a
+# `replace` directive, `go list -m` reports something that is not a git tag and
+# the clone fails. Fail early with a clear message so the fix is obvious: build
+# the plugins from that specific commit / replacement source instead.
+if [[ ! "${SCHEMAHERO_VERSION}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+	echo "error: schemahero resolves to '${SCHEMAHERO_VERSION}', which is not a release tag" >&2
+	echo "       (Go pseudo-version or a replace directive). Update this script to build the" >&2
+	echo "       plugins from that commit/replacement before the plugin model can be tested." >&2
+	exit 1
+fi
+
 echo "Installing schemahero plugins ${DRIVERS[*]} at ${SCHEMAHERO_VERSION} into ${DEST_DIR}"
 
 SRC_DIR="$(mktemp -d)"

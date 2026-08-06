@@ -14,14 +14,15 @@ contents:
     - git
     - ca-certificates
     - securebuild-baselayout
-    # schemahero v0.25.x ships each DB driver as a separate go-plugin binary
+    # schemahero v0.25.1 ships each DB driver as a separate go-plugin binary
     # (installed to /var/lib/schemahero/plugins). This image runs the schemahero
     # CLI against rqlite (schemahero-plan/apply init containers), so it needs the
-    # rqlite plugin. Pin the CLI + plugin to the 0.25 series so they match the
-    # schemahero library version in go.mod. The plugin is installed into the
-    # image at build time, so nothing is downloaded at runtime (airgap-safe).
-    - schemahero-0.25
-    - schemahero-0.25-rqlite
+    # rqlite plugin. Pin the CLI + plugin to the exact patch (~0.25.1) that matches
+    # the schemahero library version in go.mod, so the shipped go-plugin protocol
+    # matches what CI tests. The plugin is installed into the image at build time,
+    # so nothing is downloaded at runtime (airgap-safe).
+    - schemahero-0.25~0.25.1
+    - schemahero-0.25-rqlite~0.25.1
 
 accounts:
   groups:
