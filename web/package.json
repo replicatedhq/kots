@@ -98,7 +98,7 @@
     "cronstrue": "^2.61.0",
     "dayjs": "^1.11.18",
     "diff": "^8.0.3",
-    "dompurify": "^3.4.11",
+    "dompurify": "^3.4.12",
     "downloadjs": "^1.4.7",
     "filereader-stream": "^2.0.0",
     "handlebars": "^4.7.9",
@@ -135,7 +135,8 @@
     "serialize-javascript": "^7.0.5",
     "styled-components": "^5.3.5",
     "tar-stream": "^3.1.7",
-    "universal-cookie": "^8.0.1"
+    "universal-cookie": "^8.0.1",
+    "ws": "^8.21.0"
   },
   "browserslist": [
     "> 1%",
