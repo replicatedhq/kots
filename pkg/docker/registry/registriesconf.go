@@ -3,7 +3,6 @@ package registry
 import (
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
@@ -11,11 +10,7 @@ import (
 	"go.podman.io/image/v5/types"
 )
 
-var (
-	registriesConfPathOnce sync.Once
-	registriesConfPath     string
-	registriesConfPathErr  error
-)
+
 
 // SetSystemRegistriesConfPath sets SystemRegistriesConfPath on the provided
 // SystemContext to a valid v2-format registries.conf file. If the host has a
@@ -36,17 +31,7 @@ func SetSystemRegistriesConfPath(sys *types.SystemContext) error {
 }
 
 func defaultRegistriesConfPath() (string, error) {
-	registriesConfPathOnce.Do(func() {
-		registriesConfPath, registriesConfPathErr = findDefaultRegistriesConfPath()
-	})
-	return registriesConfPath, registriesConfPathErr
-}
-
-// resetRegistriesConfPathOnce is used by tests to clear the cached path.
-func resetRegistriesConfPathOnce() {
-	registriesConfPathOnce = sync.Once{}
-	registriesConfPath = ""
-	registriesConfPathErr = nil
+	return findDefaultRegistriesConfPath()
 }
 
 func findDefaultRegistriesConfPath() (string, error) {

@@ -13,8 +13,6 @@ import (
 )
 
 func TestSetSystemRegistriesConfPath_UsesHostV2Config(t *testing.T) {
-	resetRegistriesConfPathOnce()
-
 	dir := t.TempDir()
 	hostPath := filepath.Join(dir, "registries.conf")
 	// A minimal valid v2 registries.conf.
@@ -30,8 +28,6 @@ func TestSetSystemRegistriesConfPath_UsesHostV2Config(t *testing.T) {
 }
 
 func TestSetSystemRegistriesConfPath_FallsBackWhenHostConfigIsV1(t *testing.T) {
-	resetRegistriesConfPathOnce()
-
 	dir := t.TempDir()
 	hostPath := filepath.Join(dir, "registries.conf")
 	// A v1 registries.conf (uses the v1-only [registries.search] block).
@@ -55,8 +51,6 @@ registries = ['registry.access.redhat.com']
 }
 
 func TestSetSystemRegistriesConfPath_PreservesV1BlockedAndInsecureRegistries(t *testing.T) {
-	resetRegistriesConfPathOnce()
-
 	dir := t.TempDir()
 	hostPath := filepath.Join(dir, "registries.conf")
 	content := `[registries.search]
@@ -95,8 +89,6 @@ registries = ['insecure-registry.example.com']
 }
 
 func TestSetSystemRegistriesConfPath_FallsBackToEmptyV2WhenV1ConfigIsEmpty(t *testing.T) {
-	resetRegistriesConfPathOnce()
-
 	dir := t.TempDir()
 	hostPath := filepath.Join(dir, "registries.conf")
 	content := `[registries.search]
@@ -117,8 +109,6 @@ registries = []
 }
 
 func TestSetSystemRegistriesConfPath_PreservesV1BlockedRegistryWithWhitespaceInHeader(t *testing.T) {
-	resetRegistriesConfPathOnce()
-
 	dir := t.TempDir()
 	hostPath := filepath.Join(dir, "registries.conf")
 	// TOML allows whitespace around the dot in table headers.
@@ -142,8 +132,6 @@ registries = ["docker.io"]
 }
 
 func TestSetSystemRegistriesConfPath_ReturnsErrorWhenV1ConversionFails(t *testing.T) {
-	resetRegistriesConfPathOnce()
-
 	dir := t.TempDir()
 	hostPath := filepath.Join(dir, "registries.conf")
 	// A v1 config with non-empty entries that cannot be parsed as valid registry locations.
@@ -162,8 +150,6 @@ registries = ["https://invalid-scheme.example.com"]
 }
 
 func TestSetSystemRegistriesConfPath_ReturnsErrorWhenInvalidV2HasNoV1Markers(t *testing.T) {
-	resetRegistriesConfPathOnce()
-
 	dir := t.TempDir()
 	hostPath := filepath.Join(dir, "registries.conf")
 	// A v2-looking file with a v2-only marker but invalid syntax (missing quote).
@@ -180,12 +166,32 @@ func TestSetSystemRegistriesConfPath_ReturnsErrorWhenInvalidV2HasNoV1Markers(t *
 }
 
 func TestSetSystemRegistriesConfPath_FallsBackWhenHostConfigMissing(t *testing.T) {
-	resetRegistriesConfPathOnce()
-
 	hostPath := filepath.Join(t.TempDir(), "does-not-exist.conf")
 	t.Setenv("CONTAINERS_REGISTRIES_CONF", hostPath)
 
 	sys := &types.SystemContext{}
 	require.NoError(t, SetSystemRegistriesConfPath(sys))
 	assert.NotEmpty(t, sys.SystemRegistriesConfPath)
+}
+
+func TestSetSystemRegistriesConfPath_DoesNotCacheTransientErrors(t *testing.T) {
+	dir := t.TempDir()
+	hostPath := filepath.Join(dir, "registries.conf")
+
+	// Create a malformed v2 file with no v1 markers.
+	require.NoError(t, os.WriteFile(hostPath, []byte(`unqualified-search-registries = ["broken`), 0644))
+	t.Setenv("CONTAINERS_REGISTRIES_CONF", hostPath)
+
+	first := &types.SystemContext{}
+	err := SetSystemRegistriesConfPath(first)
+	require.Error(t, err)
+	assert.Empty(t, first.SystemRegistriesConfPath)
+
+	// Repair the file with a valid v2 config.
+	require.NoError(t, os.WriteFile(hostPath, []byte(`unqualified-search-registries = ["registry.access.redhat.com"]
+`), 0644))
+
+	second := &types.SystemContext{}
+	require.NoError(t, SetSystemRegistriesConfPath(second))
+	assert.Equal(t, hostPath, second.SystemRegistriesConfPath)
 }
