@@ -11,6 +11,13 @@ contents:
     - curl
     - git
     - ca-certificates-bundle
+    # This image runs the schemahero CLI (from the kotsadm-migrations package)
+    # against rqlite via the schemahero-plan/apply init containers. As of
+    # schemahero v0.25 the rqlite driver is a separate go-plugin binary installed
+    # to /var/lib/schemahero/plugins, so ship the rqlite plugin, pinned to the
+    # exact patch (~0.25.1) matching go.mod. It is installed at build time, so
+    # nothing is downloaded at runtime (airgap-safe).
+    - schemahero-0.25-rqlite~0.25.1
 
 paths:
   - path: /schemahero

@@ -45,7 +45,11 @@ environment:
       - yarn-1.22
       - py3.12-dateutil
       - py3.12-s3cmd
-      - schemahero-0.22
+      # schemahero v0.25 CLI, copied into the kotsadm-migrations subpackage below.
+      # As of 0.23+ the DB driver plugins are separate packages (added to the apko
+      # image definitions), so this provides the CLI only. Pinned to the exact
+      # patch (~0.25.1) to match the schemahero library version in go.mod.
+      - schemahero-0.25~0.25.1
       - wget
 
   environment:
