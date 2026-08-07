@@ -23,8 +23,9 @@ var (
 // blocked registries, and insecure registries are preserved. If the host file
 // is in the legacy v1 format (which newer containers/image rejects), its
 // blocked, insecure, and search registry settings are converted to a v2 file.
-// If the host file is missing or the v1 config cannot be converted, a minimal
-// empty v2 file is used instead.
+// If the host file is missing, a minimal empty v2 file is used instead. If the
+// v1 config cannot be converted, an error is returned so that blocked-registry
+// and insecure-registry policy is not silently discarded.
 func SetSystemRegistriesConfPath(sys *types.SystemContext) error {
 	path, err := defaultRegistriesConfPath()
 	if err != nil {
@@ -55,23 +56,68 @@ func findDefaultRegistriesConfPath() (string, error) {
 		if isValidV2RegistriesConf(hostPath) {
 			return hostPath, nil
 		}
-		// Host has a v1 or otherwise invalid config. Try to preserve its
-		// blocked/insecure/search registry settings by converting to v2.
+
+		if _, statErr := os.Stat(hostPath); statErr != nil {
+			if os.IsNotExist(statErr) {
+				// File does not exist; fall back to an empty v2 file.
+				return writeDefaultRegistriesConf()
+			}
+			return "", errors.Wrap(statErr, "failed to stat host registries.conf")
+		}
+
+		// Host file exists but is not valid v2. Determine whether it is a legacy
+		// v1 config before attempting conversion, so an invalid v2 file is not
+		// silently replaced with an empty v2 config.
+		isV1, err := isV1RegistriesConf(hostPath)
+		if err != nil {
+			return "", errors.Wrap(err, "host registries.conf is not valid v2 and cannot be parsed as v1")
+		}
+		if !isV1 {
+			return "", errors.Errorf("host registries.conf %q is not a valid v2 file and does not contain v1 markers; refusing to install an empty v2 config and discard registry policy", hostPath)
+		}
+
 		convertedPath, err := convertHostRegistriesConfToV2(hostPath)
 		if err == nil {
 			return convertedPath, nil
 		}
-		// If conversion fails or the v1 file has no settings, fall back to an
-		// empty v2 file rather than letting the operation fail entirely.
+		if errors.Is(err, errV1ConfigEmpty) {
+			// Nothing to preserve; fall back to an empty v2 file.
+			return writeDefaultRegistriesConf()
+		}
+		return "", errors.Wrap(err, "failed to convert host v1 registries.conf to v2; refusing to install an empty v2 config and discard registry policy")
 	}
 
 	return writeDefaultRegistriesConf()
 }
 
+// errV1ConfigEmpty indicates a legacy v1 registries.conf file was parsed
+// successfully but contained no blocked, insecure, or search registry entries.
+// In this case it is safe to fall back to an empty v2 configuration.
+var errV1ConfigEmpty = errors.New("v1 registries.conf has no blocked, insecure, or search registry entries")
+
 func isValidV2RegistriesConf(path string) bool {
 	ctx := &types.SystemContext{SystemRegistriesConfPath: path}
 	_, err := sysregistriesv2.TryUpdatingCache(ctx)
 	return err == nil
+}
+
+func isV1RegistriesConf(path string) (bool, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+	var raw map[string]interface{}
+	if err := toml.Unmarshal(data, &raw); err != nil {
+		return false, err
+	}
+	registries, ok := raw["registries"].(map[string]interface{})
+	if !ok {
+		return false, nil
+	}
+	_, hasSearch := registries["search"]
+	_, hasInsecure := registries["insecure"]
+	_, hasBlock := registries["block"]
+	return hasSearch || hasInsecure || hasBlock, nil
 }
 
 func convertHostRegistriesConfToV2(hostPath string) (string, error) {
@@ -85,8 +131,7 @@ func convertHostRegistriesConfToV2(hostPath string) (string, error) {
 		return "", errors.Wrap(err, "failed to parse v1 registries.conf")
 	}
 	if !v1.Nonempty() {
-		// Nothing to preserve; use the empty fallback.
-		return "", errors.New("v1 registries.conf is empty")
+		return "", errV1ConfigEmpty
 	}
 
 	v2, err := v1.ConvertToV2()

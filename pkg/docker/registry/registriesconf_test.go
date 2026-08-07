@@ -116,6 +116,69 @@ registries = []
 	assert.Empty(t, strings.TrimSpace(string(data)))
 }
 
+func TestSetSystemRegistriesConfPath_PreservesV1BlockedRegistryWithWhitespaceInHeader(t *testing.T) {
+	resetRegistriesConfPathOnce()
+
+	dir := t.TempDir()
+	hostPath := filepath.Join(dir, "registries.conf")
+	// TOML allows whitespace around the dot in table headers.
+	content := `[registries . block]
+registries = ["docker.io"]
+`
+	require.NoError(t, os.WriteFile(hostPath, []byte(content), 0644))
+
+	t.Setenv("CONTAINERS_REGISTRIES_CONF", hostPath)
+
+	sys := &types.SystemContext{}
+	require.NoError(t, SetSystemRegistriesConfPath(sys))
+	assert.NotEqual(t, hostPath, sys.SystemRegistriesConfPath)
+	assert.NotEmpty(t, sys.SystemRegistriesConfPath)
+
+	ctx := &types.SystemContext{SystemRegistriesConfPath: sys.SystemRegistriesConfPath}
+	reg, err := sysregistriesv2.FindRegistry(ctx, "docker.io/library/busybox")
+	require.NoError(t, err)
+	require.NotNil(t, reg)
+	assert.True(t, reg.Blocked, "expected docker.io to be blocked")
+}
+
+func TestSetSystemRegistriesConfPath_ReturnsErrorWhenV1ConversionFails(t *testing.T) {
+	resetRegistriesConfPathOnce()
+
+	dir := t.TempDir()
+	hostPath := filepath.Join(dir, "registries.conf")
+	// A v1 config with non-empty entries that cannot be parsed as valid registry locations.
+	content := `[registries.block]
+registries = ["https://invalid-scheme.example.com"]
+`
+	require.NoError(t, os.WriteFile(hostPath, []byte(content), 0644))
+
+	t.Setenv("CONTAINERS_REGISTRIES_CONF", hostPath)
+
+	sys := &types.SystemContext{}
+	err := SetSystemRegistriesConfPath(sys)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to convert host v1 registries.conf to v2")
+	assert.Empty(t, sys.SystemRegistriesConfPath)
+}
+
+func TestSetSystemRegistriesConfPath_ReturnsErrorWhenInvalidV2HasNoV1Markers(t *testing.T) {
+	resetRegistriesConfPathOnce()
+
+	dir := t.TempDir()
+	hostPath := filepath.Join(dir, "registries.conf")
+	// A v2-looking file with a v2-only marker but invalid syntax (missing quote).
+	content := `unqualified-search-registries = ["registry.access.redhat.com]
+`
+	require.NoError(t, os.WriteFile(hostPath, []byte(content), 0644))
+
+	t.Setenv("CONTAINERS_REGISTRIES_CONF", hostPath)
+
+	sys := &types.SystemContext{}
+	err := SetSystemRegistriesConfPath(sys)
+	require.Error(t, err)
+	assert.Empty(t, sys.SystemRegistriesConfPath)
+}
+
 func TestSetSystemRegistriesConfPath_FallsBackWhenHostConfigMissing(t *testing.T) {
 	resetRegistriesConfPathOnce()
 
