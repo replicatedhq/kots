@@ -11,6 +11,9 @@ contents:
     - curl
     - git
     - ca-certificates-bundle
+    # schemahero 0.23+ ships the rqlite driver as a separate go-plugin, not in the CLI.
+    # Installed to /var/lib/schemahero/plugins at build time (airgap-safe); pinned to go.mod.
+    - schemahero-0.25-rqlite~0.25.1
 
 paths:
   - path: /schemahero

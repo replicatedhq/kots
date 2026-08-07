@@ -216,7 +216,15 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: install schemahero plugins
+        run: scripts/install-schemahero-plugins.sh "$RUNNER_TEMP/schemahero-plugins"
+
       - name: test
+        env:
+          # schemahero v0.25 loads DB drivers as go-plugin binaries discovered on
+          # disk; point it at the plugins provisioned above so the in-process
+          # migration integration test can launch them.
+          SCHEMAHERO_PLUGIN_PATH: ${{ runner.temp }}/schemahero-plugins
         run: |
           echo 'unqualified-search-registries = ["docker.io", "quay.io"]' > "$CONTAINERS_REGISTRIES_CONF"
           make ci-test

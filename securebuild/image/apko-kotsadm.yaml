@@ -17,6 +17,9 @@ contents:
     - py3.12-s3cmd
     - yarn-1.22
     - ca-certificates-bundle
+    # kotsadm runs schemahero in-process for the postgres->rqlite migration. 0.23+ ships the
+    # postgres driver as a separate go-plugin, installed to /var/lib/schemahero/plugins at build (airgap-safe).
+    - schemahero-0.25-postgres~0.25.1
 
 accounts:
   groups:
