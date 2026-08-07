@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -224,6 +225,9 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 	sysCtx := &imagetypes.SystemContext{
 		DockerInsecureSkipTLSVerify: imagetypes.OptionalBoolTrue,
 		DockerDisableV1Ping:         true,
+	}
+	if err := dockerregistry.SetSystemRegistriesConfPath(sysCtx); err != nil {
+		return errors.Wrap(err, "failed to set system registries conf path")
 	}
 	if registry.Username != "" && registry.Password != "" {
 		sysCtx.DockerAuthConfig = &imagetypes.DockerAuthConfig{

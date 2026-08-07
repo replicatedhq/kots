@@ -264,6 +264,13 @@ func CopyImage(opts types.CopyImageOptions) error {
 	srcCtx := &containerstypes.SystemContext{}
 	destCtx := &containerstypes.SystemContext{}
 
+	if err := registry.SetSystemRegistriesConfPath(srcCtx); err != nil {
+		return errors.Wrap(err, "failed to set source registries conf path")
+	}
+	if err := registry.SetSystemRegistriesConfPath(destCtx); err != nil {
+		return errors.Wrap(err, "failed to set destination registries conf path")
+	}
+
 	if opts.SrcDisableV1Ping {
 		srcCtx.DockerDisableV1Ping = true
 	}
@@ -373,6 +380,9 @@ func IsPrivateImage(image string, dockerHubRegistry dockerregistrytypes.Registry
 		}
 
 		sysCtx := containerstypes.SystemContext{DockerDisableV1Ping: true}
+		if err := registry.SetSystemRegistriesConfPath(&sysCtx); err != nil {
+			return false, errors.Wrap(err, "failed to set system registries conf path")
+		}
 
 		registryHost := reference.Domain(dockerRef)
 		isDockerIO := registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io")
@@ -484,7 +494,21 @@ func getPolicyContext() (*signature.PolicyContext, error) {
 // If the destination is unreachable or the tag does not exist, returns (false, nil)
 // so the caller proceeds with the normal push. Only source-side failures surface as
 // errors, since a missing or unreadable destination should not block the push.
+func setRegistriesConfPathIfEmpty(sys *containerstypes.SystemContext) error {
+	if sys.SystemRegistriesConfPath != "" {
+		return nil
+	}
+	return registry.SetSystemRegistriesConfPath(sys)
+}
+
 func destinationManifestMatches(ctx context.Context, opts types.CopyImageOptions, srcCtx, destCtx *containerstypes.SystemContext) (bool, error) {
+	if err := setRegistriesConfPathIfEmpty(srcCtx); err != nil {
+		return false, errors.Wrap(err, "failed to set source registries conf path")
+	}
+	if err := setRegistriesConfPathIfEmpty(destCtx); err != nil {
+		return false, errors.Wrap(err, "failed to set destination registries conf path")
+	}
+
 	destImg, err := opts.DestRef.NewImageSource(ctx, destCtx)
 	if err != nil {
 		// Destination does not exist or is unreachable; fall through to the normal push.

@@ -67,6 +67,9 @@ func CopyImages(options imagetypes.PushImagesOptions, kotsNamespace string) erro
 			DockerInsecureSkipTLSVerify: imagev5types.OptionalBoolTrue,
 			DockerDisableV1Ping:         true,
 		}
+		if err := registry.SetSystemRegistriesConfPath(destCtx); err != nil {
+			return errors.Wrap(err, "failed to set destination registries conf path")
+		}
 
 		username, password := options.Registry.Username, options.Registry.Password
 		registryHost := reference.Domain(destRef.DockerReference())
@@ -105,6 +108,9 @@ func CopyImages(options imagetypes.PushImagesOptions, kotsNamespace string) erro
 
 func getCopyImagesSourceContext(clientset kubernetes.Interface, kotsNamespace string) (*imagev5types.SystemContext, error) {
 	sourceCtx := &imagev5types.SystemContext{DockerDisableV1Ping: true}
+	if err := registry.SetSystemRegistriesConfPath(sourceCtx); err != nil {
+		return nil, errors.Wrap(err, "failed to set source registries conf path")
+	}
 
 	// allow pulling images from http/invalid https docker repos
 	// intended for development only, _THIS MAKES THINGS INSECURE_
