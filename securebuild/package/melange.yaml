@@ -45,10 +45,8 @@ environment:
       - yarn-1.22
       - py3.12-dateutil
       - py3.12-s3cmd
-      # schemahero v0.25 CLI, copied into the kotsadm-migrations subpackage below.
-      # As of 0.23+ the DB driver plugins are separate packages (added to the apko
-      # image definitions), so this provides the CLI only. Pinned to the exact
-      # patch (~0.25.1) to match the schemahero library version in go.mod.
+      # schemahero 0.25 CLI (copied into the kotsadm-migrations subpackage). 0.23+ split the DB
+      # drivers into separate plugin packages, added to the apko images; this provides the CLI only.
       - schemahero-0.25~0.25.1
       - wget
 
@@ -120,7 +118,7 @@ subpackages:
           # Copy migration tables (matches reference template)
           mv migrations/tables "${DESTDIR}/tables"
 
-          # Copy schemahero binary from schemahero-0.22 package to /usr/local/bin
+          # Copy schemahero binary from schemahero-0.25 package to /usr/local/bin
           cp /usr/bin/schemahero "${DESTDIR}/usr/local/bin/schemahero"
 
   - name: ${{package.name}}-kurl-proxy
