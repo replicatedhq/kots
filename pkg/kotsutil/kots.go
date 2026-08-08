@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -910,6 +911,39 @@ func IsApiVersionKind(content []byte, apiVersion, kind string) bool {
 		return true
 	}
 	return false
+}
+
+var v1Beta3APIVersionRe = regexp.MustCompile(`(?m)^apiVersion:[ \t]*['"]?troubleshoot\.sh/v1beta3['"]?[ \t]*(#.*)?$`)
+
+// IsV1Beta3Doc reports whether doc is an unsupported troubleshoot.sh/v1beta3
+// doc. Matches the apiVersion header line directly, so it still works on docs
+// with unrendered template syntax (e.g. Helm's "{{ .Values.x }}") further down.
+func IsV1Beta3Doc(doc []byte) bool {
+	return v1Beta3APIVersionRe.Match(doc)
+}
+
+// FilterOutV1Beta3Docs removes v1beta3 documents from content (a possibly
+// multi-doc yaml file). Returns nil if nothing remains.
+func FilterOutV1Beta3Docs(content []byte) []byte {
+	docs := util.ConvertToSingleDocs(content)
+
+	kept := make([][]byte, 0, len(docs))
+	changed := false
+	for _, doc := range docs {
+		if IsV1Beta3Doc(doc) {
+			changed = true
+			continue
+		}
+		kept = append(kept, doc)
+	}
+
+	if !changed {
+		return content
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	return bytes.Join(kept, []byte("\n---\n"))
 }
 
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {

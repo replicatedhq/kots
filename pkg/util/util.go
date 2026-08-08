@@ -10,11 +10,17 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
+
+// yamlDocSeparatorLine matches a "---" yaml document separator that has
+// trailing whitespace or a trailing comment on the same line (both valid per
+// the yaml spec), so it can be normalized to a bare "---" before splitting.
+var yamlDocSeparatorLine = regexp.MustCompile(`(?m)^---[ \t]*(#.*)?$`)
 
 func IsURL(str string) bool {
 	_, err := url.ParseRequestURI(str)
@@ -127,6 +133,9 @@ func ConvertToSingleDocs(doc []byte) [][]byte {
 	singleDocs := [][]byte{}
 	// replace all windows line endings with unix line endings
 	doc = bytes.ReplaceAll(doc, []byte("\r\n"), []byte("\n"))
+	// normalize separators with trailing whitespace or a comment (e.g. "---  " or
+	// "--- # comment") to a bare "---" so they're recognized as document boundaries
+	doc = yamlDocSeparatorLine.ReplaceAll(doc, []byte("---"))
 	docs := bytes.Split(doc, []byte("\n---\n"))
 	for _, doc := range docs {
 		if len(bytes.TrimSpace(doc)) == 0 {

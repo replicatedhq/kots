@@ -318,6 +318,16 @@ func TestConvertToSingleDocs(t *testing.T) {
 			doc:  []byte("abc\r\n---\r\n\r\n---\r\ndef"),
 			want: [][]byte{[]byte("abc"), []byte("def")},
 		},
+		{
+			name: "multiple docs with trailing whitespace after separator",
+			doc:  []byte("abc\n---   \ndef"),
+			want: [][]byte{[]byte("abc"), []byte("def")},
+		},
+		{
+			name: "multiple docs with comment after separator",
+			doc:  []byte("abc\n--- # comment\ndef"),
+			want: [][]byte{[]byte("abc"), []byte("def")},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

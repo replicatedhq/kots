@@ -1,0 +1,33 @@
+contents:
+  repositories:
+    - https://apk.cve0.io
+  keyring:
+    - https://apk.cve0.io/key/cve0-signing.rsa.pub
+  packages:
+    - kurl-proxy
+    - bash
+    - busybox
+    - curl
+    - git
+    - ca-certificates
+    - securebuild-baselayout
+
+work-dir: /
+
+paths:
+  - path: /kurl_proxy
+    type: symlink
+    source: /usr/local/bin/kurl_proxy
+    permissions: 0o755
+
+accounts:
+  run-as: kotsadm
+  groups:
+    - groupname: kotsadm
+      gid: 1001
+  users:
+    - username: kotsadm
+      uid: 1001
+      gid: 1001
+
+cmd: /kurl_proxy

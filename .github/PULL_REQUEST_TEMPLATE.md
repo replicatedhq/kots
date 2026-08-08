@@ -18,9 +18,18 @@ If no, just write "NONE" below.
 If no, just write "NONE" in the release-note block below.
 If yes, a release note is required:
 -->
-```release-note
-
-```
+ New features:
+ ```release-notes-features
+ 
+ ```
+ Bug fixes:
+ ```release-notes-fixes
+ 
+ ```
+ Improvements:
+ ```release-notes-improvements
+ 
+ ```
 
 #### Does this PR require documentation?
 <!--

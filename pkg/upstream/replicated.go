@@ -350,7 +350,11 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.
 			appPath := strings.TrimPrefix(path, localPath)
 			appPath = strings.TrimLeft(appPath, string(os.PathSeparator))
 
-			release.Manifests[appPath] = contents
+			filtered, ok := filterV1Beta3(appPath, contents)
+			if !ok {
+				return nil
+			}
+			release.Manifests[appPath] = filtered
 
 			return nil
 		})
@@ -465,7 +469,11 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 				return nil, errors.Wrap(err, "failed to read file from tar")
 			}
 
-			release.Manifests[name] = content
+			filtered, ok := filterV1Beta3(name, content)
+			if !ok {
+				continue
+			}
+			release.Manifests[name] = filtered
 		}
 
 		i++
@@ -854,6 +862,25 @@ func findAppInRelease(release *Release) *kotsv1beta1.Application {
 		},
 	}
 	return app
+}
+
+// filterV1Beta3 drops unsupported troubleshoot.sh/v1beta3 docs from content.
+// ok is false when nothing is left to keep. Helm chart archives (.tgz/.tar.gz)
+// are skipped, since they're binary, not yaml.
+func filterV1Beta3(filename string, content []byte) (filtered []byte, ok bool) {
+	if strings.HasSuffix(filename, ".tgz") || strings.HasSuffix(filename, ".tar.gz") {
+		return content, true
+	}
+
+	filtered = kotsutil.FilterOutV1Beta3Docs(content)
+	if filtered == nil {
+		logger.Infof("skipping v1beta3 file from release: %s", filename)
+		return nil, false
+	}
+	if !bytes.Equal(filtered, content) {
+		logger.Infof("removed v1beta3 doc(s) from release file: %s", filename)
+	}
+	return filtered, true
 }
 
 func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
