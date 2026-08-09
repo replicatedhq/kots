@@ -10,8 +10,6 @@ import (
 	"go.podman.io/image/v5/types"
 )
 
-
-
 // SetSystemRegistriesConfPath sets SystemRegistriesConfPath on the provided
 // SystemContext to a valid v2-format registries.conf file. If the host has a
 // valid v2 registries.conf, that path is used so that configured mirrors,
@@ -21,6 +19,12 @@ import (
 // If the host file is missing, a minimal empty v2 file is used instead. If the
 // v1 config cannot be converted, an error is returned so that blocked-registry
 // and insecure-registry policy is not silently discarded.
+//
+// The returned path is only installed after validation/conversion succeeds, so
+// a transiently unreadable or malformed host file does not permanently attach
+// a broken path to the SystemContext. Callers should create a fresh
+// SystemContext for each operation so that any internal library caching is not
+// treated as permanent.
 func SetSystemRegistriesConfPath(sys *types.SystemContext) error {
 	path, err := defaultRegistriesConfPath()
 	if err != nil {
@@ -81,6 +85,11 @@ func findDefaultRegistriesConfPath() (string, error) {
 var errV1ConfigEmpty = errors.New("v1 registries.conf has no blocked, insecure, or search registry entries")
 
 func isValidV2RegistriesConf(path string) bool {
+	// Use a fresh SystemContext so the library validates the file at this
+	// exact moment. A transient failure here only causes this function to
+	// return false; the caller then falls back to v1 detection, missing-file
+	// handling, or conversion, and never installs the bad path on the
+	// caller's SystemContext.
 	ctx := &types.SystemContext{SystemRegistriesConfPath: path}
 	_, err := sysregistriesv2.TryUpdatingCache(ctx)
 	return err == nil
@@ -95,6 +104,9 @@ func isV1RegistriesConf(path string) (bool, error) {
 	if err := toml.Unmarshal(data, &raw); err != nil {
 		return false, err
 	}
+	// TOML normalizes whitespace in table headers (e.g. [registries . block]
+	// and [registries.block] both yield the same key), so the map lookup below
+	// correctly recognizes legacy v1 sections regardless of formatting.
 	registries, ok := raw["registries"].(map[string]interface{})
 	if !ok {
 		return false, nil
