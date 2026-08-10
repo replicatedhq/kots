@@ -4,5 +4,5 @@ outputs:
   GIT_TAG:
     description: 'Git tag if this is a tagged revision'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
