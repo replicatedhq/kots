@@ -1,0 +1,43 @@
+name: Build a SecureBuild image locally
+description: Publish an image locally from a SecureBuild APKO spec and local Melange packages
+
+inputs:
+  config:
+    description: Path to the SecureBuild APKO config
+    required: true
+  image-name:
+    description: Full destination image name
+    required: true
+  registry-username:
+    description: Username used to log in to the registry
+    default: ''
+    required: false
+  registry-password:
+    description: Password used to log in to the registry
+    default: ''
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/download-artifact@v8
+      with:
+        pattern: securebuild-melange-packages-*
+        path: ./packages/
+        merge-multiple: true
+
+    - uses: actions/download-artifact@v8
+      with:
+        pattern: securebuild-melange-rsa-pub-*
+        merge-multiple: true
+
+    - uses: chainguard-images/actions/apko-publish@v1.0.37
+      with:
+        config: ${{ inputs.config }}
+        archs: amd64,arm64
+        tag: ${{ inputs.image-name }}
+        repository-append: ./packages
+        keyring-append: ./melange-amd64.rsa.pub,./melange-arm64.rsa.pub
+        vcs-url: true
+        generic-user: ${{ inputs.registry-username }}
+        generic-pass: ${{ inputs.registry-password }}

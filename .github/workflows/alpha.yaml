@@ -19,7 +19,7 @@ jobs:
         uses: ./.github/actions/version-tag
 
 
-  build-migrations-melange-packages:
+  build-melange-packages:
     needs: [generate-tag]
     strategy:
       fail-fast: true
@@ -31,91 +31,43 @@ jobs:
     runs-on: ${{ matrix.runner.name }}
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/build-custom-melange-package
+      - uses: ./.github/actions/build-securebuild-package-locally
         with:
-          context: migrations/deploy
-          component: kotsadm-migrations
           git-tag: ${{ needs.generate-tag.outputs.tag }}
           arch: ${{ matrix.runner.arch }}
 
   build-migrations:
     runs-on: ubuntu-latest
-    needs: [generate-tag, build-migrations-melange-packages]
+    needs: [generate-tag, build-melange-packages]
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/build-custom-image-with-apko
+      - uses: ./.github/actions/build-securebuild-image-locally
         with:
-          context: migrations/deploy
-          component: kotsadm-migrations
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          config: securebuild/image/apko-kotsadm-migrations.yaml
           image-name: index.docker.io/kotsadm/kotsadm-migrations:alpha
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-
-  build-kotsadm-melange-packages:
-    needs: [generate-tag]
-    strategy:
-      fail-fast: true
-      matrix:
-        runner: [
-          {name: ubuntu-latest, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
-    runs-on: ${{ matrix.runner.name }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/build-custom-melange-package
-        with:
-          context: deploy
-          component: kotsadm
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
-          arch: ${{ matrix.runner.arch }}
-
   build-kotsadm:
     runs-on: ubuntu-latest
-    needs: [generate-tag, build-kotsadm-melange-packages]
+    needs: [generate-tag, build-melange-packages]
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/build-custom-image-with-apko
+      - uses: ./.github/actions/build-securebuild-image-locally
         with:
-          context: deploy
-          component: kotsadm
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          config: securebuild/image/apko-kotsadm.yaml
           image-name: index.docker.io/kotsadm/kotsadm:alpha
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-
-  build-kurl-proxy-melange-packages:
-    needs: [generate-tag]
-    strategy:
-      fail-fast: true
-      matrix:
-        runner: [
-          {name: ubuntu-latest, arch: amd64},
-          {name: arm64-runner-set, arch: arm64}
-        ]
-    runs-on: ${{ matrix.runner.name }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/build-custom-melange-package
-        with:
-          context: kurl_proxy/deploy
-          component: kurl-proxy
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
-          arch: ${{ matrix.runner.arch }}
-
   build-kurl-proxy:
     runs-on: ubuntu-latest
-    needs: [generate-tag, build-kurl-proxy-melange-packages]
+    needs: [generate-tag, build-melange-packages]
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/build-custom-image-with-apko
+      - uses: ./.github/actions/build-securebuild-image-locally
         with:
-          context: kurl_proxy/deploy
-          component: kurl-proxy
-          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          config: securebuild/image/apko-kurl-proxy.yaml
           image-name: index.docker.io/kotsadm/kurl-proxy:alpha
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -330,4 +282,3 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: kotsadm-migration-scan-output.sarif
-

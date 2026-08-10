@@ -1,9 +1,15 @@
 name: publish-securebuild
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  workflow_call:
+    inputs:
+      version:
+        description: 'Stable version tag to build (e.g. v1.2.3)'
+        required: true
+        type: string
+    secrets:
+      SECUREBUILD_API_TOKEN:
+        required: true
   workflow_dispatch:
     inputs:
       version:
@@ -12,20 +18,28 @@ on:
         type: string
 
 jobs:
-  build-package:
+  validate-version:
     runs-on: ubuntu-22.04
-    continue-on-error: true
+    steps:
+      - name: Require a stable release version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "SecureBuild only supports stable release versions (for example, v1.2.3): $VERSION"
+            exit 1
+          fi
+
+  build-package:
+    needs: validate-version
+    runs-on: ubuntu-22.04
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Set version
         id: version
         run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-          fi
+          echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
 
       - name: Install securebuild CLI
         run: |
@@ -43,7 +57,6 @@ jobs:
   build-image:
     needs: build-package
     runs-on: ubuntu-22.04
-    continue-on-error: true
     if: ${{ !cancelled() && needs.build-package.result == 'success' }}
     strategy:
       matrix:
