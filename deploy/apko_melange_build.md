@@ -2,7 +2,14 @@
 
 ## What?
 
-This doc describes a non-production-ready process for building a minimal `kots` image using `melange` and `apko`:
+KOTS packages and images are defined by the SecureBuild Melange and APKO specs:
+
+- [`securebuild/package/melange.yaml`](../securebuild/package/melange.yaml)
+- [`securebuild/image/apko-kotsadm.yaml`](../securebuild/image/apko-kotsadm.yaml)
+- [`securebuild/image/apko-kotsadm-migrations.yaml`](../securebuild/image/apko-kotsadm-migrations.yaml)
+- [`securebuild/image/apko-kurl-proxy.yaml`](../securebuild/image/apko-kurl-proxy.yaml)
+
+Stable releases build these specs with the SecureBuild CLI. Prerelease and CI builds run the same specs locally with `melange` and `apko`:
 
 - [`melange`](https://github.com/chainguard-dev/melange) is a tool for reproducibly building APK packages from source
 - [`apko`](https://github.com/chainguard-dev/apko) is a tool for reproducibly building container images from APK packages
@@ -13,38 +20,16 @@ Building with `melange` and `apko` produces smaller, more reproducible images, w
 
 ## How?
 
-First, build the package from source, using `melange`.
+The local build is implemented by these composite actions:
 
-To start, if there isn't already a signing key for the package, we need to generate one:
+- [`build-securebuild-package-locally`](../.github/actions/build-securebuild-package-locally/action.yml) adapts the package spec to build an exact source commit with an APK-compatible placeholder version, embeds the requested prerelease version, signs the packages, and uploads the local APK repository.
+- [`build-securebuild-image-locally`](../.github/actions/build-securebuild-image-locally/action.yml) downloads that repository and publishes the three APKO images from it.
 
-```sh
-melange keygen
-```
-
-We only need to build for x86_64, which is faster than building for arm64 since it doesn't require qemu.
-
-```sh
-melange build melange.yaml --arch=x86_64
-```
-
-> 💡 Only building for your local platform makes builds faster, since it doesn't have to emulate with qemu.
-> If you're on an arm64 machine (e.g., Apple Silicon), use `--arch=aarch64` here and below.
-
-Then, build the image from the newly built `kotsadm` package, and the other packages needed by the image, using `apko`:
-
-```sh
-apko publish apko.yaml ttl.sh/kotsadm --arch=x86_64
-```
-
-This will print the image to stdout, so you can run it:
-
-```sh
-docker run $(apko publish ...)
-```
+See the `build-melange-packages`, `build-kotsadm`, `build-migrations`, and `build-kurl-proxy` jobs in [`build-test.yaml`](../.github/workflows/build-test.yaml) for a complete TTL registry example.
 
 ### Presubmit GitHub Actions
 
-The above steps are automated in [GitHub Actions](./.github/actions/build-kotsadm-image/action.yml) as a presubmit check for PRs.
+The above steps are automated in GitHub Actions as a presubmit check for PRs.
 
 The image this workflow produces is only meant for validation, and not meant for production use cases at this time.
 

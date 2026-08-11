@@ -1,0 +1,76 @@
+name: Build the SecureBuild package locally
+description: Build the SecureBuild Melange spec locally for prerelease versions
+
+inputs:
+  git-tag:
+    description: Version tag to embed in the binaries
+    required: true
+  arch:
+    description: Architecture to build for
+    required: true
+  source-ref:
+    description: Exact source commit used for package provenance; defaults to the workflow commit
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Configure packages for arm64
+      if: inputs.arch == 'arm64'
+      shell: bash
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y curl jq gettext-base pkg-config apparmor
+        # ARC container runners don't run systemd as PID 1, so 'systemctl reload apparmor'
+        # (called by setup-melange) fails. Shim it to use apparmor_parser directly.
+        sudo tee /usr/local/bin/systemctl > /dev/null << 'SHIM'
+        #!/bin/bash
+        if [[ "$1" == "reload" && "$2" == "apparmor" ]]; then
+          apparmor_parser -r /etc/apparmor.d/ 2>/dev/null || true
+          exit 0
+        fi
+        exec /usr/bin/systemctl "$@"
+        SHIM
+        sudo chmod +x /usr/local/bin/systemctl
+
+    - uses: chainguard-dev/actions/setup-melange@v1.6.30
+
+    - name: Build packages
+      shell: bash
+      env:
+        ARCH: ${{ inputs.arch }}
+        GIT_TAG: ${{ inputs.git-tag }}
+        SOURCE_REF: ${{ inputs.source-ref || github.sha }}
+      run: |
+        env_file="$RUNNER_TEMP/melange.env"
+        signing_key="$RUNNER_TEMP/melange-${ARCH}.rsa"
+
+        # SecureBuild replaces the package version when it runs the spec. Melange cannot
+        # use our prerelease version as an APK version, so retain the spec's valid placeholder.
+        # The local git-checkout pipeline override keeps the source already populated from
+        # actions/checkout instead of cloning the release tag referenced by the unchanged spec.
+        printf 'export GIT_TAG=%q\nexport VERSION=%q\n' "$GIT_TAG" "$GIT_TAG" > "$env_file"
+
+        sudo melange keygen "$signing_key"
+        sudo melange build securebuild/package/melange.yaml \
+          --arch "$ARCH" \
+          --env-file "$env_file" \
+          --git-commit "$SOURCE_REF" \
+          --git-repo-url "${{ github.server_url }}/${{ github.repository }}" \
+          --out-dir "$GITHUB_WORKSPACE/packages" \
+          --pipeline-dir "${{ github.action_path }}/pipelines" \
+          --signing-key "$signing_key" \
+          --source-dir "$GITHUB_WORKSPACE"
+        sudo cp "$signing_key.pub" "$GITHUB_WORKSPACE/melange-${ARCH}.rsa.pub"
+        sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE/packages" "$GITHUB_WORKSPACE/melange-${ARCH}.rsa.pub"
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: securebuild-melange-packages-${{ inputs.arch }}
+        path: ./packages
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: securebuild-melange-rsa-pub-${{ inputs.arch }}
+        path: ./melange-${{ inputs.arch }}.rsa.pub

@@ -1,0 +1,12 @@
+name: Use source from the local workspace
+
+inputs:
+  repository:
+    description: Unused; the repository has already been checked out by the workflow
+    required: true
+  tag:
+    description: Unused; the workflow checkout determines the source revision
+
+pipeline:
+  - runs: |
+      echo "Using source already checked out by the workflow"
