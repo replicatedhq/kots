@@ -5,12 +5,23 @@ contents:
     - https://apk.cve0.io/key/cve0-signing.rsa.pub
   packages:
     - kotsadm-migrations
+    # schemahero 0.25 loads the rqlite driver as a go-plugin binary. If it isn't
+    # present locally, schemahero tries to download it from an OCI registry,
+    # which hangs in a no-network init container. Install it explicitly so it's
+    # on disk at /var/lib/schemahero/plugins/schemahero-rqlite (a default search
+    # path) and no download is ever attempted.
+    - schemahero-0.25-rqlite~0.25.1
     - bash
     - busybox
     - securebuild-baselayout
     - curl
     - git
     - ca-certificates-bundle
+
+# Point schemahero at the bundled plugin so discovery never falls back to a
+# network download. Redundant with the default search paths, but explicit.
+environment:
+  SCHEMAHERO_PLUGIN_PATH: /var/lib/schemahero/plugins
 
 paths:
   - path: /schemahero
