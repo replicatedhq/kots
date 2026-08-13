@@ -13,7 +13,6 @@ import (
 	godigest "github.com/opencontainers/go-digest"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.podman.io/image/v5/transports/alltransports"
@@ -21,55 +20,48 @@ import (
 )
 
 func Test_IsPrivateImages(t *testing.T) {
-	type args struct {
-		baseImages      []string
-		kotsKindsImages []string
-		kotsKinds       *kotsutil.KotsKinds
+	// Use a local mock registry so the test is deterministic and does not rely on
+	// external registry rate limits or network availability.
+	body := []byte(`{"schemaVersion":2,"mediaType":"application/vnd.docker.distribution.manifest.v2+json","config":{"mediaType":"application/vnd.docker.container.image.v1+json","digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","size":1},"layers":[]}`)
+	contentType := "application/vnd.docker.distribution.manifest.v2+json"
+
+	manifests := map[string]mockManifest{
+		"public/image:tag": {body: body, contentType: contentType},
+		"public/digest:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {body: body, contentType: contentType},
+		"public-multiarch/image:tag": {body: []byte(`{"errors":[{"code":"MANIFEST_UNKNOWN","message":"no image found in manifest list for architecture"}]}`), contentType: "application/json"},
+		"private/image:tag":          {body: []byte(`{"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}`), contentType: "application/json", status: http.StatusUnauthorized},
+		"missing/image:tag":          {body: []byte(`{"errors":[{"code":"MANIFEST_UNKNOWN","message":"manifest unknown"}]}`), contentType: "application/json", status: http.StatusNotFound},
 	}
+	srv := newMockManifestRegistry(manifests)
+	defer srv.Close()
+	host := hostFromServer(t, srv)
+
+	// The mock registry uses a self-signed certificate.
+	t.Setenv("KOTSADM_INSECURE_SRCREGISTRY", "true")
 
 	tests := []struct {
 		image string
 		want  bool
 	}{
 		{
-			image: "registry.replicated.com/appslug/image:version",
-			want:  true,
-		},
-		{
-			image: "quay.io/replicatedcom/qa-kots-2:alpine-3.4",
-			want:  true,
-		},
-		{
-			image: "quay.io/replicatedcom/qa-kots-1:alpine-3.5",
-			want:  true,
-		},
-		{
-			image: "quay.io/replicatedcom/qa-kots-3:alpine-3.6",
-			want:  true,
-		},
-		{
-			image: "quay.io/replicatedcom/someimage:1@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
-			want:  true,
-		},
-		{
-			image: "testing.registry.com:5000/testing-ns/random-image:2",
-			want:  true,
-		},
-		{
-			image: "testing.registry.com:5000/testing-ns/random-image:1",
-			want:  true,
-		},
-		{
-			image: "redis:7@sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+			image: fmt.Sprintf("%s/public/image:tag", host),
 			want:  false,
 		},
 		{
-			image: "nginx:1",
+			image: fmt.Sprintf("%s/public/digest@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", host),
 			want:  false,
 		},
 		{
-			image: "busybox",
+			image: fmt.Sprintf("%s/public-multiarch/image:tag", host),
 			want:  false,
+		},
+		{
+			image: fmt.Sprintf("%s/private/image:tag", host),
+			want:  true,
+		},
+		{
+			image: fmt.Sprintf("%s/missing/image:tag", host),
+			want:  true,
 		},
 	}
 
@@ -90,6 +82,7 @@ func Test_IsPrivateImages(t *testing.T) {
 type mockManifest struct {
 	body        []byte
 	contentType string
+	status      int
 }
 
 // newMockManifestRegistry builds an httptest.Server that responds to the small
@@ -123,7 +116,11 @@ func newMockManifestRegistry(manifests map[string]mockManifest) *httptest.Server
 
 		w.Header().Set("Content-Type", entry.contentType)
 		w.Header().Set("Docker-Content-Digest", godigest.FromBytes(entry.body).String())
-		w.WriteHeader(http.StatusOK)
+		status := entry.status
+		if status == 0 {
+			status = http.StatusOK
+		}
+		w.WriteHeader(status)
 		if r.Method != http.MethodHead {
 			_, _ = w.Write(entry.body)
 		}
@@ -344,4 +341,3 @@ func Test_destinationManifestMatches_DestUnreachable(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, got)
 }
-

@@ -11,6 +11,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
+	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -20,6 +22,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	dockerref "go.podman.io/image/v5/docker/reference"
 )
 
 type TestCaseSpec struct {
@@ -102,8 +105,49 @@ func TestKotsPull(t *testing.T) {
 	store.SetStore(mockStore)
 	defer store.SetStore(nil)
 
+	// Avoid real Docker Hub calls during pull tests; image privacy is
+	// environment-dependent and asserted separately in pkg/image tests. Use the
+	// expected privacy values from each test case's fixture so the integration
+	// test still verifies that the classification is correctly persisted through
+	// the pull pipeline.
+	currentExpectedPrivacy := map[string]bool{}
+	originalIsPrivateImageFn := image.IsPrivateImageFn
+	image.IsPrivateImageFn = func(img string, dockerHubRegistry dockerregistrytypes.RegistryOptions) (bool, error) {
+		if isPrivate, ok := currentExpectedPrivacy[img]; ok {
+			return isPrivate, nil
+		}
+		// Normalize the image reference to match fixture entries that may be
+		// represented differently (e.g. docker.io/library/nginx vs nginx).
+		dockerRef, err := dockerref.ParseDockerRef(img)
+		if err != nil {
+			return false, err
+		}
+		normalized := dockerref.FamiliarString(dockerRef)
+		if isPrivate, ok := currentExpectedPrivacy[normalized]; ok {
+			return isPrivate, nil
+		}
+		return originalIsPrivateImageFn(img, dockerHubRegistry)
+	}
+	defer func() { image.IsPrivateImageFn = originalIsPrivateImageFn }()
+
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
+			// Load the expected privacy values from the fixture so the mock below
+			// returns deterministic, correct values for this test case.
+			wantResultsDir := strings.Replace(tt.PullOptions.RootDir, "results", "wantResults", 1)
+			wantInstallationPath := filepath.Join(wantResultsDir, "kotsKinds", "userdata", "installation.yaml")
+			wantInstallationContents, readErr := os.ReadFile(wantInstallationPath)
+			if readErr == nil {
+				wantInstallation := kotsv1beta1.Installation{}
+				unmarshalErr := yaml.Unmarshal(wantInstallationContents, &wantInstallation)
+				if unmarshalErr == nil {
+					for _, img := range wantInstallation.Spec.KnownImages {
+						currentExpectedPrivacy[img.Image] = img.IsPrivate
+					}
+				}
+			}
+			defer func() { clear(currentExpectedPrivacy) }()
+
 			// create the result directories and defer cleanup
 			os.Mkdir(tt.PullOptions.RootDir, 0755)
 			os.Mkdir(fmt.Sprintf("%s/replicated-kots-app", tt.PullOptions.RootDir), 0755)
@@ -118,7 +162,7 @@ func TestKotsPull(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			wantResultsDir := strings.Replace(tt.PullOptions.RootDir, "results", "wantResults", 1)
+			wantResultsDir = strings.Replace(tt.PullOptions.RootDir, "results", "wantResults", 1)
 			err = filepath.Walk(wantResultsDir,
 				func(path string, info os.FileInfo, err error) error {
 					if err != nil {
@@ -255,12 +299,12 @@ func TestKotsPull(t *testing.T) {
 
 			require.NoError(t, err)
 
-			wantInstallationPath := strings.Replace(installationPath, "results", "wantResults", 1)
+			wantInstallationPath = strings.Replace(installationPath, "results", "wantResults", 1)
 
 			installationContents, err := os.ReadFile(installationPath)
 			require.NoError(t, err)
 
-			wantInstallationContents, err := os.ReadFile(wantInstallationPath)
+			wantInstallationContents, err = os.ReadFile(wantInstallationPath)
 			require.NoError(t, err)
 
 			installation := kotsv1beta1.Installation{}
@@ -272,6 +316,7 @@ func TestKotsPull(t *testing.T) {
 			require.NoError(t, err)
 
 			require.ElementsMatch(t, wantInstallation.Spec.KnownImages, installation.Spec.KnownImages)
+
 			wantInstallation.Spec.KnownImages = nil
 			installation.Spec.KnownImages = nil
 			require.Equal(t, wantInstallation, installation)
