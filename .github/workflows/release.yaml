@@ -160,6 +160,7 @@ jobs:
   build-kotsadm-bundle:
     runs-on: ubuntu-latest
     needs: [generate-tag, build-migrations, build-kotsadm]
+    if: ${{ !cancelled() && needs.generate-tag.result == 'success' && needs.build-migrations.result == 'success' && needs.build-kotsadm.result == 'success' }}
     steps:
     - name: Checkout
       uses: actions/checkout@v7
@@ -291,6 +292,7 @@ jobs:
   generate-kurl-addon:
     runs-on: ubuntu-latest
     needs: [ generate-tag, build-kurl-proxy, build-kots, build-kotsadm-bundle ]
+    if: ${{ !cancelled() && needs.generate-tag.result == 'success' && needs.build-kurl-proxy.result == 'success' && needs.build-kots.result == 'success' && needs.build-kotsadm-bundle.result == 'success' }}
     outputs:
       addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
     env:
@@ -340,7 +342,7 @@ jobs:
 
   validate-kurl-addon:
     runs-on: ubuntu-latest
-    if: ${{ github.ref_type != 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
+    if: ${{ !cancelled() && needs.generate-tag.result == 'success' && needs.generate-kurl-addon.result == 'success' && needs.kurl-addon-changes-filter.result == 'success' && (github.ref_type != 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true') }}
     needs: [ generate-tag, generate-kurl-addon, kurl-addon-changes-filter ]
     steps:
       - name: checkout
@@ -359,7 +361,7 @@ jobs:
 
   publish-kurl-addon:
     runs-on: ubuntu-latest
-    if: ${{ github.ref_type != 'branch' }}
+    if: ${{ !cancelled() && github.ref_type != 'branch' && needs.generate-tag.result == 'success' && needs.generate-kurl-addon.result == 'success' }}
     needs: [ generate-tag, generate-kurl-addon ]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
@@ -400,7 +402,7 @@ jobs:
 
   build-airgap:
     runs-on: ubuntu-latest
-    if: github.ref_type != 'branch'
+    if: ${{ !cancelled() && github.ref_type != 'branch' && needs.goreleaser.result == 'success' && needs.generate-tag.result == 'success' && needs.build-kotsadm-bundle.result == 'success' }}
     needs: [goreleaser, generate-tag, build-kotsadm-bundle]
     steps:
     - name: Download kotsadm bundle
