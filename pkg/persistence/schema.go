@@ -22,6 +22,9 @@ func UpdateDBSchema(driver string, uri string, schemaDir string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to connect to %s", driver)
 	}
+	if conn == nil {
+		return errors.Errorf("no database connection returned for driver %q", driver)
+	}
 	defer conn.Close()
 
 	statements := []string{}
@@ -49,9 +52,13 @@ func UpdateDBSchema(driver string, uri string, schemaDir string) error {
 			return errors.Wrapf(err, "failed to unmarshal %s", path)
 		}
 
-		schema := driverTableSchema(driver, table.Spec.Schema)
-		if schema == nil {
-			return nil
+		if table.Spec.Name == "" {
+			return errors.Errorf("table spec %s has no name", path)
+		}
+
+		schema, err := driverTableSchema(driver, table.Spec.Schema)
+		if err != nil {
+			return errors.Wrapf(err, "failed to resolve %s schema for %s", driver, path)
 		}
 
 		stmnts, err := conn.PlanTableSchema(table.Spec.Name, schema, nil)
@@ -84,23 +91,23 @@ func connectSchemahero(driver string, uri string) (interfaces.SchemaHeroDatabase
 	}
 }
 
-func driverTableSchema(driver string, schema *schemasv1alpha4.TableSchema) any {
+func driverTableSchema(driver string, schema *schemasv1alpha4.TableSchema) (any, error) {
 	if schema == nil {
-		return nil
+		return nil, errors.New("table spec has no schema")
 	}
 
 	switch driver {
 	case "postgres":
 		if schema.Postgres == nil {
-			return nil
+			return nil, errors.New("table spec has no postgres schema")
 		}
-		return schema.Postgres
+		return schema.Postgres, nil
 	case "rqlite":
 		if schema.RQLite == nil {
-			return nil
+			return nil, errors.New("table spec has no rqlite schema")
 		}
-		return schema.RQLite
+		return schema.RQLite, nil
 	default:
-		return nil
+		return nil, errors.Errorf("unsupported schemahero driver %q", driver)
 	}
 }
