@@ -173,7 +173,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 	}
 
 	// wait for rqlite to be ready
-	var rqliteDB gorqlite.Connection
+	var rqliteDB *gorqlite.Connection
 	if err := pool.Retry(ctx, 60*time.Second, func() error {
 		url := fmt.Sprintf("http://localhost:%s/readyz", rqlite.GetPort("4001/tcp"))
 		newRequest, err := http.NewRequest("GET", url, nil)
@@ -202,7 +202,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 	// init dbs vars
 	t.Setenv("POSTGRES_URI", pgURI)
 	t.Setenv("POSTGRES_SCHEMA_DIR", POSTGRES_SCHEMA_DIR)
-	persistence.SetDB(&rqliteDB)
+	persistence.SetDB(rqliteDB)
 
 	// update postgres schema
 	if err := persistence.UpdateDBSchema("postgres", pgURI, POSTGRES_SCHEMA_DIR); err != nil {
@@ -225,7 +225,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 	}
 
 	// validate data in rqlite
-	if err := validateDataInRqlite(&rqliteDB); err != nil {
+	if err := validateDataInRqlite(rqliteDB); err != nil {
 		t.Fatalf("Failed to validate data in rqlite: %s", err)
 	}
 }

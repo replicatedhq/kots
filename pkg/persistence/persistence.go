@@ -26,6 +26,6 @@ func MustGetDBSession() *gorqlite.Connection {
 		fmt.Printf("error connecting to rqlite: %v\n", err)
 		panic(err)
 	}
-	db = &newDB
+	db = newDB
 	return db
 }

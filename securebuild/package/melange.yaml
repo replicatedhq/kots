@@ -45,7 +45,7 @@ environment:
       - yarn-1.22
       - py3.12-dateutil
       - py3.12-s3cmd
-      - schemahero-0.22
+      - schemahero-0.25~0.25.1
       - wget
 
   environment:
@@ -105,6 +105,8 @@ subpackages:
   - name: ${{package.name}}-migrations
     description: KOTS Admin Console migration tables and schemahero binary v${{vars.major-minor-version}}
     dependencies:
+      runtime:
+        - schemahero-0.25-rqlite~0.25.1
       provides:
         - kotsadm-migrations=${{package.full-version}}
     pipeline:
@@ -113,10 +115,7 @@ subpackages:
           mkdir -p "${DESTDIR}"
           mkdir -p "${DESTDIR}/usr/local/bin"
 
-          # Copy migration tables (matches reference template)
           mv migrations/tables "${DESTDIR}/tables"
-
-          # Copy schemahero binary from schemahero-0.22 package to /usr/local/bin
           cp /usr/bin/schemahero "${DESTDIR}/usr/local/bin/schemahero"
 
   - name: ${{package.name}}-kurl-proxy
