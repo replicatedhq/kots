@@ -387,18 +387,22 @@ jobs:
     needs: [generate-tag]
     if: github.ref_type != 'branch'
     steps:
-    - name: Checkout
-      uses: actions/checkout@v7
+    - name: Setup Depot CLI
+      uses: depot/setup-action@v1
 
     - name: Generate KOTS Release Notes PR
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        GH_PAT: ${{ secrets.GH_PAT }}
+        DEPOT_CI_DISPATCH_TOKEN: ${{ secrets.DEPOT_CI_DISPATCH_TOKEN }}
       run: |
-        curl -H "Authorization: token $GH_PAT" \
-          -H 'Accept: application/json' \
-          -d "{\"event_type\": \"app-manager-release-notes\", \"client_payload\": {\"version\": \"${GIT_TAG}\" }}" \
-          "https://api.github.com/repos/replicatedhq/replicated-docs/dispatches"
+        depot ci dispatch \
+          --repo replicatedhq/replicated-docs \
+          --workflow release-notes.yml \
+          --ref main \
+          --input event_type=app-manager-release-notes \
+          --input version="$GIT_TAG" \
+          --input dry_run=false \
+          --token "$DEPOT_CI_DISPATCH_TOKEN"
 
   build-airgap:
     runs-on: ubuntu-latest
