@@ -123,12 +123,14 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 	}
 
 	for key, builtBundle := range builtBundles {
-		configMapName := GetSpecName(app.GetSlug()) + "-" + key
-		err := createSupportBundleSpecConfigMap(app, sequence, kotsKinds, configMapName, builtBundle, opts, clientset)
+		secretName := GetSpecName(app.GetSlug()) + "-" + key
+		err := createSupportBundleSpecSecret(app, sequence, kotsKinds, secretName, builtBundle, opts, clientset)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create support bundle configmap")
+			return nil, errors.Wrap(err, "failed to create support bundle secret")
 		}
 	}
+
+	deleteLegacySupportBundleSpecConfigMaps(clientset, app.GetSlug())
 
 	mergedBundle := mergeSupportBundleSpecs(builtBundles)
 	err = createSupportBundleSpecSecret(app, sequence, kotsKinds, GetSpecName(app.GetSlug()), mergedBundle, opts, clientset)
@@ -165,87 +167,6 @@ func mergeSupportBundleSpecs(builtBundles map[string]*troubleshootv1beta2.Suppor
 	mergedBundle = deduplicatedAfterCollection(mergedBundle)
 
 	return mergedBundle
-}
-
-// createSupportBundleSpecConfigMap creates a configmap containing the support bundle spec
-func createSupportBundleSpecConfigMap(app *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, configMapName string, builtBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, clientset kubernetes.Interface) error {
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	var b bytes.Buffer
-	if err := s.Encode(builtBundle, &b); err != nil {
-		return errors.Wrap(err, "failed to encode support bundle")
-	}
-
-	templatedSpec := b.Bytes()
-
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, util.PodNamespace)
-	if err != nil {
-		return errors.Wrap(err, "failed render support bundle spec")
-	}
-
-	// unmarshal the spec, look for image replacements in collectors and then remarshal
-	// we do this after template rendering to support templating and then replacement
-	supportBundle, err := kotsutil.LoadSupportBundleFromContents(renderedSpec)
-	if err != nil {
-		return errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
-	}
-
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
-	if err != nil {
-		return errors.Wrap(err, "failed to get registry settings for app")
-	}
-
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
-	if err != nil {
-		return errors.Wrap(err, "failed to update collectors")
-	}
-	supportBundle.Spec.Collectors = collectors
-	b.Reset()
-	if err := s.Encode(supportBundle, &b); err != nil {
-		return errors.Wrap(err, "failed to encode support bundle")
-	}
-	renderedSpec = b.Bytes()
-
-	existingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
-	labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
-	if err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			configMap := &corev1.ConfigMap{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "ConfigMap",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      configMapName,
-					Namespace: util.PodNamespace,
-					Labels:    labels,
-				},
-				Data: map[string]string{
-					SpecDataKey: string(renderedSpec),
-				},
-			}
-
-			_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), configMap, metav1.CreateOptions{})
-			if err != nil {
-				return errors.Wrap(err, "failed to create support bundle secret")
-			}
-
-			logger.Debugf("created %q support bundle spec secret", configMapName)
-		} else {
-			return errors.Wrap(err, "failed to read support bundle secret")
-		}
-	} else {
-		if existingConfigMap.Data == nil {
-			existingConfigMap.Data = map[string]string{}
-		}
-		existingConfigMap.Data[SpecDataKey] = string(renderedSpec)
-		existingConfigMap.ObjectMeta.Labels = labels
-
-		_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to update support bundle secret")
-		}
-	}
-	return nil
 }
 
 // createSupportBundleSpecSecret creates a secret containing the support bundle spec
@@ -327,6 +248,23 @@ func createSupportBundleSpecSecret(app *apptypes.App, sequence int64, kotsKinds 
 		}
 	}
 	return nil
+}
+
+// deleteLegacySupportBundleSpecConfigMaps deletes the legacy ConfigMaps that were
+// used to store support bundle sub-specs before they were moved to Secrets.
+func deleteLegacySupportBundleSpecConfigMaps(clientset kubernetes.Interface, appSlug string) {
+	names := []string{
+		GetSpecName(appSlug) + "-" + kotstypes.VendorSpecificSupportBundleSpecKey,
+		GetSpecName(appSlug) + "-" + kotstypes.ClusterSpecificSupportBundleSpecKey,
+		GetSpecName(appSlug) + "-" + kotstypes.DefaultSupportBundleSpecKey,
+	}
+
+	for _, name := range names {
+		err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+		if err != nil && !kuberneteserrors.IsNotFound(err) {
+			logger.Errorf("failed to delete legacy support bundle spec configmap %s: %v", name, err)
+		}
+	}
 }
 
 // addAfterCollectionSpec adds cluster specific and upload results URI to the support bundle
