@@ -48,7 +48,7 @@ runs:
         EOF
         sudo rm -rf /var/lib/apt/lists/*
 
-    - uses: chainguard-dev/actions/setup-melange@v1.6.30
+    - uses: chainguard-dev/actions/setup-melange@v1.6.31
 
     - name: Build packages
       shell: bash
