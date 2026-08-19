@@ -34,6 +34,20 @@ runs:
         SHIM
         sudo chmod +x /usr/local/bin/systemctl
 
+    - name: Configure apt for amd64
+      if: inputs.arch == 'amd64'
+      shell: bash
+      run: |
+        sudo sed -i \
+          's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
+          /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || true
+        sudo tee /etc/apt/apt.conf.d/80-retries-timeouts > /dev/null << 'EOF'
+        Acquire::Retries "3";
+        Acquire::http::Timeout "30";
+        Acquire::https::Timeout "30";
+        EOF
+        sudo rm -rf /var/lib/apt/lists/*
+
     - uses: chainguard-dev/actions/setup-melange@v1.6.30
 
     - name: Build packages
