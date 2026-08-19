@@ -109,7 +109,7 @@ func GetBundleCommand(appSlug string) []string {
 	return command
 }
 
-// CreateSupportBundleDependencies generates k8s secrets and configmaps for the support bundle spec and redactors.
+// CreateSupportBundleDependencies generates k8s secrets for the support bundle spec and configmaps for the redactors.
 // These resources will be used when executing a support bundle collection
 func CreateSupportBundleDependencies(app *apptypes.App, sequence int64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
 	kotsKinds, err := getKotsKindsForApp(app, sequence)
