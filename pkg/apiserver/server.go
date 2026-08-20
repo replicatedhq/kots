@@ -96,6 +96,10 @@ func Start(params *APIServerParams) {
 		log.Println("Failed to clean up legacy support bundle spec configmaps: ", err)
 	}
 
+	if err := supportbundle.CleanupLegacyRedactSpecConfigMaps(context.TODO(), k8sClientset, util.PodNamespace); err != nil {
+		log.Println("Failed to clean up legacy redactor spec configmaps: ", err)
+	}
+
 	op := operator.Init(operatorClient, kotsStore, params.AutocreateClusterToken, k8sClientset)
 	if err := op.Start(); err != nil {
 		log.Println("error starting the operator")

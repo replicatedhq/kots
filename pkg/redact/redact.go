@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
@@ -36,16 +37,25 @@ type RedactorMetadata struct {
 }
 
 const (
-	redactConfigMapName     = "kotsadm-redact"
-	redactSpecConfigMapName = "kotsadm-redact-spec"
-	redactSpecDataKey       = "redact-spec"
+	redactConfigMapName = "kotsadm-redact"
+	redactSpecName      = "kotsadm-redact-spec"
+	redactSpecDataKey   = "redact-spec"
 )
 
 func GetKotsadmRedactSpecURI() string {
-	return fmt.Sprintf("configmap/%s/%s/%s", util.PodNamespace, redactSpecConfigMapName, redactSpecDataKey)
+	return fmt.Sprintf("secret/%s/%s/%s", util.PodNamespace, redactSpecName, redactSpecDataKey)
 }
 
-// GenerateKotsadmRedactSpec creates a configmap that contains the admin console custom redaction yaml spec
+// deleteLegacyRedactSpecConfigMap deletes a legacy ConfigMap that was used to store a
+// rendered redactor spec before redactor specs were moved to Secrets.
+func deleteLegacyRedactSpecConfigMap(clientset kubernetes.Interface, name string) {
+	err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		logger.Errorf("failed to delete legacy redactor spec configmap %s: %v", name, err)
+	}
+}
+
+// GenerateKotsadmRedactSpec creates a secret that contains the admin console custom redaction yaml spec
 // generated from "kotsadm-redact" configmap for collecting support bundles. contains the full redact spec type that is supported by troubleshoot.
 func GenerateKotsadmRedactSpec(clientset kubernetes.Interface) error {
 	spec, _, err := GetRedactSpec()
@@ -53,44 +63,46 @@ func GenerateKotsadmRedactSpec(clientset kubernetes.Interface) error {
 		return errors.Wrap(err, "failed to get redact spec")
 	}
 
-	existingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), redactSpecConfigMapName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), redactSpecName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return errors.Wrap(err, "failed to read redact spec configmap")
+		return errors.Wrap(err, "failed to read redact spec secret")
 	} else if kuberneteserrors.IsNotFound(err) {
-		configmap := &corev1.ConfigMap{
+		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
-				Kind:       "ConfigMap",
+				Kind:       "Secret",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      redactSpecConfigMapName,
+				Name:      redactSpecName,
 				Namespace: util.PodNamespace,
 				Labels:    kotsadmtypes.GetKotsadmLabels(),
 			},
-			Data: map[string]string{
-				redactSpecDataKey: spec,
+			Data: map[string][]byte{
+				redactSpecDataKey: []byte(spec),
 			},
 		}
 
-		_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), configmap, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 		if err != nil {
-			return errors.Wrap(err, "failed to create redactor spec configmap")
+			return errors.Wrap(err, "failed to create redactor spec secret")
 		}
 
+		deleteLegacyRedactSpecConfigMap(clientset, redactSpecName)
 		return nil
 	}
 
-	if existingConfigMap.Data == nil {
-		existingConfigMap.Data = map[string]string{}
+	if existingSecret.Data == nil {
+		existingSecret.Data = map[string][]byte{}
 	}
-	existingConfigMap.Data[redactSpecDataKey] = spec
-	existingConfigMap.ObjectMeta.Labels = kotsadmtypes.GetKotsadmLabels()
+	existingSecret.Data[redactSpecDataKey] = []byte(spec)
+	existingSecret.ObjectMeta.Labels = kotsadmtypes.GetKotsadmLabels()
 
-	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update redactor spec secret")
 	}
 
+	deleteLegacyRedactSpecConfigMap(clientset, redactSpecName)
 	return nil
 }
 

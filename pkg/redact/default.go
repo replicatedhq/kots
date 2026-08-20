@@ -18,16 +18,16 @@ import (
 )
 
 const (
-	defaultRedactSpecConfigMapName = "kotsadm-redact-default-spec"
-	defaultRedactSpecDataKey       = "default-redactor"
-	ipv4AddressRegex               = "(?P<mask>\\b(?P<drop>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?P<drop>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?P<drop>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?P<drop>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b)"
+	defaultRedactSpecName    = "kotsadm-redact-default-spec"
+	defaultRedactSpecDataKey = "default-redactor"
+	ipv4AddressRegex         = "(?P<mask>\\b(?P<drop>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?P<drop>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?P<drop>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?P<drop>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b)"
 )
 
 func GetDefaultRedactSpecURI() string {
-	return fmt.Sprintf("configmap/%s/%s/%s", util.PodNamespace, defaultRedactSpecConfigMapName, defaultRedactSpecDataKey)
+	return fmt.Sprintf("secret/%s/%s/%s", util.PodNamespace, defaultRedactSpecName, defaultRedactSpecDataKey)
 }
 
-// CreateRenderedDefaultRedactSpec creates a configmap that contains the default redaction yaml spec for the admin console
+// CreateRenderedDefaultRedactSpec creates a secret that contains the default redaction yaml spec for the admin console
 func CreateRenderedDefaultRedactSpec(clientset kubernetes.Interface) error {
 	redactor := getDefaultRedactor()
 
@@ -36,46 +36,48 @@ func CreateRenderedDefaultRedactSpec(clientset kubernetes.Interface) error {
 	if err := s.Encode(redactor, &b); err != nil {
 		return errors.Wrap(err, "failed to serialize default redactor")
 	}
-	spec := b.String()
+	spec := b.Bytes()
 
-	existingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), defaultRedactSpecConfigMapName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), defaultRedactSpecName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return errors.Wrap(err, "failed to read default redactor configmap")
+		return errors.Wrap(err, "failed to read default redactor secret")
 	} else if kuberneteserrors.IsNotFound(err) {
-		configMap := &corev1.ConfigMap{
+		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
-				Kind:       "ConfigMap",
+				Kind:       "Secret",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      defaultRedactSpecConfigMapName,
+				Name:      defaultRedactSpecName,
 				Namespace: util.PodNamespace,
 				Labels:    kotsadmtypes.GetKotsadmLabels(),
 			},
-			Data: map[string]string{
+			Data: map[string][]byte{
 				defaultRedactSpecDataKey: spec,
 			},
 		}
 
-		_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), configMap, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 		if err != nil {
-			return errors.Wrap(err, "failed to create default redactor configmap")
+			return errors.Wrap(err, "failed to create default redactor secret")
 		}
 
+		deleteLegacyRedactSpecConfigMap(clientset, defaultRedactSpecName)
 		return nil
 	}
 
-	if existingConfigMap.Data == nil {
-		existingConfigMap.Data = map[string]string{}
+	if existingSecret.Data == nil {
+		existingSecret.Data = map[string][]byte{}
 	}
-	existingConfigMap.Data[defaultRedactSpecDataKey] = spec
-	existingConfigMap.ObjectMeta.Labels = kotsadmtypes.GetKotsadmLabels()
+	existingSecret.Data[defaultRedactSpecDataKey] = spec
+	existingSecret.ObjectMeta.Labels = kotsadmtypes.GetKotsadmLabels()
 
-	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to update default redactor configmap")
+		return errors.Wrap(err, "failed to update default redactor secret")
 	}
 
+	deleteLegacyRedactSpecConfigMap(clientset, defaultRedactSpecName)
 	return nil
 }
 
