@@ -127,7 +127,7 @@ func CreateSupportBundleDependencies(app *apptypes.App, sequence int64, opts typ
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	// redactors configured in the admin console (from kotsadm-redact backend and written to kotsadm-redact-spec)
+	// redactors configured in the admin console (from kotsadm-redact backend secret and written to kotsadm-redact-spec)
 	err = redact.GenerateKotsadmRedactSpec(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to write kotsadm redact spec secret")
