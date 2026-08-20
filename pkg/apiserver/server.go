@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/prune"
 	"github.com/replicatedhq/kots/pkg/rbac"
+	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/snapshotscheduler"
@@ -94,6 +95,14 @@ func Start(params *APIServerParams) {
 
 	if err := supportbundle.CleanupLegacySpecConfigMaps(context.TODO(), k8sClientset, util.PodNamespace); err != nil {
 		log.Println("Failed to clean up legacy support bundle spec configmaps: ", err)
+	}
+
+	if err := redact.MigrateRedactConfigMap(k8sClientset); err != nil {
+		log.Println("Failed to migrate kotsadm-redact configmap to secret: ", err)
+	}
+
+	if err := supportbundle.CleanupLegacyRedactSpecConfigMaps(context.TODO(), k8sClientset, util.PodNamespace); err != nil {
+		log.Println("Failed to clean up legacy redactor spec configmaps: ", err)
 	}
 
 	op := operator.Init(operatorClient, kotsStore, params.AutocreateClusterToken, k8sClientset)

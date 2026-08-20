@@ -1,15 +1,20 @@
 package redact
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/replicatedhq/kots/pkg/redact/types"
+	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func Test_getSlug(t *testing.T) {
@@ -55,17 +60,17 @@ func Test_getSlug(t *testing.T) {
 func Test_getRedactSpec(t *testing.T) {
 	tests := []struct {
 		name      string
-		configMap v1.ConfigMap
+		secret    corev1.Secret
 		want      string
 		errstring string
 	}{
 		{
 			name: "old spec only", // this test shows the code path when the redact specs haven't been updated
-			configMap: v1.ConfigMap{
+			secret: corev1.Secret{
 				TypeMeta:   metav1.TypeMeta{},
 				ObjectMeta: metav1.ObjectMeta{},
-				Data: map[string]string{
-					"kotsadm-redact": `
+				Data: map[string][]byte{
+					"kotsadm-redact": []byte(`
 kind: Redactor
 apiVersion: troubleshoot.sh/v1beta2
 metadata:
@@ -85,7 +90,7 @@ spec:
       - selector: S3_ENDPOINT
         redactor: '("value": ").*(")'
       yamlPath:
-      - abc.xyz.*`,
+      - abc.xyz.*`),
 				},
 			},
 			want: `apiVersion: troubleshoot.sh/v1beta2
@@ -115,12 +120,12 @@ status: {}
 		},
 		{
 			name: "multiple new specs only",
-			configMap: v1.ConfigMap{
+			secret: corev1.Secret{
 				TypeMeta:   metav1.TypeMeta{},
 				ObjectMeta: metav1.ObjectMeta{},
-				Data: map[string]string{
-					"replace-password": `{"metadata":{"name":"replace password","slug":"replace-password","createdAt":"2020-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: replace password\nspec:\n  redactors:\n  - name: replace password\n    fileSelector:\n      file: data/my-password-dump\n    removals:\n      values:\n      - abc123\n"}`,
-					"all-files":        `{"metadata":{"name":"all files","slug":"all-files","createdAt":"2020-06-15T14:26:10.721733-04:00","updatedAt":"2020-06-15T14:26:10.721734-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: all files\nspec:\n  redactors:\n  - name: all files\n    removals:\n      regex:\n      - redactor: (another)(?P\u003cmask\u003e.*)(here)\n      - selector: S3_ENDPOINT\n        redactor: '(\"value\": \").*(\")'\n      yamlPath:\n      - abc.xyz.*\n"}`,
+				Data: map[string][]byte{
+					"replace-password": []byte(`{"metadata":{"name":"replace password","slug":"replace-password","createdAt":"2020-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: replace password\nspec:\n  redactors:\n  - name: replace password\n    fileSelector:\n      file: data/my-password-dump\n    removals:\n      values:\n      - abc123\n"}`),
+					"all-files":        []byte(`{"metadata":{"name":"all files","slug":"all-files","createdAt":"2020-06-15T14:26:10.721733-04:00","updatedAt":"2020-06-15T14:26:10.721734-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: all files\nspec:\n  redactors:\n  - name: all files\n    removals:\n      regex:\n      - redactor: (another)(?P\u003cmask\u003e.*)(here)\n      - selector: S3_ENDPOINT\n        redactor: '(\"value\": \").*(\")'\n      yamlPath:\n      - abc.xyz.*\n"}`),
 				},
 			},
 			want: `apiVersion: troubleshoot.sh/v1beta2
@@ -153,12 +158,38 @@ status: {}
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			got, errstring, err := getRedactSpec(&tt.configMap)
+			got, errstring, err := getRedactSpec(&tt.secret)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 			req.Equal(tt.errstring, errstring)
 		})
 	}
+}
+
+func Test_MigrateRedactConfigMap(t *testing.T) {
+	legacyData := map[string]string{
+		"replace-password": `{"metadata":{"name":"replace password","slug":"replace-password","enabled":true,"description":""},"redact":"kind: Redactor\n"}`,
+	}
+
+	clientset := fake.NewSimpleClientset(&corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      redactSecretName,
+			Namespace: util.PodNamespace,
+			Labels:    map[string]string{"kots.io/kotsadm": "true"},
+		},
+		Data: legacyData,
+	})
+
+	err := MigrateRedactConfigMap(clientset)
+	require.NoError(t, err)
+
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), redactSecretName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	assert.Equal(t, legacyData["replace-password"], string(secret.Data["replace-password"]))
+
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), redactSecretName, metav1.GetOptions{})
+	assert.True(t, kuberneteserrors.IsNotFound(err))
 }
 
 func Test_splitRedactors(t *testing.T) {

@@ -7,7 +7,9 @@ import (
 
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
@@ -27,45 +29,39 @@ func Test_CreateRenderedDefaultRedactSpec(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		want   string
 		client kubernetes.Interface
 	}{
 		{
-			name:   "no existing default configmap",
-			want:   defaultRedactorSpec,
+			name:   "no existing secret",
 			client: fake.NewSimpleClientset(),
 		},
 		{
-			name: "existing default configmap with no data",
-			want: defaultRedactorSpec,
-			client: fake.NewSimpleClientset(&corev1.ConfigMap{
+			name: "existing secret with no data",
+			client: fake.NewSimpleClientset(&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      defaultRedactSpecConfigMapName,
+					Name:      defaultRedactSpecName,
 					Namespace: util.PodNamespace,
 				},
 			}),
 		},
 		{
-			name: "existing default configmap with no default data key",
-			want: defaultRedactorSpec,
-			client: fake.NewSimpleClientset(&corev1.ConfigMap{
+			name: "existing secret with default data key",
+			client: fake.NewSimpleClientset(&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      defaultRedactSpecConfigMapName,
+					Name:      defaultRedactSpecName,
 					Namespace: util.PodNamespace,
 				},
-				Data: map[string]string{},
+				Data: map[string][]byte{
+					defaultRedactSpecDataKey: []byte(defaultRedactorSpec),
+				},
 			}),
 		},
 		{
-			name: "existing default configmap with default data key",
-			want: defaultRedactorSpec,
+			name: "existing legacy configmap is deleted",
 			client: fake.NewSimpleClientset(&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      defaultRedactSpecConfigMapName,
+					Name:      defaultRedactSpecName,
 					Namespace: util.PodNamespace,
-				},
-				Data: map[string]string{
-					defaultRedactSpecDataKey: defaultRedactorSpec,
 				},
 			}),
 		},
@@ -74,21 +70,19 @@ func Test_CreateRenderedDefaultRedactSpec(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := CreateRenderedDefaultRedactSpec(test.client)
-			assert.NoErrorf(t, err, "failed to create default redactor configmap: %v", err)
+			require.NoError(t, err)
 
-			configMap, err := test.client.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), defaultRedactSpecConfigMapName, metav1.GetOptions{})
-			assert.NoErrorf(t, err, "failed to get default redactor configmap: %v", err)
+			secret, err := test.client.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), defaultRedactSpecName, metav1.GetOptions{})
+			require.NoError(t, err)
 
-			if configMap.Data == nil {
-				t.Errorf("expected data to be set")
-			}
+			require.NotNil(t, secret.Data)
+			got, ok := secret.Data[defaultRedactSpecDataKey]
+			require.True(t, ok)
 
-			got, ok := configMap.Data[defaultRedactSpecDataKey]
-			if !ok {
-				t.Errorf("no default redactor data key")
-			}
+			assert.Equal(t, defaultRedactorSpec, string(got))
 
-			assert.Equalf(t, test.want, got, "expected default redactor spec to be %s, got %s", test.want, got)
+			_, err = test.client.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), defaultRedactSpecName, metav1.GetOptions{})
+			assert.True(t, kuberneteserrors.IsNotFound(err))
 		})
 	}
 }
