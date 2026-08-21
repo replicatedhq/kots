@@ -25,9 +25,9 @@ RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
   && mv kustomize /usr/local/bin/kustomize
 
 # Install helm v4
-ENV HELM_VERSION=4.1.3
+ENV HELM_VERSION=4.2.4
 ENV HELM_URL=https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
-ENV HELM_SHA256SUM=02ce9722d541238f81459938b84cf47df2fdf1187493b4bfb2346754d82a4700
+ENV HELM_SHA256SUM=c306b46f719b0a4da32d0f78ee21bf90ce8d602f15b22ab753f0674d1670a7f3
 RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM_URL}" \
   && echo "${HELM_SHA256SUM} helm.tar.gz" | sha256sum -c - \
   && tar -xzvf helm.tar.gz \

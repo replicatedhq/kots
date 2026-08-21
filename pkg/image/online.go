@@ -94,7 +94,7 @@ func UpdateInstallationImages(opts UpdateInstallationImagesOptions) error {
 			return installationImage.IsPrivate, nil
 		}
 
-		p, err := IsPrivateImage(image, dockerHubRegistry)
+		p, err := IsPrivateImageFn(image, dockerHubRegistry)
 		if err != nil {
 			return false, err
 		}
@@ -362,6 +362,10 @@ func CopyImage(opts types.CopyImageOptions) error {
 
 	return nil
 }
+
+// IsPrivateImageFn is the function used by UpdateInstallationImages to determine if an image is private.
+// It defaults to IsPrivateImage but can be overridden in tests to avoid network calls.
+var IsPrivateImageFn = IsPrivateImage
 
 // if dockerHubRegistry is provided, its credentials will be used for DockerHub images to increase the rate limit.
 func IsPrivateImage(image string, dockerHubRegistry dockerregistrytypes.RegistryOptions) (bool, error) {
