@@ -29,9 +29,9 @@
     "glob": "^10.5.0",
     "@actions/http-client": "^4.0.0",
     "serialize-javascript": "^7.0.5",
-    "brace-expansion": "^2.1.2",
+    "brace-expansion": "^2.1.4",
     "diff": "^8.0.3",
     "undici": "^6.27.0",
-    "js-yaml": "^4.3.0"
+    "js-yaml": "^4.3.1"
   }
 }
