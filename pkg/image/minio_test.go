@@ -72,6 +72,102 @@ func Test_GetMinioImage(t *testing.T) {
 			wantErr:          false,
 		},
 		{
+			name: "should return minio image from deployment when the add-on ships from the kurlsh repository",
+			clientset: fake.NewSimpleClientset(
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      kurl.ConfigMapName,
+						Namespace: kurl.ConfigMapNamespace,
+					},
+				},
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "minio",
+						Namespace: "minio",
+					},
+					Spec: appsv1.DeploymentSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name:  "minio",
+										Image: "kurlsh/minio:RELEASE.2025-10-15T17-29-55Z",
+									},
+								},
+							},
+						},
+					},
+				},
+			),
+			kotsadmNamespace: metav1.NamespaceDefault,
+			wantImage:        "kurlsh/minio:RELEASE.2025-10-15T17-29-55Z",
+			wantErr:          false,
+		},
+		{
+			name: "should return minio image from deployment when the add-on is pulled from a private registry",
+			clientset: fake.NewSimpleClientset(
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      kurl.ConfigMapName,
+						Namespace: kurl.ConfigMapNamespace,
+					},
+				},
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "minio",
+						Namespace: "minio",
+					},
+					Spec: appsv1.DeploymentSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name:  "minio",
+										Image: "registry.example.com:5000/kurlsh/minio:RELEASE.2025-10-15T17-29-55Z",
+									},
+								},
+							},
+						},
+					},
+				},
+			),
+			kotsadmNamespace: metav1.NamespaceDefault,
+			wantImage:        "registry.example.com:5000/kurlsh/minio:RELEASE.2025-10-15T17-29-55Z",
+			wantErr:          false,
+		},
+		{
+			name: "should return empty image when the minio container is not a RELEASE build",
+			clientset: fake.NewSimpleClientset(
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      kurl.ConfigMapName,
+						Namespace: kurl.ConfigMapNamespace,
+					},
+				},
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "minio",
+						Namespace: "minio",
+					},
+					Spec: appsv1.DeploymentSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name:  "minio",
+										Image: "kurlsh/minio:0.20250101.0",
+									},
+								},
+							},
+						},
+					},
+				},
+			),
+			kotsadmNamespace: metav1.NamespaceDefault,
+			wantImage:        "",
+			wantErr:          false,
+		},
+		{
 			name: "should return minio image from statefulset for kurl instance with default namespace",
 			clientset: fake.NewSimpleClientset(
 				&corev1.ConfigMap{
