@@ -109,7 +109,7 @@ func GetBundleCommand(appSlug string) []string {
 	return command
 }
 
-// CreateSupportBundleDependencies generates k8s secrets for the support bundle spec and configmaps for the redactors.
+// CreateSupportBundleDependencies generates k8s secrets for the support bundle spec and redactors.
 // These resources will be used when executing a support bundle collection
 func CreateSupportBundleDependencies(app *apptypes.App, sequence int64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
 	kotsKinds, err := getKotsKindsForApp(app, sequence)
@@ -127,24 +127,24 @@ func CreateSupportBundleDependencies(app *apptypes.App, sequence int64, opts typ
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	// redactors configured in the admin console (from kotsadm-redact backend and written to kotsadm-redact-spec)
+	// redactors configured in the admin console (from kotsadm-redact backend secret and written to kotsadm-redact-spec)
 	err = redact.GenerateKotsadmRedactSpec(clientset)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to write kotsadm redact spec configmap")
+		return nil, errors.Wrap(err, "failed to write kotsadm redact spec secret")
 	}
 	redactURIs := []string{redact.GetKotsadmRedactSpecURI()}
 
 	// redactors configured in the app spec (written to kotsadm-<app-slug>-redact-spec)
 	err = redact.CreateRenderedAppRedactSpec(clientset, app, sequence, kotsKinds)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to write app redact spec configmap")
+		return nil, errors.Wrap(err, "failed to write app redact spec secret")
 	}
 	redactURIs = append(redactURIs, redact.GetAppRedactSpecURI(app.GetSlug()))
 
 	// default redactors applied to all support bundles (written to kotsadm-redact-default-spec)
 	err = redact.CreateRenderedDefaultRedactSpec(clientset)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to write default redact spec configmap")
+		return nil, errors.Wrap(err, "failed to write default redact spec secret")
 	}
 	redactURIs = append(redactURIs, redact.GetDefaultRedactSpecURI())
 

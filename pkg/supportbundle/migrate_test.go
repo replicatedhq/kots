@@ -77,3 +77,52 @@ func TestCleanupLegacySpecConfigMaps(t *testing.T) {
 	_, err = clientset.CoreV1().ConfigMaps("another").Get(context.TODO(), "cluster-wide-supportbundle", metav1.GetOptions{})
 	require.NoError(t, err)
 }
+
+func TestCleanupLegacyRedactSpecConfigMaps(t *testing.T) {
+	namespace := "kotsadm"
+	label := map[string]string{kotstypes.KotsadmKey: kotstypes.KotsadmLabelValue}
+
+	objects := []runtime.Object{
+		// Legacy redactor spec ConfigMaps that should be deleted.
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "kotsadm-redact-spec", Namespace: namespace, Labels: label},
+		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "kotsadm-redact-default-spec", Namespace: namespace, Labels: label},
+		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "kotsadm-my-app-redact-spec", Namespace: namespace, Labels: label},
+		},
+		// The kotsadm-redact backend ConfigMap (should NOT be deleted).
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "kotsadm-redact", Namespace: namespace, Labels: label},
+		},
+		// A legacy redactor ConfigMap without the kotsadm label (should not be deleted by label selector).
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "kotsadm-your-app-redact-spec", Namespace: namespace},
+		},
+		// A non-matching kotsadm ConfigMap (should not be deleted).
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "kotsadm-something-else", Namespace: namespace, Labels: label},
+		},
+	}
+
+	clientset := testclient.NewSimpleClientset(objects...)
+
+	err := CleanupLegacyRedactSpecConfigMaps(context.TODO(), clientset, namespace)
+	require.NoError(t, err)
+
+	configmaps, err := clientset.CoreV1().ConfigMaps(namespace).List(context.TODO(), metav1.ListOptions{})
+	require.NoError(t, err)
+
+	remainingNames := []string{}
+	for _, cm := range configmaps.Items {
+		remainingNames = append(remainingNames, cm.Name)
+	}
+
+	assert.ElementsMatch(t, []string{
+		"kotsadm-redact",
+		"kotsadm-your-app-redact-spec",
+		"kotsadm-something-else",
+	}, remainingNames)
+}
