@@ -290,7 +290,9 @@ function kotsadm_api_encryption_key() {
     local src="$DIR/addons/kotsadm/$KOTSADM_VERSION"
     local dst="$DIR/kustomize/kotsadm"
 
-    local API_ENCRYPTION=$(kubernetes_secret_value default kotsadm-encryption encryptionKey)
+    local API_ENCRYPTION_ENCODED API_ENCRYPTION
+    API_ENCRYPTION_ENCODED=$(kubectl -n default get secret kotsadm-encryption --ignore-not-found -ojsonpath="{ .data.encryptionKey }")
+    API_ENCRYPTION=$(echo "$API_ENCRYPTION_ENCODED" | base64 --decode)
 
     if [ -z "$API_ENCRYPTION" ]; then
         # 24 byte key + 12 byte nonce, base64 encoded. This is separate from the base64 encoding used
