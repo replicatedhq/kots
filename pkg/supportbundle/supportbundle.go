@@ -98,7 +98,7 @@ func GetSpecURI(appSlug string) string {
 }
 
 func GetBundleCommand(appSlug string) []string {
-	redactURIs := []string{redact.GetKotsadmRedactSpecURI(), redact.GetAppRedactSpecURI(appSlug)}
+	redactURIs := []string{redact.GetKotsadmRedactSpecURI(), redact.GetAppRedactSpecURI(appSlug), redact.GetDefaultRedactSpecURI()}
 	redactors := strings.Join(redactURIs, ",")
 
 	command := []string{
