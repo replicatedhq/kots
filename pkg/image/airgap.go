@@ -3,7 +3,6 @@ package image
 import (
 	"archive/tar"
 	"bufio"
-	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -13,11 +12,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/distribution/reference"
+	gzip "github.com/klauspost/pgzip"
 	imagespecsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/archiveutil"
@@ -52,7 +53,7 @@ func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool,
 	}
 	defer reader.Close()
 
-	gzipReader, err := gzip.NewReader(reader)
+	gzipReader, err := gzip.NewReaderN(reader, 1_048_576, runtime.GOMAXPROCS(0))
 	if err != nil {
 		return errors.Wrap(err, "failed to get new gzip reader")
 	}
@@ -541,7 +542,7 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 	}
 	defer fileReader.Close()
 
-	gzipReader, err := gzip.NewReader(fileReader)
+	gzipReader, err := gzip.NewReaderN(fileReader, 1_048_576, runtime.GOMAXPROCS(0))
 	if err != nil {
 		return errors.Wrap(err, "failed to get new gzip reader")
 	}
@@ -738,7 +739,7 @@ func getImageInfosFromBundle(airgapBundle string, getLayerInfo bool) (map[string
 	}
 	defer fileReader.Close()
 
-	gzipReader, err := gzip.NewReader(fileReader)
+	gzipReader, err := gzip.NewReaderN(fileReader, 1_048_576, runtime.GOMAXPROCS(0))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get new gzip reader")
 	}
@@ -879,7 +880,7 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, artifactsToPush *kotsv1be
 	}
 	defer fileReader.Close()
 
-	gzipReader, err := gzip.NewReader(fileReader)
+	gzipReader, err := gzip.NewReaderN(fileReader, 1_048_576, runtime.GOMAXPROCS(0))
 	if err != nil {
 		return errors.Wrap(err, "failed to get new gzip reader")
 	}
