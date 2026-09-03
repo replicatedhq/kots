@@ -45,7 +45,7 @@ environment:
       - yarn-1.22
       - py3.12-dateutil
       - py3.12-s3cmd
-      - schemahero-0.25~0.25.1
+      - schemahero~0.26.1
       - wget
 
   environment:
@@ -106,7 +106,7 @@ subpackages:
     description: KOTS Admin Console migration tables and schemahero binary v${{vars.major-minor-version}}
     dependencies:
       runtime:
-        - schemahero-0.25-rqlite~0.25.1
+        - schemahero-rqlite~0.26.1
       provides:
         - kotsadm-migrations=${{package.full-version}}
     pipeline:

@@ -59,9 +59,9 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rqlite/gorqlite v0.0.0-20260504155303-50d445fd0ab9
-	github.com/schemahero/schemahero v0.25.1
-	github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260702180721-561be52a664a
-	github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20260702180721-561be52a664a
+	github.com/schemahero/schemahero v0.26.1
+	github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260903194640-0b4928bde8a5
+	github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20260903194640-0b4928bde8a5
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.4.0
 	github.com/spf13/cobra v1.10.2
@@ -410,7 +410,10 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3 // indirect
 	github.com/hashicorp/aws-sdk-go-base/v2 v2.0.0-beta.74 // indirect
+	github.com/hashicorp/go-hclog v1.6.3 // indirect
+	github.com/hashicorp/go-plugin v1.8.0 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
+	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b // indirect
 	github.com/k0sproject/dig v0.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
@@ -436,6 +439,7 @@ require (
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/nwaples/rardecode/v2 v2.2.0 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
+	github.com/oklog/run v1.1.0 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/opencontainers/cgroups v0.0.6 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
