@@ -3,7 +3,6 @@ package image
 import (
 	"archive/tar"
 	"bufio"
-	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -13,13 +12,15 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/distribution/reference"
+	gzip "github.com/klauspost/pgzip"
 	imagespecsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/archiveutil"
 	dockerarchive "github.com/replicatedhq/kots/pkg/docker/archive"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
@@ -32,6 +33,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"go.podman.io/image/v5/transports/alltransports"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	oras "oras.land/oras-go/v2"
 	orasfile "oras.land/oras-go/v2/content/file"
 	orasremote "oras.land/oras-go/v2/registry/remote"
@@ -40,8 +43,9 @@ import (
 )
 
 const (
-	EmbeddedClusterArtifactType = "application/vnd.embeddedcluster.artifact"
-	EmbeddedClusterMediaType    = "application/vnd.embeddedcluster.file"
+	EmbeddedClusterArtifactType  = "application/vnd.embeddedcluster.artifact"
+	EmbeddedClusterMediaType     = "application/vnd.embeddedcluster.file"
+	maxConcurrentImageBlobCopies = 10
 )
 
 func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool, progressWriter io.Writer) error {
@@ -51,7 +55,7 @@ func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool,
 	}
 	defer reader.Close()
 
-	gzipReader, err := gzip.NewReader(reader)
+	gzipReader, err := gzip.NewReaderN(reader, 2_097_152, runtime.GOMAXPROCS(0))
 	if err != nil {
 		return errors.Wrap(err, "failed to get new gzip reader")
 	}
@@ -148,28 +152,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		return errors.Wrap(err, "failed to find airgap meta")
 	}
 
-	switch airgap.Spec.Format {
-	case dockertypes.FormatDockerRegistry:
-		extractedBundle, err := os.MkdirTemp("", "extracted-airgap-kots")
-		if err != nil {
-			return errors.Wrap(err, "failed to create temp dir for unarchived airgap bundle")
-		}
-		defer os.RemoveAll(extractedBundle)
-
-		if err := util.ExtractTGZArchive(airgapBundle, extractedBundle); err != nil {
-			return errors.Wrap(err, "falied to unarchive airgap bundle")
-		}
-		if err := PushImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options); err != nil {
-			return errors.Wrap(err, "failed to push images from docker registry bundle")
-		}
-		if err := PushECImagesFromTempRegistry(extractedBundle, airgap, options); err != nil {
-			return errors.Wrap(err, "failed to push embedded cluster images from docker registry bundle")
-		}
-	case dockertypes.FormatDockerArchive, "":
-		if err := PushImagesFromDockerArchiveBundle(airgapBundle, options); err != nil {
-			return errors.Wrap(err, "failed to push images from docker archive bundle")
-		}
-	default:
+	if airgap.Spec.Format != dockertypes.FormatDockerRegistry && airgap.Spec.Format != dockertypes.FormatDockerArchive && airgap.Spec.Format != "" {
 		return errors.Errorf("Airgap bundle format '%s' is not supported", airgap.Spec.Format)
 	}
 
@@ -183,9 +166,42 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		VersionLabel: airgap.Spec.VersionLabel,
 		HTTPClient:   &http.Client{Transport: orasretry.NewTransport(transport)},
 	}
-	err = PushEmbeddedClusterArtifacts(airgapBundle, airgap.Spec.EmbeddedClusterArtifacts, pushEmbeddedArtifactsOpts)
-	if err != nil {
-		return errors.Wrap(err, "failed to push embedded cluster artifacts")
+
+	var group errgroup.Group
+	group.Go(func() error {
+		if err := PushEmbeddedClusterArtifacts(airgapBundle, airgap.Spec.EmbeddedClusterArtifacts, pushEmbeddedArtifactsOpts); err != nil {
+			return errors.Wrap(err, "failed to push embedded cluster artifacts")
+		}
+		return nil
+	})
+	group.Go(func() error {
+		switch airgap.Spec.Format {
+		case dockertypes.FormatDockerRegistry:
+			extractedBundle, err := os.MkdirTemp("", "extracted-airgap-kots")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir for unarchived airgap bundle")
+			}
+			defer os.RemoveAll(extractedBundle)
+
+			if err := util.ExtractTGZArchive(airgapBundle, extractedBundle); err != nil {
+				return errors.Wrap(err, "failed to unarchive airgap bundle")
+			}
+			if err := PushImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options); err != nil {
+				return errors.Wrap(err, "failed to push images from docker registry bundle")
+			}
+			if err := PushECImagesFromTempRegistry(extractedBundle, airgap, options); err != nil {
+				return errors.Wrap(err, "failed to push embedded cluster images from docker registry bundle")
+			}
+		case dockertypes.FormatDockerArchive, "":
+			if err := PushImagesFromDockerArchiveBundle(airgapBundle, options); err != nil {
+				return errors.Wrap(err, "failed to push images from docker archive bundle")
+			}
+		}
+		return nil
+	})
+
+	if err := group.Wait(); err != nil {
+		return err
 	}
 
 	return nil
@@ -511,20 +527,15 @@ func PushImagesFromDockerArchivePath(airgapRootDir string, options imagetypes.Pu
 }
 
 func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.PushImagesOptions) error {
-	if exists, err := archives.DirExistsInTGZArchive("images", airgapBundle); err != nil {
-		return errors.Wrap(err, "failed to check if images dir exists in airgap bundle")
-	} else if !exists {
-		// images were already pushed from the CLI
-		return nil
-	}
-
+	imageInfos := make(map[string]*imagetypes.ImageInfo)
 	if options.LogForUI {
 		WriteProgressLine(options.ProgressWriter, "Reading image information from bundle...")
-	}
 
-	imageInfos, err := getImageInfosFromBundle(airgapBundle, options.LogForUI)
-	if err != nil {
-		return errors.Wrap(err, "failed to get images info from bundle")
+		var err error
+		imageInfos, err = getImageInfosFromBundle(airgapBundle, options.LogForUI)
+		if err != nil {
+			return errors.Wrap(err, "failed to get images info from bundle")
+		}
 	}
 
 	fileReader, err := os.Open(airgapBundle)
@@ -533,28 +544,25 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 	}
 	defer fileReader.Close()
 
-	gzipReader, err := gzip.NewReader(fileReader)
+	gzipReader, err := gzip.NewReaderN(fileReader, 2_097_152, runtime.GOMAXPROCS(0))
 	if err != nil {
 		return errors.Wrap(err, "failed to get new gzip reader")
 	}
 	defer gzipReader.Close()
 
-	reportWriter := options.ProgressWriter
-	if options.LogForUI {
-		wc := reportWriterWithProgress(imageInfos, options.ProgressWriter)
-		reportWriter = wc.(io.Writer)
-		defer wc.Write([]byte("+status.flush:\n"))
-		defer wc.Close()
-	}
-
 	tarReader := tar.NewReader(gzipReader)
+	var pushGroup errgroup.Group
+	var progressMutex sync.Mutex
+	blobCopiesSemaphore := semaphore.NewWeighted(maxConcurrentImageBlobCopies)
+	var extractErr error
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return errors.Wrap(err, "failed to get read archive")
+			extractErr = errors.Wrap(err, "failed to get read archive")
+			break
 		}
 
 		if header.Typeflag != tar.TypeReg {
@@ -562,51 +570,89 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 		}
 
 		imagePath := header.Name
-		imageInfo, ok := imageInfos[imagePath]
-		if !ok {
-			continue
+		imageInfo := imageInfos[imagePath]
+		if options.LogForUI {
+			if imageInfo == nil {
+				continue
+			}
+		} else {
+			pathParts := strings.Split(imagePath, string(os.PathSeparator))
+			if len(pathParts) < 2 || pathParts[0] != "images" {
+				continue
+			}
+			if len(pathParts) < 3 {
+				extractErr = errors.Errorf("not enough parts in image path: %q", imagePath)
+				break
+			}
+			imageInfo = &imagetypes.ImageInfo{
+				Format: dockertypes.FormatDockerArchive,
+				Layers: make(map[string]*imagetypes.LayerInfo),
+				Status: "queued",
+			}
 		}
 
 		if options.LogForUI {
-			WriteProgressLine(reportWriter, fmt.Sprintf("Extracting image %s", imagePath))
+			progressMutex.Lock()
+			WriteProgressLine(options.ProgressWriter, fmt.Sprintf("Extracting image %s", imagePath))
+			progressMutex.Unlock()
 		}
 
 		tmpFile, err := os.CreateTemp("", "kotsadm-image-")
 		if err != nil {
-			return errors.Wrap(err, "failed to create temp file")
+			extractErr = errors.Wrap(err, "failed to create temp file")
+			break
 		}
-		defer tmpFile.Close()
-		defer os.Remove(tmpFile.Name())
+		tmpFileName := tmpFile.Name()
 
 		_, err = io.Copy(tmpFile, tarReader)
 		if err != nil {
-			return errors.Wrapf(err, "failed to write file %q", imagePath)
+			tmpFile.Close()
+			os.Remove(tmpFileName)
+			extractErr = errors.Wrapf(err, "failed to write file %q", imagePath)
+			break
 		}
 
 		// Close file to flush all data before pushing to registry
 		if err := tmpFile.Close(); err != nil {
-			return errors.Wrap(err, "failed to close tmp file")
+			os.Remove(tmpFileName)
+			extractErr = errors.Wrap(err, "failed to close tmp file")
+			break
 		}
 
 		pathParts := strings.Split(imagePath, string(os.PathSeparator))
 		if len(pathParts) < 3 {
-			return errors.Errorf("not enough path parts in %q", imagePath)
+			os.Remove(tmpFileName)
+			extractErr = errors.Errorf("not enough path parts in %q", imagePath)
+			break
 		}
 
 		rewrittenImage, err := imageutil.RewriteDockerArchiveImage(options.Registry, pathParts[2:])
 		if err != nil {
-			return errors.Wrap(err, "failed to rewrite docker archive image")
+			os.Remove(tmpFileName)
+			extractErr = errors.Wrap(err, "failed to rewrite docker archive image")
+			break
 		}
 
-		srcRef, err := alltransports.ParseImageName(fmt.Sprintf("%s:%s", dockertypes.FormatDockerArchive, tmpFile.Name()))
+		srcRef, err := alltransports.ParseImageName(fmt.Sprintf("%s:%s", dockertypes.FormatDockerArchive, tmpFileName))
 		if err != nil {
-			return errors.Wrap(err, "failed to parse src image name")
+			os.Remove(tmpFileName)
+			extractErr = errors.Wrap(err, "failed to parse src image name")
+			break
 		}
 
 		destStr := fmt.Sprintf("docker://%s", imageutil.DestImageFromKustomizeImage(rewrittenImage))
 		destRef, err := alltransports.ParseImageName(destStr)
 		if err != nil {
-			return errors.Wrapf(err, "failed to parse dest image name %s", destStr)
+			os.Remove(tmpFileName)
+			extractErr = errors.Wrapf(err, "failed to parse dest image name %s", destStr)
+			break
+		}
+
+		reportWriter := options.ProgressWriter
+		var progressWriter io.WriteCloser
+		if options.LogForUI {
+			progressWriter = reportWriterWithProgressForImage(imagePath, imageInfos, options.ProgressWriter, &progressMutex)
+			reportWriter = progressWriter
 		}
 
 		pushImageOpts := imagetypes.PushImageOptions{
@@ -622,27 +668,46 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 					Username: options.Registry.Username,
 					Password: options.Registry.Password,
 				},
-				CopyAll:            false, // docker-archive format does not support multi-arch images
-				DestSkipTLSVerify:  true,
-				DestDisableV1Ping:  true,
-				ReportWriter:       reportWriter,
-				SkipExistingImages: options.SkipExistingImages,
+				CopyAll:                       false, // docker-archive format does not support multi-arch images
+				DestSkipTLSVerify:             true,
+				DestDisableV1Ping:             true,
+				ReportWriter:                  reportWriter,
+				ConcurrentBlobCopiesSemaphore: blobCopiesSemaphore,
+				SkipExistingImages:            options.SkipExistingImages,
 			},
 		}
-		if err := pushImage(pushImageOpts); err != nil {
-			return errors.Wrapf(err, "failed to push image %s", imagePath)
-		}
+		pushGroup.Go(func() error {
+			defer os.Remove(tmpFileName)
+			if progressWriter != nil {
+				defer func() {
+					progressWriter.Write([]byte("+status.flush:\n"))
+					progressWriter.Close()
+				}()
+			}
+			if err := pushImage(pushImageOpts); err != nil {
+				return errors.Wrapf(err, "failed to push image %s", imagePath)
+			}
+			return nil
+		})
+	}
+
+	pushErr := pushGroup.Wait()
+	if extractErr != nil {
+		return extractErr
+	}
+	if pushErr != nil {
+		return pushErr
 	}
 
 	return nil
 }
 
 func pushImage(opts imagetypes.PushImageOptions) error {
-	opts.ImageInfo.UploadStart = time.Now()
 	if opts.LogForUI {
 		fmt.Printf("Pushing image %s\n", opts.ImageID) // still log in console for future reference
 		opts.ReportWriter.Write([]byte(fmt.Sprintf("+file.begin:%s\n", opts.ImageID)))
 	} else {
+		opts.ImageInfo.UploadStart = time.Now()
 		destImageStr := opts.CopyImageOptions.DestRef.DockerReference().String() // this is better for debugging from the cli than the image id
 		WriteProgressLine(opts.ReportWriter, fmt.Sprintf("Pushing image %s", destImageStr))
 	}
@@ -668,9 +733,10 @@ func pushImage(opts imagetypes.PushImageOptions) error {
 	}
 
 	opts.Log.FinishChildSpinner()
-	opts.ImageInfo.UploadEnd = time.Now()
 	if opts.LogForUI {
 		opts.ReportWriter.Write([]byte(fmt.Sprintf("+file.end:%s\n", opts.ImageID)))
+	} else {
+		opts.ImageInfo.UploadEnd = time.Now()
 	}
 
 	return nil
@@ -683,7 +749,7 @@ func getImageInfosFromBundle(airgapBundle string, getLayerInfo bool) (map[string
 	}
 	defer fileReader.Close()
 
-	gzipReader, err := gzip.NewReader(fileReader)
+	gzipReader, err := gzip.NewReaderN(fileReader, 2_097_152, runtime.GOMAXPROCS(0))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get new gzip reader")
 	}
@@ -748,10 +814,14 @@ func layerInfoFromLayers(layers []dockertypes.Layer) (map[string]*imagetypes.Lay
 }
 
 func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, reportWriter io.Writer) io.WriteCloser {
+	return reportWriterWithProgressForImage("", imageInfos, reportWriter, &sync.Mutex{})
+}
+
+func reportWriterWithProgressForImage(imageID string, imageInfos map[string]*imagetypes.ImageInfo, reportWriter io.Writer, mutex *sync.Mutex) io.WriteCloser {
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
 		currentLayerID := ""
-		currentImageID := ""
+		currentImageID := imageID
 		currentLine := ""
 
 		scanner := bufio.NewScanner(pipeReader)
@@ -767,40 +837,42 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 			// Writing manifest to image destination
 			// Storing signatures
 
-			if strings.HasPrefix(line, "Copying blob sha256:") {
+			mutex.Lock()
+			func() {
+				defer mutex.Unlock()
+				if strings.HasPrefix(line, "Copying blob sha256:") {
+					currentLine = line
+					progressLayerEnded(currentImageID, currentLayerID, imageInfos)
+					currentLayerID = strings.TrimPrefix(line, "Copying blob sha256:")
+					progressLayerStarted(currentImageID, currentLayerID, imageInfos)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "Copying config sha256:") {
+					currentLine = line
+					progressLayerEnded(currentImageID, currentLayerID, imageInfos)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "+file.begin:") {
+					currentImageID = strings.TrimPrefix(line, "+file.begin:")
+					progressFileStarted(currentImageID, imageInfos)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "+file.end:") {
+					progressFileEnded(currentImageID, imageInfos)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "+file.error:") {
+					errorStr := strings.TrimPrefix(line, "+file.error:")
+					progressFileFailed(currentImageID, imageInfos, errorStr)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "+status.flush:") {
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				}
 				currentLine = line
-				progressLayerEnded(currentImageID, currentLayerID, imageInfos)
-				currentLayerID = strings.TrimPrefix(line, "Copying blob sha256:")
-				progressLayerStarted(currentImageID, currentLayerID, imageInfos)
 				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "Copying config sha256:") {
-				currentLine = line
-				progressLayerEnded(currentImageID, currentLayerID, imageInfos)
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "+file.begin:") {
-				currentImageID = strings.TrimPrefix(line, "+file.begin:")
-				progressFileStarted(currentImageID, imageInfos)
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "+file.end:") {
-				progressFileEnded(currentImageID, imageInfos)
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "+file.error:") {
-				errorStr := strings.TrimPrefix(line, "+file.error:")
-				progressFileFailed(currentImageID, imageInfos, errorStr)
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "+status.flush:") {
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else {
-				currentLine = line
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			}
+			}()
 		}
 	}()
 
@@ -808,6 +880,10 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 }
 
 func PushEmbeddedClusterArtifacts(airgapBundle string, artifactsToPush *kotsv1beta1.EmbeddedClusterArtifacts, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
+	if artifactsToPush == nil {
+		return nil
+	}
+
 	tmpDir, err := os.MkdirTemp("", "embedded-cluster-artifacts")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp directory")
@@ -820,7 +896,7 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, artifactsToPush *kotsv1be
 	}
 	defer fileReader.Close()
 
-	gzipReader, err := gzip.NewReader(fileReader)
+	gzipReader, err := gzip.NewReaderN(fileReader, 2_097_152, runtime.GOMAXPROCS(0))
 	if err != nil {
 		return errors.Wrap(err, "failed to get new gzip reader")
 	}

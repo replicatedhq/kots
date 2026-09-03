@@ -328,14 +328,15 @@ func CopyImage(opts types.CopyImageOptions) error {
 	}
 
 	_, err := CopyImageWithGC(context.Background(), opts.DestRef, opts.SrcRef, &copy.Options{
-		RemoveSignatures:      true,
-		SignBy:                "",
-		ReportWriter:          opts.ReportWriter,
-		SourceCtx:             srcCtx,
-		DestinationCtx:        destCtx,
-		ForceManifestMIMEType: "",
-		ImageListSelection:    imageListSelection,
-		PreserveDigests:       opts.PreserveDigests,
+		RemoveSignatures:              true,
+		SignBy:                        "",
+		ReportWriter:                  opts.ReportWriter,
+		SourceCtx:                     srcCtx,
+		DestinationCtx:                destCtx,
+		ForceManifestMIMEType:         "",
+		ImageListSelection:            imageListSelection,
+		PreserveDigests:               opts.PreserveDigests,
+		ConcurrentBlobCopiesSemaphore: opts.ConcurrentBlobCopiesSemaphore,
 		// Skip per-child copies when the destination already has the same manifest.
 		// The precheck above handles the parent manifest list; this covers individual
 		// child images and any case where the parent differs but children are already

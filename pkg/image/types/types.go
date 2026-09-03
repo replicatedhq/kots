@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"go.podman.io/image/v5/types"
+	"golang.org/x/sync/semaphore"
 )
 
 type ProcessImageOptions struct {
@@ -48,6 +49,9 @@ type CopyImageOptions struct {
 	DestDisableV1Ping bool
 	DestSkipTLSVerify bool
 	ReportWriter      io.Writer
+	// ConcurrentBlobCopiesSemaphore limits concurrent layer and config copies
+	// across all image copy operations that share this semaphore.
+	ConcurrentBlobCopiesSemaphore *semaphore.Weighted
 	// SkipExistingImages enables an opt-in idempotency precheck: before invoking
 	// the copy library, the destination tag's manifest is fetched and compared
 	// against the source. If they match (byte-equal or canonically equal), the
