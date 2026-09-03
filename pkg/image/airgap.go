@@ -34,6 +34,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"go.podman.io/image/v5/transports/alltransports"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	oras "oras.land/oras-go/v2"
 	orasfile "oras.land/oras-go/v2/content/file"
 	orasremote "oras.land/oras-go/v2/registry/remote"
@@ -42,8 +43,9 @@ import (
 )
 
 const (
-	EmbeddedClusterArtifactType = "application/vnd.embeddedcluster.artifact"
-	EmbeddedClusterMediaType    = "application/vnd.embeddedcluster.file"
+	EmbeddedClusterArtifactType  = "application/vnd.embeddedcluster.artifact"
+	EmbeddedClusterMediaType     = "application/vnd.embeddedcluster.file"
+	maxConcurrentImageBlobCopies = 10
 )
 
 func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool, progressWriter io.Writer) error {
@@ -548,17 +550,10 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 	}
 	defer gzipReader.Close()
 
-	reportWriter := options.ProgressWriter
-	if options.LogForUI {
-		wc := reportWriterWithProgress(imageInfos, options.ProgressWriter)
-		reportWriter = wc.(io.Writer)
-		defer wc.Write([]byte("+status.flush:\n"))
-		defer wc.Close()
-	}
-
 	tarReader := tar.NewReader(gzipReader)
 	var pushGroup errgroup.Group
-	var pushMutex sync.Mutex
+	var progressMutex sync.Mutex
+	blobCopiesSemaphore := semaphore.NewWeighted(maxConcurrentImageBlobCopies)
 	var extractErr error
 	for {
 		header, err := tarReader.Next()
@@ -597,7 +592,9 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 		}
 
 		if options.LogForUI {
-			WriteProgressLine(reportWriter, fmt.Sprintf("Extracting image %s", imagePath))
+			progressMutex.Lock()
+			WriteProgressLine(options.ProgressWriter, fmt.Sprintf("Extracting image %s", imagePath))
+			progressMutex.Unlock()
 		}
 
 		tmpFile, err := os.CreateTemp("", "kotsadm-image-")
@@ -651,6 +648,13 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 			break
 		}
 
+		reportWriter := options.ProgressWriter
+		var progressWriter io.WriteCloser
+		if options.LogForUI {
+			progressWriter = reportWriterWithProgressForImage(imagePath, imageInfos, options.ProgressWriter, &progressMutex)
+			reportWriter = progressWriter
+		}
+
 		pushImageOpts := imagetypes.PushImageOptions{
 			ImageID:      imagePath,
 			ImageInfo:    imageInfo,
@@ -664,17 +668,22 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 					Username: options.Registry.Username,
 					Password: options.Registry.Password,
 				},
-				CopyAll:            false, // docker-archive format does not support multi-arch images
-				DestSkipTLSVerify:  true,
-				DestDisableV1Ping:  true,
-				ReportWriter:       reportWriter,
-				SkipExistingImages: options.SkipExistingImages,
+				CopyAll:                       false, // docker-archive format does not support multi-arch images
+				DestSkipTLSVerify:             true,
+				DestDisableV1Ping:             true,
+				ReportWriter:                  reportWriter,
+				ConcurrentBlobCopiesSemaphore: blobCopiesSemaphore,
+				SkipExistingImages:            options.SkipExistingImages,
 			},
 		}
 		pushGroup.Go(func() error {
 			defer os.Remove(tmpFileName)
-			pushMutex.Lock()
-			defer pushMutex.Unlock()
+			if progressWriter != nil {
+				defer func() {
+					progressWriter.Write([]byte("+status.flush:\n"))
+					progressWriter.Close()
+				}()
+			}
 			if err := pushImage(pushImageOpts); err != nil {
 				return errors.Wrapf(err, "failed to push image %s", imagePath)
 			}
@@ -694,11 +703,11 @@ func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.P
 }
 
 func pushImage(opts imagetypes.PushImageOptions) error {
-	opts.ImageInfo.UploadStart = time.Now()
 	if opts.LogForUI {
 		fmt.Printf("Pushing image %s\n", opts.ImageID) // still log in console for future reference
 		opts.ReportWriter.Write([]byte(fmt.Sprintf("+file.begin:%s\n", opts.ImageID)))
 	} else {
+		opts.ImageInfo.UploadStart = time.Now()
 		destImageStr := opts.CopyImageOptions.DestRef.DockerReference().String() // this is better for debugging from the cli than the image id
 		WriteProgressLine(opts.ReportWriter, fmt.Sprintf("Pushing image %s", destImageStr))
 	}
@@ -724,9 +733,10 @@ func pushImage(opts imagetypes.PushImageOptions) error {
 	}
 
 	opts.Log.FinishChildSpinner()
-	opts.ImageInfo.UploadEnd = time.Now()
 	if opts.LogForUI {
 		opts.ReportWriter.Write([]byte(fmt.Sprintf("+file.end:%s\n", opts.ImageID)))
+	} else {
+		opts.ImageInfo.UploadEnd = time.Now()
 	}
 
 	return nil
@@ -804,10 +814,14 @@ func layerInfoFromLayers(layers []dockertypes.Layer) (map[string]*imagetypes.Lay
 }
 
 func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, reportWriter io.Writer) io.WriteCloser {
+	return reportWriterWithProgressForImage("", imageInfos, reportWriter, &sync.Mutex{})
+}
+
+func reportWriterWithProgressForImage(imageID string, imageInfos map[string]*imagetypes.ImageInfo, reportWriter io.Writer, mutex *sync.Mutex) io.WriteCloser {
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
 		currentLayerID := ""
-		currentImageID := ""
+		currentImageID := imageID
 		currentLine := ""
 
 		scanner := bufio.NewScanner(pipeReader)
@@ -823,40 +837,42 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 			// Writing manifest to image destination
 			// Storing signatures
 
-			if strings.HasPrefix(line, "Copying blob sha256:") {
+			mutex.Lock()
+			func() {
+				defer mutex.Unlock()
+				if strings.HasPrefix(line, "Copying blob sha256:") {
+					currentLine = line
+					progressLayerEnded(currentImageID, currentLayerID, imageInfos)
+					currentLayerID = strings.TrimPrefix(line, "Copying blob sha256:")
+					progressLayerStarted(currentImageID, currentLayerID, imageInfos)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "Copying config sha256:") {
+					currentLine = line
+					progressLayerEnded(currentImageID, currentLayerID, imageInfos)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "+file.begin:") {
+					currentImageID = strings.TrimPrefix(line, "+file.begin:")
+					progressFileStarted(currentImageID, imageInfos)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "+file.end:") {
+					progressFileEnded(currentImageID, imageInfos)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "+file.error:") {
+					errorStr := strings.TrimPrefix(line, "+file.error:")
+					progressFileFailed(currentImageID, imageInfos, errorStr)
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				} else if strings.HasPrefix(line, "+status.flush:") {
+					writeCurrentProgress(currentLine, imageInfos, reportWriter)
+					return
+				}
 				currentLine = line
-				progressLayerEnded(currentImageID, currentLayerID, imageInfos)
-				currentLayerID = strings.TrimPrefix(line, "Copying blob sha256:")
-				progressLayerStarted(currentImageID, currentLayerID, imageInfos)
 				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "Copying config sha256:") {
-				currentLine = line
-				progressLayerEnded(currentImageID, currentLayerID, imageInfos)
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "+file.begin:") {
-				currentImageID = strings.TrimPrefix(line, "+file.begin:")
-				progressFileStarted(currentImageID, imageInfos)
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "+file.end:") {
-				progressFileEnded(currentImageID, imageInfos)
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "+file.error:") {
-				errorStr := strings.TrimPrefix(line, "+file.error:")
-				progressFileFailed(currentImageID, imageInfos, errorStr)
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else if strings.HasPrefix(line, "+status.flush:") {
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			} else {
-				currentLine = line
-				writeCurrentProgress(currentLine, imageInfos, reportWriter)
-				continue
-			}
+			}()
 		}
 	}()
 
