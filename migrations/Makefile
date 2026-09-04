@@ -1,5 +1,5 @@
 SHELL:=/bin/bash
-SCHEMAHERO_TAG ?= 0.26.0
+SCHEMAHERO_TAG ?= 0.26.1
 DOCKER_BUILD_ARGS ?=
 
 build_schema:
