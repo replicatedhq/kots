@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -188,14 +190,19 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestLicense, _, err := license.Sync(app, "", false)
+	// Bound the upstream calls (license sync + fetch available updates) so a stalled
+	// connection to the app service fails fast instead of hanging the handler forever.
+	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+	defer cancel()
+
+	latestLicense, _, err := license.Sync(ctx, app, "", false)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to sync license"))
 		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
 		return
 	}
 
-	updates, err := update.GetAvailableUpdates(store, app, latestLicense)
+	updates, err := update.GetAvailableUpdates(ctx, store, app, latestLicense)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get available app updates"))
 		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)

@@ -1,6 +1,7 @@
 package update
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -32,7 +33,7 @@ func InitAvailableUpdatesDir() error {
 	return nil
 }
 
-func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *licensewrapper.LicenseWrapper) ([]types.AvailableUpdate, error) {
+func GetAvailableUpdates(ctx context.Context, kotsStore storepkg.Store, app *apptypes.App, license *licensewrapper.LicenseWrapper) ([]types.AvailableUpdate, error) {
 	licenseChan, err := kotsutil.FindChannelInLicense(app.SelectedChannelID, license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find channel in license")
@@ -54,7 +55,7 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *l
 		SortOrder:          "desc", // get the latest updates first
 		ReportingInfo:      reporting.GetReportingInfo(app.ID),
 	}
-	updates, err := upstreampkg.GetUpdatesUpstream(upstreamURI, fetchOptions)
+	updates, err := upstreampkg.GetUpdatesUpstream(ctx, upstreamURI, fetchOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get updates")
 	}

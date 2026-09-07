@@ -218,7 +218,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	}
 
 	if !kotsadm.IsAirgap() {
-		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense, matchedChannelID)
+		licenseData, err := replicatedapp.GetLatestLicense(context.Background(), verifiedLicense, matchedChannelID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get latest license")
 		}

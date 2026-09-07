@@ -2,6 +2,7 @@ package replicatedapp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -44,7 +45,7 @@ type LicenseData struct {
 // GetLatestLicense will return the latest license from the replicated api, if selectedChannelID is provided
 // it will be passed along to the api.
 // Note: The Replicated API can return v1beta1 or v1beta2 licenses, which are wrapped in a LicenseWrapper.
-func GetLatestLicense(license *licensewrapper.LicenseWrapper, selectedChannelID string) (*LicenseData, error) {
+func GetLatestLicense(ctx context.Context, license *licensewrapper.LicenseWrapper, selectedChannelID string) (*LicenseData, error) {
 	if license.IsEmpty() {
 		return nil, errors.New("license wrapper contains no license")
 	}
@@ -54,7 +55,7 @@ func GetLatestLicense(license *licensewrapper.LicenseWrapper, selectedChannelID 
 		return nil, errors.Wrap(err, "failed to make license url")
 	}
 
-	licenseData, err := getLicenseFromAPI(fullURL, license)
+	licenseData, err := getLicenseFromAPI(ctx, fullURL, license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license from api")
 	}
@@ -103,11 +104,12 @@ func getAppIdFromLicenseId(s store.Store, licenseID string) (string, error) {
 	return "", nil
 }
 
-func getLicenseFromAPI(url string, license *licensewrapper.LicenseWrapper) (*LicenseData, error) {
+func getLicenseFromAPI(ctx context.Context, url string, license *licensewrapper.LicenseWrapper) (*LicenseData, error) {
 	req, err := util.NewRetryableRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
+	req = req.WithContext(ctx)
 
 	licenseID := license.GetLicenseID()
 	req.SetBasicAuth(licenseID, licenseID)

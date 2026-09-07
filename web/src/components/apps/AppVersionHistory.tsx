@@ -342,6 +342,9 @@ class AppVersionHistory extends Component<Props, State> {
     window.removeEventListener("message", this.handleIframeMessage);
   }
 
+  // TODO: this fetch has no retry/polling, so a single failed or stalled request
+  // leaves the Available Updates section blank until the page is reloaded.
+  // Consider retrying while in flight/failed. See shortcut story 139518.
   fetchAvailableUpdates = async (showSpinner = true) => {
     const appSlug = this.props.params.slug;
     this.setState({ isFetchingAvailableUpdates: showSpinner });

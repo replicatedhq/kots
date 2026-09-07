@@ -1,6 +1,7 @@
 package upstream
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/pkg/errors"
@@ -8,7 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
+func GetUpdatesUpstream(ctx context.Context, upstreamURI string, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
 	if !util.IsURL(upstreamURI) {
 		return nil, errors.New("not implemented")
 	}
@@ -18,7 +19,7 @@ func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*
 		return nil, errors.Wrap(err, "parse request uri failed")
 	}
 	if u.Scheme == "replicated" {
-		return getUpdatesReplicated(fetchOptions)
+		return getUpdatesReplicated(ctx, fetchOptions)
 	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)

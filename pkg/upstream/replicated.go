@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -71,7 +72,7 @@ type ChannelRelease struct {
 	EmbeddedClusterVersion string `json:"embeddedClusterVersion,omitempty"` // the version of the embedded cluster (if applicable) this release contains
 }
 
-func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
+func getUpdatesReplicated(ctx context.Context, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
 	currentCursor := replicatedapp.ReplicatedCursor{
 		ChannelID:   fetchOptions.CurrentChannelID,
 		ChannelName: fetchOptions.CurrentChannelName,
@@ -83,7 +84,7 @@ func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckR
 		return nil, errors.New("No license was provided")
 	}
 
-	pendingReleases, updateCheckTime, err := listPendingChannelReleases(fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.SortOrder, fetchOptions.ReportingInfo, fetchOptions.CurrentChannelID)
+	pendingReleases, updateCheckTime, err := listPendingChannelReleases(ctx, fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.SortOrder, fetchOptions.ReportingInfo, fetchOptions.CurrentChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -177,7 +178,7 @@ func downloadReplicated(
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
 
-		licenseData, err := replicatedapp.GetLatestLicense(license, appSelectedChannelID)
+		licenseData, err := replicatedapp.GetLatestLicense(context.Background(), license, appSelectedChannelID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}
@@ -482,7 +483,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	return &release, nil
 }
 
-func listPendingChannelReleases(license *licensewrapper.LicenseWrapper, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]ChannelRelease, *time.Time, error) {
+func listPendingChannelReleases(ctx context.Context, license *licensewrapper.LicenseWrapper, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]ChannelRelease, *time.Time, error) {
 	if license.IsEmpty() {
 		return nil, nil, errors.New("license wrapper contains no license")
 	}
@@ -525,6 +526,7 @@ func listPendingChannelReleases(license *licensewrapper.LicenseWrapper, lastUpda
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to call newrequest")
 	}
+	req = req.WithContext(ctx)
 
 	reporting.InjectReportingInfoHeaders(req.Header, reportingInfo)
 

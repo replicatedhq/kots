@@ -1,6 +1,7 @@
 package license
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -60,7 +61,7 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *licensewrapper.Licen
 
 	log.ActionWithSpinner("Checking for license update")
 	// we fetch the latest license to ensure that the license is up to date, before proceeding
-	updatedLicense, err := replicatedapp.GetLatestLicense(license, "")
+	updatedLicense, err := replicatedapp.GetLatestLicense(context.Background(), license, "")
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to get latest license")

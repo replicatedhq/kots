@@ -1,6 +1,7 @@
 package update
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -438,7 +439,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 			mockServer := newMockServerWithReleases(tt.perChannelReleases, tt.expectedSelectedChannelId, tt.wantErr)
 			defer mockServer.Close()
 			tt.setup(t, tt.args, mockServer.URL)
-			got, err := GetAvailableUpdates(tt.args.kotsStore, tt.args.app, &licensewrapper.LicenseWrapper{V1: tt.args.license})
+			got, err := GetAvailableUpdates(context.Background(), tt.args.kotsStore, tt.args.app, &licensewrapper.LicenseWrapper{V1: tt.args.license})
 			if tt.wantErr {
 				req.Error(err)
 				return

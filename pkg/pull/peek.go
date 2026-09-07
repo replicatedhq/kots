@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -50,7 +51,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) (*upstr
 	}
 
 	log.ActionWithSpinner("Listing releases")
-	v, err := upstream.GetUpdatesUpstream(upstreamURI, &fetchOptions)
+	v, err := upstream.GetUpdatesUpstream(context.Background(), upstreamURI, &fetchOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to peek upstream")

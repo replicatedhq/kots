@@ -1,6 +1,7 @@
 package license
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 
@@ -17,7 +18,7 @@ import (
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 )
 
-func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*licensewrapper.LicenseWrapper, bool, error) {
+func Sync(ctx context.Context, a *apptypes.App, licenseString string, failOnVersionCreate bool) (*licensewrapper.LicenseWrapper, bool, error) {
 	latestSequence, err := store.GetStore().GetLatestAppSequence(a.ID, true)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get latest app sequence")
@@ -44,7 +45,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*lic
 		updatedLicense = verifiedLicense
 	} else {
 		// get from the api
-		licenseData, err := replicatedapp.GetLatestLicense(currentLicense, a.SelectedChannelID)
+		licenseData, err := replicatedapp.GetLatestLicense(ctx, currentLicense, a.SelectedChannelID)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to get latest license")
 		}
@@ -116,12 +117,12 @@ func SyncWithServiceAccountToken(a *apptypes.App, serviceAccountToken string, fa
 	licenseWithToken.Spec.LicenseID = serviceAccountToken
 	wrappedLicenseWithToken := &licensewrapper.LicenseWrapper{V1: licenseWithToken}
 
-	licenseData, err := replicatedapp.GetLatestLicense(wrappedLicenseWithToken, a.SelectedChannelID)
+	licenseData, err := replicatedapp.GetLatestLicense(context.Background(), wrappedLicenseWithToken, a.SelectedChannelID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get latest license with service account token")
 	}
 
-	return Sync(a, string(licenseData.LicenseBytes), failOnVersionCreate)
+	return Sync(context.Background(), a, string(licenseData.LicenseBytes), failOnVersionCreate)
 }
 
 func Change(a *apptypes.App, newLicenseString string) (*licensewrapper.LicenseWrapper, error) {
@@ -141,7 +142,7 @@ func Change(a *apptypes.App, newLicenseString string) (*licensewrapper.LicenseWr
 	}
 
 	if !a.IsAirgap {
-		licenseData, err := replicatedapp.GetLatestLicense(newLicense, a.SelectedChannelID)
+		licenseData, err := replicatedapp.GetLatestLicense(context.Background(), newLicense, a.SelectedChannelID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}
