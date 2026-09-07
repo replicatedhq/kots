@@ -467,7 +467,7 @@ jobs:
         echo "id=${id:0:7}" >> "$GITHUB_OUTPUT"
 
   regression-test:
-    if: github.ref_type == 'branch'
+    if: ${{ !cancelled() && github.ref_type == 'branch' && needs.regression-test-setup.result == 'success' && needs.generate-tag.result == 'success' && needs.build-kots.result == 'success' && needs.generate-kurl-addon.result == 'success' && needs.build-kotsadm-bundle.result == 'success' }}
     needs: [ regression-test-setup, generate-tag, build-kots, generate-kurl-addon, build-kotsadm-bundle ]
     uses: ./.github/workflows/regression.yaml
     with:
