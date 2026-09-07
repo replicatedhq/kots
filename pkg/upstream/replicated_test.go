@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -927,4 +928,49 @@ spec:
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to read file from tar")
 	})
+}
+
+// Test_listPendingChannelReleases_ContextTimeout verifies that a stalled
+// upstream connection is aborted when the request context deadline is
+// exceeded, instead of hanging indefinitely. Regression coverage for the
+// hang described in shortcut story 139518.
+func Test_listPendingChannelReleases_ContextTimeout(t *testing.T) {
+	// the server accepts the connection but never responds
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	license := &licensewrapper.LicenseWrapper{
+		V1: &kotsv1beta1.License{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "kots.io/v1beta1",
+				Kind:       "License",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-license",
+			},
+			Spec: kotsv1beta1.LicenseSpec{
+				AppSlug:         "test-app",
+				Endpoint:        server.URL,
+				LicenseID:       "test-license-id",
+				LicenseSequence: 1,
+			},
+		},
+	}
+
+	cursor := replicatedapp.ReplicatedCursor{
+		ChannelID:   "test-channel-id",
+		ChannelName: "test-channel",
+		Cursor:      "test-cursor",
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	start := time.Now()
+	_, _, err := listPendingChannelReleases(ctx, license, nil, cursor, false, "desc", nil, "test-channel-id")
+	require.Error(t, err)
+	require.Less(t, time.Since(start), 5*time.Second,
+		"request should be canceled at the context deadline, not hang on the stalled server")
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
@@ -247,4 +248,34 @@ spec:
 			}
 		})
 	}
+}
+
+// Test_getLicenseFromAPI_ContextTimeout verifies that a stalled upstream
+// connection is aborted when the request context deadline is exceeded,
+// instead of hanging indefinitely. Regression coverage for the hang
+// described in shortcut story 139518.
+func Test_getLicenseFromAPI_ContextTimeout(t *testing.T) {
+	// the server accepts the connection but never responds
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	license := &licensewrapper.LicenseWrapper{
+		V1: &kotsv1beta1.License{
+			Spec: kotsv1beta1.LicenseSpec{
+				LicenseID: "test-license-id",
+				AppSlug:   "test-app",
+			},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	start := time.Now()
+	_, err := getLicenseFromAPI(ctx, server.URL, license)
+	require.Error(t, err)
+	assert.Less(t, time.Since(start), 5*time.Second,
+		"request should be canceled at the context deadline, not hang on the stalled server")
 }
