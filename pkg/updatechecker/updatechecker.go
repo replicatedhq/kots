@@ -1,6 +1,7 @@
 package updatechecker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -222,7 +223,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	}
 
 	// sync license, this method is only called when online
-	latestLicense, _, err := license.Sync(a, "", false)
+	latestLicense, _, err := license.Sync(context.Background(), a, "", false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to sync license")
 	}

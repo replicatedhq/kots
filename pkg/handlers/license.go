@@ -137,7 +137,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestLicense, isSynced, err := kotsadmlicense.Sync(foundApp, syncLicenseRequest.LicenseData, true)
+	latestLicense, isSynced, err := kotsadmlicense.Sync(r.Context(), foundApp, syncLicenseRequest.LicenseData, true)
 	if err != nil {
 		syncLicenseResponse.Error = "failed to sync license"
 		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
@@ -305,7 +305,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	if !kotsadm.IsAirgap() {
 		// sync license
 		logger.Info("syncing license with server to retrieve latest version")
-		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense, matchedChannelID)
+		licenseData, err := replicatedapp.GetLatestLicense(r.Context(), verifiedLicense, matchedChannelID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get latest license"))
 			uploadLicenseResponse.Error = err.Error()

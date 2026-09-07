@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -151,14 +152,14 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 		return true, "", nil
 	}
 
-	ll, err := replicatedapp.GetLatestLicense(&currLicense, a.SelectedChannelID)
+	ll, err := replicatedapp.GetLatestLicense(context.Background(), &currLicense, a.SelectedChannelID)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get latest license")
 	}
 	if currLicense.GetChannelID() != ll.License.GetChannelID() || r.ChannelID != ll.License.GetChannelID() {
 		return false, "license channel has changed, please sync the license", nil
 	}
-	updates, err := update.GetAvailableUpdates(store.GetStore(), a, &currLicense)
+	updates, err := update.GetAvailableUpdates(context.Background(), store.GetStore(), a, &currLicense)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get available updates")
 	}

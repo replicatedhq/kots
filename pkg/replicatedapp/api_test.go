@@ -1,6 +1,7 @@
 package replicatedapp
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -221,7 +222,7 @@ spec:
 			defer server.Close()
 
 			// Call the function
-			licenseData, err := getLicenseFromAPI(server.URL, test.license)
+			licenseData, err := getLicenseFromAPI(context.Background(), server.URL, test.license)
 			require.NoError(t, err)
 			require.NotNil(t, licenseData)
 
