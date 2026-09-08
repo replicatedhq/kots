@@ -102,7 +102,10 @@ const validateNodeRow = async (page: Page, expect: Expect, nodeRow: Locator) => 
 const expectUsageMetric = async (metric: Locator, expect: Expect, name: string) => {
   await expect(metric).toBeVisible();
   await expect.poll(
-    async () => extractNumber(await metric.textContent() ?? '0'),
+    async () => {
+      const text = await metric.textContent();
+      return text?.includes('used') ? extractNumber(text) : 0;
+    },
     {
       message: `Expected ${name} usage to be reported`,
       timeout: 60000,
