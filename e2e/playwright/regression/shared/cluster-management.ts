@@ -79,16 +79,13 @@ const validateNodeRow = async (page: Page, expect: Expect, nodeRow: Locator) => 
   await expect(nodeRow.getByTestId('node-status')).toHaveText('Connected');
 
   const nodePods = nodeRow.getByTestId('node-pods');
-  await expect(nodePods).toBeVisible();
-  expect(extractNumber(await nodePods.textContent())).toBeGreaterThan(0);
+  await expectUsageMetric(nodePods, expect, 'pods');
 
   const nodeCpu = nodeRow.getByTestId('node-cpu');
-  await expect(nodeCpu).toBeVisible();
-  expect(extractNumber(await nodeCpu.textContent())).toBeGreaterThan(0);
+  await expectUsageMetric(nodeCpu, expect, 'CPU');
 
   const nodeMemory = nodeRow.getByTestId('node-memory');
-  await expect(nodeMemory).toBeVisible();
-  expect(extractNumber(await nodeMemory.textContent())).toBeGreaterThan(0);
+  await expectUsageMetric(nodeMemory, expect, 'memory');
 
   await expect(nodeRow).toContainText('No Disk Pressure');
   await expect(nodeRow).toContainText('No CPU Pressure');
@@ -101,6 +98,20 @@ const validateNodeRow = async (page: Page, expect: Expect, nodeRow: Locator) => 
   await drainNodeModal.getByRole('button', { name: 'Cancel' }).click();
   await expect(drainNodeModal).not.toBeVisible();
 }
+
+const expectUsageMetric = async (metric: Locator, expect: Expect, name: string) => {
+  await expect(metric).toBeVisible();
+  await expect.poll(
+    async () => {
+      const text = await metric.textContent();
+      return text?.includes('used') ? extractNumber(text) : 0;
+    },
+    {
+      message: `Expected ${name} usage to be reported`,
+      timeout: 60000,
+    }
+  ).toBeGreaterThan(0);
+};
 
 const extractNumber = (text: string): number => {
   const match = text.match(/\d+(\.\d+)?/);
