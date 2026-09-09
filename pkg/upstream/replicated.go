@@ -119,6 +119,7 @@ func downloadReplicated(
 	rootDir string,
 	useAppDir bool,
 	license *licensewrapper.LicenseWrapper,
+	licenseData []byte,
 	existingConfigValues *kotsv1beta1.ConfigValues,
 	existingIdentityConfig *kotsv1beta1.IdentityConfig,
 	updateCursor replicatedapp.ReplicatedCursor,
@@ -178,11 +179,12 @@ func downloadReplicated(
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
 
-		licenseData, err := replicatedapp.GetLatestLicense(context.Background(), license, appSelectedChannelID)
+		latestLicenseData, err := replicatedapp.GetLatestLicense(context.Background(), license, appSelectedChannelID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}
-		license = licenseData.License
+		license = latestLicenseData.License
+		licenseData = latestLicenseData.LicenseBytes
 
 		release = downloadedRelease
 	}
@@ -305,6 +307,7 @@ func downloadReplicated(
 		Type:                     "replicated",
 		UpdateCursor:             release.UpdateCursor.Cursor,
 		License:                  license,
+		LicenseData:              licenseData,
 		ChannelID:                channelID,
 		ChannelName:              channelName,
 		VersionLabel:             release.VersionLabel,

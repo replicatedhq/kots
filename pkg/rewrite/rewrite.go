@@ -58,6 +58,8 @@ type RewriteOptions struct {
 	// SkipExistingImages — opt-in idempotent push behavior. See
 	// imagetypes.CopyImageOptions.SkipExistingImages.
 	SkipExistingImages bool
+	// LicenseData is the original license payload, before it was unmarshaled.
+	LicenseData string
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -85,6 +87,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CurrentEmbeddedClusterArtifacts: rewriteOptions.Installation.Spec.EmbeddedClusterArtifacts,
 		EncryptionKey:                   rewriteOptions.Installation.Spec.EncryptionKey,
 		License:                         rewriteOptions.License,
+		LicenseData:                     []byte(rewriteOptions.LicenseData),
 		AppSequence:                     rewriteOptions.AppSequence,
 		AppSlug:                         rewriteOptions.AppSlug,
 		AppSelectedChannelID:            rewriteOptions.AppSelectedChannelID,

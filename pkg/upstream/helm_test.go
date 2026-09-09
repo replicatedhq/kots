@@ -1502,6 +1502,8 @@ description: A Replicated Chart
 				ReplicatedProxyDomain:    "custom.proxy.com",
 				ReplicatedChartNames:     testReplicatedChartNames,
 			}
+			upstream.LicenseData, err = MustMarshalLicenseWrapper(upstream.License)
+			require.NoError(t, err)
 
 			writeOptions := types.WriteOptions{
 				KotsadmID:           "kotsadm-id",
@@ -1530,6 +1532,32 @@ description: A Replicated Chart
 			}
 		})
 	}
+}
+
+func Test_buildReplicatedValues_preservesOriginalLicenseData(t *testing.T) {
+	originalLicenseData := []byte(`apiVersion: kots.io/v1beta1
+kind: License
+spec:
+  appSlug: example-app
+  fieldAddedBySaaS: preserve-me
+`)
+
+	values, err := buildReplicatedValues(&types.Upstream{
+		License:     &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{}},
+		LicenseData: originalLicenseData,
+	}, types.WriteOptions{IsAirgap: true})
+	require.NoError(t, err)
+	require.Equal(t, string(originalLicenseData), values["license"])
+}
+
+func Test_buildReplicatedValues_marshalsLicenseWhenOriginalDataIsUnavailable(t *testing.T) {
+	license := &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{}}
+	expectedLicenseData, err := MustMarshalLicenseWrapper(license)
+	require.NoError(t, err)
+
+	values, err := buildReplicatedValues(&types.Upstream{License: license}, types.WriteOptions{IsAirgap: true})
+	require.NoError(t, err)
+	require.Equal(t, string(expectedLicenseData), values["license"])
 }
 
 func diffString(got, want string) string {

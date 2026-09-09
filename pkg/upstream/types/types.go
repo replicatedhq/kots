@@ -40,6 +40,9 @@ type Upstream struct {
 	ReplicatedChartNames     []string
 	EmbeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts
 	EncryptionKey            string
+	// LicenseData is the original license payload. Keep it unmodified so newer
+	// license fields are not discarded by an older local schema.
+	LicenseData []byte
 }
 
 type Update struct {
@@ -119,6 +122,8 @@ type FetchOptions struct {
 	ReportingInfo                   *reportingtypes.ReportingInfo
 	SkipCompatibilityCheck          bool
 	AppSelectedChannelID            string
+	// LicenseData is the original license payload, before it was unmarshaled.
+	LicenseData []byte
 }
 
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {
