@@ -82,6 +82,9 @@ type PullOptions struct {
 	ReportingInfo          *reportingtypes.ReportingInfo
 	SkipCompatibilityCheck bool
 	KotsKinds              *kotsutil.KotsKinds
+	// LicenseData is the original license payload when LicenseObj was used.
+	// It is preserved for consumers that need the complete license document.
+	LicenseData string
 }
 
 var (
@@ -147,15 +150,21 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	var installation *kotsv1beta1.Installation
 
-	_, localConfigValues, localLicense, localInstallation, localIdentityConfig, err := findConfig(pullOptions.LocalPath)
+	_, localConfigValues, localLicense, localLicenseData, localInstallation, localIdentityConfig, err := findConfig(pullOptions.LocalPath)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to find config files in local path")
 	}
 
 	if pullOptions.LicenseObj != nil {
 		fetchOptions.License = pullOptions.LicenseObj
+		fetchOptions.LicenseData = []byte(pullOptions.LicenseData)
 	} else if pullOptions.LicenseFile != "" {
-		license, err := licensewrapper.LoadLicenseFromPath(pullOptions.LicenseFile)
+		licenseData, err := os.ReadFile(pullOptions.LicenseFile)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to read license from file")
+		}
+
+		license, err := licensewrapper.LoadLicenseFromBytes(licenseData)
 		if err != nil {
 			if errors.Cause(err) == kotslicense.ErrSignatureInvalid {
 				return "", kotslicense.ErrSignatureInvalid
@@ -166,8 +175,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
 		fetchOptions.License = &license
+		fetchOptions.LicenseData = licenseData
 	} else if localLicense != nil {
 		fetchOptions.License = localLicense
+		fetchOptions.LicenseData = localLicenseData
 	}
 
 	if !fetchOptions.License.IsEmpty() {
@@ -886,14 +897,15 @@ func publicKeysMatch(log *logger.CLILogger, license *licensewrapper.LicenseWrapp
 	return nil
 }
 
-func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *licensewrapper.LicenseWrapper, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
+func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *licensewrapper.LicenseWrapper, []byte, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
 	if localPath == "" {
-		return nil, nil, nil, nil, nil, nil
+		return nil, nil, nil, nil, nil, nil, nil
 	}
 
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
 	var license *licensewrapper.LicenseWrapper
+	var licenseData []byte
 	var installation *kotsv1beta1.Installation
 	var identityConfig *kotsv1beta1.IdentityConfig
 
@@ -924,8 +936,10 @@ func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValue
 				values = obj.(*kotsv1beta1.ConfigValues)
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
 				license = &licensewrapper.LicenseWrapper{V1: obj.(*kotsv1beta1.License)}
+				licenseData = content
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta2" && gvk.Kind == "License" {
 				license = &licensewrapper.LicenseWrapper{V2: obj.(*kotsv1beta2.License)}
+				licenseData = content
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Installation" {
 				installation = obj.(*kotsv1beta1.Installation)
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {
@@ -936,8 +950,8 @@ func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValue
 		})
 
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to walk local dir")
+		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to walk local dir")
 	}
 
-	return config, values, license, installation, identityConfig, nil
+	return config, values, license, licenseData, installation, identityConfig, nil
 }
