@@ -144,6 +144,7 @@ func RenderDir(opts types.RenderDirOptions) error {
 		CreateAppDir:         false,
 		ExcludeKotsKinds:     true,
 		License:              &license,
+		LicenseData:          opts.App.License,
 		ConfigValues:         configValues,
 		K8sNamespace:         appNamespace,
 		CopyImages:           false,

@@ -346,11 +346,15 @@ func buildReplicatedValues(u *types.Upstream, options types.WriteOptions) (map[s
 	// only add the license if this is an airgap install
 	// because the airgap builder doesn't have the license context
 	if !u.License.IsEmpty() && options.IsAirgap {
-		licenseBytes, err := MustMarshalLicenseWrapper(u.License)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal license")
+		licenseData := u.LicenseData
+		if len(licenseData) == 0 {
+			var err error
+			licenseData, err = MustMarshalLicenseWrapper(u.License)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to marshal license")
+			}
 		}
-		replicatedValues["license"] = string(licenseBytes)
+		replicatedValues["license"] = string(licenseData)
 	}
 
 	if options.PrivateCAsConfigmap != "" {

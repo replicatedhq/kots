@@ -184,6 +184,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	pullOptions := pull.PullOptions{
 		Downstreams:            downstreamNames,
 		LicenseObj:             &license,
+		LicenseData:            a.License,
 		Namespace:              appNamespace,
 		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:     identityConfigFile,

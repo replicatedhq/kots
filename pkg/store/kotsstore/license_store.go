@@ -157,7 +157,7 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 		selectedChannelId = newLicense.GetChannelID()
 	}
 
-	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, renderer, reportingInfo, selectedChannelId)
+	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, renderer, reportingInfo, selectedChannelId, originalLicenseData)
 	if err != nil {
 		// ignore error here to prevent a failure to render the current version
 		// preventing the end-user from updating the application
@@ -194,7 +194,7 @@ func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
 	return nil
 }
 
-func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, baseSequence int64, archiveDir string, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]gorqlite.ParameterizedStatement, int64, error) {
+func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, baseSequence int64, archiveDir string, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string, licenseData string) ([]gorqlite.ParameterizedStatement, int64, error) {
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to get registry settings for app")
@@ -204,6 +204,9 @@ func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, bas
 	if err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to get app")
 	}
+	// Rendering happens before the new license is persisted, so use the raw
+	// license received for this update rather than the previous app license.
+	app.License = licenseData
 
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
