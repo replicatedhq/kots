@@ -1021,7 +1021,7 @@ lint[output] {
 
   file := input[_]
 
-  expression := "(ConfigOption|ConfigOptionName|ConfigOptionEquals|ConfigOptionNotEquals)\\W+?(repl\\W+?)?([\\w\\d_-]+)"
+  expression := "(ConfigOption|ConfigOptionName|ConfigOptionEquals|ConfigOptionNotEquals)\\W+?(repl\\W+?)?([\\w\\d_-](?:[\\w\\d._-]*[\\w\\d_-])?)"
   expression_matches := regex.find_all_string_submatch_n(expression, file.content, -1)
 
   capture_groups := expression_matches[_]
@@ -1053,7 +1053,7 @@ lint[output] {
 
   marshalled_value := yaml.marshal(value)
 
-  expression := "(ConfigOption|ConfigOptionName|ConfigOptionEquals|ConfigOptionNotEquals)\\W+?(repl\\W+?)?([\\w\\d_-]+)"
+  expression := "(ConfigOption|ConfigOptionName|ConfigOptionEquals|ConfigOptionNotEquals)\\W+?(repl\\W+?)?([\\w\\d_-](?:[\\w\\d._-]*[\\w\\d_-])?)"
   expression_matches := regex.find_all_string_submatch_n(expression, marshalled_value, -1)
 
   capture_groups := expression_matches[_]
@@ -1081,7 +1081,7 @@ lint[output] {
 
   file := input[_]
 
-  expression := "(ConfigOption|ConfigOptionName|ConfigOptionEquals|ConfigOptionNotEquals)\\W+?(repl\\W+?)([\\w\\d_-]+)"
+  expression := "(ConfigOption|ConfigOptionName|ConfigOptionEquals|ConfigOptionNotEquals)\\W+?(repl\\W+?)([\\w\\d_-](?:[\\w\\d._-]*[\\w\\d_-])?)"
   expression_matches := regex.find_all_string_submatch_n(expression, file.content, -1)
 
   capture_groups := expression_matches[_]
