@@ -157,10 +157,7 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 	if err := rows.Scan(&appCount); err != nil {
 		return 0, errors.Wrap(err, "failed to scan app count for slug update")
 	}
-	routeSlug := currentApp.Slug
-	if appCount == 1 && currentApp.Slug == currentLicense.GetAppSlug() {
-		routeSlug = newSlug
-	}
+	routeSlug := routeSlugForLicenseUpdate(appCount, currentApp.Slug, currentLicense.GetAppSlug(), newSlug)
 	// The upstream slug comes from the license even when the route slug must stay
 	// unique across multiple installed apps.
 	upstreamURI := fmt.Sprintf("replicated://%s", newSlug)
@@ -214,6 +211,13 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 	}
 
 	return newSeq, nil
+}
+
+func routeSlugForLicenseUpdate(appCount int, currentRouteSlug, oldLicenseSlug, newLicenseSlug string) string {
+	if appCount == 1 && currentRouteSlug == oldLicenseSlug {
+		return newLicenseSlug
+	}
+	return currentRouteSlug
 }
 
 func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {

@@ -71,3 +71,34 @@ func TestValidateLicenseIdentity(t *testing.T) {
 		})
 	}
 }
+
+func TestRejectSameLicenseForChange(t *testing.T) {
+	license := func(customerID, licenseID string) *licensewrapper.LicenseWrapper {
+		return &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{Spec: kotsv1beta1.LicenseSpec{
+			CustomerID: customerID,
+			LicenseID:  licenseID,
+		}}}
+	}
+	for _, tc := range []struct {
+		name    string
+		current *licensewrapper.LicenseWrapper
+		new     *licensewrapper.LicenseWrapper
+		wantErr bool
+	}{
+		{"same customer with new license ID", license("customer-a", "license-a"), license("customer-a", "license-b"), true},
+		{"different customer with same license ID", license("customer-a", "license-a"), license("customer-b", "license-a"), false},
+		{"legacy same license ID", license("", "license-a"), license("customer-b", "license-a"), true},
+		{"legacy new license ID", license("", "license-a"), license("customer-b", "license-b"), false},
+		{"new customer ID missing, same license ID", license("customer-a", "license-a"), license("", "license-a"), true},
+		{"new customer ID missing, new license ID", license("customer-a", "license-a"), license("", "license-b"), false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := RejectSameLicenseForChange(tc.current, tc.new)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

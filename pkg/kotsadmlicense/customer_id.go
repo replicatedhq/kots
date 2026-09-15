@@ -37,3 +37,23 @@ func ValidateLicenseIdentity(current, updated *licensewrapper.LicenseWrapper) er
 	}
 	return errors.Errorf("license IDs do not match: current %q, new %q", current.GetLicenseID(), updated.GetLicenseID())
 }
+
+// Change replaces a community license. When both licenses have customer IDs,
+// a different customer ID identifies the replacement; legacy licenses use
+// their license IDs instead.
+func RejectSameLicenseForChange(current, replacement *licensewrapper.LicenseWrapper) error {
+	if current == nil || current.IsEmpty() || replacement == nil || replacement.IsEmpty() {
+		return errors.New("current and new licenses are required")
+	}
+	if sameLicenseIdentity(current, replacement) {
+		return errors.New("New license is the same as the current license")
+	}
+	return nil
+}
+
+func sameLicenseIdentity(current, replacement *licensewrapper.LicenseWrapper) bool {
+	if current.GetCustomerID() != "" && replacement.GetCustomerID() != "" {
+		return current.GetCustomerID() == replacement.GetCustomerID()
+	}
+	return current.GetLicenseID() == replacement.GetLicenseID()
+}

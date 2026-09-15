@@ -183,25 +183,22 @@ func Change(a *apptypes.App, newLicenseString string) (*licensewrapper.LicenseWr
 	if currentLicense.GetLicenseType() != "community" {
 		return nil, errors.New("Changing from a non-community license is not supported")
 	}
-	if err := ValidateLicenseIdentity(currentLicense, newLicense); err != nil {
-		return nil, errors.Wrap(err, "failed to validate license identity")
+	if err := RejectSameLicenseForChange(currentLicense, newLicense); err != nil {
+		return nil, err
 	}
 
-	// A same-ID update belongs to this app, so only check for conflicts when
-	// the incoming license uses a different ID.
-	if currentLicense.GetLicenseID() != newLicense.GetLicenseID() {
-		existingLicense, err := CheckIfLicenseExists([]byte(newLicenseString))
+	// Check if the replacement license is already installed.
+	existingLicense, err := CheckIfLicenseExists([]byte(newLicenseString))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if license exists")
+	}
+	if existingLicense != nil {
+		resolved, err := ResolveExistingLicense(newLicense)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if license exists")
+			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
 		}
-		if existingLicense != nil {
-			resolved, err := ResolveExistingLicense(newLicense)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
-			}
-			if !resolved {
-				return nil, errors.New("License already exists")
-			}
+		if !resolved {
+			return nil, errors.New("License already exists")
 		}
 	}
 
@@ -256,7 +253,7 @@ func CheckIfLicenseExists(license []byte) (*licensewrapper.LicenseWrapper, error
 	}
 
 	for _, l := range allLicenses {
-		if l.GetLicenseID() == decodedLicense.GetLicenseID() {
+		if sameLicenseIdentity(l, &decodedLicense) {
 			return l, nil
 		}
 	}
@@ -281,7 +278,7 @@ func ResolveExistingLicense(newLicense *licensewrapper.LicenseWrapper) (bool, er
 			continue
 		}
 
-		if appLicense.GetLicenseID() != newLicense.GetLicenseID() {
+		if !sameLicenseIdentity(&appLicense, newLicense) {
 			continue
 		}
 
@@ -296,7 +293,7 @@ func ResolveExistingLicense(newLicense *licensewrapper.LicenseWrapper) (bool, er
 		return false, errors.Wrap(err, "failed to get all app licenses")
 	}
 	for _, l := range allLicenses {
-		if l.GetLicenseID() == newLicense.GetLicenseID() {
+		if sameLicenseIdentity(l, newLicense) {
 			return false, nil
 		}
 	}
