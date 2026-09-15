@@ -1,7 +1,6 @@
 import { useReducer, useEffect, ReactNode } from "react";
 import { KotsPageTitle } from "@components/Head";
 import Dropzone from "react-dropzone";
-import yaml from "js-yaml";
 import classNames from "classnames";
 import size from "lodash/size";
 import Modal from "react-modal";
@@ -11,7 +10,6 @@ import {
   Utilities,
   getLicenseExpiryDate,
   isServiceAccountToken,
-  serviceAccountTokensMatch,
 } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 import styled from "styled-components";
@@ -121,6 +119,10 @@ const AppLicenseComponent = () => {
         return response.json();
       })
       .then(async (licenseResponse) => {
+        if (licenseResponse.slug && licenseResponse.slug !== app.slug) {
+          window.location.replace(`/app/${licenseResponse.slug}/license`);
+          return;
+        }
         let message;
         if (!licenseResponse.synced) {
           message = "License is already up to date";
@@ -183,6 +185,10 @@ const AppLicenseComponent = () => {
         return response.json();
       })
       .then(async (tokenResponse) => {
+        if (tokenResponse.slug && tokenResponse.slug !== outletContext.app.slug) {
+          window.location.replace(`/app/${tokenResponse.slug}/license`);
+          return;
+        }
         let message;
         if (tokenResponse.synced) {
           message = "Service account token uploaded and license synced successfully";
@@ -217,34 +223,6 @@ const AppLicenseComponent = () => {
     // eslint-disable-next-line
     const content: any = await getFileContent(files[0]);
     const contentStr = new TextDecoder("utf-8").decode(content);
-    const airgapLicense = await yaml.safeLoad(contentStr);
-    const { appLicense } = state;
-
-    // TODO: FIX THIS
-    // @ts-expect-error
-    if (airgapLicense?.spec?.licenseID !== appLicense?.id) {
-      // if the license ID has changed, but the service account token is the same, we can sync the license
-      // @ts-expect-error
-      if (serviceAccountTokensMatch(airgapLicense.spec?.licenseID, appLicense?.id)) {
-        return syncAppLicense(contentStr);
-      }
-      setState({
-        message: "Licenses do not match",
-        messageType: "error",
-      });
-      return;
-    }
-
-    // TODO: FIX THIS
-    // @ts-expect-error
-    if (airgapLicense?.spec?.licenseSequence === appLicense?.licenseSequence) {
-      setState({
-        message: "License is already up to date",
-        messageType: "info",
-      });
-      return;
-    }
-
     syncAppLicense(contentStr);
   };
 
@@ -303,6 +281,10 @@ const AppLicenseComponent = () => {
         return response.json();
       })
       .then(async (licenseResponse) => {
+        if (licenseResponse.slug && licenseResponse.slug !== app.slug) {
+          window.location.replace(`/app/${licenseResponse.slug}/license`);
+          return;
+        }
         setState({
           appLicense: licenseResponse.license,
           showNextStepModal: true,
@@ -732,7 +714,7 @@ const AppLicenseComponent = () => {
               Change your license
             </p>
             <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
-              The new license must be for the same application as your current
+              The new license must belong to the same customer as your current
               license.
             </p>
             <div

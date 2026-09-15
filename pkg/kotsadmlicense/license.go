@@ -52,13 +52,12 @@ func Sync(ctx context.Context, a *apptypes.App, licenseString string, failOnVers
 		updatedLicense = licenseData.License
 		licenseString = string(licenseData.LicenseBytes)
 	}
+	if err := ValidateLicenseIdentity(currentLicense, updatedLicense); err != nil {
+		return nil, false, errors.Wrap(err, "failed to validate license identity")
+	}
 
 	// check to see if both licenses are of the 'serviceaccount token' type, and if so check if the account ID matches
-	_, serviceAccountUpdated, saMatchErr := ValidateServiceAccountToken(updatedLicense.GetLicenseID(), currentLicense)
-
-	if currentLicense.GetLicenseID() != updatedLicense.GetLicenseID() && saMatchErr != nil {
-		return nil, false, errors.New("license ids do not match")
-	}
+	_, serviceAccountUpdated, _ := ValidateServiceAccountToken(updatedLicense.GetLicenseID(), currentLicense)
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
@@ -81,6 +80,12 @@ func Sync(ctx context.Context, a *apptypes.App, licenseString string, failOnVers
 	synced := false
 	if updatedLicense.GetLicenseSequence() != currentLicense.GetLicenseSequence() ||
 		updatedLicense.GetLicenseSequence() != kotsKinds.License.GetLicenseSequence() ||
+		updatedLicense.GetLicenseID() != currentLicense.GetLicenseID() ||
+		updatedLicense.GetLicenseID() != kotsKinds.License.GetLicenseID() ||
+		updatedLicense.GetCustomerID() != kotsKinds.License.GetCustomerID() ||
+		updatedLicense.GetAppSlug() != currentLicense.GetAppSlug() ||
+		updatedLicense.GetAppSlug() != kotsKinds.License.GetAppSlug() ||
+		updatedLicense.GetCustomerID() != currentLicense.GetCustomerID() ||
 		serviceAccountUpdated {
 
 		channelChanged := false
@@ -92,6 +97,12 @@ func Sync(ctx context.Context, a *apptypes.App, licenseString string, failOnVers
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to update license")
 		}
+		updatedApp, err := store.GetStore().GetApp(a.ID)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "failed to get app after license update")
+		}
+		a.Slug = updatedApp.Slug
+		a.UpstreamURI = updatedApp.UpstreamURI
 
 		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, false, archiveDir); err != nil {
 			return nil, false, errors.Wrap(err, "failed to run preflights")
@@ -172,25 +183,25 @@ func Change(a *apptypes.App, newLicenseString string) (*licensewrapper.LicenseWr
 	if currentLicense.GetLicenseType() != "community" {
 		return nil, errors.New("Changing from a non-community license is not supported")
 	}
-	if currentLicense.GetLicenseID() == newLicense.GetLicenseID() {
-		return nil, errors.New("New license is the same as the current license")
-	}
-	if currentLicense.GetAppSlug() != newLicense.GetAppSlug() {
-		return nil, errors.New("New license is for a different application")
+	if err := ValidateLicenseIdentity(currentLicense, newLicense); err != nil {
+		return nil, errors.Wrap(err, "failed to validate license identity")
 	}
 
-	// check if license already exists
-	existingLicense, err := CheckIfLicenseExists([]byte(newLicenseString))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if license exists")
-	}
-	if existingLicense != nil {
-		resolved, err := ResolveExistingLicense(newLicense)
+	// A same-ID update belongs to this app, so only check for conflicts when
+	// the incoming license uses a different ID.
+	if currentLicense.GetLicenseID() != newLicense.GetLicenseID() {
+		existingLicense, err := CheckIfLicenseExists([]byte(newLicenseString))
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
+			return nil, errors.Wrap(err, "failed to check if license exists")
 		}
-		if !resolved {
-			return nil, errors.New("License already exists")
+		if existingLicense != nil {
+			resolved, err := ResolveExistingLicense(newLicense)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
+			}
+			if !resolved {
+				return nil, errors.New("License already exists")
+			}
 		}
 	}
 
@@ -219,6 +230,12 @@ func Change(a *apptypes.App, newLicenseString string) (*licensewrapper.LicenseWr
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update license")
 	}
+	updatedApp, err := store.GetStore().GetApp(a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app after license update")
+	}
+	a.Slug = updatedApp.Slug
+	a.UpstreamURI = updatedApp.UpstreamURI
 
 	if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, false, archiveDir); err != nil {
 		return nil, errors.Wrap(err, "failed to run preflights")

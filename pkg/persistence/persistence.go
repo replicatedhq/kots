@@ -29,3 +29,17 @@ func MustGetDBSession() *gorqlite.Connection {
 	db = newDB
 	return db
 }
+
+// NewTransactionDBSession returns a dedicated connection for atomic
+// multi-statement writes without changing the shared session's settings.
+func NewTransactionDBSession() (*gorqlite.Connection, error) {
+	conn, err := gorqlite.Open(os.Getenv("RQLITE_URI"))
+	if err != nil {
+		return nil, err
+	}
+	if err := conn.SetExecutionWithTransaction(true); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	return conn, nil
+}

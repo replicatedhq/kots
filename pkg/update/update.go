@@ -107,9 +107,8 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *licensewrapper.Licens
 		if err != nil {
 			return errors.Wrap(err, "failed to find airgap metadata")
 		}
-		if airgap.Spec.AppSlug != license.GetAppSlug() {
-			return nil
-		}
+		// Airgap metadata has no customer ID. Match the bundle to this license by
+		// channel ID; its app slug may be an older or inactive alias.
 		if _, err = kotsutil.FindChannelInLicense(airgap.Spec.ChannelID, license); err != nil {
 			logger.Info("skipping airgap update check for channel not found in current license",
 				zap.String("airgap_channelName", airgap.Spec.ChannelName),

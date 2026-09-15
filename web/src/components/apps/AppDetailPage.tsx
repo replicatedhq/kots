@@ -1,6 +1,6 @@
 import { Fragment, useReducer, useEffect, useState } from "react";
 import classNames from "classnames";
-import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
 import { useTheme } from "@src/components/context/withTheme";
 import {
@@ -76,6 +76,7 @@ function AppDetailPage(props: Props) {
   );
 
   const navigate = useNavigate();
+  const routeLocation = useLocation();
   const params = useParams<KotsParams>();
   const selectedApp = useSelectedApp();
   const [appsRefetchInterval, setAppsRefetchInterval] = useState<
@@ -90,6 +91,37 @@ function AppDetailPage(props: Props) {
   } = useApps({ refetchInterval: appsRefetchInterval });
 
   const { apps: appsList } = appsData || {};
+
+  useEffect(() => {
+    if (
+      appsList?.length !== 1 ||
+      !params.slug ||
+      params.slug === appsList[0].slug
+    ) {
+      return;
+    }
+
+    // With one app, an old slug cannot refer to another installed app. Keep
+    // the rest of the URL so direct links to license and version pages work.
+    navigate(
+      {
+        pathname: routeLocation.pathname.replace(
+          /^\/app\/[^/]+/,
+          `/app/${appsList[0].slug}`
+        ),
+        search: routeLocation.search,
+        hash: routeLocation.hash,
+      },
+      { replace: true }
+    );
+  }, [
+    appsList,
+    params.slug,
+    routeLocation.pathname,
+    routeLocation.search,
+    routeLocation.hash,
+    navigate,
+  ]);
 
   /**
    *  Runs on mount and on update. Also handles redirect logic

@@ -19,6 +19,7 @@ type ServiceAccountTokenResponse struct {
 	Success bool            `json:"success"`
 	Error   string          `json:"error,omitempty"`
 	Synced  bool            `json:"synced"`
+	Slug    string          `json:"slug"`
 	License LicenseResponse `json:"license"`
 }
 
@@ -92,6 +93,7 @@ func (h *Handler) UploadServiceAccountToken(w http.ResponseWriter, r *http.Reque
 
 	response.Success = true
 	response.Synced = isSynced
+	response.Slug = foundApp.Slug
 	response.License = *licenseResponse
 
 	JSON(w, http.StatusOK, response)

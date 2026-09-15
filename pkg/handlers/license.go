@@ -59,6 +59,7 @@ type SyncLicenseResponse struct {
 	Success bool            `json:"success"`
 	Error   string          `json:"error,omitempty"`
 	Synced  bool            `json:"synced"`
+	Slug    string          `json:"slug"`
 	License LicenseResponse `json:"license"`
 }
 
@@ -171,6 +172,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 
 	syncLicenseResponse.Success = true
 	syncLicenseResponse.Synced = isSynced
+	syncLicenseResponse.Slug = foundApp.Slug
 	syncLicenseResponse.License = *licenseResponse
 
 	JSON(w, http.StatusOK, syncLicenseResponse)
@@ -625,6 +627,7 @@ type ChangeLicenseRequest struct {
 type ChangeLicenseResponse struct {
 	Success bool            `json:"success"`
 	Error   string          `json:"error,omitempty"`
+	Slug    string          `json:"slug"`
 	License LicenseResponse `json:"license"`
 }
 
@@ -695,6 +698,7 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	changeLicenseResponse.Success = true
+	changeLicenseResponse.Slug = foundApp.Slug
 	changeLicenseResponse.License = *licenseResponse
 
 	JSON(w, 200, changeLicenseResponse)
