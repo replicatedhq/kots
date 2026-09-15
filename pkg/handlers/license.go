@@ -292,9 +292,6 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	desiredAppName := strings.Replace(verifiedLicense.GetAppSlug(), "-", " ", 0)
-	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.GetAppSlug())
-
 	// verify that requested channel slug exists in the license
 	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
 	if err != nil {
@@ -318,6 +315,8 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		verifiedLicense = licenseData.License
 		licenseString = string(licenseData.LicenseBytes)
 	}
+	desiredAppName := strings.Replace(verifiedLicense.GetAppSlug(), "-", " ", 0)
+	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.GetAppSlug())
 
 	// check license expiration
 	expired, err := kotslicense.LicenseIsExpired(verifiedLicense)

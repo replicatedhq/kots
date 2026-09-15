@@ -198,6 +198,7 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewNoRequiredConfig()),
 			Entry(nil, inventory.NewVersionHistoryPagination()),
 			Entry(nil, inventory.NewChangeLicense()),
+			Entry(nil, inventory.NewChangeAppSlug()),
 			Entry(nil, inventory.NewMinKotsVersionOnline()),
 			Entry(nil, inventory.NewMinKotsVersionAirgap()),
 			Entry(nil, inventory.NewTargetKotsVersionOnline()),
