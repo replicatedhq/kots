@@ -3,7 +3,7 @@ package kotsstore
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -111,7 +111,13 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*licensewrapper.LicenseWrapper, error
 }
 
 func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *licensewrapper.LicenseWrapper, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error) {
-	db := persistence.MustGetDBSession()
+	// Use a dedicated connection so the transaction flag cannot affect other
+	// requests using the shared database session.
+	db, err := persistence.NewTransactionDBSession()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to open license update transaction")
+	}
+	defer db.Close()
 
 	statements := []gorqlite.ParameterizedStatement{}
 
@@ -128,7 +134,34 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 		}
 	}
 	encodedLicense := b.Bytes()
-	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), encodedLicense, 0644); err != nil {
+	newSlug := newLicense.GetAppSlug()
+	if newSlug == "" {
+		return 0, errors.New("new license must have an app slug")
+	}
+	currentApp, err := s.GetApp(appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get app for license update")
+	}
+	currentLicense, err := s.GetLatestLicenseForApp(appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get current license for slug update")
+	}
+	rows, err := db.QueryOne(`select count(1) from app`)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to count apps for slug update")
+	}
+	if !rows.Next() {
+		return 0, errors.New("failed to read app count for slug update")
+	}
+	var appCount int
+	if err := rows.Scan(&appCount); err != nil {
+		return 0, errors.Wrap(err, "failed to scan app count for slug update")
+	}
+	routeSlug := routeSlugForLicenseUpdate(appCount, currentApp.Slug, currentLicense.GetAppSlug(), newSlug)
+	// The upstream slug comes from the license even when the route slug must stay
+	// unique across multiple installed apps.
+	upstreamURI := fmt.Sprintf("replicated://%s", newSlug)
+	if err := os.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), encodedLicense, 0644); err != nil {
 		return int64(0), errors.Wrap(err, "failed to write new license")
 	}
 
@@ -145,19 +178,19 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 		logger.Debug("Skipping selected_channel_id update for multi-channel license")
 		//  app has the original license data received from the server
 		statements = append(statements, gorqlite.ParameterizedStatement{
-			Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ? where id = ?`,
-			Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, appID},
+			Query:     `update app set license = ?, slug = ?, upstream_uri = ?, last_license_sync = ?, channel_changed = ? where id = ?`,
+			Arguments: []interface{}{originalLicenseData, routeSlug, upstreamURI, time.Now().Unix(), channelChanged, appID},
 		})
 	} else {
 		//  app has the original license data received from the server
 		statements = append(statements, gorqlite.ParameterizedStatement{
-			Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ?, selected_channel_id = ? where id = ?`,
-			Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, newLicense.GetChannelID(), appID},
+			Query:     `update app set license = ?, slug = ?, upstream_uri = ?, last_license_sync = ?, channel_changed = ?, selected_channel_id = ? where id = ?`,
+			Arguments: []interface{}{originalLicenseData, routeSlug, upstreamURI, time.Now().Unix(), channelChanged, newLicense.GetChannelID(), appID},
 		})
 		selectedChannelId = newLicense.GetChannelID()
 	}
 
-	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, renderer, reportingInfo, selectedChannelId, originalLicenseData)
+	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, renderer, reportingInfo, selectedChannelId, originalLicenseData, routeSlug, upstreamURI)
 	if err != nil {
 		// ignore error here to prevent a failure to render the current version
 		// preventing the end-user from updating the application
@@ -180,6 +213,13 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 	return newSeq, nil
 }
 
+func routeSlugForLicenseUpdate(appCount int, currentRouteSlug, oldLicenseSlug, newLicenseSlug string) string {
+	if appCount == 1 && currentRouteSlug == oldLicenseSlug {
+		return newLicenseSlug
+	}
+	return currentRouteSlug
+}
+
 func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
 	db := persistence.MustGetDBSession()
 	query := `update app set last_license_sync = ? where id = ?`
@@ -194,7 +234,7 @@ func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
 	return nil
 }
 
-func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, baseSequence int64, archiveDir string, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string, licenseData string) ([]gorqlite.ParameterizedStatement, int64, error) {
+func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, baseSequence int64, archiveDir string, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string, licenseData string, routeSlug string, upstreamURI string) ([]gorqlite.ParameterizedStatement, int64, error) {
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to get registry settings for app")
@@ -205,8 +245,11 @@ func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, bas
 		return nil, int64(0), errors.Wrap(err, "failed to get app")
 	}
 	// Rendering happens before the new license is persisted, so use the raw
-	// license received for this update rather than the previous app license.
+	// license and active slug received for this update rather than the previous
+	// values from the app row.
 	app.License = licenseData
+	app.Slug = routeSlug
+	app.UpstreamURI = upstreamURI
 
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {

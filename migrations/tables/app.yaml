@@ -9,6 +9,11 @@ spec:
       strict: true
       primaryKey:
       - id
+      indexes:
+      - name: app_slug_unique
+        columns:
+        - slug
+        isUnique: true
       columns:
       - name: id
         type: text

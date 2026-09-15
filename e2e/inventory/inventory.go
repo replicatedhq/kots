@@ -102,6 +102,15 @@ func NewChangeLicense() Test {
 	}
 }
 
+func NewChangeAppSlug() Test {
+	return Test{
+		ID:          "@change-app-slug",
+		Namespace:   "change-app-slug",
+		AppSlug:     "change-app-slug",
+		UpstreamURI: "change-app-slug/unstable",
+	}
+}
+
 func NewMultiAppBackupAndRestoreTest() Test {
 	return Test{
 		ID:             "@multi-app-backup-and-restore",

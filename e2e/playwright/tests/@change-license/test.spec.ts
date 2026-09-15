@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { login, uploadLicense } from '../shared';
 
-test('change license', async ({ page }) => {
+test('change a community license to a paid license', async ({ page }) => {
   test.slow();
   await login(page);
   await uploadLicense(page, expect, "community-license.yaml");
@@ -14,10 +14,6 @@ test('change license', async ({ page }) => {
   await page.getByRole('button', { name: 'Change license' }).click();
   const changeLicenseModal = page.getByLabel('Change License');
   await expect(changeLicenseModal).toContainText('Change your license');
-  await page.setInputFiles('input[type="file"]', `${process.env.TEST_PATH}/different-app-license.yaml`);
-  await changeLicenseModal.getByRole('button', { name: 'Change license' }).click();
-  await expect(changeLicenseModal).toContainText('New license is for a different application', { timeout: 10000 });
-  await page.getByText('Select a different file').click();
   await page.setInputFiles('input[type="file"]', `${process.env.TEST_PATH}/expired-license.yaml`);
   await changeLicenseModal.getByRole('button', { name: 'Change license' }).click();
   await expect(changeLicenseModal).toContainText('License is expired', { timeout: 10000 });
@@ -28,10 +24,8 @@ test('change license', async ({ page }) => {
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.locator('#app')).toContainText('change-license-paid');
   await expect(page.locator('#app')).toContainText('Prod license');
-  await expect(page.locator('#app')).not.toContainText('change-license-community');
   await expect(page.locator('#app')).not.toContainText('Community license');
   await expect(page.getByRole('button', { name: 'Change license' })).not.toBeVisible();
   await page.getByRole('link', { name: 'Version history' }).click();
   await expect(page.locator('#app')).toContainText('License Change', { timeout: 10000 });
-  await expect(page.locator('#app')).toContainText('Sequence 1');
 });

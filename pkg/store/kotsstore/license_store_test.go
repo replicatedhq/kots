@@ -188,3 +188,23 @@ func TestLicenseWrapper_EmptyWrapper(t *testing.T) {
 	assert.Empty(t, wrapper.GetLicenseID(), "empty wrapper should return empty license ID")
 	assert.Empty(t, wrapper.GetChannelID(), "empty wrapper should return empty channel ID")
 }
+
+func TestRouteSlugForLicenseUpdate(t *testing.T) {
+	for _, tc := range []struct {
+		name            string
+		appCount        int
+		currentRoute    string
+		oldLicenseSlug  string
+		newLicenseSlug  string
+		wantRoute       string
+	}{
+		{"single app alias update", 1, "old-app", "old-app", "new-app", "new-app"},
+		{"single app with existing route mismatch", 1, "old-app-1", "old-app", "new-app", "old-app-1"},
+		{"multi-app alias update", 2, "old-app", "old-app", "new-app", "old-app"},
+		{"multi-app suffixed route", 2, "old-app-1", "old-app", "new-app", "old-app-1"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.wantRoute, routeSlugForLicenseUpdate(tc.appCount, tc.currentRoute, tc.oldLicenseSlug, tc.newLicenseSlug))
+		})
+	}
+}
