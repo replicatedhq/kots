@@ -59,6 +59,7 @@ type SyncLicenseResponse struct {
 	Success bool            `json:"success"`
 	Error   string          `json:"error,omitempty"`
 	Synced  bool            `json:"synced"`
+	Slug    string          `json:"slug"`
 	License LicenseResponse `json:"license"`
 }
 
@@ -171,6 +172,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 
 	syncLicenseResponse.Success = true
 	syncLicenseResponse.Synced = isSynced
+	syncLicenseResponse.Slug = foundApp.Slug
 	syncLicenseResponse.License = *licenseResponse
 
 	JSON(w, http.StatusOK, syncLicenseResponse)
@@ -290,9 +292,6 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	desiredAppName := strings.Replace(verifiedLicense.GetAppSlug(), "-", " ", 0)
-	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.GetAppSlug())
-
 	// verify that requested channel slug exists in the license
 	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
 	if err != nil {
@@ -316,6 +315,8 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		verifiedLicense = licenseData.License
 		licenseString = string(licenseData.LicenseBytes)
 	}
+	desiredAppName := strings.Replace(verifiedLicense.GetAppSlug(), "-", " ", 0)
+	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.GetAppSlug())
 
 	// check license expiration
 	expired, err := kotslicense.LicenseIsExpired(verifiedLicense)
@@ -625,6 +626,7 @@ type ChangeLicenseRequest struct {
 type ChangeLicenseResponse struct {
 	Success bool            `json:"success"`
 	Error   string          `json:"error,omitempty"`
+	Slug    string          `json:"slug"`
 	License LicenseResponse `json:"license"`
 }
 
@@ -695,6 +697,7 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	changeLicenseResponse.Success = true
+	changeLicenseResponse.Slug = foundApp.Slug
 	changeLicenseResponse.License = *licenseResponse
 
 	JSON(w, 200, changeLicenseResponse)

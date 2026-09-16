@@ -1,6 +1,5 @@
 import { useReducer } from "react";
 import size from "lodash/size";
-import yaml from "js-yaml";
 import classNames from "classnames";
 import Loader from "@src/components/shared/Loader";
 import Dropzone from "react-dropzone";
@@ -9,7 +8,6 @@ import {
   getFileContent,
   getLicenseExpiryDate,
   Utilities,
-  serviceAccountTokensMatch,
 } from "@src/utilities/utilities";
 import "@src/scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
@@ -86,6 +84,10 @@ const DashboardLicenseCard = (props: Props) => {
         return response.json();
       })
       .then(async (licenseResponse) => {
+        if (licenseResponse.slug && licenseResponse.slug !== app?.slug) {
+          window.location.replace(`/app/${licenseResponse.slug}`);
+          return;
+        }
         let message;
         if (!licenseResponse.synced) {
           message = "License is already up to date";
@@ -133,35 +135,6 @@ const DashboardLicenseCard = (props: Props) => {
     // eslint-disable-next-line
     const content: any = await getFileContent(files[0]);
     const contentStr = new TextDecoder("utf-8").decode(content);
-    const airgapLicense = await yaml.safeLoad(contentStr);
-    const { appLicense } = state;
-
-    // @ts-expect-error
-    // TODO: fix this
-    if (airgapLicense.spec?.licenseID !== appLicense?.id) {
-      // if the license ID has changed, but the service account token is the same, we can sync the license
-      // @ts-expect-error
-      if (serviceAccountTokensMatch(airgapLicense.spec?.licenseID, appLicense?.id)) {
-        return syncLicense(contentStr);
-      }
-
-      setState({
-        message: "Licenses do not match",
-        messageType: "error",
-      });
-      return;
-    }
-
-    // @ts-expect-error
-    // TODO: fix this
-    if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
-      setState({
-        message: "License is already up to date",
-        messageType: "info",
-      });
-      return;
-    }
-
     syncLicense(contentStr);
   };
 

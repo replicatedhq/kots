@@ -1671,6 +1671,42 @@ jobs:
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
+  validate-change-app-slug:
+    runs-on: ubuntu-24.04
+    needs: [ validate-deps ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.33.7}
+        ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: download e2e deps
+        uses: actions/download-artifact@v8
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v8
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-id: '@change-app-slug'
+          kots-namespace: 'change-app-slug'
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
+          cmx-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.REPLICATED_API_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
   validate-change-channel:
     runs-on: ubuntu-24.04
     needs: [ validate-deps ]
@@ -5066,6 +5102,7 @@ jobs:
       - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       - validate-change-license
+      - validate-change-app-slug
       - validate-gitops
       - validate-version-history-pagination
       - validate-support-bundle
