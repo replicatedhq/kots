@@ -52,16 +52,16 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20250729184643-f055e67a064d
+	github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20260917192845-cc570e6bbd56
 	github.com/replicatedhq/kotskinds v0.0.0-20251219184143-fc5e03d7bbc6
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.134.0
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rqlite/gorqlite v0.0.0-20260504155303-50d445fd0ab9
-	github.com/schemahero/schemahero v0.26.1
-	github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260903194640-0b4928bde8a5
-	github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20260903194640-0b4928bde8a5
+	github.com/schemahero/schemahero v0.26.2-0.20260917201005-3b4a91c0d466
+	github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260917201005-3b4a91c0d466
+	github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20260917201005-3b4a91c0d466
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.4.0
 	github.com/spf13/cobra v1.10.2
@@ -106,7 +106,6 @@ require (
 	cloud.google.com/go/iam v1.12.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
-	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
@@ -118,7 +117,7 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
-	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/Microsoft/go-winio v0.6.3-0.20251027160822-ad3df93bed29 // indirect
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
@@ -224,7 +223,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/k0sproject/k0s v1.35.2-0.20260513163141-fd5b560f3acb // indirect
+	github.com/k0sproject/k0s v1.36.3-0.20260626104849-bdf1c22c23a5 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/klauspost/pgzip v1.2.6
@@ -321,7 +320,7 @@ require (
 	google.golang.org/genproto v0.0.0-20260729162451-8efbd57d26e0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260729162451-8efbd57d26e0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260803160001-6ac0973c030d // indirect
-	google.golang.org/grpc v1.83.1 // indirect
+	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
@@ -460,7 +459,7 @@ require (
 	github.com/xo/dburl v0.24.2 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.etcd.io/etcd/api/v3 v3.7.0 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.7.0 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.7.1 // indirect
 	go.etcd.io/etcd/client/v3 v3.7.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/bridges/prometheus v0.69.0 // indirect
@@ -478,14 +477,14 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.21.4 // indirect
-	k8s.io/cloud-provider v0.36.0 // indirect
+	k8s.io/cloud-provider v0.36.2 // indirect
 	k8s.io/component-helpers v0.37.0 // indirect
-	k8s.io/controller-manager v0.36.0 // indirect
-	k8s.io/cri-api v0.36.0 // indirect
-	k8s.io/cri-client v0.36.0 // indirect
+	k8s.io/controller-manager v0.36.2 // indirect
+	k8s.io/cri-api v0.36.2 // indirect
+	k8s.io/cri-client v0.36.2 // indirect
 	k8s.io/kms v0.37.0 // indirect
 	k8s.io/kubernetes v1.37.0 // indirect
-	k8s.io/mount-utils v0.36.0 // indirect
+	k8s.io/mount-utils v0.36.2 // indirect
 	k8s.io/streaming v0.37.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.36.0 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
