@@ -11,6 +11,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
   name: replicated
   namespace: ""
+
 ---
 # Source: replicated/templates/replicated-secret.yaml
 apiVersion: v1
@@ -78,6 +79,7 @@ stringData:
     replicatedID: ""
     appID: ""
   # kindIs "invalid" indicates that the value is nil and the user did not provide a value
+
 ---
 # Source: replicated/templates/replicated-supportbundle.yaml
 apiVersion: v1
@@ -146,6 +148,7 @@ stringData:
               - pass:
                   when: "true"
                   message: Replicated SDK App status is not ready.
+
 ---
 # Source: replicated/templates/replicated-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -184,6 +187,7 @@ rules:
   - replicated
   - replicated-instance-report
   - replicated-custom-app-metrics-report
+
 ---
 # Source: replicated/templates/replicated-rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -205,6 +209,7 @@ subjects:
 - kind: ServiceAccount
   name: replicated
   namespace: ""
+
 ---
 # Source: replicated/templates/replicated-service.yaml
 apiVersion: v1
@@ -227,6 +232,7 @@ spec:
     app.kubernetes.io/name: replicated
     app.kubernetes.io/instance: replicated-release
   type: ClusterIP
+
 ---
 # Source: replicated/templates/replicated-deployment.yaml
 apiVersion: apps/v1
