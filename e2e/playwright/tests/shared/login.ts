@@ -1,7 +1,11 @@
 import { Expect, Page } from '@playwright/test';
+import { retry } from 'ts-retry';
 
 export const login = async (page: Page) => {
-  await page.goto('/');
+  await retry(
+    () => page.goto('/'),
+    { delay: 1000, maxTry: 10 }
+  );
   await page.getByPlaceholder('password').click();
   await page.getByPlaceholder('password').fill('password');
   await page.getByRole('button', { name: 'Log in' }).click();
