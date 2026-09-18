@@ -38,6 +38,8 @@ on:
         required: true
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL:
         required: true
+      REPLICATED_API_TOKEN:
+        required: true
 
   workflow_dispatch:
     inputs:
@@ -192,7 +194,7 @@ jobs:
             backend_config: "embedded-online-install-backend-config.tfvars",
             terraform_script: "embedded-online-install.sh",
             is_upgrade: "0"
-          },
+          }
           # NOTE (@salah): decided not to port this test to playwright
           # {
           #   id: "embedded-online-upgrade",
@@ -201,62 +203,6 @@ jobs:
           #   terraform_script: "embedded-online-upgrade.sh",
           #   is_upgrade: "1"
           # },
-          {
-            id: "existing-airgapped-install-admin",
-            name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
-            backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
-            terraform_script: "existing-airgapped-install-admin.sh",
-            is_upgrade: "0"
-          },
-          {
-            id: "existing-airgapped-install-minimum",
-            name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
-            backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
-            terraform_script: "existing-airgapped-install-minimum.sh",
-            is_upgrade: "0"
-          },
-          {
-            id: "existing-online-upgrade-admin",
-            name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
-            backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
-            terraform_script: "existing-online-upgrade-admin.sh",
-            is_upgrade: "1"
-          },
-          {
-            id: "existing-online-upgrade-minimum",
-            name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
-            backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
-            terraform_script: "existing-online-upgrade-minimum.sh",
-            is_upgrade: "1"
-          },
-          {
-            id: "existing-online-install-admin",
-            name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
-            backend_config: "existing-online-install-admin-backend-config.tfvars",
-            terraform_script: "existing-online-install-admin.sh",
-            is_upgrade: "0"
-          },
-          {
-            id: "existing-online-install-minimum",
-            name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
-            backend_config: "existing-online-install-minimum-backend-config.tfvars",
-            terraform_script: "existing-online-install-minimum.sh",
-            is_upgrade: "0"
-          },
-          {
-            id: "existing-airgapped-upgrade-admin",
-            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-            backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
-            terraform_script: "existing-airgapped-upgrade-admin.sh",
-            is_upgrade: "1"
-          },
-          {
-            id: "existing-airgapped-upgrade-minimum",
-            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
-            backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
-            terraform_script: "existing-airgapped-upgrade-minimum.sh",
-            is_upgrade: "1"
-          }
           # NOTE (@salah): decided not to port this test to playwright
           # {
           #   id: "helmvm-online-install",
@@ -455,8 +401,227 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
 
+  existing-tests:
+    name: existing-tests (${{ matrix.test.id }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - id: existing-airgapped-install-admin
+            name: type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin
+            test_path: regression/@existing-airgapped-install-admin
+            airgapped: "1"
+            upgrade: "0"
+          - id: existing-airgapped-install-minimum
+            name: type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac
+            test_path: regression/@existing-airgapped-install-minimal
+            airgapped: "1"
+            upgrade: "0"
+          - id: existing-online-upgrade-admin
+            name: type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin
+            test_path: regression/@existing-online-upgrade-admin
+            airgapped: "0"
+            upgrade: "1"
+          - id: existing-online-upgrade-minimum
+            name: type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac
+            test_path: regression/@existing-online-upgrade-minimal
+            airgapped: "0"
+            upgrade: "1"
+          - id: existing-online-install-admin
+            name: type=existing cluster, env=online, phase=new install, rbac=cluster admin
+            test_path: regression/@existing-online-install-admin
+            airgapped: "0"
+            upgrade: "0"
+          - id: existing-online-install-minimum
+            name: type=existing cluster, env=online, phase=new install, rbac=minimal rbac
+            test_path: regression/@existing-online-install-minimal
+            airgapped: "0"
+            upgrade: "0"
+          - id: existing-airgapped-upgrade-admin
+            name: type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin
+            test_path: regression/@existing-airgapped-upgrade-admin
+            airgapped: "1"
+            upgrade: "1"
+          - id: existing-airgapped-upgrade-minimum
+            name: type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac
+            test_path: regression/@existing-airgapped-upgrade-minimal
+            airgapped: "1"
+            upgrade: "1"
+    env:
+      REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
+      VM_NAME: kots-${{ matrix.test.id }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download kots binary
+        uses: actions/download-artifact@v8
+        with:
+          name: kots
+          path: cmx-assets
+
+      - name: Download kotsadm bundle
+        uses: actions/download-artifact@v8
+        with:
+          name: kotsadm-bundle
+          path: cmx-assets/kotsadm-bundle
+
+      - name: Install Replicated CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo replicatedhq/replicated --pattern '*_linux_amd64.tar.gz' --output /tmp/replicated.tar.gz --clobber
+          tar -xzf /tmp/replicated.tar.gz -C /tmp
+          sudo mv /tmp/replicated /usr/local/bin/replicated
+
+      - name: Prepare CMX assets
+        run: |
+          ssh-keygen -q -t ed25519 -C cmx@ci -f /tmp/cmx-key -N ''
+          tar -czf /tmp/playwright.tar.gz -C e2e playwright
+          tar -czf /tmp/kotsadm.tar.gz -C cmx-assets/kotsadm-bundle .
+          chmod +x cmx-assets/kots .github/scripts/cmx-existing-cluster-setup.sh
+
+      - name: Create CMX VM
+        id: vm
+        run: |
+          replicated vm create \
+            --distribution ubuntu \
+            --version 22.04 \
+            --instance-type r1.large \
+            --disk 100 \
+            --network-policy open \
+            --name "$VM_NAME" \
+            --ssh-public-key /tmp/cmx-key.pub \
+            --tag repo=replicatedhq-kots \
+            --tag workflow-run=${{ github.run_id }} \
+            --tag test=${{ matrix.test.id }} \
+            --ttl 6h \
+            --wait 10m \
+            --output json > /tmp/vm.json
+
+          vm_id="$(jq -r '.[0].id' /tmp/vm.json)"
+          network_id="$(jq -r '.[0].network_id' /tmp/vm.json)"
+          ssh_endpoint="$(replicated vm ssh-endpoint "$vm_id" --username cmx)"
+          ssh_authority="${ssh_endpoint#ssh://}"
+          ssh_host_port="${ssh_authority#*@}"
+          {
+            echo "id=$vm_id"
+            echo "network_id=$network_id"
+            echo "ssh_host=${ssh_host_port%:*}"
+            echo "ssh_port=${ssh_host_port##*:}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Copy test assets to CMX VM
+        env:
+          SSH_HOST: ${{ steps.vm.outputs.ssh_host }}
+          SSH_PORT: ${{ steps.vm.outputs.ssh_port }}
+        run: |
+          ssh_args=(-i /tmp/cmx-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT")
+          scp_args=(-i /tmp/cmx-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P "$SSH_PORT")
+          ssh "${ssh_args[@]}" "cmx@$SSH_HOST" 'mkdir -p /home/cmx/playwright'
+          scp "${scp_args[@]}" /tmp/playwright.tar.gz "cmx@$SSH_HOST:/tmp/playwright.tar.gz"
+          scp "${scp_args[@]}" /tmp/kotsadm.tar.gz "cmx@$SSH_HOST:/tmp/kotsadm.tar.gz"
+          scp "${scp_args[@]}" cmx-assets/kots "cmx@$SSH_HOST:/tmp/kots-nightly"
+          scp "${scp_args[@]}" .github/scripts/cmx-existing-cluster-setup.sh "cmx@$SSH_HOST:/tmp/cmx-existing-cluster-setup.sh"
+          ssh "${ssh_args[@]}" "cmx@$SSH_HOST" 'tar -xzf /tmp/playwright.tar.gz -C /home/cmx'
+
+      - name: Install k0s and prepare test VM
+        env:
+          SSH_HOST: ${{ steps.vm.outputs.ssh_host }}
+          SSH_PORT: ${{ steps.vm.outputs.ssh_port }}
+          OLD_VERSION: ${{ github.event.inputs.version_tag_old || inputs.version_tag_old }}
+        run: |
+          ssh_args=(-i /tmp/cmx-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT")
+          # Variables in the remote command intentionally expand on the runner.
+          # shellcheck disable=SC2029
+          ssh "${ssh_args[@]}" "cmx@$SSH_HOST" \
+            "sudo env KOTS_OLD_VERSION='$OLD_VERSION' IS_UPGRADE='${{ matrix.test.upgrade }}' IS_AIRGAPPED='${{ matrix.test.airgapped }}' TEST_PATH='${{ matrix.test.test_path }}' bash /tmp/cmx-existing-cluster-setup.sh"
+
+      - name: Expose Admin Console
+        id: admin_console
+        run: |
+          replicated vm port expose '${{ steps.vm.outputs.id }}' --port 30880 --protocol http --output json > /tmp/admin-console-port.json
+          hostname="$(jq -r .hostname /tmp/admin-console-port.json)"
+          echo "url=http://$hostname" >> "$GITHUB_OUTPUT"
+
+      - name: Air-gap CMX network
+        if: matrix.test.airgapped == '1'
+        env:
+          SSH_HOST: ${{ steps.vm.outputs.ssh_host }}
+          SSH_PORT: ${{ steps.vm.outputs.ssh_port }}
+        run: |
+          replicated network update '${{ steps.vm.outputs.network_id }}' --policy airgap
+          for attempt in $(seq 1 12); do
+            if ssh -i /tmp/cmx-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" "cmx@$SSH_HOST" \
+              'if curl -fsS --connect-timeout 5 --max-time 10 https://example.com >/dev/null; then exit 1; fi'; then
+              echo "CMX air-gap policy is blocking egress"
+              exit 0
+            fi
+            echo "Waiting for CMX air-gap policy to take effect (attempt $attempt/12)"
+            sleep 5
+          done
+          echo "CMX air-gap policy still allows egress" >&2
+          exit 1
+
+      - name: Run the test
+        env:
+          SSH_HOST: ${{ steps.vm.outputs.ssh_host }}
+          SSH_PORT: ${{ steps.vm.outputs.ssh_port }}
+          OLD_VERSION: ${{ github.event.inputs.version_tag_old || inputs.version_tag_old }}
+          NEW_VERSION: ${{ github.event.inputs.version_tag_new || inputs.version_tag_new }}
+          TEST_REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_QA_API_TOKEN }}
+          TEST_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+          TEST_AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+          TEST_OKTA_PASSWORD: ${{ secrets.IDENTITY_SERVICE_OKTA_PASSWORD }}
+          TEST_OKTA_CLIENT_SECRET: ${{ secrets.IDENTITY_SERVICE_OKTA_CLIENT_SECRET }}
+          TEST_OKTA_ACCESS_TOKEN: ${{ secrets.IDENTITY_SERVICE_OKTA_ACCESS_TOKEN }}
+        run: |
+          ssh_args=(-i /tmp/cmx-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -p "$SSH_PORT")
+          # Variables in the remote command intentionally expand on the runner.
+          # shellcheck disable=SC2029
+          ssh "${ssh_args[@]}" "cmx@$SSH_HOST" \
+            "sudo env TEST_DIR=regression TEST_PATH='${{ matrix.test.test_path }}' PLAYWRIGHT_BROWSERS_PATH=/home/cmx/playwright/.cache/ms-playwright OLD_KOTS_VERSION='$OLD_VERSION' NEW_KOTS_VERSION='$NEW_VERSION' REPLICATED_API_TOKEN='$TEST_REPLICATED_API_TOKEN' AWS_ACCESS_KEY_ID='$TEST_AWS_ACCESS_KEY_ID' AWS_SECRET_ACCESS_KEY='$TEST_AWS_SECRET_ACCESS_KEY' IDENTITY_SERVICE_OKTA_PASSWORD='$TEST_OKTA_PASSWORD' IDENTITY_SERVICE_OKTA_CLIENT_SECRET='$TEST_OKTA_CLIENT_SECRET' IDENTITY_SERVICE_OKTA_ACCESS_TOKEN='$TEST_OKTA_ACCESS_TOKEN' ADMIN_CONSOLE_PORT=30880 CMX_REGISTRY=true AIRGAP_ASSETS_PRELOADED='${{ matrix.test.airgapped == '1' && 'true' || 'false' }}' AIRGAP_ASSET_DIR=/opt/kots-regression-airgap KUBECONFIG=/root/.kube/config bash -c 'export PRIVATE_IP=\$(cat /tmp/cmx-private-ip); export BASE_URL=http://\$PRIVATE_IP:30880; cd /home/cmx/playwright && npx playwright test \"\$TEST_PATH\"'"
+
+      - name: Collect failure artifacts
+        if: failure() && steps.vm.outputs.id != ''
+        continue-on-error: true
+        env:
+          SSH_HOST: ${{ steps.vm.outputs.ssh_host }}
+          SSH_PORT: ${{ steps.vm.outputs.ssh_port }}
+        run: |
+          ssh_args=(-i /tmp/cmx-key -o ConnectTimeout=15 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT")
+          scp_args=(-i /tmp/cmx-key -o ConnectTimeout=15 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P "$SSH_PORT")
+          timeout 2m ssh "${ssh_args[@]}" "cmx@$SSH_HOST" 'sudo timeout 45s support-bundle --interactive=false --output /tmp/host-support-bundle.tar.gz /tmp/support-bundle-host-spec.yaml || true; sudo timeout 45s support-bundle --interactive=false --output /tmp/in-cluster-support-bundle.tar.gz /tmp/support-bundle-in-cluster-spec.yaml || true; sudo chmod -R a+r /tmp/*support-bundle.tar.gz /home/cmx/playwright/playwright-report 2>/dev/null || true' || true
+          scp "${scp_args[@]}" -r "cmx@$SSH_HOST:/home/cmx/playwright/playwright-report" ./playwright-report || true
+          scp "${scp_args[@]}" "cmx@$SSH_HOST:/tmp/host-support-bundle.tar.gz" . || true
+          scp "${scp_args[@]}" "cmx@$SSH_HOST:/tmp/in-cluster-support-bundle.tar.gz" . || true
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: existing-${{ matrix.test.id }}-failure-artifacts
+          path: |
+            playwright-report/
+            host-support-bundle.tar.gz
+            in-cluster-support-bundle.tar.gz
+          if-no-files-found: warn
+
+      - name: Print troubleshooting details
+        if: failure() && steps.vm.outputs.id != ''
+        run: |
+          echo "Admin Console: ${{ steps.admin_console.outputs.url }}"
+          echo "VM: ${{ steps.vm.outputs.id }}"
+          echo "Failure artifacts were collected before the VM cleanup step."
+
+      - name: Remove CMX VM
+        if: always() && steps.vm.outputs.id != ''
+        continue-on-error: true
+        run: replicated vm rm '${{ steps.vm.outputs.id }}'
+
   cleanup:
-    needs: [get-workspace-name, tests]
+    needs: [get-workspace-name, tests, existing-tests]
     runs-on: ubuntu-latest
     env:
       WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
