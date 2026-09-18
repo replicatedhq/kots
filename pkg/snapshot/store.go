@@ -1377,6 +1377,11 @@ func validateGCP(storeGoogle *types.StoreGoogle, bucket string) error {
 // system root CAs, for use as the HeadBucket validation client against endpoints signed by a private
 // or self-signed CA. Returns a nil client (and no error) when caCertData is empty, leaving the default
 // transport untouched.
+// caCertHTTPClientResponseHeaderTimeout bounds how long the CA-trust HTTP client waits for
+// response headers, so a slow or unresponsive endpoint fails validation instead of hanging
+// indefinitely.
+const caCertHTTPClientResponseHeaderTimeout = 30 * time.Second
+
 func newCACertHTTPClient(caCertData []byte) (*http.Client, error) {
 	if len(caCertData) == 0 {
 		return nil, nil
@@ -1394,6 +1399,7 @@ func newCACertHTTPClient(caCertData []byte) (*http.Client, error) {
 	transport.TLSClientConfig = &tls.Config{
 		RootCAs: rootCAs,
 	}
+	transport.ResponseHeaderTimeout = caCertHTTPClientResponseHeaderTimeout
 
 	return &http.Client{
 		Transport: transport,

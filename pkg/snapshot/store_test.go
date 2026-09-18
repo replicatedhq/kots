@@ -680,6 +680,7 @@ func Test_newCACertHTTPClient(t *testing.T) {
 		req.Equal(defaultTransport.TLSHandshakeTimeout, transport.TLSHandshakeTimeout)
 		req.Equal(defaultTransport.IdleConnTimeout, transport.IdleConnTimeout)
 		req.Equal(defaultTransport.ExpectContinueTimeout, transport.ExpectContinueTimeout)
+		req.Equal(caCertHTTPClientResponseHeaderTimeout, transport.ResponseHeaderTimeout, "custom transport must bound the response-header wait so a slow or unresponsive endpoint fails validation instead of hanging indefinitely")
 	})
 
 	t.Run("invalid ca cert data returns an error", func(t *testing.T) {
