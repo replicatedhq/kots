@@ -5,10 +5,13 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -1370,6 +1373,29 @@ func validateGCP(storeGoogle *types.StoreGoogle, bucket string) error {
 	return nil
 }
 
+// newCACertHTTPClient returns an *http.Client whose transport trusts caCertData in addition to the
+// system root CAs, for use as the HeadBucket validation client against endpoints signed by a private
+// or self-signed CA. Returns a nil client (and no error) when caCertData is empty, leaving the default
+// transport untouched.
+func newCACertHTTPClient(caCertData []byte) (*http.Client, error) {
+	if len(caCertData) == 0 {
+		return nil, nil
+	}
+
+	rootCAs := x509.NewCertPool()
+	if ok := rootCAs.AppendCertsFromPEM(caCertData); !ok {
+		return nil, errors.New("failed to parse ca certificate data")
+	}
+
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs: rootCAs,
+			},
+		},
+	}, nil
+}
+
 func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket string, options ValidateStoreOptions) error {
 	if options.ValidateUsingAPod {
 		clientset, err := k8sutil.GetClientset()
@@ -1403,6 +1429,14 @@ func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket str
 
 	if storeOther.AccessKeyID != "" && storeOther.SecretAccessKey != "" {
 		s3Config.Credentials = credentials.NewStaticCredentials(storeOther.AccessKeyID, storeOther.SecretAccessKey, "")
+	}
+
+	caCertHTTPClient, err := newCACertHTTPClient(options.CACertData)
+	if err != nil {
+		return errors.Wrap(err, "failed to configure ca certificate")
+	}
+	if caCertHTTPClient != nil {
+		s3Config.HTTPClient = caCertHTTPClient
 	}
 
 	newSession, err := session.NewSession(s3Config)
@@ -1454,6 +1488,14 @@ func validateInternalS3(ctx context.Context, storeInternal *types.StoreInternal,
 
 	if storeInternal.AccessKeyID != "" && storeInternal.SecretAccessKey != "" {
 		s3Config.Credentials = credentials.NewStaticCredentials(storeInternal.AccessKeyID, storeInternal.SecretAccessKey, "")
+	}
+
+	caCertHTTPClient, err := newCACertHTTPClient(options.CACertData)
+	if err != nil {
+		return errors.Wrap(err, "failed to configure ca certificate")
+	}
+	if caCertHTTPClient != nil {
+		s3Config.HTTPClient = caCertHTTPClient
 	}
 
 	newSession, err := session.NewSession(s3Config)
