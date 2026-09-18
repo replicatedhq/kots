@@ -120,6 +120,10 @@ install_monitoring() {
   kubectl apply --server-side -f "${manifest_dir}/setup"
   kubectl wait --for=condition=Established --all customresourcedefinition --timeout=2m
   kubectl apply -f "$manifest_dir"
+  # KOTS queries Prometheus from its application namespace. The upstream
+  # kube-prometheus policy only admits traffic from selected monitoring pods.
+  kubectl -n monitoring patch networkpolicy prometheus-k8s --type=merge \
+    --patch='{"spec":{"ingress":[{}]}}'
   kubectl -n monitoring rollout status deployment/prometheus-operator --timeout=3m
   kubectl -n monitoring rollout status daemonset/node-exporter --timeout=3m
   for _ in $(seq 1 60); do

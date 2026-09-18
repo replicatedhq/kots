@@ -255,7 +255,7 @@ const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
   runCommand(`kubectl -n velero patch daemonset node-agent --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'`);
 };
 
-export const waitForVeleroAndNodeAgent = async (timeout: number = 60000): Promise<void> => {
+export const waitForVeleroAndNodeAgent = async (timeout: number = 180000): Promise<void> => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     if (isVeleroReady() && isNodeAgentReady() && isVeleroVersionGettable()) {
