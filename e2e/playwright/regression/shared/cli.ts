@@ -11,6 +11,7 @@ import {
 } from './constants';
 
 import { execSync } from 'child_process';
+import { existsSync } from 'fs';
 
 export const deleteKurlConfigMap = () => {
   runCommand(`kubectl delete configmap kurl-config --namespace kube-system --ignore-not-found`);
@@ -102,6 +103,7 @@ sudo mv velero-${veleroVersion}-linux-amd64/velero /usr/local/bin/velero`);
     --secret-file ${credsFileName} \
     --prefix ${prefix} \
     ${fsBackupFlags}`);
+  configureVeleroForK0s();
 };
 
 export const installVeleroHostPath = async (
@@ -150,6 +152,7 @@ export const installVeleroHostPath = async (
     --plugins velero/velero-plugin-for-aws:${veleroAwsPluginVersion}`;
   }
   runCommand(installCommand);
+  configureVeleroForK0s();
 
   if (isAirgapped) {
     configureVeleroImagePullSecret(registryInfo);
@@ -176,16 +179,16 @@ export const prepareVeleroImages = async (
 ) => {
   const isVelero10OrNewer = semverjs.gte(semverjs.coerce(veleroVersion), semverjs.coerce("1.10"));
 
-  /*
-    we use skopeo (from the jumpbox) to copy the velero images from dockerhub to the registry on the airgapped instances.
-  */
+  const assetsPreloaded = process.env.AIRGAP_ASSETS_PRELOADED === "true";
+  const assetDir = process.env.AIRGAP_ASSET_DIR || "/opt/kots-regression-airgap";
 
   console.log("Preparing velero images", "\n");
 
-  // Create a NodePort service for the kurl registry so that we can copy images to it using skopeo from the jumpbox
-  // Delete the service if it already exists
-  runCommand(`kubectl --namespace kurl delete service registry-node --ignore-not-found`);
-  runCommand(`cat <<EOF | kubectl apply -f -
+  // kURL supplies its own registry service. CMX clusters provision the same
+  // registry endpoint before their network is switched to air-gap mode.
+  if (process.env.CMX_REGISTRY !== "true") {
+    runCommand(`kubectl --namespace kurl delete service registry-node --ignore-not-found`);
+    runCommand(`cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Service
 metadata:
@@ -201,31 +204,27 @@ spec:
   selector:
     app: registry
 EOF`);
+  }
 
-  // Copy velero image from docker to the registry with retry logic since DockerHub occasionally returns 503 errors
-  await retry(
-    async () => {
-      runCommand(`skopeo copy docker://velero/velero:${veleroVersion} docker://${process.env.PRIVATE_IP}:30443/velero:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
-    },
-    { delay: 5000, maxTry: 3 }
-  );
+  const copyImage = async (name: string, version: string, archiveName: string) => {
+    const source = assetsPreloaded
+      ? `oci-archive:${assetDir}/${archiveName}`
+      : `docker://velero/${name}:${version}`;
+    const runOnJumpbox = !assetsPreloaded;
+    await retry(
+      async () => {
+        runCommand(`skopeo copy ${source} docker://${process.env.PRIVATE_IP}:30443/${name}:${version} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, runOnJumpbox);
+      },
+      { delay: 5000, maxTry: 3 }
+    );
+  };
 
-  // Copy velero aws plugin image from docker to the registry with retry logic since DockerHub occasionally returns 503 errors
-  await retry(
-    async () => {
-      runCommand(`skopeo copy docker://velero/velero-plugin-for-aws:${veleroAwsPluginVersion} docker://${process.env.PRIVATE_IP}:30443/velero-plugin-for-aws:${veleroAwsPluginVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
-    },
-    { delay: 5000, maxTry: 3 }
-  );
+  await copyImage("velero", veleroVersion, "velero.tar");
+  await copyImage("velero-plugin-for-aws", veleroAwsPluginVersion, "velero-plugin-for-aws.tar");
 
   // Copy restore helper image from docker to the registry with retry logic since DockerHub occasionally returns 503 errors
   const restoreHelperImageName = isVelero10OrNewer ? "velero-restore-helper" : "velero-restic-restore-helper";
-  await retry(
-    async () => {
-      runCommand(`skopeo copy docker://velero/${restoreHelperImageName}:${veleroVersion} docker://${process.env.PRIVATE_IP}:30443/${restoreHelperImageName}:${veleroVersion} --dest-creds ${registryInfo.username}:${registryInfo.password} --dest-tls-verify=false`, true);
-    },
-    { delay: 5000, maxTry: 3 }
-  );
+  await copyImage(restoreHelperImageName, veleroVersion, "velero-restore-helper.tar");
 
   // Create velero namespace so that applying the restore helper configmap doesn't fail.
   // This could be done after velero is installed, but it is easier to have it as part of the "prepare velero images" section.
@@ -246,6 +245,14 @@ data:
 EOF`);
 };
 
+const configureVeleroForK0s = () => {
+  if (process.env.CMX_REGISTRY !== "true") {
+    return;
+  }
+
+  runCommand(`kubectl -n velero patch daemonset node-agent --type=strategic --patch='{"spec":{"template":{"spec":{"volumes":[{"name":"host-pods","hostPath":{"path":"/var/lib/k0s/kubelet/pods"}},{"name":"host-plugins","hostPath":{"path":"/var/lib/k0s/kubelet/plugins"}}]}}}}'`);
+};
+
 const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
   // delete secret from velero namespace
   runCommand(`kubectl -n velero delete secret registry-creds --ignore-not-found`);
@@ -255,9 +262,10 @@ const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
 
   // patch velero deployment
   runCommand(`kubectl -n velero patch deployment velero --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'`);
+  runCommand(`kubectl -n velero patch daemonset node-agent --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'`);
 };
 
-export const waitForVeleroAndNodeAgent = async (timeout: number = 60000): Promise<void> => {
+export const waitForVeleroAndNodeAgent = async (timeout: number = 180000): Promise<void> => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     if (isVeleroReady() && isNodeAgentReady() && isVeleroVersionGettable()) {
@@ -477,6 +485,7 @@ export const upgradeKots = async (namespace: string, isAirgapped: boolean, regis
 };
 
 export const ensureNodePortService = (namespace: string) => {
+  const adminConsolePort = process.env.ADMIN_CONSOLE_PORT || "8800";
   runCommand(`cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Service
@@ -490,8 +499,22 @@ spec:
   ports:
   - port: 8800
     targetPort: 3000
-    nodePort: 8800
+    nodePort: ${adminConsolePort}
 EOF`);
+
+  if (process.env.CMX_REGISTRY === "true") {
+    runCommand(`if [ -f /tmp/kotsadm-port-forward.pid ]; then kill "$(cat /tmp/kotsadm-port-forward.pid)" 2>/dev/null || true; fi
+nohup kubectl --namespace ${namespace} port-forward --address 0.0.0.0 service/kotsadm-external ${adminConsolePort}:8800 >/tmp/kotsadm-port-forward.log 2>&1 </dev/null &
+echo $! >/tmp/kotsadm-port-forward.pid
+for attempt in $(seq 1 30); do
+  if curl -sS --max-time 2 -o /dev/null http://127.0.0.1:${adminConsolePort}; then
+    exit 0
+  fi
+  sleep 1
+done
+cat /tmp/kotsadm-port-forward.log >&2
+exit 1`);
+  }
 };
 
 export const waitForDex = async (namespace: string, timeout: number = 90000): Promise<void> => {
@@ -540,6 +563,13 @@ export const removeKots = (namespace: string) => {
 };
 
 export const downloadViaJumpbox = (remoteUrl: string, localPath: string) => {
+  if (process.env.AIRGAP_ASSETS_PRELOADED === "true") {
+    if (!existsSync(localPath)) {
+      throw new Error(`Preloaded air-gap asset not found: ${localPath}`);
+    }
+    console.log(`Using preloaded air-gap asset ${localPath}`, "\n");
+    return;
+  }
   const command = `${SSH_TO_JUMPBOX} "curl -L '${remoteUrl}'" > ${localPath}`;
   console.log(command, "\n");
   execSync(command, {stdio: 'inherit'});

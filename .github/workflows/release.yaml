@@ -1,6 +1,7 @@
 name: release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*"
@@ -14,15 +15,28 @@ jobs:
   generate-tag:
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ github.ref_type == 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
+      tag: ${{ steps.resolve_tag.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Get tags
         id: get_tag
+        if: github.event_name != 'workflow_dispatch'
         uses: ./.github/actions/version-tag
+      - name: Resolve build tag
+        id: resolve_tag
+        env:
+          GENERATED_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "tag=sha${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref_type }}" == "branch" ]]; then
+            echo "tag=$GENERATED_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Push tag
-        if: github.ref_type == 'branch'
+        if: github.event_name == 'push' && github.ref_type == 'branch'
         env:
           GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         run: |
@@ -31,7 +45,7 @@ jobs:
 
   build-melange-packages:
     needs: [generate-tag]
-    if: contains(needs.generate-tag.outputs.tag, '-')
+    if: github.ref_type == 'branch' || contains(needs.generate-tag.outputs.tag, '-')
     strategy:
       fail-fast: true
       matrix:
@@ -61,7 +75,7 @@ jobs:
     if: ${{ !cancelled() && needs.generate-tag.result == 'success' && (needs.build-melange-packages.result == 'success' || needs.build-securebuild.result == 'success') }}
     steps:
       - uses: actions/checkout@v7
-      - if: contains(needs.generate-tag.outputs.tag, '-')
+      - if: github.ref_type == 'branch' || contains(needs.generate-tag.outputs.tag, '-')
         uses: ./.github/actions/build-securebuild-image-locally
         with:
           config: securebuild/image/apko-kotsadm-migrations.yaml
@@ -95,7 +109,7 @@ jobs:
     if: ${{ !cancelled() && needs.generate-tag.result == 'success' && (needs.build-melange-packages.result == 'success' || needs.build-securebuild.result == 'success') }}
     steps:
       - uses: actions/checkout@v7
-      - if: contains(needs.generate-tag.outputs.tag, '-')
+      - if: github.ref_type == 'branch' || contains(needs.generate-tag.outputs.tag, '-')
         uses: ./.github/actions/build-securebuild-image-locally
         with:
           config: securebuild/image/apko-kurl-proxy.yaml
@@ -149,7 +163,7 @@ jobs:
     if: ${{ !cancelled() && needs.generate-tag.result == 'success' && (needs.build-melange-packages.result == 'success' || needs.build-securebuild.result == 'success') }}
     steps:
       - uses: actions/checkout@v7
-      - if: contains(needs.generate-tag.outputs.tag, '-')
+      - if: github.ref_type == 'branch' || contains(needs.generate-tag.outputs.tag, '-')
         uses: ./.github/actions/build-securebuild-image-locally
         with:
           config: securebuild/image/apko-kotsadm.yaml
@@ -485,3 +499,4 @@ jobs:
       IDENTITY_SERVICE_OKTA_ACCESS_TOKEN: ${{ secrets.IDENTITY_SERVICE_OKTA_ACCESS_TOKEN }}
       E2E_GH_PAT: ${{ secrets.E2E_GH_PAT }}
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
+      REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}

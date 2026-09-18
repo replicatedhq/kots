@@ -17,6 +17,18 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
 
   const configureSnapshotsModal = page.getByTestId("configure-snapshots-modal");
+  if (process.env.CMX_REGISTRY === "true") {
+    const storageSettingsCard = page.getByTestId('snapshots-storage-settings-card');
+    // The settings card renders before the asynchronously-triggered Velero
+    // setup modal. Give the modal its full opportunity to appear before
+    // deciding that snapshots were already configured.
+    try {
+      await configureSnapshotsModal.waitFor({ state: 'visible', timeout: 15000 });
+    } catch {
+      await expect(storageSettingsCard).toBeVisible();
+      return;
+    }
+  }
   await expect(configureSnapshotsModal).toBeVisible({ timeout: 15000 });
 
   await expect(configureSnapshotsModal.getByTestId("velero-not-installed-tab")).toBeVisible();
@@ -40,6 +52,7 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect) => {
 
   await configureSnapshotsModal.getByRole('button', { name: 'Ok, got it!' }).click();
   await expect(configureSnapshotsModal).not.toBeVisible();
+  await expect(page.locator('.ReactModal__Overlay')).not.toBeVisible();
 };
 
 export const configureSnapshotsAWSInstanceRole = async (page: Page, expect: Expect) => {
@@ -195,10 +208,17 @@ export const validateAutomaticPartialSnapshots = async (page: Page, expect: Expe
 };
 
 export const createAppSnapshot = async (page: Page, expect: Expect) => {
+  if (process.env.CMX_REGISTRY === "true") {
+    // The test app's only volume available to KOTS under minimal RBAC is an
+    // emptyDir. Seed it so this workflow exercises a real volume backup and
+    // restore, as it did on the former kURL test cluster.
+    runCommand(`kubectl exec -n ${APP_SLUG} example-redis-0 -- sh -c 'echo kots-cmx-snapshot-test > /scratch/kots-cmx-snapshot-test'`);
+  }
+
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
   await page.getByRole('link', { name: 'Partial Snapshots (Application)' }).click();
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
-  await expect(page.getByTestId('partial-snapshots-recommendation')).toBeVisible();
+  await expect(page.getByTestId('partial-snapshots-recommendation')).toBeVisible({ timeout: 30000 });
 
   // Partial snapshots page
   const partialSnapshotsCard = page.getByTestId('partial-snapshots-card');
