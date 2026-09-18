@@ -1382,17 +1382,21 @@ func newCACertHTTPClient(caCertData []byte) (*http.Client, error) {
 		return nil, nil
 	}
 
-	rootCAs := x509.NewCertPool()
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil || rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
 	if ok := rootCAs.AppendCertsFromPEM(caCertData); !ok {
 		return nil, errors.New("failed to parse ca certificate data")
 	}
 
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{
+		RootCAs: rootCAs,
+	}
+
 	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs: rootCAs,
-			},
-		},
+		Transport: transport,
 	}, nil
 }
 

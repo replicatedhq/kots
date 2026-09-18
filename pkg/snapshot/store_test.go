@@ -641,10 +641,14 @@ func Test_newCACertHTTPClient(t *testing.T) {
 		req.Nil(client)
 	})
 
-	t.Run("valid ca cert data produces a client whose transport trusts exactly that CA", func(t *testing.T) {
+	t.Run("valid ca cert data produces a client whose transport trusts the CA in addition to system roots", func(t *testing.T) {
 		certPEM := generateSelfSignedCertPEM(t, "kots-test-ca")
 
-		expectedPool := x509.NewCertPool()
+		expectedPool, err := x509.SystemCertPool()
+		req.NoError(err)
+		if expectedPool == nil {
+			expectedPool = x509.NewCertPool()
+		}
 		req.True(expectedPool.AppendCertsFromPEM(certPEM))
 
 		client, err := newCACertHTTPClient(certPEM)
@@ -654,7 +658,28 @@ func Test_newCACertHTTPClient(t *testing.T) {
 		transport, ok := client.Transport.(*http.Transport)
 		req.True(ok, "expected client.Transport to be *http.Transport")
 		req.NotNil(transport.TLSClientConfig)
-		req.True(expectedPool.Equal(transport.TLSClientConfig.RootCAs), "constructed client's TLS RootCAs must include the provided CACertData")
+		req.True(expectedPool.Equal(transport.TLSClientConfig.RootCAs), "constructed client's TLS RootCAs must include system roots plus the provided CACertData")
+	})
+
+	t.Run("valid ca cert data preserves default transport network behavior", func(t *testing.T) {
+		certPEM := generateSelfSignedCertPEM(t, "kots-test-ca")
+
+		client, err := newCACertHTTPClient(certPEM)
+		req.NoError(err)
+		req.NotNil(client)
+
+		transport, ok := client.Transport.(*http.Transport)
+		req.True(ok, "expected client.Transport to be *http.Transport")
+
+		defaultTransport, ok := http.DefaultTransport.(*http.Transport)
+		req.True(ok, "expected http.DefaultTransport to be *http.Transport")
+
+		req.NotNil(transport.Proxy, "custom transport must keep proxy support (e.g. HTTPS_PROXY) from the default transport")
+		req.Equal(reflect.ValueOf(defaultTransport.Proxy).Pointer(), reflect.ValueOf(transport.Proxy).Pointer(), "custom transport must reuse the default environment-based proxy function")
+		req.NotNil(transport.DialContext, "custom transport must keep the default dialer (and its connect timeout) instead of hanging indefinitely")
+		req.Equal(defaultTransport.TLSHandshakeTimeout, transport.TLSHandshakeTimeout)
+		req.Equal(defaultTransport.IdleConnTimeout, transport.IdleConnTimeout)
+		req.Equal(defaultTransport.ExpectContinueTimeout, transport.ExpectContinueTimeout)
 	})
 
 	t.Run("invalid ca cert data returns an error", func(t *testing.T) {
