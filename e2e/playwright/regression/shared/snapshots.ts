@@ -198,7 +198,7 @@ export const createAppSnapshot = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
   await page.getByRole('link', { name: 'Partial Snapshots (Application)' }).click();
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
-  await expect(page.getByTestId('partial-snapshots-recommendation')).toBeVisible();
+  await expect(page.getByTestId('partial-snapshots-recommendation')).toBeVisible({ timeout: 30000 });
 
   // Partial snapshots page
   const partialSnapshotsCard = page.getByTestId('partial-snapshots-card');

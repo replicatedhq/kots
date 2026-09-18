@@ -103,6 +103,7 @@ sudo mv velero-${veleroVersion}-linux-amd64/velero /usr/local/bin/velero`);
     --secret-file ${credsFileName} \
     --prefix ${prefix} \
     ${fsBackupFlags}`);
+  configureVeleroForK0s();
 };
 
 export const installVeleroHostPath = async (
@@ -151,6 +152,7 @@ export const installVeleroHostPath = async (
     --plugins velero/velero-plugin-for-aws:${veleroAwsPluginVersion}`;
   }
   runCommand(installCommand);
+  configureVeleroForK0s();
 
   if (isAirgapped) {
     configureVeleroImagePullSecret(registryInfo);
@@ -241,6 +243,14 @@ metadata:
 data:
   image: ${registryInfo.ip}/${restoreHelperImageName}:${veleroVersion}
 EOF`);
+};
+
+const configureVeleroForK0s = () => {
+  if (process.env.CMX_REGISTRY !== "true") {
+    return;
+  }
+
+  runCommand(`kubectl -n velero patch daemonset node-agent --type=strategic --patch='{"spec":{"template":{"spec":{"volumes":[{"name":"host-pods","hostPath":{"path":"/var/lib/k0s/kubelet/pods"}},{"name":"host-plugins","hostPath":{"path":"/var/lib/k0s/kubelet/plugins"}}]}}}}'`);
 };
 
 const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
