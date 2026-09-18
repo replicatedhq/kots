@@ -5,7 +5,7 @@ contents:
     - https://apk.cve0.io/key/cve0-signing.rsa.pub
   packages:
     - kotsadm-migrations
-    - schemahero-rqlite~0.26.1
+    - schemahero-rqlite~0.26.2
     - bash
     - busybox
     - securebuild-baselayout
