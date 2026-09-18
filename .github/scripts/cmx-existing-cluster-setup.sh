@@ -12,6 +12,7 @@ readonly REGISTRY_PASSWORD="password"
 readonly REGISTRY_PORT="30443"
 readonly AIRGAP_ASSET_DIR="/opt/kots-regression-airgap"
 readonly LOCAL_PATH_PROVISIONER_VERSION="v0.0.37"
+readonly KUBE_PROMETHEUS_VERSION="v0.14.0"
 
 wait_for_node() {
   for _ in $(seq 1 60); do
@@ -108,6 +109,28 @@ spec:
 EOF
   kubectl wait --for=condition=Ready pod/local-path-smoke-test --timeout=2m
   kubectl delete pod/local-path-smoke-test pvc/local-path-smoke-test --wait=true
+}
+
+install_monitoring() {
+  curl -fsSL \
+    "https://github.com/prometheus-operator/kube-prometheus/archive/refs/tags/${KUBE_PROMETHEUS_VERSION}.tar.gz" \
+    | tar xz -C /tmp
+
+  local manifest_dir="/tmp/kube-prometheus-${KUBE_PROMETHEUS_VERSION#v}/manifests"
+  kubectl apply --server-side -f "${manifest_dir}/setup"
+  kubectl wait --for=condition=Established --all customresourcedefinition --timeout=2m
+  kubectl apply -f "$manifest_dir"
+  kubectl -n monitoring rollout status deployment/prometheus-operator --timeout=3m
+  kubectl -n monitoring rollout status daemonset/node-exporter --timeout=3m
+  for _ in $(seq 1 60); do
+    if kubectl -n monitoring get statefulset/prometheus-k8s >/dev/null 2>&1; then
+      kubectl -n monitoring rollout status statefulset/prometheus-k8s --timeout=5m
+      return
+    fi
+    sleep 2
+  done
+  echo "Prometheus StatefulSet was not created" >&2
+  return 1
 }
 
 install_registry() {
@@ -311,6 +334,7 @@ main() {
   install_dependencies
   install_k0s
   install_storage
+  install_monitoring
   install_registry
   prepare_kots_binaries
   prepare_playwright

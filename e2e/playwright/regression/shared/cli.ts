@@ -252,6 +252,7 @@ const configureVeleroImagePullSecret = (registryInfo: RegistryInfo) => {
 
   // patch velero deployment
   runCommand(`kubectl -n velero patch deployment velero --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'`);
+  runCommand(`kubectl -n velero patch daemonset node-agent --type=merge --patch='{"spec":{"template":{"spec":{ "imagePullSecrets":[{"name":"registry-creds"}] }}}}'`);
 };
 
 export const waitForVeleroAndNodeAgent = async (timeout: number = 60000): Promise<void> => {
@@ -490,6 +491,20 @@ spec:
     targetPort: 3000
     nodePort: ${adminConsolePort}
 EOF`);
+
+  if (process.env.CMX_REGISTRY === "true") {
+    runCommand(`if [ -f /tmp/kotsadm-port-forward.pid ]; then kill "$(cat /tmp/kotsadm-port-forward.pid)" 2>/dev/null || true; fi
+nohup kubectl --namespace ${namespace} port-forward --address 0.0.0.0 service/kotsadm-external ${adminConsolePort}:8800 >/tmp/kotsadm-port-forward.log 2>&1 </dev/null &
+echo $! >/tmp/kotsadm-port-forward.pid
+for attempt in $(seq 1 30); do
+  if curl -sS --max-time 2 -o /dev/null http://127.0.0.1:${adminConsolePort}; then
+    exit 0
+  fi
+  sleep 1
+done
+cat /tmp/kotsadm-port-forward.log >&2
+exit 1`);
+  }
 };
 
 export const waitForDex = async (namespace: string, timeout: number = 90000): Promise<void> => {
