@@ -1,5 +1,6 @@
 import { VENDOR_APP_ID } from './constants';
 import { runCommandWithOutput, downloadViaJumpbox } from './cli';
+import { existsSync } from 'fs';
 
 export async function promoteRelease(
   releaseSequence: number,
@@ -83,6 +84,14 @@ export async function downloadAirgapBundle(
   portalBase64Password: string,
   destPath: string
 ) {
+  if (process.env.AIRGAP_ASSETS_PRELOADED === 'true') {
+    if (!existsSync(destPath)) {
+      throw new Error(`Preloaded air-gap bundle not found: ${destPath}`);
+    }
+    console.log(`Using preloaded air-gap bundle ${destPath}`);
+    return;
+  }
+
   // get airgap bundle download url
   const output = runCommandWithOutput(`curl -XGET 'https://api.replicated.com/market/v3/airgap/images/url?customer_id=${customerID}&channel_sequence=${channelSequence}' -H 'Authorization: Basic ${portalBase64Password}'`, true);
   const bundleUrl = JSON.parse(output).url;
