@@ -721,6 +721,19 @@ func Test_validateOther_withCACert(t *testing.T) {
 		req.Error(err)
 		req.Contains(err.Error(), "certificate signed by unknown authority")
 	})
+
+	t.Run("malformed CA data is rejected end-to-end with a wrapped configuration error", func(t *testing.T) {
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: []byte("not a certificate")})
+		req.Error(err)
+		req.Contains(err.Error(), "failed to configure ca certificate")
+	})
+
+	t.Run("a well-formed but non-matching CA is rejected with an unknown authority error", func(t *testing.T) {
+		wrongCACertPEM := generateSelfSignedCertPEM(t, "kots-test-wrong-ca")
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: wrongCACertPEM})
+		req.Error(err)
+		req.Contains(err.Error(), "certificate signed by unknown authority")
+	})
 }
 
 func Test_validateInternalS3_withCACert(t *testing.T) {
@@ -751,6 +764,19 @@ func Test_validateInternalS3_withCACert(t *testing.T) {
 
 	t.Run("without the uploaded CA validation fails with an unknown authority error", func(t *testing.T) {
 		err := validateStore(context.Background(), store, ValidateStoreOptions{})
+		req.Error(err)
+		req.Contains(err.Error(), "certificate signed by unknown authority")
+	})
+
+	t.Run("malformed CA data is rejected end-to-end with a wrapped configuration error", func(t *testing.T) {
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: []byte("not a certificate")})
+		req.Error(err)
+		req.Contains(err.Error(), "failed to configure ca certificate")
+	})
+
+	t.Run("a well-formed but non-matching CA is rejected with an unknown authority error", func(t *testing.T) {
+		wrongCACertPEM := generateSelfSignedCertPEM(t, "kots-test-wrong-ca")
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: wrongCACertPEM})
 		req.Error(err)
 		req.Contains(err.Error(), "certificate signed by unknown authority")
 	})
