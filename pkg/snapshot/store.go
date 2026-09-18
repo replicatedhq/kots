@@ -1406,6 +1406,19 @@ func newCACertHTTPClient(caCertData []byte) (*http.Client, error) {
 	}, nil
 }
 
+// applyCACert configures s3Config's HTTPClient to trust caCertData, if provided, so HeadBucket
+// validation against endpoints signed by a private or self-signed CA succeeds.
+func applyCACert(s3Config *aws.Config, caCertData []byte) error {
+	caCertHTTPClient, err := newCACertHTTPClient(caCertData)
+	if err != nil {
+		return errors.Wrap(err, "failed to configure ca certificate")
+	}
+	if caCertHTTPClient != nil {
+		s3Config.HTTPClient = caCertHTTPClient
+	}
+	return nil
+}
+
 func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket string, options ValidateStoreOptions) error {
 	if options.ValidateUsingAPod {
 		clientset, err := k8sutil.GetClientset()
@@ -1441,12 +1454,8 @@ func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket str
 		s3Config.Credentials = credentials.NewStaticCredentials(storeOther.AccessKeyID, storeOther.SecretAccessKey, "")
 	}
 
-	caCertHTTPClient, err := newCACertHTTPClient(options.CACertData)
-	if err != nil {
-		return errors.Wrap(err, "failed to configure ca certificate")
-	}
-	if caCertHTTPClient != nil {
-		s3Config.HTTPClient = caCertHTTPClient
+	if err := applyCACert(s3Config, options.CACertData); err != nil {
+		return err
 	}
 
 	newSession, err := session.NewSession(s3Config)
@@ -1500,12 +1509,8 @@ func validateInternalS3(ctx context.Context, storeInternal *types.StoreInternal,
 		s3Config.Credentials = credentials.NewStaticCredentials(storeInternal.AccessKeyID, storeInternal.SecretAccessKey, "")
 	}
 
-	caCertHTTPClient, err := newCACertHTTPClient(options.CACertData)
-	if err != nil {
-		return errors.Wrap(err, "failed to configure ca certificate")
-	}
-	if caCertHTTPClient != nil {
-		s3Config.HTTPClient = caCertHTTPClient
+	if err := applyCACert(s3Config, options.CACertData); err != nil {
+		return err
 	}
 
 	newSession, err := session.NewSession(s3Config)
