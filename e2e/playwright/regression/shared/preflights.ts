@@ -46,12 +46,18 @@ export const validateSmallAirgapInitialPreflights = async (page: Page, expect: E
   await expect(resultsWrapper.getByTestId("preflight-message-row").nth(1)).toContainText('Containerd container runtime was found.');
 
   await expect(resultsWrapper.getByTestId("preflight-message-title").nth(2)).toContainText('Check Kubernetes environment.');
-  await expect(resultsWrapper.getByTestId("preflight-message-row").nth(2)).toContainText('KURL is a supported distribution');
+  const expectedDistributionResult = process.env.CMX_REGISTRY === "true"
+    ? 'Unable to determine the distribution of Kubernetes'
+    : 'KURL is a supported distribution';
+  await expect(resultsWrapper.getByTestId("preflight-message-row").nth(2)).toContainText(expectedDistributionResult);
 
   await expect(resultsWrapper.getByTestId("preflight-message-title").nth(3)).toContainText('Total CPU Cores in the cluster is 2 or greater');
   await expect(resultsWrapper.getByTestId("preflight-message-row").nth(3)).toContainText('There are at least 2 cores in the cluster');
 
   await page.getByRole('button', { name: 'Deploy', exact: true }).click();
+  if (process.env.CMX_REGISTRY === "true") {
+    await page.getByRole('button', { name: 'Deploy anyway', exact: true }).click();
+  }
 };
 
 export const validateIgnorePreflightsModal = async (page: Page, expect: Expect) => {
