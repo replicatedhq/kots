@@ -55,6 +55,9 @@ export const validateSmallAirgapInitialPreflights = async (page: Page, expect: E
   await expect(resultsWrapper.getByTestId("preflight-message-row").nth(3)).toContainText('There are at least 2 cores in the cluster');
 
   await page.getByRole('button', { name: 'Deploy', exact: true }).click();
+  if (process.env.CMX_REGISTRY === "true") {
+    await page.getByRole('button', { name: 'Deploy anyway', exact: true }).click();
+  }
 };
 
 export const validateIgnorePreflightsModal = async (page: Page, expect: Expect) => {

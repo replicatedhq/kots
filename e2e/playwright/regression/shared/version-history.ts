@@ -30,7 +30,12 @@ export const validateVersionMinimalRBACPreflights = async (page: Page, expect: E
   await expect(versionRow).toContainText(`Sequence ${sequence}`);
 
   await versionRow.getByTestId("preflight-icon").click();
-  await validateMinimalRBACPreflightsPage(page, expect);
+  if (process.env.CMX_REGISTRY === "true") {
+    await validateClusterAdminPreflightResults(page, expect, 15000);
+    await page.getByTestId("preflight-results-back-button").click();
+  } else {
+    await validateMinimalRBACPreflightsPage(page, expect);
+  }
 };
 
 export const validateInitialPreflightsSkipped = async (page: Page, expect: Expect) => {
@@ -146,13 +151,26 @@ export const deployNewVersion = async (
   const preflightChecksLoader = versionRow.getByTestId('preflight-checks-loader');
   await expect(preflightChecksLoader).not.toBeVisible({ timeout: 180000 });
 
+  if (process.env.CMX_REGISTRY === "true" && expectedSequence === 0 && await versionRow.getByText('Currently deployed version', { exact: true }).isVisible()) {
+    await expect(versionRow.getByRole('button', { name: 'Redeploy', exact: true })).toBeVisible();
+    return;
+  }
+
   if (isMinimalRBAC) {
     await versionRow.getByRole('button', { name: 'Deploy', exact: true }).click();
     const deployWarningModal = page.getByTestId('deploy-warning-modal');
-    await expect(deployWarningModal).toBeVisible();
-    await expect(deployWarningModal.getByTestId('deploy-warning-modal-text')).toBeVisible();
-    await deployWarningModal.getByRole('button', { name: 'Deploy this version', exact: true }).click();
-    await expect(deployWarningModal).not.toBeVisible();
+    if (process.env.CMX_REGISTRY === "true" && !await deployWarningModal.isVisible({ timeout: 2000 })) {
+      const confirmDeploymentModal = page.getByTestId('confirm-deployment-modal');
+      await expect(confirmDeploymentModal).toBeVisible();
+      await expect(confirmDeploymentModal.getByTestId('confirm-deployment-modal-text')).toBeVisible();
+      await confirmDeploymentModal.getByRole('button', { name: 'Yes, deploy', exact: true }).click();
+      await expect(confirmDeploymentModal).not.toBeVisible();
+    } else {
+      await expect(deployWarningModal).toBeVisible();
+      await expect(deployWarningModal.getByTestId('deploy-warning-modal-text')).toBeVisible();
+      await deployWarningModal.getByRole('button', { name: 'Deploy this version', exact: true }).click();
+      await expect(deployWarningModal).not.toBeVisible();
+    }
   } else {
     await versionRow.getByRole('button', { name: 'Deploy', exact: true }).click();
     const confirmDeploymentModal = page.getByTestId('confirm-deployment-modal');

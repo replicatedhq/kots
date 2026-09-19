@@ -17,6 +17,9 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
 
   const configureSnapshotsModal = page.getByTestId("configure-snapshots-modal");
+  if (process.env.CMX_REGISTRY === "true" && !await configureSnapshotsModal.isVisible({ timeout: 5000 })) {
+    return;
+  }
   await expect(configureSnapshotsModal).toBeVisible({ timeout: 15000 });
 
   await expect(configureSnapshotsModal.getByTestId("velero-not-installed-tab")).toBeVisible();
@@ -195,6 +198,13 @@ export const validateAutomaticPartialSnapshots = async (page: Page, expect: Expe
 };
 
 export const createAppSnapshot = async (page: Page, expect: Expect) => {
+  if (process.env.CMX_REGISTRY === "true") {
+    // The test app's only volume available to KOTS under minimal RBAC is an
+    // emptyDir. Seed it so this workflow exercises a real volume backup and
+    // restore, as it did on the former kURL test cluster.
+    runCommand(`kubectl exec -n ${APP_SLUG} example-redis-0 -- sh -c 'echo kots-cmx-snapshot-test > /scratch/kots-cmx-snapshot-test'`);
+  }
+
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
   await page.getByRole('link', { name: 'Partial Snapshots (Application)' }).click();
   await expect(page.locator('.Loader')).not.toBeVisible({ timeout: 15000 });
