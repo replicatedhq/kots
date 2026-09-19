@@ -30,12 +30,7 @@ export const validateVersionMinimalRBACPreflights = async (page: Page, expect: E
   await expect(versionRow).toContainText(`Sequence ${sequence}`);
 
   await versionRow.getByTestId("preflight-icon").click();
-  if (process.env.CMX_REGISTRY === "true") {
-    await validateClusterAdminPreflightResults(page, expect, 15000);
-    await page.getByTestId("preflight-results-back-button").click();
-  } else {
-    await validateMinimalRBACPreflightsPage(page, expect);
-  }
+  await validateMinimalRBACPreflightsPage(page, expect);
 };
 
 export const validateInitialPreflightsSkipped = async (page: Page, expect: Expect) => {

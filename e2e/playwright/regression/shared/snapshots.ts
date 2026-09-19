@@ -19,14 +19,14 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect) => {
   const configureSnapshotsModal = page.getByTestId("configure-snapshots-modal");
   if (process.env.CMX_REGISTRY === "true") {
     const storageSettingsCard = page.getByTestId('snapshots-storage-settings-card');
-    for (let attempt = 0; attempt < 30; attempt++) {
-      if (await configureSnapshotsModal.isVisible()) {
-        break;
-      }
-      if (await storageSettingsCard.isVisible()) {
-        return;
-      }
-      await page.waitForTimeout(500);
+    // The settings card renders before the asynchronously-triggered Velero
+    // setup modal. Give the modal its full opportunity to appear before
+    // deciding that snapshots were already configured.
+    try {
+      await configureSnapshotsModal.waitFor({ state: 'visible', timeout: 15000 });
+    } catch {
+      await expect(storageSettingsCard).toBeVisible();
+      return;
     }
   }
   await expect(configureSnapshotsModal).toBeVisible({ timeout: 15000 });
