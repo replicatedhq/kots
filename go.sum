@@ -32,8 +32,8 @@ cloud.google.com/go/pubsub v1.0.1/go.mod h1:R0Gpsv3s54REJCy4fxDixWD93lHJMoZTyQ2k
 cloud.google.com/go/pubsub v1.1.0/go.mod h1:EwwdRX2sKPjnvnqCa270oGRyludottCI76h+R3AArQw=
 cloud.google.com/go/storage v1.0.0/go.mod h1:IhtSnM/ZTZV8YYJWCY8RULGVqBDmpoyjwiyrjsg+URw=
 cloud.google.com/go/storage v1.5.0/go.mod h1:tpKbwo567HUNpVclU5sGELwQWBDZ8gh0ZeosJ0Rtdos=
-cloud.google.com/go/storage v1.67.1 h1:cDeyjY1ik/2IBs4/nLytL6Orrtbi5M0G6beyGRl/9EQ=
-cloud.google.com/go/storage v1.67.1/go.mod h1:UsS9OgFg/XHOSYakQ8ZtLWWeyGkk1WnmD/GsGfN0BHM=
+cloud.google.com/go/storage v1.68.0 h1:gqrAMJ51OZjYgU6AJ2U60um90YQhSjq8HEIQNtJ4C/8=
+cloud.google.com/go/storage v1.68.0/go.mod h1:UsS9OgFg/XHOSYakQ8ZtLWWeyGkk1WnmD/GsGfN0BHM=
 cloud.google.com/go/trace v1.16.0 h1:GmQovzFc5F0CNfl0VLgL64aoTtu7xsM0YajW2GlG9+E=
 cloud.google.com/go/trace v1.16.0/go.mod h1:r+bdAn16dKLSV1G2D5v3e58IlQlizfxWrUfjx7kM7X0=
 cyphar.com/go-pathrs v0.2.5 h1:SnX9FBvnoyn3lUs1dkMgZ52bAETpirNu3FTRh5HlRik=
@@ -1048,8 +1048,8 @@ github.com/onsi/ginkgo v1.10.1/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+
 github.com/onsi/ginkgo v1.12.1/go.mod h1:zj2OWP4+oCPe1qIXoGWkgMRwljMUYCdkwsT2108oapk=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
 github.com/onsi/ginkgo v1.16.5/go.mod h1:+E8gABHa3K6zRBolWtd+ROzc/U5bkGt0FwiG042wbpU=
-github.com/onsi/ginkgo/v2 v2.32.2 h1:2o6vyFvR6snrJWgRVztC+OwuqqPEMI1UzYl2s2iU7Cg=
-github.com/onsi/ginkgo/v2 v2.32.2/go.mod h1:+aXOY+vzZ5mu2iI2HpTZUPmM//oQfsNFX6gU9kNcA44=
+github.com/onsi/ginkgo/v2 v2.33.0 h1:C8gBA6Uc2ZEubiV+SXiu5tZnMTwEmXHgkJwGozKtZf8=
+github.com/onsi/ginkgo/v2 v2.33.0/go.mod h1:+aXOY+vzZ5mu2iI2HpTZUPmM//oQfsNFX6gU9kNcA44=
 github.com/onsi/gomega v0.0.0-20170829124025-dcabb60a477c/go.mod h1:C1qb7wdrVGGVU+Z6iS04AVkA3Q65CEZX59MT0QO5uiA=
 github.com/onsi/gomega v1.3.0/go.mod h1:C1qb7wdrVGGVU+Z6iS04AVkA3Q65CEZX59MT0QO5uiA=
 github.com/onsi/gomega v1.4.2/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
@@ -1057,8 +1057,8 @@ github.com/onsi/gomega v1.5.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1Cpa
 github.com/onsi/gomega v1.7.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
 github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7JYyY=
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
-github.com/onsi/gomega v1.43.0 h1:VlG/1FxqNxhSO+lq/OHBNaaqwiBK/mO8JbVkX9Y+FeU=
-github.com/onsi/gomega v1.43.0/go.mod h1:REff/hsDsodHoKlWsP2mAPhu1+5/6hVYNf9rIEBpeSg=
+github.com/onsi/gomega v1.43.1 h1:vGIPFuYrIO6/0Z09s0I0QQQgFchiX4+tb1re3MScJYo=
+github.com/onsi/gomega v1.43.1/go.mod h1:e/C2HwaZ1DhvjzXXuFhcR7hY7Sh9pl7MmoWKEjzwcdA=
 github.com/open-policy-agent/opa v1.20.2 h1:dlX5VEGA5M62W8+X1nRPEaQIh/CMRn5FcD1mebpKWKg=
 github.com/open-policy-agent/opa v1.20.2/go.mod h1:yYKTQAlkbefoXSYChT4ek8gc8WCtScL7L7OSZxFVe0s=
 github.com/opencontainers/cgroups v0.0.7 h1:FqhggFhigAMgKKwy39jweWX3h7Ha6VBF/qNR6Sso3oc=
@@ -1156,8 +1156,8 @@ github.com/redis/go-redis/v9 v9.10.0/go.mod h1:huWgSWd8mW6+m0VPhJjSSQ+d6Nh1VICQ6
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20260917192845-cc570e6bbd56 h1:6czkQI+cMj+izRc/CmGE8GueLUbGriUttD18I+Qi3bg=
 github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20260917192845-cc570e6bbd56/go.mod h1:zCq9V1szrqcBnGBD4yZIAFwDi3mJ/Z03IpoHi1Ev2I0=
-github.com/replicatedhq/kotskinds v0.0.0-20251219184143-fc5e03d7bbc6 h1:2xmBPZQTdytaQUfSpNi2XgsLgH1aD1YFsJPX0ltC+Zc=
-github.com/replicatedhq/kotskinds v0.0.0-20251219184143-fc5e03d7bbc6/go.mod h1:hpR1pZ3mEtbMrl/tmuqNjK+cSBcmb8F7A1EPhXwssfI=
+github.com/replicatedhq/kotskinds v0.1.0 h1:FkFAExFH+kfDLXV2fZFVNtdXR02GkpDAGlUcoBcsjdU=
+github.com/replicatedhq/kotskinds v0.1.0/go.mod h1:8sswH8+cIoOVQdFtUfzOri+SEHIKw8YYwJvGOG9yYgI=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=
 github.com/replicatedhq/kurlkinds v1.5.0/go.mod h1:rUpBMdC81IhmJNCWMU/uRsMETv9P0xFoMvdSP/TAr5A=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDHxGfVkPCRXbA4BfQJvt5DHjFiTtWy3R/t4djyY=
@@ -1187,8 +1187,8 @@ github.com/sagikazarmark/locafero v0.12.0 h1:/NQhBAkUb4+fH1jivKHWusDYFjMOOKU88ee
 github.com/sagikazarmark/locafero v0.12.0/go.mod h1:sZh36u/YSZ918v0Io+U9ogLYQJ9tLLBmM4eneO6WwsI=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 h1:1EYB5IzjZawrrnELUi78f9fPu57HuXjmddZPjrls/28=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.3/go.mod h1:JXeL+ps8p7/KNMjDQk3TCwPpBy0wYklyWTfbkIzdIFU=
-github.com/schemahero/schemahero v0.26.2-0.20260917201005-3b4a91c0d466 h1:KZi3BtWvxhVTnIJhi9sJXhft0QOjpdVeLXveqQMBoBw=
-github.com/schemahero/schemahero v0.26.2-0.20260917201005-3b4a91c0d466/go.mod h1:gciU53OXhqkB7QPCgZucHYs5CB7WcMviQRDCJmBe6tY=
+github.com/schemahero/schemahero v0.26.2 h1:AWvHirS0IEvtokFNhAUnB59HwfKxcz99nGUU+xnSlXM=
+github.com/schemahero/schemahero v0.26.2/go.mod h1:gciU53OXhqkB7QPCgZucHYs5CB7WcMviQRDCJmBe6tY=
 github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260917201005-3b4a91c0d466 h1:THa04zua9K3XoCWn5dvOdfkL5JoyTbcQDTMgcNhBuM8=
 github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260917201005-3b4a91c0d466/go.mod h1:Vch/9chuv9tgZBm4ssHRG5HOqzyOPVq1PyHEOZ4gq5c=
 github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20260917201005-3b4a91c0d466 h1:5D2Ctc+t7xFjD4284Tu6K0DA5xzQ8KNVF5I1xwNFE08=
