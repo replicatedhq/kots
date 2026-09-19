@@ -3,7 +3,7 @@ module github.com/replicatedhq/kots
 go 1.26.8
 
 require (
-	cloud.google.com/go/storage v1.67.1
+	cloud.google.com/go/storage v1.68.0
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.30
 	github.com/Azure/go-autorest/autorest/adal v0.9.24
@@ -42,8 +42,8 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/moby/moby/api v1.56.0
 	github.com/moby/moby/client v0.6.0
-	github.com/onsi/ginkgo/v2 v2.32.2
-	github.com/onsi/gomega v1.43.0
+	github.com/onsi/ginkgo/v2 v2.33.0
+	github.com/onsi/gomega v1.43.1
 	github.com/open-policy-agent/opa v1.20.2
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/ory/dockertest/v4 v4.0.0
@@ -53,13 +53,13 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/replicatedhq/embedded-cluster/kinds v1.15.1-0.20260917192845-cc570e6bbd56
-	github.com/replicatedhq/kotskinds v0.0.0-20251219184143-fc5e03d7bbc6
+	github.com/replicatedhq/kotskinds v0.1.0
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.134.1
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rqlite/gorqlite v0.0.0-20260504155303-50d445fd0ab9
-	github.com/schemahero/schemahero v0.26.2-0.20260917201005-3b4a91c0d466
+	github.com/schemahero/schemahero v0.26.2
 	github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260917201005-3b4a91c0d466
 	github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20260917201005-3b4a91c0d466
 	github.com/segmentio/ksuid v1.0.4
