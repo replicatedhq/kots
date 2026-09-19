@@ -5,10 +5,13 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -1370,6 +1373,53 @@ func validateGCP(storeGoogle *types.StoreGoogle, bucket string) error {
 	return nil
 }
 
+// caCertHTTPClientResponseHeaderTimeout bounds how long the CA-trust HTTP client waits for
+// response headers, so a slow or unresponsive endpoint fails validation instead of hanging
+// indefinitely.
+const caCertHTTPClientResponseHeaderTimeout = 30 * time.Second
+
+// newCACertHTTPClient returns an *http.Client whose transport trusts caCertData in addition to the
+// system root CAs, for use as the HeadBucket validation client against endpoints signed by a private
+// or self-signed CA. If the system root pool cannot be loaded, the transport falls back to trusting
+// only caCertData, since x509.NewCertPool starts empty. Returns a nil client (and no error) when
+// caCertData is empty, leaving the default transport untouched.
+func newCACertHTTPClient(caCertData []byte) (*http.Client, error) {
+	if len(caCertData) == 0 {
+		return nil, nil
+	}
+
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil || rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+	if ok := rootCAs.AppendCertsFromPEM(caCertData); !ok {
+		return nil, errors.New("failed to parse ca certificate data")
+	}
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{
+		RootCAs: rootCAs,
+	}
+	transport.ResponseHeaderTimeout = caCertHTTPClientResponseHeaderTimeout
+
+	return &http.Client{
+		Transport: transport,
+	}, nil
+}
+
+// applyCACert configures s3Config's HTTPClient to trust caCertData, if provided, so HeadBucket
+// validation against endpoints signed by a private or self-signed CA succeeds.
+func applyCACert(s3Config *aws.Config, caCertData []byte) error {
+	caCertHTTPClient, err := newCACertHTTPClient(caCertData)
+	if err != nil {
+		return errors.Wrap(err, "failed to configure ca certificate")
+	}
+	if caCertHTTPClient != nil {
+		s3Config.HTTPClient = caCertHTTPClient
+	}
+	return nil
+}
+
 func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket string, options ValidateStoreOptions) error {
 	if options.ValidateUsingAPod {
 		clientset, err := k8sutil.GetClientset()
@@ -1403,6 +1453,10 @@ func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket str
 
 	if storeOther.AccessKeyID != "" && storeOther.SecretAccessKey != "" {
 		s3Config.Credentials = credentials.NewStaticCredentials(storeOther.AccessKeyID, storeOther.SecretAccessKey, "")
+	}
+
+	if err := applyCACert(s3Config, options.CACertData); err != nil {
+		return err
 	}
 
 	newSession, err := session.NewSession(s3Config)
@@ -1454,6 +1508,10 @@ func validateInternalS3(ctx context.Context, storeInternal *types.StoreInternal,
 
 	if storeInternal.AccessKeyID != "" && storeInternal.SecretAccessKey != "" {
 		s3Config.Credentials = credentials.NewStaticCredentials(storeInternal.AccessKeyID, storeInternal.SecretAccessKey, "")
+	}
+
+	if err := applyCACert(s3Config, options.CACertData); err != nil {
+		return err
 	}
 
 	newSession, err := session.NewSession(s3Config)

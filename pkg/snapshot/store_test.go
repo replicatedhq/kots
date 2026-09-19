@@ -2,8 +2,18 @@ package snapshot
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/stretchr/testify/require"
@@ -597,4 +607,177 @@ func TestFindBackupStoreLocation(t *testing.T) {
 			}
 		})
 	}
+}
+
+// generateSelfSignedCertPEM returns a PEM-encoded, self-signed certificate usable as CACertData in tests.
+func generateSelfSignedCertPEM(t *testing.T, commonName string) []byte {
+	t.Helper()
+
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: commonName},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+	}
+
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	require.NoError(t, err)
+
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+}
+
+func Test_newCACertHTTPClient(t *testing.T) {
+	req := require.New(t)
+
+	t.Run("no ca cert data returns nil client and no error", func(t *testing.T) {
+		client, err := newCACertHTTPClient(nil)
+		req.NoError(err)
+		req.Nil(client)
+	})
+
+	t.Run("valid ca cert data produces a client whose transport trusts the CA in addition to system roots", func(t *testing.T) {
+		certPEM := generateSelfSignedCertPEM(t, "kots-test-ca")
+
+		expectedPool, err := x509.SystemCertPool()
+		req.NoError(err)
+		if expectedPool == nil {
+			expectedPool = x509.NewCertPool()
+		}
+		req.True(expectedPool.AppendCertsFromPEM(certPEM))
+
+		client, err := newCACertHTTPClient(certPEM)
+		req.NoError(err)
+		req.NotNil(client)
+
+		transport, ok := client.Transport.(*http.Transport)
+		req.True(ok, "expected client.Transport to be *http.Transport")
+		req.NotNil(transport.TLSClientConfig)
+		req.True(expectedPool.Equal(transport.TLSClientConfig.RootCAs), "constructed client's TLS RootCAs must include system roots plus the provided CACertData")
+	})
+
+	t.Run("valid ca cert data preserves default transport network behavior", func(t *testing.T) {
+		certPEM := generateSelfSignedCertPEM(t, "kots-test-ca")
+
+		client, err := newCACertHTTPClient(certPEM)
+		req.NoError(err)
+		req.NotNil(client)
+
+		transport, ok := client.Transport.(*http.Transport)
+		req.True(ok, "expected client.Transport to be *http.Transport")
+
+		defaultTransport, ok := http.DefaultTransport.(*http.Transport)
+		req.True(ok, "expected http.DefaultTransport to be *http.Transport")
+
+		req.NotNil(transport.Proxy, "custom transport must keep proxy support (e.g. HTTPS_PROXY) from the default transport")
+		req.Equal(reflect.ValueOf(defaultTransport.Proxy).Pointer(), reflect.ValueOf(transport.Proxy).Pointer(), "custom transport must reuse the default environment-based proxy function")
+		req.NotNil(transport.DialContext, "custom transport must keep the default dialer (and its connect timeout) instead of hanging indefinitely")
+		req.Equal(defaultTransport.TLSHandshakeTimeout, transport.TLSHandshakeTimeout)
+		req.Equal(defaultTransport.IdleConnTimeout, transport.IdleConnTimeout)
+		req.Equal(defaultTransport.ExpectContinueTimeout, transport.ExpectContinueTimeout)
+		req.Equal(caCertHTTPClientResponseHeaderTimeout, transport.ResponseHeaderTimeout, "custom transport must bound the response-header wait so a slow or unresponsive endpoint fails validation instead of hanging indefinitely")
+	})
+
+	t.Run("invalid ca cert data returns an error", func(t *testing.T) {
+		client, err := newCACertHTTPClient([]byte("not a certificate"))
+		req.Error(err)
+		req.Nil(client)
+	})
+}
+
+func Test_validateOther_withCACert(t *testing.T) {
+	req := require.New(t)
+
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	serverCertPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: server.Certificate().Raw})
+
+	store := &types.Store{
+		Provider: "aws",
+		Bucket:   "snapshot-bucket",
+		Other: &types.StoreOther{
+			Endpoint:        server.URL,
+			Region:          "us-east-1",
+			AccessKeyID:     "test",
+			SecretAccessKey: "test",
+		},
+	}
+
+	t.Run("uploaded CA is trusted and validation succeeds", func(t *testing.T) {
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: serverCertPEM})
+		req.NoError(err)
+	})
+
+	t.Run("without the uploaded CA validation fails with an unknown authority error", func(t *testing.T) {
+		err := validateStore(context.Background(), store, ValidateStoreOptions{})
+		req.Error(err)
+		req.Contains(err.Error(), "certificate signed by unknown authority")
+	})
+
+	t.Run("malformed CA data is rejected end-to-end with a wrapped configuration error", func(t *testing.T) {
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: []byte("not a certificate")})
+		req.Error(err)
+		req.Contains(err.Error(), "failed to configure ca certificate")
+	})
+
+	t.Run("a well-formed but non-matching CA is rejected with an unknown authority error", func(t *testing.T) {
+		wrongCACertPEM := generateSelfSignedCertPEM(t, "kots-test-wrong-ca")
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: wrongCACertPEM})
+		req.Error(err)
+		req.Contains(err.Error(), "certificate signed by unknown authority")
+	})
+}
+
+func Test_validateInternalS3_withCACert(t *testing.T) {
+	req := require.New(t)
+
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	serverCertPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: server.Certificate().Raw})
+
+	store := &types.Store{
+		Provider: "aws",
+		Bucket:   "snapshot-bucket",
+		Internal: &types.StoreInternal{
+			Endpoint:        server.URL,
+			Region:          "us-east-1",
+			AccessKeyID:     "test",
+			SecretAccessKey: "test",
+		},
+	}
+
+	t.Run("uploaded CA is trusted and validation succeeds", func(t *testing.T) {
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: serverCertPEM})
+		req.NoError(err)
+	})
+
+	t.Run("without the uploaded CA validation fails with an unknown authority error", func(t *testing.T) {
+		err := validateStore(context.Background(), store, ValidateStoreOptions{})
+		req.Error(err)
+		req.Contains(err.Error(), "certificate signed by unknown authority")
+	})
+
+	t.Run("malformed CA data is rejected end-to-end with a wrapped configuration error", func(t *testing.T) {
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: []byte("not a certificate")})
+		req.Error(err)
+		req.Contains(err.Error(), "failed to configure ca certificate")
+	})
+
+	t.Run("a well-formed but non-matching CA is rejected with an unknown authority error", func(t *testing.T) {
+		wrongCACertPEM := generateSelfSignedCertPEM(t, "kots-test-wrong-ca")
+		err := validateStore(context.Background(), store, ValidateStoreOptions{CACertData: wrongCACertPEM})
+		req.Error(err)
+		req.Contains(err.Error(), "certificate signed by unknown authority")
+	})
 }
