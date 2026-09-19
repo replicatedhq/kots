@@ -541,7 +541,17 @@ jobs:
       - name: Expose Admin Console
         id: admin_console
         run: |
-          replicated vm port expose '${{ steps.vm.outputs.id }}' --port 30880 --protocol http --output json > /tmp/admin-console-port.json
+          for attempt in $(seq 1 5); do
+            if replicated vm port expose '${{ steps.vm.outputs.id }}' --port 30880 --protocol http --output json > /tmp/admin-console-port.json; then
+              break
+            fi
+            if [[ "$attempt" == "5" ]]; then
+              echo "Failed to expose the Admin Console after $attempt attempts" >&2
+              exit 1
+            fi
+            echo "Replicated API request failed; retrying Admin Console port exposure (attempt $attempt/5)"
+            sleep $((attempt * 5))
+          done
           hostname="$(jq -r .hostname /tmp/admin-console-port.json)"
           echo "url=http://$hostname" >> "$GITHUB_OUTPUT"
 
