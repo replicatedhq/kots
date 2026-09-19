@@ -43,6 +43,7 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect) => {
 
   await configureSnapshotsModal.getByRole('button', { name: 'Ok, got it!' }).click();
   await expect(configureSnapshotsModal).not.toBeVisible();
+  await expect(page.locator('.ReactModal__Overlay')).not.toBeVisible();
 };
 
 export const configureSnapshotsAWSInstanceRole = async (page: Page, expect: Expect) => {
