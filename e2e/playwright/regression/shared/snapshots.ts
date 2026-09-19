@@ -17,8 +17,17 @@ export const addSnapshotsRBAC = async (page: Page, expect: Expect) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
 
   const configureSnapshotsModal = page.getByTestId("configure-snapshots-modal");
-  if (process.env.CMX_REGISTRY === "true" && !await configureSnapshotsModal.isVisible({ timeout: 5000 })) {
-    return;
+  if (process.env.CMX_REGISTRY === "true") {
+    const storageSettingsCard = page.getByTestId('snapshots-storage-settings-card');
+    for (let attempt = 0; attempt < 30; attempt++) {
+      if (await configureSnapshotsModal.isVisible()) {
+        break;
+      }
+      if (await storageSettingsCard.isVisible()) {
+        return;
+      }
+      await page.waitForTimeout(500);
+    }
   }
   await expect(configureSnapshotsModal).toBeVisible({ timeout: 15000 });
 

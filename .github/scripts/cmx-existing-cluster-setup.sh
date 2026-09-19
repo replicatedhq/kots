@@ -30,9 +30,14 @@ wait_for_node() {
 install_dependencies() {
   export DEBIAN_FRONTEND=noninteractive
   apt-get update
-  apt-get install -y apache2-utils ca-certificates curl jq skopeo
+  apt-get install -y apache2-utils ca-certificates curl gnupg jq skopeo
 
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  mkdir -p /etc/apt/keyrings
+  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+    | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" \
+    > /etc/apt/sources.list.d/nodesource.list
+  apt-get update
   apt-get install -y build-essential nodejs
 
   curl -sL https://github.com/replicatedhq/troubleshoot/releases/latest/download/support-bundle_linux_amd64.tar.gz |
@@ -123,7 +128,7 @@ install_monitoring() {
   # KOTS queries Prometheus from its application namespace. The upstream
   # kube-prometheus policy only admits traffic from selected monitoring pods.
   kubectl -n monitoring patch networkpolicy prometheus-k8s --type=merge \
-    --patch='{"spec":{"ingress":[{}]}}'
+    --patch='{"spec":{"ingress":[{"from":[{"namespaceSelector":{"matchLabels":{"kubernetes.io/metadata.name":"qakotsregression"}},"podSelector":{"matchLabels":{"app":"kotsadm"}}}]}]}}'
   kubectl -n monitoring rollout status deployment/prometheus-operator --timeout=3m
   kubectl -n monitoring rollout status daemonset/node-exporter --timeout=3m
   for _ in $(seq 1 60); do
