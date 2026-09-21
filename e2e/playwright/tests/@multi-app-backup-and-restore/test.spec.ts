@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { login, uploadLicense } from '../shared';
 
 test('multi app backup and restore', async ({ page }) => {
-  test.slow();
+  test.setTimeout(10 * 60 * 1000); // 10 minutes
   await login(page);
   await uploadLicense(page, expect, "app1-license.yaml");
   await expect(page.locator('#app')).toContainText('Multi App Backup and Restore 1', { timeout: 30000 });
@@ -17,22 +17,20 @@ test('multi app backup and restore', async ({ page }) => {
   await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click(); 
   await page.getByRole('link', { name: 'Partial Snapshots' }).click({ timeout: 10000 });
   await page.getByRole('button', { name: 'Start a snapshot' }).click({ timeout: 15000 });
-  await expect(page.locator('#app')).toContainText('Completed', { timeout: 30000 });
+  await expect(page.locator('#app')).toContainText('Completed', { timeout: 300000 });
   await page.locator('.replicated-select__control').click();
-  await page.waitForTimeout(1000);
+  await expect(page.locator('.replicated-select__option').getByText('Multi App Backup and Restore 2', { exact: true })).toBeVisible({ timeout: 15000 });
   await page.locator('.replicated-select__option').getByText('Multi App Backup and Restore 2', { exact: true }).click();
-  await page.waitForTimeout(1000);
   await expect(page.locator('#app')).toContainText('No snapshots yet', { timeout: 15000 });
   await page.getByRole('button', { name: 'Start a snapshot' }).click();
-  await expect(page.locator('#app')).toContainText('Completed', { timeout: 30000 });
+  await expect(page.locator('#app')).toContainText('Completed', { timeout: 300000 });
   await page.locator('svg.icons.clickable[data-tip="Restore from this backup"]').click();
   await page.getByPlaceholder('type your slug').fill('multi-app-backup-and-restore-2');
   await page.getByRole('button', { name: 'Confirm and restore' }).click();
   await page.getByRole('button', { name: 'Cancel snapshot restore' }).click();
   await page.locator('.replicated-select__control').click({ timeout: 15000 });
-  await page.waitForTimeout(1000);
+  await expect(page.locator('.replicated-select__option').getByText('Multi App Backup and Restore 1', { exact: true })).toBeVisible({ timeout: 15000 });
   await page.locator('.replicated-select__option').getByText('Multi App Backup and Restore 1', { exact: true }).click();
-  await page.waitForTimeout(1000);
   await page.locator('svg.icons.clickable[data-tip="Restore from this backup"]').click({ timeout: 15000 });
   await page.getByPlaceholder('type your slug').fill('multi-app-backup-and-restore-1');
   await page.getByRole('button', { name: 'Confirm and restore' }).click();
