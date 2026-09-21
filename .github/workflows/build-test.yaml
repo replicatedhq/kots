@@ -5024,7 +5024,8 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --private-ca-configmap custom-cas \
-            --kotsadm-tag 24h
+            --kotsadm-tag 24h \
+            --wait-duration 5m
 
           echo "exec into the deployment and check for the file and its contents"
           if ! kubectl exec -n "$APP_SLUG" deployment/kotsadm -- cat /certs/ca.crt | grep "test value"; then
