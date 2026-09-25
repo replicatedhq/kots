@@ -44,7 +44,7 @@ require (
 	github.com/moby/moby/client v0.6.0
 	github.com/onsi/ginkgo/v2 v2.33.0
 	github.com/onsi/gomega v1.44.0
-	github.com/open-policy-agent/opa v1.20.2
+	github.com/open-policy-agent/opa v1.21.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/ory/dockertest/v4 v4.0.0
 	github.com/otiai10/copy v1.14.1
@@ -396,7 +396,7 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.29.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
-	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/gobwas/glob v1.0.0 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/google/cadvisor/lib v0.60.5 // indirect
