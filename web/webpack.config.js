@@ -4,8 +4,6 @@ const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
-const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
-
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
 function mapEnvironment(env) {
@@ -56,9 +54,11 @@ module.exports = function (env) {
         ".ts",
       ],
       fallback: {
+        assert: require.resolve("assert/"),
+        buffer: require.resolve("buffer/"),
         fs: false,
         stream: require.resolve("stream-browserify"),
-        crypto: require.resolve("crypto-browserify"),
+        crypto: false,
         zlib: require.resolve("browserify-zlib"),
         constants: require.resolve("constants-browserify"),
         util: require.resolve("util/"),
@@ -148,7 +148,6 @@ module.exports = function (env) {
       ],
     },
     plugins: [
-      new NodePolyfillPlugin(),
       new webpack.ProvidePlugin({
         Buffer: ["buffer", "Buffer"],
         process: "process/browser",
