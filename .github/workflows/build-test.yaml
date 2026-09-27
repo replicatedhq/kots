@@ -395,7 +395,9 @@ jobs:
           path: .image.env
 
       - name: push minio
-        run: skopeo copy --all --retry-times 5 docker://kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+        run: |
+          skopeo copy --all --retry-times 5 docker://kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+          skopeo copy --all --retry-times 5 docker://bitnamilegacy/minio-client:2025.7.21-debian-12-r3 docker://ttl.sh/automated-${{ github.run_id }}/minio-mc:2025.7.21-debian-12-r3
 
 
   push-rqlite:
