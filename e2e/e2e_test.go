@@ -32,22 +32,26 @@ var veleroCLI *velero.CLI
 var kotsInstaller *kots.Installer
 
 var (
-	skipTeardown          bool
-	existingKubeconfig    string
-	kotsadmImageRegistry  string
-	kotsadmImageNamespace string
-	kotsadmImageTag       string
-	airgap                bool
-	isOpenShift           bool
-	isEKS                 bool
-	kotsadmForwardPort    string
-	kotsHelmChartURL      string
-	kotsHelmChartVersion  string
-	kotsDockerhubUsername string
-	kotsDockerhubPassword string
-	awsAccessKeyID        string
-	awsSecretAccessKey    string
-	gitTag                string
+	skipTeardown           bool
+	existingKubeconfig     string
+	kotsadmImageRegistry   string
+	kotsadmImageNamespace  string
+	kotsadmImageTag        string
+	airgap                 bool
+	isOpenShift            bool
+	isEKS                  bool
+	kotsadmForwardPort     string
+	kotsHelmChartURL       string
+	kotsHelmChartVersion   string
+	kotsDockerhubUsername  string
+	kotsDockerhubPassword  string
+	minioImageRepository   string
+	minioImageTag          string
+	minioMCImageRepository string
+	minioMCImageTag        string
+	awsAccessKeyID         string
+	awsSecretAccessKey     string
+	gitTag                 string
 )
 
 func init() {
@@ -64,6 +68,10 @@ func init() {
 	flag.StringVar(&kotsHelmChartVersion, "kots-helm-chart-version", "", "kots helm chart version")
 	flag.StringVar(&kotsDockerhubUsername, "kots-dockerhub-username", "", "kots dockerhub username")
 	flag.StringVar(&kotsDockerhubPassword, "kots-dockerhub-password", "", "kots dockerhub password")
+	flag.StringVar(&minioImageRepository, "minio-image-repository", "", "override the MinIO image repository")
+	flag.StringVar(&minioImageTag, "minio-image-tag", "", "override the MinIO image tag")
+	flag.StringVar(&minioMCImageRepository, "minio-mc-image-repository", "", "override the MinIO client image repository")
+	flag.StringVar(&minioMCImageTag, "minio-mc-image-tag", "", "override the MinIO client image tag")
 	flag.StringVar(&awsAccessKeyID, "aws-access-key-id", "", "aws access key id")
 	flag.StringVar(&awsSecretAccessKey, "aws-secret-access-key", "", "aws secret access key")
 	flag.StringVar(&gitTag, "git-tag", "", "git tag")
@@ -158,7 +166,12 @@ var _ = Describe("E2E", func() {
 				if test.NeedsSnapshots {
 					GinkgoWriter.Println("Installing Minio")
 
-					minio := minio.New(minio.Options{})
+					minio := minio.New(minio.Options{
+						ImageRepository:   minioImageRepository,
+						ImageTag:          minioImageTag,
+						MCImageRepository: minioMCImageRepository,
+						MCImageTag:        minioMCImageTag,
+					})
 					minio.Install(helmCLI, c.GetKubeconfig())
 
 					GinkgoWriter.Println("Installing Velero")
