@@ -23,21 +23,29 @@ type Minio struct {
 }
 
 type Options struct {
-	Namespace   string
-	ReleaseName string
-	AccessKey   string
-	SecretKey   string
-	Bucket      string
+	Namespace         string
+	ReleaseName       string
+	AccessKey         string
+	SecretKey         string
+	Bucket            string
+	ImageRepository   string
+	ImageTag          string
+	MCImageRepository string
+	MCImageTag        string
 }
 
 func New(opts Options) Minio {
 	m := Minio{
 		Options{
-			Namespace:   opts.Namespace,
-			ReleaseName: opts.ReleaseName,
-			AccessKey:   opts.AccessKey,
-			SecretKey:   opts.SecretKey,
-			Bucket:      opts.Bucket,
+			Namespace:         opts.Namespace,
+			ReleaseName:       opts.ReleaseName,
+			AccessKey:         opts.AccessKey,
+			SecretKey:         opts.SecretKey,
+			Bucket:            opts.Bucket,
+			ImageRepository:   opts.ImageRepository,
+			ImageTag:          opts.ImageTag,
+			MCImageRepository: opts.MCImageRepository,
+			MCImageTag:        opts.MCImageTag,
 		},
 	}
 	if m.options.Namespace == "" {
@@ -63,8 +71,7 @@ func (m *Minio) Install(helmCLI *helm.CLI, kubeconfig string) {
 	Expect(err).WithOffset(1).Should(Succeed(), "helm repo add")
 	Eventually(session).WithOffset(1).WithTimeout(time.Minute).Should(gexec.Exit(0), "helm repo add")
 
-	session, err = helmCLI.Install(
-		kubeconfig,
+	args := []string{
 		"--create-namespace",
 		fmt.Sprintf("--namespace=%s", m.options.Namespace),
 		"--wait",
@@ -75,10 +82,25 @@ func (m *Minio) Install(helmCLI *helm.CLI, kubeconfig string) {
 		"--set=rootUser=rootuser,rootPassword=rootpass123",
 		fmt.Sprintf("--set=users[0].accessKey=%s,users[0].secretKey=%s,users[0].policy=readwrite", m.GetAccessKey(), m.GetSecretKey()),
 		fmt.Sprintf("--set=buckets[0].name=%s,buckets[0].policy=none,buckets[0].purge=false", m.GetBucket()),
+	}
+	if m.options.ImageRepository != "" {
+		args = append(args, "--set-string=image.repository="+m.options.ImageRepository)
+	}
+	if m.options.ImageTag != "" {
+		args = append(args, "--set-string=image.tag="+m.options.ImageTag)
+	}
+	if m.options.MCImageRepository != "" {
+		args = append(args, "--set-string=mcImage.repository="+m.options.MCImageRepository)
+	}
+	if m.options.MCImageTag != "" {
+		args = append(args, "--set-string=mcImage.tag="+m.options.MCImageTag)
+	}
+	args = append(args,
 		m.options.ReleaseName,
 		"minio/minio",
 		"--version=v5.0.13",
 	)
+	session, err = helmCLI.Install(kubeconfig, args...)
 	Expect(err).WithOffset(1).Should(Succeed(), "helm install")
 	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "helm install")
 }
