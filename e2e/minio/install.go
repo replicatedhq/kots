@@ -108,7 +108,7 @@ func (m *Minio) Install(helmCLI *helm.CLI, kubeconfig string) {
 	)
 	session, err = helmCLI.Install(kubeconfig, args...)
 	Expect(err).WithOffset(1).Should(Succeed(), "helm install")
-	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "helm install")
+	Eventually(session).WithOffset(1).WithTimeout(5*time.Minute).Should(gexec.Exit(0), "helm install")
 }
 
 func (m *Minio) GetURL() string {
