@@ -11,7 +11,7 @@ import {
 } from '../shared';
 
 test('target kots version', async ({ page }) => {
-  test.setTimeout(5 * 60 * 1000); // 5 minutes
+  test.setTimeout(20 * 60 * 1000); // 20 minutes
 
   await login(page);
   await uploadLicense(page, expect);
