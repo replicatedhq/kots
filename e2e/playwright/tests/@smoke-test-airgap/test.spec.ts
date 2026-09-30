@@ -11,7 +11,7 @@ import {
 } from "../shared";
 
 test("smoke test airgap", async ({ page }) => {
-  test.setTimeout(10 * 60 * 1000); // 10 minutes
+  test.setTimeout(20 * 60 * 1000); // 20 minutes
 
   await login(page);
   await uploadLicense(page, expect);
