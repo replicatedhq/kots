@@ -69,7 +69,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
 	github.com/tj/go-spin v1.1.0
-	github.com/vmware-tanzu/velero v1.18.3
+	github.com/vmware-tanzu/velero v1.18.4
 	go.podman.io/image/v5 v5.41.2
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.28.0
@@ -95,8 +95,8 @@ require (
 	oras.land/oras-go/v2 v2.6.2
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.25.1
-	sigs.k8s.io/kustomize/api v0.21.1
-	sigs.k8s.io/kustomize/kyaml v0.21.1
+	sigs.k8s.io/kustomize/api v0.21.2
+	sigs.k8s.io/kustomize/kyaml v0.21.2
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -223,8 +223,8 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/k0sproject/k0s v1.36.3-0.20260626104849-bdf1c22c23a5 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.20.0 // indirect
-	github.com/klauspost/pgzip v1.2.6
+	github.com/klauspost/compress v1.20.1 // indirect
+	github.com/klauspost/pgzip v1.2.7
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
