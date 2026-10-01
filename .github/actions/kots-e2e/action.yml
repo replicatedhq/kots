@@ -106,6 +106,12 @@ runs:
       with:
         path: .image.env
 
+    - name: set default storage class for eks
+      if: ${{ inputs.k8s-distribution == 'eks' }}
+      run: |
+        kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+      shell: bash
+
     - name: execute suite "${{ inputs.test-id }}"
       env:
         REPLICATED_API_TOKEN: ${{ inputs.replicated-api-token }}
