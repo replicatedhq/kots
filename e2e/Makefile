@@ -56,6 +56,10 @@ test:
 			--kots-helm-chart-version=$(KOTS_HELM_CHART_VERSION) \
 			--kots-dockerhub-username=$(KOTS_DOCKERHUB_USERNAME) \
 			--kots-dockerhub-password=$(KOTS_DOCKERHUB_PASSWORD) \
+			--minio-image-repository=$(MINIO_IMAGE_REPOSITORY) \
+			--minio-image-tag=$(MINIO_IMAGE_TAG) \
+			--minio-mc-image-repository=$(MINIO_MC_IMAGE_REPOSITORY) \
+			--minio-mc-image-tag=$(MINIO_MC_IMAGE_TAG) \
 			--aws-access-key-id=$(AWS_ACCESS_KEY_ID) \
 			--aws-secret-access-key=$(AWS_SECRET_ACCESS_KEY) \
 			--git-tag=$(GIT_TAG) \
