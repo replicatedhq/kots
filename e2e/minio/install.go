@@ -16,6 +16,9 @@ const (
 	DefaultAccessKey   = "accessKey"
 	DefaultSecretKey   = "secretKey"
 	DefaultBucket      = "bucket1"
+
+	ImageRepository = "kurlsh/minio"
+	ImageTag        = "RELEASE.2025-10-15T17-29-55Z"
 )
 
 type Minio struct {
@@ -72,6 +75,9 @@ func (m *Minio) Install(helmCLI *helm.CLI, kubeconfig string) {
 		"--set=replicas=1",
 		"--set=resources.requests.memory=128Mi",
 		"--set=persistence.enabled=false",
+		// quay.io/minio images are no longer publicly available
+		fmt.Sprintf("--set=image.repository=%s,image.tag=%s", ImageRepository, ImageTag),
+		fmt.Sprintf("--set=mcImage.repository=%s,mcImage.tag=%s", ImageRepository, ImageTag),
 		"--set=rootUser=rootuser,rootPassword=rootpass123",
 		fmt.Sprintf("--set=users[0].accessKey=%s,users[0].secretKey=%s,users[0].policy=readwrite", m.GetAccessKey(), m.GetSecretKey()),
 		fmt.Sprintf("--set=buckets[0].name=%s,buckets[0].policy=none,buckets[0].purge=false", m.GetBucket()),
