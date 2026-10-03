@@ -394,8 +394,18 @@ jobs:
         with:
           path: .image.env
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: push minio
-        run: skopeo copy --all --retry-times 5 docker://kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+        run: |
+          skopeo copy --all --retry-times 5 docker://kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+          docker buildx build --pull --platform linux/amd64,linux/arm64 --push \
+            -f e2e/minio/Dockerfile \
+            -t ttl.sh/automated-${{ github.run_id }}/minio-mc:2025.7.21-debian-12-r3 .
 
 
   push-rqlite:
@@ -1168,6 +1178,7 @@ jobs:
             --config-values config.yaml \
             --app-version-label "$APP_VERSION_LABEL" \
             --airgap-bundle app-seq1.airgap \
+            --wait-duration 5m \
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
