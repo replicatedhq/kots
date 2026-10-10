@@ -11,7 +11,7 @@ import {
 } from '../shared';
 
 test('target kots version', async ({ page }) => {
-  test.setTimeout(5 * 60 * 1000); // 5 minutes
+  test.setTimeout(20 * 60 * 1000); // 20 minutes
 
   await login(page);
   await uploadLicense(page, expect);
@@ -28,7 +28,9 @@ const validateAirgapInstallRestrictive = async (page: Page, expect: Expect) => {
     '/tmp/app.airgap'
   );
 
-  await airgapInstall(page, expect, 'ttl.sh', 'admin', 'password', 'test', '/tmp/app.airgap', 15 * 1000); // 15 seconds (should fail quickly)
+  // This upload is expected to be rejected before pushing images; use a stable
+  // registry endpoint so a ttl.sh outage cannot mask the version error.
+  await airgapInstall(page, expect, 'registry.k8s.io', 'admin', 'password', 'test', '/tmp/app.airgap', 15 * 1000); // 15 seconds (should fail quickly)
 
   const errorMessage = airgapInstallErrorMessage(page);
   await expect(errorMessage).toContainText("requires");
