@@ -16,7 +16,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
-	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"github.com/rqlite/gorqlite"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
@@ -238,23 +237,12 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 		}
 
 		if preflightSpec.String != "" {
-			preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpec.String))
+			kinds, err := kotsutil.KotsKindsFromMap(map[string][]byte{"preflight.yaml": []byte(preflightSpec.String)})
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load preflights from spec")
 			}
 
-			// this spec has templates applied to it already
-			numAnalyzers := 0
-			for _, analyzer := range preflight.Spec.Analyzers {
-				exclude := troubleshootanalyze.GetExcludeFlag(analyzer).BoolOrDefaultFalse()
-				if !exclude {
-					numAnalyzers += 1
-				}
-			}
-
-			if numAnalyzers > 0 {
-				app.HasPreflight = true
-			}
+			app.HasPreflight = kinds.HasPreflights()
 		}
 		if configSpec.String != "" {
 			config, err := kotsutil.LoadConfigFromBytes([]byte(configSpec.String))

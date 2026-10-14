@@ -21,6 +21,7 @@ type PreflightError struct {
 }
 
 type PreflightResults struct {
+	Notice  string                             `json:"notice,omitempty"`
 	Results []*preflight.UploadPreflightResult `json:"results,omitempty"`
 	Errors  []*PreflightError                  `json:"errors,omitempty"`
 }

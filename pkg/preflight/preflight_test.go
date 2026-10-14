@@ -19,6 +19,8 @@ func Test_GetPreflightState(t *testing.T) {
 		ignoreNonStrict  bool
 		want             string
 	}{
+		{"unsupported notice", &types.PreflightResults{Notice: "Beta3 specs will not run"}, false, "warn"},
+		{"ignore unsupported notice", &types.PreflightResults{Notice: "Beta3 specs will not run"}, true, "pass"},
 		{
 			name: "pass",
 			preflightResults: &types.PreflightResults{
