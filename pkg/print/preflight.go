@@ -11,6 +11,9 @@ import (
 func PreflightResults(results preflighttypes.PreflightResults) {
 	w := NewTabWriter()
 	defer w.Flush()
+	if results.Notice != "" {
+		fmt.Fprintf(w, "\nWARNING: %s\n", results.Notice)
+	}
 
 	if len(results.Errors) > 0 {
 		fmt.Fprintf(w, "\n")

@@ -53,6 +53,10 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 	}
 
 	preflightpkg.InjectDefaultPreflights(kotsKinds.Preflight, kotsKinds, registrySettings)
+	hasStrict, err := kotsKinds.HasStrictPreflights()
+	if err != nil {
+		return errors.Wrap(err, "failed to check for strict preflights")
+	}
 
 	var preflightErr error
 	defer func() {
@@ -65,7 +69,7 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 					},
 				},
 			}
-			if err := setPreflightResults(params.AppSlug, preflightResults); err != nil {
+			if err := setPreflightResults(params.AppSlug, preflightResults, hasStrict); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set preflight results"))
 				return
 			}
@@ -85,10 +89,10 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 			zap.Int64("sequence", params.NextSequence))
 
 		setResults := func(results *types.PreflightResults) error {
-			return setPreflightResults(params.AppSlug, results)
+			return setPreflightResults(params.AppSlug, results, hasStrict)
 		}
 
-		_, err := preflightpkg.Execute(kotsKinds.Preflight, false, setPreflightProgress, setResults)
+		_, err := preflightpkg.Execute(kotsKinds.Preflight, false, setPreflightProgress, setResults, kotsKinds.HasUnsupportedTroubleshoot)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 			return
@@ -98,7 +102,7 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 	return nil
 }
 
-func setPreflightResults(appSlug string, results *types.PreflightResults) error {
+func setPreflightResults(appSlug string, results *types.PreflightResults, hasStrict bool) error {
 	resultsBytes, err := json.Marshal(results)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal preflight results")
@@ -111,7 +115,7 @@ func setPreflightResults(appSlug string, results *types.PreflightResults) error 
 			AppSlug:                    appSlug,
 			ClusterSlug:                "this-cluster",
 			Skipped:                    false,
-			HasFailingStrictPreflights: hasFailingStrictPreflights(results),
+			HasFailingStrictPreflights: hasStrict && hasFailingStrictPreflights(results),
 		},
 		Progress: "", // clear the progress once the results are set
 	}

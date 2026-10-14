@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { PreflightCheck, PreflightResponse } from "../types";
+import { PreflightCheck, PreflightResponse, getPreflightDisplayResults } from "../types";
 import { useState } from "react";
 
 async function getPreflightResult({
@@ -68,7 +68,7 @@ function hasPreflightResults(response: PreflightResponse): boolean {
   if (typeof response?.preflightResult?.result === "string")
     throw new Error("Preflight response is not properly unmarshalled");
 
-  return Boolean(response?.preflightResult?.result?.results?.length);
+  return Boolean(getPreflightDisplayResults(response).length);
 }
 
 // just results which is an object
@@ -84,7 +84,7 @@ function hasFailureOrWarning(response: PreflightResponse): boolean {
     throw new Error("Preflight response is not properly unmarshalled");
 
   return Boolean(
-    response?.preflightResult?.result?.results?.find(
+    getPreflightDisplayResults(response).find(
       (result) => result?.isFail || result?.isWarn
     )
   );
@@ -113,10 +113,11 @@ function flattenPreflightResponse({
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
     pollForUpdates:
-      !response?.preflightResult?.skipped ||
-      hasRunningPreflightChecks(response),
+      (!response?.preflightResult?.skipped || hasRunningPreflightChecks(response)) &&
+      !response?.preflightResult?.result?.results?.length &&
+      (!response?.preflightResult?.result?.notice || hasPreflightErrors(response)),
     preflightResults:
-      response?.preflightResult?.result?.results?.map((responseResult) => ({
+      getPreflightDisplayResults(response).map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
         message: responseResult.message || "",
         title: responseResult.title || "",
@@ -145,8 +146,7 @@ function flattenPreflightResponse({
       response?.preflightResult?.skipped || hasRunningPreflightChecks(response),
     showPreflightResultErrors:
       hasPreflightErrors(response) && // has errors
-      !response?.preflightResult?.skipped && // not skipped
-      !hasPreflightResults(response),
+      !response?.preflightResult?.skipped, // not skipped
     showPreflightResults:
       !response?.preflightResult?.skipped &&
       hasPreflightResults(response) &&
@@ -190,8 +190,6 @@ function useGetPrelightResults({
     },
     refetchInterval: (preflightCheck: PreflightCheck | undefined) => {
       if (!preflightCheck) return null;
-
-      if (preflightCheck?.preflightResults.length > 0) return null;
 
       const refetchInterval = makeRefetchInterval(preflightCheck);
 

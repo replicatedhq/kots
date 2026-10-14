@@ -730,7 +730,7 @@ var _ = Describe("Kots", func() {
 	})
 })
 
-func TestIsV1Beta3Doc(t *testing.T) {
+func TestIsUnsupportedTroubleshootDoc(t *testing.T) {
 	tests := []struct {
 		name string
 		doc  []byte
@@ -772,27 +772,9 @@ func TestIsV1Beta3Doc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, kotsutil.IsV1Beta3Doc(tt.doc))
+			assert.Equal(t, tt.want, kotsutil.IsUnsupportedTroubleshootDoc(tt.doc))
 		})
 	}
-}
-
-func TestFilterOutV1Beta3Docs(t *testing.T) {
-	content := []byte(
-		"apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: v2\n" +
-			"\n---\n" +
-			"apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nmetadata:\n  name: v3\n" +
-			"\n---\n" +
-			"apiVersion: troubleshoot.sh/v1beta3\nkind: HostPreflight\nmetadata:\n  name: hp3\n",
-	)
-
-	filtered := kotsutil.FilterOutV1Beta3Docs(content)
-	assert.Equal(t, "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: v2\n", string(filtered))
-
-	assert.Nil(t, kotsutil.FilterOutV1Beta3Docs([]byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\n")))
-
-	unchanged := []byte("apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\n")
-	assert.Equal(t, unchanged, kotsutil.FilterOutV1Beta3Docs(unchanged))
 }
 
 func TestIsKotsKind(t *testing.T) {

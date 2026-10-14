@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight/types"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
@@ -27,7 +28,14 @@ import (
 
 // Execute will Execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
-func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool, setProgress func(progress map[string]interface{}) error, setResults func(results *types.PreflightResults) error) (*types.PreflightResults, error) {
+func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool, setProgress func(progress map[string]interface{}) error, setResults func(results *types.PreflightResults) error, unsupported bool) (*types.PreflightResults, error) {
+	uploadPreflightResults := &types.PreflightResults{}
+	if unsupported {
+		uploadPreflightResults.Notice = kotsutil.UnsupportedTroubleshootMessage
+	}
+	if unsupported && !kotsutil.HasRunnablePreflights(preflightSpec) {
+		return uploadPreflightResults, setResults(uploadPreflightResults)
+	}
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
 	defer close(progressChan)
 
@@ -76,7 +84,6 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 		}
 	}()
 
-	uploadPreflightResults := &types.PreflightResults{}
 	defer func() {
 		completeMx.Lock()
 		defer completeMx.Unlock()

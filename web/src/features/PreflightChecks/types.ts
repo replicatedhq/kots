@@ -22,6 +22,7 @@ interface PreflightResponseResult {
   skipped: boolean;
   result:
     | {
+        notice?: string;
         errors?: PreflightResponseError[];
         results?: PreflightResponseResultItem[];
       }
@@ -42,6 +43,22 @@ interface PreflightResponseResultItem {
   strict: boolean;
   title: string;
   uri: string;
+}
+
+// Add the notice only for display; it is never a saved analyzer result.
+export function getPreflightDisplayResults(
+  response: PreflightResponse
+): PreflightResponseResultItem[] {
+  const result = response?.preflightResult?.result;
+  if (typeof result === "string")
+    throw new Error("Preflight response is not properly unmarshalled");
+  const results = result?.results || [];
+  return result?.notice
+    ? [
+        { isWarn: true, title: "Unsupported v1beta3 specs", message: result.notice, strict: false, uri: "" },
+        ...results,
+      ]
+    : results;
 }
 
 /* UI TYPES */
