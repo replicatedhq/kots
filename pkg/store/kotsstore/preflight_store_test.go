@@ -87,6 +87,12 @@ func Test_hasFailingStrictPreflights(t *testing.T) {
 		wantErr            bool
 	}{
 		{
+			name:               "notice and collection error do not complete strict checks",
+			preflightSpecStr:   toSqlString(t, strictTruePreflightSpec),
+			preflightResultStr: gorqlite.NullString{Valid: true, String: `{"notice":"Beta3 specs will not run","errors":[{"error":"collection failed"}]}`},
+			want:               true,
+		},
+		{
 			name:               "expect true, nil when preflightSpec with strict:true analyzer and result IsFail:true",
 			preflightSpecStr:   toSqlString(t, strictTruePreflightSpec),
 			preflightResultStr: toSqlString(t, strictFailTruePreflightResultSpec),

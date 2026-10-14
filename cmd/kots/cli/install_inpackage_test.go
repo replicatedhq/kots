@@ -2,12 +2,29 @@ package cli
 
 import (
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/handlers"
+	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"testing"
 )
+
+func Test_checkPreflightNotice(t *testing.T) {
+	response := &handlers.GetPreflightResultResponse{
+		PreflightResult: preflighttypes.PreflightResult{Result: `{"notice":"Beta3 specs will not run"}`},
+	}
+	for _, skip := range []bool{false, true} {
+		available, err := checkPreflightResults(response, skip)
+		require.Equal(t, skip, available)
+		if skip {
+			require.NoError(t, err)
+		} else {
+			require.ErrorContains(t, err, "preflight check warnings")
+		}
+	}
+}
 
 func Test_parseToleration(t *testing.T) {
 	tests := []struct {

@@ -11,7 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -99,6 +99,8 @@ type KotsKinds struct {
 	Redactor      *troubleshootv1beta2.Redactor
 	HostPreflight *troubleshootv1beta2.HostPreflight
 
+	HasUnsupportedTroubleshoot bool
+
 	Config       *kotsv1beta1.Config
 	ConfigValues *kotsv1beta1.ConfigValues
 
@@ -146,7 +148,7 @@ func IsKotsKind(apiVersion string, kind string) bool {
 	if apiVersion == "kots.io/v1beta2" {
 		return true
 	}
-	if apiVersion == "troubleshoot.sh/v1beta2" {
+	if apiVersion == "troubleshoot.sh/v1beta2" || apiVersion == "troubleshoot.sh/v1beta3" {
 		return true
 	}
 	if apiVersion == "troubleshoot.replicated.com/v1beta1" {
@@ -266,10 +268,14 @@ func (k *KotsKinds) IsConfigurable() bool {
 }
 
 func (k *KotsKinds) HasPreflights() bool {
-	if k == nil || k.Preflight == nil {
+	return k != nil && (k.HasUnsupportedTroubleshoot || HasRunnablePreflights(k.Preflight))
+}
+
+func HasRunnablePreflights(preflight *troubleshootv1beta2.Preflight) bool {
+	if preflight == nil {
 		return false
 	}
-	for _, a := range k.Preflight.Spec.Analyzers {
+	for _, a := range preflight.Spec.Analyzers {
 		exclude := troubleshootanalyze.GetExcludeFlag(a).BoolOrDefaultFalse()
 		if !exclude {
 			return true
@@ -445,8 +451,15 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 				if o.Preflight == nil {
 					return "", nil
 				}
+				preflight := o.Preflight.DeepCopy()
+				if o.HasUnsupportedTroubleshoot {
+					if preflight.Annotations == nil {
+						preflight.Annotations = map[string]string{}
+					}
+					preflight.Annotations[unsupportedTroubleshootAnnotation] = "true"
+				}
 				var b bytes.Buffer
-				if err := s.Encode(o.Preflight, &b); err != nil {
+				if err := s.Encode(preflight, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode preflight")
 				}
 				return string(b.Bytes()), nil
@@ -557,6 +570,9 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 	// kots kinds could be part of a multi-yaml doc
 	docs := util.ConvertToSingleDocs(content)
 	for _, doc := range docs {
+		if IsUnsupportedTroubleshootDoc(doc) {
+			doc = UnsupportedTroubleshootWarning()
+		}
 		decoded, gvk, err := decode(doc, nil, nil)
 		if err != nil {
 			return errors.Wrapf(err, "failed to decode: %v", string(content))
@@ -631,6 +647,11 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 		case "troubleshoot.sh/v1beta2, Kind=Redactor":
 			k.Redactor = decoded.(*troubleshootv1beta2.Redactor)
 		case "troubleshoot.sh/v1beta2, Kind=Preflight":
+			k.HasUnsupportedTroubleshoot = k.HasUnsupportedTroubleshoot || decoded.(*troubleshootv1beta2.Preflight).Annotations[unsupportedTroubleshootAnnotation] != ""
+			// An empty warning marker must not own a supported spec's URI or metadata.
+			if k.Preflight != nil && k.Preflight.Annotations[unsupportedTroubleshootAnnotation] != "" && reflect.DeepEqual(k.Preflight.Spec, troubleshootv1beta2.PreflightSpec{}) {
+				k.Preflight = nil
+			}
 			k.Preflight = troubleshootpreflight.ConcatPreflightSpec(k.Preflight, decoded.(*troubleshootv1beta2.Preflight))
 		case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
 			k.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
@@ -913,39 +934,6 @@ func IsApiVersionKind(content []byte, apiVersion, kind string) bool {
 	return false
 }
 
-var v1Beta3APIVersionRe = regexp.MustCompile(`(?m)^apiVersion:[ \t]*['"]?troubleshoot\.sh/v1beta3['"]?[ \t]*(#.*)?$`)
-
-// IsV1Beta3Doc reports whether doc is an unsupported troubleshoot.sh/v1beta3
-// doc. Matches the apiVersion header line directly, so it still works on docs
-// with unrendered template syntax (e.g. Helm's "{{ .Values.x }}") further down.
-func IsV1Beta3Doc(doc []byte) bool {
-	return v1Beta3APIVersionRe.Match(doc)
-}
-
-// FilterOutV1Beta3Docs removes v1beta3 documents from content (a possibly
-// multi-doc yaml file). Returns nil if nothing remains.
-func FilterOutV1Beta3Docs(content []byte) []byte {
-	docs := util.ConvertToSingleDocs(content)
-
-	kept := make([][]byte, 0, len(docs))
-	changed := false
-	for _, doc := range docs {
-		if IsV1Beta3Doc(doc) {
-			changed = true
-			continue
-		}
-		kept = append(kept, doc)
-	}
-
-	if !changed {
-		return content
-	}
-	if len(kept) == 0 {
-		return nil
-	}
-	return bytes.Join(kept, []byte("\n---\n"))
-}
-
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
 	installationData, err := os.ReadFile(installationFilePath)
 	if err != nil {
@@ -956,6 +944,9 @@ func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Install
 }
 
 func LoadSupportBundleFromContents(data []byte) (*troubleshootv1beta2.SupportBundle, error) {
+	if IsUnsupportedTroubleshootDoc(data) {
+		return nil, errors.New("KOTS does not support troubleshoot.sh/v1beta3 support bundles")
+	}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
 	if err != nil {
@@ -1161,6 +1152,9 @@ func LoadConfigValuesFromBytes(data []byte) (*kotsv1beta1.ConfigValues, error) {
 }
 
 func LoadPreflightFromContents(content []byte) (*troubleshootv1beta2.Preflight, error) {
+	if IsUnsupportedTroubleshootDoc(content) {
+		return nil, errors.New("KOTS does not support troubleshoot.sh/v1beta3 preflights")
+	}
 	content, err := docrewrite.ConvertToV1Beta2(content)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert to v1beta2")

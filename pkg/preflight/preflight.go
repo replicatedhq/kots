@@ -29,6 +29,7 @@ import (
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
+	"github.com/replicatedhq/troubleshoot/pkg/multitype"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
 	"go.yaml.in/yaml/v2"
@@ -120,7 +121,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonS
 		setResults := func(results *types.PreflightResults) error {
 			return setPreflightResults(appID, sequence, results)
 		}
-		uploadPreflightResults, err := Execute(kotsKinds.Preflight, ignoreRBAC, setProgress, setResults)
+		uploadPreflightResults, err := Execute(kotsKinds.Preflight, ignoreRBAC, setProgress, setResults, kotsKinds.HasUnsupportedTroubleshoot)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 			return
@@ -255,11 +256,10 @@ func GetPreflightState(preflightResults *types.PreflightResults, ignoreNonStrict
 		return "fail"
 	}
 
-	if len(preflightResults.Results) == 0 {
-		return "pass"
-	}
-
 	state := "pass"
+	if preflightResults.Notice != "" && !ignoreNonStrict {
+		state = "warn"
+	}
 	for _, result := range preflightResults.Results {
 		if ignoreNonStrict && !result.Strict {
 			continue
@@ -282,13 +282,17 @@ func GetSpecURI(appSlug string) string {
 	return fmt.Sprintf("secret/%s/%s", util.PodNamespace, GetSpecSecretName(appSlug))
 }
 
-func GetPreflightCommand(appSlug string) []string {
-	comamnd := []string{
+func GetPreflightCommand(appSlug string, unsupported bool) []string {
+	var command []string
+	if unsupported {
+		command = append(command, fmt.Sprintf("printf '%%s\\n' '%s'", kotsutil.UnsupportedTroubleshootMessage))
+	}
+	command = append(command,
 		"curl https://krew.sh/preflight | bash",
 		fmt.Sprintf("kubectl preflight %s\n", GetSpecURI(appSlug)),
-	}
+	)
 
-	return comamnd
+	return command
 }
 
 func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds, archiveDir string) error {
@@ -314,6 +318,12 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 	}
 
 	InjectDefaultPreflights(builtPreflight, kotsKinds, registrySettings)
+	if kotsKinds.HasUnsupportedTroubleshoot && !kotsutil.HasRunnablePreflights(builtPreflight) {
+		excluded := troubleshootv1beta2.CollectorMeta{Exclude: &multitype.BoolOrString{StrVal: "true"}}
+		builtPreflight.Spec.Collectors = append(builtPreflight.Spec.Collectors,
+			&troubleshootv1beta2.Collect{ClusterInfo: &troubleshootv1beta2.ClusterInfo{CollectorMeta: excluded}},
+			&troubleshootv1beta2.Collect{ClusterResources: &troubleshootv1beta2.ClusterResources{CollectorMeta: excluded}})
+	}
 
 	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(builtPreflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
@@ -328,6 +338,9 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 		baseURL = origin
 	}
 	builtPreflight.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%d", baseURL, app.Slug, sequence)
+	if kotsKinds.HasUnsupportedTroubleshoot {
+		builtPreflight.Spec.UploadResultsTo += "?unsupported=true"
+	}
 
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer

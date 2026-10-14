@@ -159,6 +159,11 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 
 	for _, upstreamFile := range u.Files {
 		for _, doc := range util.ConvertToSingleDocs(upstreamFile.Content) {
+			if kotsutil.IsUnsupportedTroubleshootDoc(doc) {
+				// Only the executable KOTS spec is replaced; upstream keeps the
+				// original document for other installers and future rendering.
+				doc = kotsutil.UnsupportedTroubleshootWarning()
+			}
 			gvk := OverlySimpleGVK{}
 			if err := yaml.Unmarshal(doc, &gvk); err != nil {
 				continue

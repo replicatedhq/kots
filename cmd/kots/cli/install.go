@@ -1118,7 +1118,8 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse, skipPr
 		}
 	}
 
-	var isWarn, isFail bool
+	isWarn := results.Notice != "" && !skipPreflights
+	var isFail bool
 	for _, result := range results.Results {
 		if skipPreflights && !result.Strict {
 			// if we're skipping preflights, we should only check the strict preflight results
