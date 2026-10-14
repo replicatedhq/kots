@@ -1,0 +1,116 @@
+pkg/upstream/replicated.go
+  s_1026f69ab2a9bd::t_6f1483cfc8ac6e 357,472
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_02fb144d61999b 163-164,166
+  s_1026f69ab2a9bd::t_08f16d75be41b1 162,165
+pkg/base/base.go
+  s_1026f69ab2a9bd::t_02fb144d61999b 252,255-256
+  s_1026f69ab2a9bd::t_08f16d75be41b1 254
+  s_1026f69ab2a9bd::t_0b0d12e5623288 253
+pkg/preflight/warning_collectors_test.go
+  s_1026f69ab2a9bd::t_ca4c4aa73f52d7 1-3,5-20,22-23,25-29,31-36
+  s_1026f69ab2a9bd::t_54c1edf11a1fa4 30
+  s_1026f69ab2a9bd::t_207ff375249795 4
+  s_1026f69ab2a9bd::t_08f16d75be41b1 24
+  s_1026f69ab2a9bd::t_6faf308a4677bc 21
+  s_1026f69ab2a9bd::t_ea51c42699591c 37-38
+pkg/upstream/replicated_test.go
+  s_49c73e75e4ce86::t_996b8be0a2db84 773
+  s_49c73e75e4ce86::t_50e7318d2cb468 743-744,774
+  s_49c73e75e4ce86::t_c4039a93cdd8bb 741-742
+  s_49c73e75e4ce86::t_0d17a104eea9e8 739
+  s_49c73e75e4ce86::t_40283470210f5b 775
+pkg/preflight/execute.go
+  s_1026f69ab2a9bd::t_eab2db2ff99923 15,31-32
+  s_1026f69ab2a9bd::t_e09318383a2479 33-35
+  s_1026f69ab2a9bd::t_ad9306a8800b2f 36,85
+pkg/preflight/preflight.go
+  s_1026f69ab2a9bd::t_eab2db2ff99923 289,322,344
+  s_1026f69ab2a9bd::t_2ab507a4b9f60b 286-288
+  s_1026f69ab2a9bd::t_8470ef7951022b 290-291
+  s_1026f69ab2a9bd::t_efd545d0c9da0a 323-325
+  s_1026f69ab2a9bd::t_387c2fe309ffd8 342-343
+  s_1026f69ab2a9bd::t_c257d4dee26553 32,124,294,296,326-327
+pkg/kotsutil/troubleshoot_template_error.go
+  s_1026f69ab2a9bd::t_870f4905b4e47b 11,21-22,25-37
+  s_1026f69ab2a9bd::t_d30dbc518ce321 7,14,16-17
+  s_1026f69ab2a9bd::t_02fb144d61999b 5
+  s_1026f69ab2a9bd::t_928e7a79a04528 19-20,23-24
+  s_1026f69ab2a9bd::t_08f16d75be41b1 10,12-13
+  s_1026f69ab2a9bd::t_eab2db2ff99923 38-40
+  s_1026f69ab2a9bd::t_ed2a28cedc5462 1-4,6,8-9,41
+  s_1026f69ab2a9bd::t_73d3406a50322d 15,18
+  s_1026f69ab2a9bd::t_558113fb1b2b9a 42
+pkg/kotsutil/kots.go
+  s_1026f69ab2a9bd::t_d30dbc518ce321 270,943-944
+  s_49c73e75e4ce86::t_8a66e985e323db 150
+  s_1026f69ab2a9bd::t_08f16d75be41b1 572-573,942,1150
+  s_49c73e75e4ce86::t_c65c8ee13206b5 574
+  s_1026f69ab2a9bd::t_e75ee421e2ebcb 1151
+  s_1026f69ab2a9bd::t_e9795abe429ff2 271-273
+  s_1026f69ab2a9bd::t_b76a6b1a7931a6 1152
+  s_1026f69ab2a9bd::t_227e0f0b547db8 101-102,274,277,453-459,461,649
+pkg/base/preflight_compatibility_test.go
+  s_49c73e75e4ce86::t_5efa50fc3a2e22 1-11
+  s_1026f69ab2a9bd::t_2aded85a890611 50
+  s_1026f69ab2a9bd::t_340a49b501b4eb 18,27-31,45-47
+  s_1026f69ab2a9bd::t_6faf308a4677bc 12-17,19-26,32-44,48-49,51-53
+  s_1026f69ab2a9bd::t_f73c4746628b33 54-56
+  s_1026f69ab2a9bd::t_0069b104253b38 57-90
+pkg/preflight/types/types.go
+  s_1026f69ab2a9bd::t_5c7fbbeef182a7 24
+pkg/store/kotsstore/preflight_store_test.go
+  s_1026f69ab2a9bd::t_0748400b7a9570 89-94
+pkg/upgradeservice/preflight/preflight.go
+  s_1026f69ab2a9bd::t_32b1fa1678febc 56-59,72,92,95,105,118
+web/src/features/PreflightChecks/types.ts
+  s_1026f69ab2a9bd::t_ec97ca719db3fb 25,48-63
+web/src/utilities/utilities.js
+  s_84c928d021a21b::t_52eb709d382ed0 434,438
+web/src/utilities/utilities.test.js
+  s_84c928d021a21b::t_451a8d84af5e58 1-11
+pkg/handlers/preflight.go
+  s_1026f69ab2a9bd::t_95890b0d1646e4 291,325-337
+pkg/kotsutil/kots_test.go
+  s_1026f69ab2a9bd::t_1394289cc23ced 733,775
+pkg/store/kotsstore/app_store.go
+  s_1026f69ab2a9bd::t_b8110f75e26354 240,245
+web/src/components/upgrade_service/hooks/getPreflightResult.tsx
+  s_1026f69ab2a9bd::t_fb48d98069dca9 5,71,87,119,148
+web/src/features/PreflightChecks/api/getPreflightResult.test.tsx
+  s_1026f69ab2a9bd::t_3ad626e5e76384 1-49
+web/src/features/PreflightChecks/api/getPreflightResult.tsx
+  s_1026f69ab2a9bd::t_d192ed4c01e3c4 2,71,87,119,148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aaeeff674630d0113239c893e5ea1b40c1aaf2c3",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    },
+    "s_49c73e75e4ce86": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a116c0-ca51-7111-a924-b5bdac2146db",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    },
+    "s_84c928d021a21b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a130c2-e782-73a1-bd66-bd3c909bf8d6",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}
