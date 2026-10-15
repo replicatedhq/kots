@@ -1,0 +1,52 @@
+pkg/kotsutil/kots.go
+  s_1026f69ab2a9bd::t_0961d7ae59b6a1 576,578,580
+  s_1026f69ab2a9bd::t_31482151767244 577,579,581-582,954
+pkg/base/preflight_helm_values.go
+  s_33281c77b0f47c::t_9fee324b2b36f6 15,71-73
+pkg/base/preflight_helm_values_test.go
+  s_1026f69ab2a9bd::t_85e5de83e3c32b 48,52,83-86,98-100,123-129
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_725a4baecfab2b 140-144,165-179,254,263-271,273-274
+pkg/kotsutil/kots_test.go
+  s_1026f69ab2a9bd::t_59fd9dc2f4e53d 4,23,774-797,824-837
+pkg/kotsutil/supportbundle_references.go
+  s_1026f69ab2a9bd::t_dc80239bd3eca7 1-139
+pkg/kotsutil/supportbundle_references_test.go
+  s_1026f69ab2a9bd::t_cbf6a5e0ea64d8 1-127
+pkg/kotsutil/troubleshoot.go
+  s_1026f69ab2a9bd::t_815ce2030da087 36-39
+pkg/kotsutil/troubleshoot_template_error.go
+  s_1026f69ab2a9bd::t_b2030265249181 6,9,49-54,64-88
+pkg/reporting/app.go
+  s_33281c77b0f47c::t_62b8a26ea28a94 21,277
+pkg/reporting/preflight.go
+  s_33281c77b0f47c::t_43250a0e825c02 10,65,98,106-108
+pkg/reporting/preflight_test.go
+  s_1026f69ab2a9bd::t_b8a94cedbbb916 1-28
+pkg/supportbundle/spec.go
+  s_1026f69ab2a9bd::t_d05dc32daf964c 76-79,337,388,392,396-400,405-408,418
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7ff30dd5fbdb4e69079026c4ea34e91170fb009a",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    },
+    "s_33281c77b0f47c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a09150-6dca-73b2-b6f6-3f9ac32c804e",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}
