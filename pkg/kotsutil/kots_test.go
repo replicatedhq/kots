@@ -744,21 +744,43 @@ func TestIsUnsupportedTroubleshootDoc(t *testing.T) {
 		{
 			name: "v1beta3 preflight",
 			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\n"),
-			want: true,
+			want: false,
 		},
 		{
 			name: "v1beta3 host preflight",
 			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: HostPreflight\n"),
-			want: true,
+			want: false,
 		},
 		{
 			name: "v1beta3 doc, any other kind",
 			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: SupportBundle\n"),
-			want: true,
+			want: false,
 		},
 		{
 			name: "v1beta3 with quoted apiVersion",
 			doc:  []byte("apiVersion: \"troubleshoot.sh/v1beta3\"\nkind: 'Preflight'\n"),
+			want: false,
+		},
+		{
+			name: "beta3 KOTS expression",
+			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nmetadata:\n  name: 'repl{{ ConfigOption `name` }}'\n"),
+		},
+		{
+			name: "beta3 analyzer runtime message",
+			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nspec:\n  message: 'Unsupported version {{ .version }}'\n"),
+		},
+		{
+			name: "beta3 literal opening braces",
+			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nspec:\n  message: 'Literal {{'\n"),
+		},
+		{
+			name: "beta3 Helm comment with CRLF",
+			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\r\nkind: Preflight\r\n# {{/* checks */}}\r\n"),
+			want: true,
+		},
+		{
+			name: "beta3 cross-document Helm variable",
+			doc:  []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nspec:\n  value: '{{ $memory }}'\n"),
 			want: true,
 		},
 		{

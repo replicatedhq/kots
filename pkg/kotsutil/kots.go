@@ -574,19 +574,15 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 			doc = UnsupportedTroubleshootWarning()
 		}
 		decoded, gvk, err := decode(doc, nil, nil)
-		if err != nil {
-			return errors.Wrapf(err, "failed to decode: %v", string(content))
-		}
-
-		if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
+		if IsV1Beta3TroubleshootDoc(doc) || (err == nil && strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,")) {
 			doc, err = docrewrite.ConvertToV1Beta2(doc)
 			if err != nil {
 				return errors.Wrap(err, "failed to convert to v1beta2")
 			}
 			decoded, gvk, err = decode(doc, nil, nil)
-			if err != nil {
-				return errors.Wrapf(err, "failed to decode troubleshoot doc: %v", string(content))
-			}
+		}
+		if err != nil {
+			return errors.Wrapf(err, "failed to decode: %v", string(content))
 		}
 
 		switch gvk.String() {
@@ -945,7 +941,14 @@ func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Install
 
 func LoadSupportBundleFromContents(data []byte) (*troubleshootv1beta2.SupportBundle, error) {
 	if IsUnsupportedTroubleshootDoc(data) {
-		return nil, errors.New("KOTS does not support troubleshoot.sh/v1beta3 support bundles")
+		return nil, errors.New("KOTS does not support Helm templates in v1beta3 support bundles")
+	}
+	if IsV1Beta3TroubleshootDoc(data) {
+		converted, err := docrewrite.ConvertToV1Beta2(data)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to prepare v1beta3 support bundle")
+		}
+		data = converted
 	}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
@@ -1153,7 +1156,7 @@ func LoadConfigValuesFromBytes(data []byte) (*kotsv1beta1.ConfigValues, error) {
 
 func LoadPreflightFromContents(content []byte) (*troubleshootv1beta2.Preflight, error) {
 	if IsUnsupportedTroubleshootDoc(content) {
-		return nil, errors.New("KOTS does not support troubleshoot.sh/v1beta3 preflights")
+		return nil, errors.New("KOTS does not support Helm templates in v1beta3 preflights")
 	}
 	content, err := docrewrite.ConvertToV1Beta2(content)
 	if err != nil {

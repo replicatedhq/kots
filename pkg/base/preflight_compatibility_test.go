@@ -12,7 +12,7 @@ import (
 
 func TestTemplatedBeta3IsRetainedButNotExecuted(t *testing.T) {
 	content := "apiVersion: troubleshoot.sh/v1beta3\r\nkind: SupportBundle\r\nspec:\r\n{{ if .Values.enabled }}\r\n  collectors: []\r\n{{ end }}\r\n"
-	legacy := "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nspec:\n  analyzers:\n    - clusterVersion:\n        checkName: 'repl{{ printf \"KOTS check\" }}'\n"
+	legacy := "apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nspec:\n  analyzers:\n    - clusterVersion:\n        checkName: 'repl{{ printf \"KOTS check\" }}'\n"
 	u := &upstreamtypes.Upstream{Type: "replicated", Files: []upstreamtypes.UpstreamFile{
 		{Path: "legacy.yaml", Content: []byte(legacy)}, {Path: "beta3.yaml", Content: []byte(content)},
 	}}
@@ -46,6 +46,8 @@ func TestPreflightReleaseDetection(t *testing.T) {
 		runnable, notice bool
 	}{
 		{"beta2 only", []string{legacy}, true, false},
+		{"concrete beta3 only", []string{strings.ReplaceAll(legacy, "v1beta2", "v1beta3")}, true, false},
+		{"beta2 and concrete beta3", []string{legacy, strings.ReplaceAll(legacy, "v1beta2", "v1beta3")}, true, false},
 		{"beta2 then beta3", []string{legacy, beta3}, true, true},
 		{"beta3 then beta2", []string{beta3, legacy}, true, true},
 		{"beta3 only", []string{beta3}, false, true},
@@ -77,6 +79,26 @@ func TestPreflightReleaseDetection(t *testing.T) {
 				require.Equal(t, tc.notice, reloaded.HasUnsupportedTroubleshoot)
 				require.Equal(t, kinds.HasPreflights(), reloaded.HasPreflights())
 			}
+		})
+	}
+}
+
+func TestConcreteBeta3KindsAndMalformedSpecs(t *testing.T) {
+	for _, version := range []string{"v1beta2", "v1beta3"} {
+		t.Run(version, func(t *testing.T) {
+			bundle := []byte("apiVersion: troubleshoot.sh/" + version + "\nkind: SupportBundle\nspec:\n  collectors:\n    - clusterInfo: {}\n")
+			loaded, err := kotsutil.LoadSupportBundleFromContents(bundle)
+			require.NoError(t, err)
+			require.Len(t, loaded.Spec.Collectors, 1)
+			kinds, err := kotsutil.KotsKindsFromMap(map[string][]byte{"bundle.yaml": bundle,
+				"host.yaml": []byte("apiVersion: troubleshoot.sh/" + version + "\nkind: HostPreflight\nspec:\n  collectors:\n    - cpu: {}\n"),
+			})
+			require.NoError(t, err)
+			require.NotNil(t, kinds.SupportBundle)
+			require.NotNil(t, kinds.HostPreflight)
+			require.False(t, kinds.HasUnsupportedTroubleshoot)
+			_, err = kotsutil.LoadPreflightFromContents([]byte("apiVersion: troubleshoot.sh/" + version + "\nkind: Preflight\nspec:\n  collectors:\n    - runPod:\n        podSpec:\n          containers:\n            - resources:\n                requests:\n                  memory: not-a-quantity\n"))
+			require.ErrorContains(t, err, "quantities must match")
 		})
 	}
 }

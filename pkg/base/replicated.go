@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -138,6 +137,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions, r
 
 func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (map[string][]byte, error) {
 	renderedKotsKindsMap := make(map[string][]byte)
+	var chartPreflights []BaseFile
 
 	builder, itemValues, err := NewConfigContextTemplateBuilder(u, renderOptions)
 	if err != nil {
@@ -170,6 +170,10 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 			}
 		}
 		for _, doc := range docs {
+			if troubleshootHelmChart(doc) != "" {
+				chartPreflights = append(chartPreflights, BaseFile{Path: upstreamFile.Path, Content: doc})
+				continue
+			}
 			if kotsutil.IsUnsupportedTroubleshootDoc(doc) {
 				// Only the executable KOTS spec is replaced; upstream keeps the
 				// original document for other installers and future rendering.
@@ -246,6 +250,34 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 		}
 	}
 
+	if len(chartPreflights) > 0 {
+		charts, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, file := range chartPreflights {
+			ref := troubleshootHelmChart(file.Content)
+			rendered, err := builder.RenderTemplate(file.Path, string(file.Content))
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to render KOTS templates in %s", file.Path)
+			}
+			doc, err := renderTroubleshootWithChart([]byte(rendered), ref, charts, u.Files, renderOptions.Namespace)
+			if err != nil {
+				return nil, errors.Wrapf(err, "cannot render %s with values from HelmChart %q", file.Path, ref)
+			}
+			var parsed interface{}
+			if err := yaml.Unmarshal(doc, &parsed); err != nil {
+				return nil, errors.Wrapf(err, "invalid rendered YAML in %s", file.Path)
+			}
+			if parsed == nil { // A conditional may disable the entire document.
+				continue
+			}
+			if existing := renderedKotsKindsMap[file.Path]; len(existing) > 0 {
+				doc = bytes.Join([][]byte{existing, doc}, []byte("\n---\n"))
+			}
+			renderedKotsKindsMap[file.Path] = doc
+		}
+	}
 	return renderedKotsKindsMap, nil
 }
 
@@ -296,31 +328,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 	}
 	helmUpstream.Name = kotsHelmChart.GetDirName()
 
-	mergedValues := kotsHelmChart.Spec.Values
-	if mergedValues == nil {
-		mergedValues = map[string]kotsv1beta1.MappedChartValue{}
-	}
-
-	for _, optionalValue := range kotsHelmChart.Spec.OptionalValues {
-		parsedBool, err := strconv.ParseBool(optionalValue.When)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse when conditional on optional value")
-		}
-
-		if !parsedBool {
-			continue
-		}
-
-		if optionalValue.RecursiveMerge {
-			mergedValues = kotsv1beta1.MergeHelmChartValues(mergedValues, optionalValue.Values)
-		} else {
-			for k, v := range optionalValue.Values {
-				mergedValues[k] = v
-			}
-		}
-	}
-
-	helmValues, err := kotsHelmChart.Spec.GetHelmValues(mergedValues)
+	helmValues, err := kotsutil.HelmChartValues(kotsHelmChart)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render local values for chart")
 	}

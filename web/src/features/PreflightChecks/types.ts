@@ -55,7 +55,7 @@ export function getPreflightDisplayResults(
   const results = result?.results || [];
   return result?.notice
     ? [
-        { isWarn: true, title: "Unsupported v1beta3 specs", message: result.notice, strict: false, uri: "" },
+        { isWarn: true, title: "Helm-templated specs not run", message: result.notice, strict: false, uri: "" },
         ...results,
       ]
     : results;
