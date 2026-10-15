@@ -1,0 +1,57 @@
+pkg/supportbundle/spec.go
+  s_1026f69ab2a9bd::t_d05dc32daf964c 76-79,337,388,392,396-400,405-408,418
+pkg/kotsutil/troubleshoot.go
+  s_1026f69ab2a9bd::t_815ce2030da087 36-39
+pkg/kotsutil/supportbundle_references.go
+  s_1026f69ab2a9bd::t_dc80239bd3eca7 1-139
+pkg/kotsutil/kots.go
+  s_1026f69ab2a9bd::t_0961d7ae59b6a1 573,575,577
+  s_1026f69ab2a9bd::t_31482151767244 574,576,578,948
+pkg/reporting/app.go
+  s_33281c77b0f47c::t_62b8a26ea28a94 21,277
+pkg/base/base.go
+  s_1026f69ab2a9bd::t_08f16d75be41b1 254
+pkg/kotsutil/supportbundle_references_test.go
+  s_1026f69ab2a9bd::t_cbf6a5e0ea64d8 1-127
+pkg/base/preflight_helm_values.go
+  s_33281c77b0f47c::t_9fee324b2b36f6 15,71-73
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_02fb144d61999b 183-191
+  s_1026f69ab2a9bd::t_08f16d75be41b1 182,192
+  s_1026f69ab2a9bd::t_725a4baecfab2b 140-144,165-179,193,262,271-279,281-282
+  s_1026f69ab2a9bd::t_dae74e6e3d9ed6 229
+pkg/reporting/preflight.go
+  s_33281c77b0f47c::t_43250a0e825c02 10,65,98,106-108
+pkg/base/preflight_helm_values_test.go
+  s_1026f69ab2a9bd::t_85e5de83e3c32b 72,76,107-110,122-124,147-153
+  s_1026f69ab2a9bd::t_9841b8bcab3594 66
+  s_1026f69ab2a9bd::t_e39a32c5d6bd99 7,17,43-50,53-65,156,183-191
+pkg/reporting/preflight_test.go
+  s_1026f69ab2a9bd::t_b8a94cedbbb916 1-28
+pkg/base/preflight_compatibility_test.go
+  s_1026f69ab2a9bd::t_416e91773b48f0 34,36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ffb644062e06d47edd92d3308b7352d626911801",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    },
+    "s_33281c77b0f47c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a09150-6dca-73b2-b6f6-3f9ac32c804e",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}
