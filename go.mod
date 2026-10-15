@@ -82,11 +82,11 @@ require (
 	golang.org/x/crypto v0.58.0
 	golang.org/x/oauth2 v0.37.0
 	golang.org/x/sync v0.24.0
-	google.golang.org/api v0.302.0
+	google.golang.org/api v0.304.0
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.67.3
 	gopkg.in/yaml.v2 v2.4.0
-	helm.sh/helm/v4 v4.3.0
+	helm.sh/helm/v4 v4.3.1
 	k8s.io/api v0.37.1
 	k8s.io/apimachinery v0.37.1
 	k8s.io/cli-runtime v0.37.1
@@ -465,8 +465,8 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.21.4 // indirect
-	k8s.io/apiextensions-apiserver v0.37.0 // indirect
-	k8s.io/apiserver v0.37.0 // indirect
+	k8s.io/apiextensions-apiserver v0.37.1 // indirect
+	k8s.io/apiserver v0.37.1 // indirect
 	k8s.io/cloud-provider v0.36.2 // indirect
 	k8s.io/component-base v0.37.1 // indirect
 	k8s.io/component-helpers v0.37.1 // indirect
@@ -474,7 +474,7 @@ require (
 	k8s.io/cri-api v0.36.2 // indirect
 	k8s.io/cri-client v0.36.2 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
-	k8s.io/kms v0.37.0 // indirect
+	k8s.io/kms v0.37.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
 	k8s.io/kubernetes v1.37.0 // indirect
 	k8s.io/mount-utils v0.36.2 // indirect
