@@ -1,0 +1,37 @@
+pkg/kotsutil/troubleshoot_template_error.go
+  s_1026f69ab2a9bd::t_08f16d75be41b1 13,15,17-18
+  s_1026f69ab2a9bd::t_d30dbc518ce321 10,16,19,21-22
+  s_1026f69ab2a9bd::t_928e7a79a04528 24-25,28-29,51,54-55
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_08f16d75be41b1 162,165
+pkg/preflight/warning_collectors_test.go
+  s_1026f69ab2a9bd::t_08f16d75be41b1 33
+pkg/kotsutil/kots.go
+  s_1026f69ab2a9bd::t_08f16d75be41b1 559-560,928,1140-1141
+  s_1026f69ab2a9bd::t_d30dbc518ce321 929-930
+  s_1026f69ab2a9bd::t_e75ee421e2ebcb 1142
+pkg/base/base.go
+  s_1026f69ab2a9bd::t_0b0d12e5623288 253
+  s_1026f69ab2a9bd::t_08f16d75be41b1 254
+pkg/base/preflight_compatibility_test.go
+  s_1026f69ab2a9bd::t_9e1ba4b6318eea 13-14,21,28,31,33-35,42-43,45-51,55,62-65,82-96,98-103
+  s_1026f69ab2a9bd::t_8c0f395f6b5f13 38-41,67-73
+  s_1026f69ab2a9bd::t_08f16d75be41b1 97
+  s_1026f69ab2a9bd::t_a4960cc830dcd7 52-54,56-61,74-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d3d007a21f7bb1a16ba5986bb67895fa99df3e31",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}
