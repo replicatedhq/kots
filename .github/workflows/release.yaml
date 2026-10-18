@@ -277,11 +277,17 @@ jobs:
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v7
       with:
-        version: "v1.2.5"
-        args: release --rm-dist --config deploy/.goreleaser.yaml
+        version: "v1.26.2"
+        args: release --clean --config deploy/.goreleaser.yaml
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GORELEASER_CURRENT_TAG: ${{ needs.generate-tag.outputs.tag }}
+    - name: Verify darwin universal binary has amd64 and arm64
+      run: |
+        info="$(file dist/kots_darwin_all/kots)"
+        echo "$info"
+        echo "$info" | grep -q 'x86_64' || { echo "missing x86_64 slice"; exit 1; }
+        echo "$info" | grep -q 'arm64' || { echo "missing arm64 slice"; exit 1; }
 
   publish-pact-contracts:
     runs-on: ubuntu-latest
