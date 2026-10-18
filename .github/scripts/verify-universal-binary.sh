@@ -23,22 +23,33 @@ fail() {
   exit 1
 }
 
-# prints N bytes starting at OFFSET as lowercase hex
+# prints 4 bytes starting at OFFSET as lowercase hex; callers must have bounds-checked OFFSET against the file size,
+# so any od failure here is a real read error and is reported as one
 read_hex() {
-  od -An -v -tx1 -j "$1" -N "$2" "$binary" 2>/dev/null | tr -d ' \n' || true
+  local out
+  out="$(od -An -v -tx1 -j "$1" -N 4 "$binary")" || fail "failed to read $binary at offset $1"
+  tr -d ' \n' <<<"$out"
 }
 
 [[ -f "$binary" ]] || fail "universal binary not found at $binary"
+[[ -r "$binary" ]] || fail "universal binary at $binary is not readable"
 
-[[ "$(read_hex 0 4)" == "$FAT_MAGIC" ]] || fail "$binary is not a Mach-O universal binary"
+size="$(wc -c <"$binary" | tr -d ' ')"
+fat_header_size=8
+fat_arch_size=20
 
-nfat_hex="$(read_hex 4 4)"
-[[ ${#nfat_hex} -eq 8 ]] || fail "$binary has a truncated universal binary header"
+((size >= 4)) || fail "$binary is not a Mach-O universal binary"
+magic="$(read_hex 0)"
+[[ "$magic" == "$FAT_MAGIC" ]] || fail "$binary is not a Mach-O universal binary"
+
+((size >= fat_header_size)) || fail "$binary has a truncated universal binary header"
+nfat_hex="$(read_hex 4)"
 nfat_arch=$((16#$nfat_hex))
+((size >= fat_header_size + nfat_arch * fat_arch_size)) || fail "$binary has a truncated universal binary header"
+
 cpu_types=()
 for ((i = 0; i < nfat_arch; i++)); do
-  cpu_type="$(read_hex $((8 + i * 20)) 4)"
-  [[ ${#cpu_type} -eq 8 ]] || fail "$binary has a truncated universal binary header"
+  cpu_type="$(read_hex $((fat_header_size + i * fat_arch_size)))"
   cpu_types+=("$cpu_type")
 done
 echo "$binary: universal binary with $nfat_arch architecture(s), cputypes: ${cpu_types[*]}"
