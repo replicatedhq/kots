@@ -1,0 +1,21 @@
+deploy/.goreleaser.yaml
+  s_db7446c9d70994::t_b5c46b5a88dff1 29-31
+.github/scripts/verify-universal-binary.sh
+  s_db7446c9d70994::t_4126482a8bbef2 1-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c1384fae0cc5a95dd3c0c854d5423f5e02a400bc",
+  "prompts": {},
+  "sessions": {
+    "s_db7446c9d70994": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f164e8e1-c127-4afd-82e4-577a225a2288",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Xav Paice <xav@replicated.com>"
+    }
+  }
+}
