@@ -1,27 +1,29 @@
 #!/usr/bin/env bash
 
 # Fails unless the given file is a Mach-O universal binary with both x86_64 and arm64 slices.
+# Invoked by the universal_binaries post hook in deploy/.goreleaser.yaml, before GoReleaser publishes the release.
 
 set -euo pipefail
 
 binary="${1:?usage: verify-universal-binary.sh <path-to-binary>}"
 
-if [[ ! -f "$binary" ]]; then
-  echo "universal binary not found at $binary" >&2
+fail() {
+  if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    echo "::error::$1" >&2
+  else
+    echo "$1" >&2
+  fi
   exit 1
-fi
+}
 
-info="$(file "$binary")"
+[[ -f "$binary" ]] || fail "universal binary not found at $binary"
+
+# -b omits the filename from the summary line; macOS prints extra per-arch lines that repeat the path, so keep only the first
+info="$(file -b "$binary" | sed -n 1p)"
 echo "$info"
 
-if [[ "$info" != *"Mach-O universal binary"* ]]; then
-  echo "$binary is not a Mach-O universal binary" >&2
-  exit 1
-fi
+[[ "$info" == *"Mach-O universal binary"* ]] || fail "$binary is not a Mach-O universal binary"
 
 for arch in x86_64 arm64; do
-  if [[ "$info" != *"$arch"* ]]; then
-    echo "$binary is missing the $arch slice" >&2
-    exit 1
-  fi
+  [[ "$info" == *"$arch"* ]] || fail "$binary is missing the $arch slice"
 done
