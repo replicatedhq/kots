@@ -1,0 +1,230 @@
+[
+  {
+    "Expression": "Add 2 3",
+    "Want": "5"
+  },
+  {
+    "Expression": "Sub 5 2",
+    "Want": "3"
+  },
+  {
+    "Expression": "Mult 3 4",
+    "Want": "12"
+  },
+  {
+    "Expression": "Div 12 3",
+    "Want": "4"
+  },
+  {
+    "Expression": "Base64Encode \"hello\" | Base64Decode",
+    "Want": "hello"
+  },
+  {
+    "Expression": "ToLower \"HELLO\" | ToUpper",
+    "Want": "HELLO"
+  },
+  {
+    "Expression": "Trim \" x \"",
+    "Want": "x"
+  },
+  {
+    "Expression": "Trim \"xxhellox\" \"x\"",
+    "Want": "hello"
+  },
+  {
+    "Expression": "TrimSpace \" hi \"",
+    "Want": "hi"
+  },
+  {
+    "Expression": "UrlEncode \"a b\"",
+    "Want": "a+b"
+  },
+  {
+    "Expression": "Split \"a,b\" \",\" | len",
+    "Want": "2"
+  },
+  {
+    "Expression": "ParseBool \"true\"",
+    "Want": "true"
+  },
+  {
+    "Expression": "ParseFloat \"1.25\"",
+    "Want": "1.25"
+  },
+  {
+    "Expression": "ParseInt \"ff\" 16 64",
+    "Want": "255"
+  },
+  {
+    "Expression": "ParseUint \"11\" 2 64",
+    "Want": "3"
+  },
+  {
+    "Expression": "HumanSize 1024",
+    "Want": "1.024kB"
+  },
+  {
+    "Expression": "IsAirgap",
+    "Want": "false"
+  },
+  {
+    "Expression": "IsKurl",
+    "Want": "false"
+  },
+  {
+    "Expression": "KurlAll",
+    "Want": ""
+  },
+  {
+    "Expression": "KurlString \"x\"",
+    "Want": ""
+  },
+  {
+    "Expression": "KurlOption \"x\"",
+    "Want": ""
+  },
+  {
+    "Expression": "KurlBool \"x\"",
+    "Want": "false"
+  },
+  {
+    "Expression": "KurlInt \"x\"",
+    "Want": "0"
+  },
+  {
+    "Expression": "IdentityServiceEnabled",
+    "Want": "false"
+  },
+  {
+    "Expression": "IdentityServiceClientID",
+    "Want": ""
+  },
+  {
+    "Expression": "IdentityServiceClientSecret",
+    "Want": ""
+  },
+  {
+    "Expression": "IdentityServiceRoles | len",
+    "Want": "0"
+  },
+  {
+    "Expression": "IdentityServiceName",
+    "Want": ""
+  },
+  {
+    "Expression": "IdentityServicePort",
+    "Want": ""
+  },
+  {
+    "Expression": "HelmValue \".Values.image\"",
+    "Want": ""
+  },
+  {
+    "Expression": "LicenseFieldValue \"missing\"",
+    "Want": ""
+  },
+  {
+    "Expression": "LicenseDockerCfg",
+    "Want": ""
+  },
+  {
+    "Expression": "ChannelName",
+    "Want": ""
+  },
+  {
+    "Expression": "Cursor",
+    "Want": ""
+  },
+  {
+    "Expression": "VersionLabel",
+    "Want": ""
+  },
+  {
+    "Expression": "IsRequired",
+    "Want": "false"
+  },
+  {
+    "Expression": "ReleaseNotes",
+    "Want": ""
+  },
+  {
+    "Expression": "ConfigOptionName \"x\"",
+    "Want": "x"
+  },
+  {
+    "Expression": "ConfigOptionIndex \"x\"",
+    "Want": ""
+  },
+  {
+    "Expression": "ConfigOption \"x\"",
+    "Want": ""
+  },
+  {
+    "Expression": "ConfigOptionData \"x\"",
+    "Want": ""
+  },
+  {
+    "Expression": "ConfigOptionFilename \"x\"",
+    "Want": ""
+  },
+  {
+    "Expression": "ConfigOptionEquals \"x\" \"v\"",
+    "Want": "false"
+  },
+  {
+    "Expression": "ConfigOptionNotEquals \"x\" \"v\"",
+    "Want": "false"
+  },
+  {
+    "Expression": "HasLocalRegistry",
+    "Want": "false"
+  },
+  {
+    "Expression": "LocalRegistryAddress",
+    "Want": ""
+  },
+  {
+    "Expression": "LocalRegistryHost",
+    "Want": ""
+  },
+  {
+    "Expression": "LocalRegistryNamespace",
+    "Want": ""
+  },
+  {
+    "Expression": "KubernetesVersion | semverCompare \">=0.0.0\"",
+    "Want": "true"
+  },
+  {
+    "Expression": "Lookup \"v1\" \"Secret\" \"\" \"absent\" | len",
+    "Want": "0"
+  },
+  {
+    "Expression": "RandomString 12 | len",
+    "Want": "12"
+  },
+  {
+    "Expression": "RandomBytes 12 | Base64Decode | len",
+    "Want": "12"
+  },
+  {
+    "Expression": "Add (ParseInt \"2\") (ParseUint \"3\")",
+    "Error": "reflect.Value.Int"
+  },
+  {
+    "Expression": "Mult (ParseUint \"3\") (ParseInt \"2\")",
+    "Error": "reflect.Value.Uint"
+  },
+  {
+    "Expression": "RandomString 4 \"[XY]\" | len",
+    "Want": "4"
+  },
+  {
+    "Expression": "YamlEscape \"hello\" | trim",
+    "Want": "hello"
+  },
+  {
+    "Expression": "NowFmt \"UTC\"",
+    "Want": "UTC"
+  }
+]

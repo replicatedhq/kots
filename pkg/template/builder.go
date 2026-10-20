@@ -60,12 +60,13 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	}
 
 	configCtx, err := b.newConfigContext(opts.ConfigGroups, opts.ExistingValues, opts.LocalRegistry,
-		opts.License, opts.Application, opts.VersionInfo, dockerHubRegistry, slug, opts.DecryptValues)
+		opts.License, opts.Application, opts.VersionInfo, dockerHubRegistry, slug, opts.DecryptValues, newIdentityCtx(opts.IdentityConfig, opts.ApplicationInfo))
 	if err != nil {
 		return Builder{}, nil, errors.Wrap(err, "create config context")
 	}
 
 	b.Ctx = []Ctx{
+		newFunctionDefaults{},
 		StaticCtx{},
 		licenseCtx{License: opts.License, App: opts.Application, VersionInfo: opts.VersionInfo},
 		newKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
@@ -193,11 +194,14 @@ func (b *Builder) BuildFuncMap() template.FuncMap {
 		b.Functs = template.FuncMap{}
 	}
 
-	funcMap := b.Functs
+	funcMap := template.FuncMap{}
 	for _, ctx := range b.Ctx {
 		for name, fn := range ctx.FuncMap() {
 			funcMap[name] = fn
 		}
+	}
+	for name, fn := range b.Functs {
+		funcMap[name] = fn
 	}
 	return funcMap
 }

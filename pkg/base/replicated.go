@@ -193,7 +193,11 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 				doc = []byte(config)
 
 			case "kots.io/v1beta1, Kind=HelmChart", "kots.io/v1beta2, Kind=HelmChart":
-				helmchart, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
+				chartBuilder, err := helmChartTemplateBuilder(doc, u.Files, *builder)
+				if err != nil {
+					return nil, err
+				}
+				helmchart, err := chartBuilder.RenderTemplate(upstreamFile.Path, string(doc))
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
@@ -396,7 +400,11 @@ func findAllKotsV1Beta1HelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, bu
 			continue
 		}
 
-		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, log)
+		chartBuilder, err := helmChartTemplateBuilder(upstreamFile.Content, upstreamFiles, builder)
+		if err != nil {
+			return nil, err
+		}
+		baseFile, err := upstreamFileToBaseFile(upstreamFile, chartBuilder, log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
@@ -635,4 +643,38 @@ func removeFileFromUpstream(files []upstreamtypes.UpstreamFile, path string) []u
 		}
 	}
 	return files
+}
+
+// Resolve chart identity before rendering values so HelmValue sees the matching archive.
+func helmChartTemplateBuilder(doc []byte, files []upstreamtypes.UpstreamFile, builder template.Builder) (template.Builder, error) {
+	if !bytes.Contains(doc, []byte("HelmValue")) {
+		return builder, nil
+	}
+	var identity struct {
+		Spec struct {
+			Chart struct {
+				Name    string `json:"name"`
+				Version string `json:"chartVersion"`
+			} `json:"chart"`
+		} `json:"spec"`
+	}
+	if err := yaml.Unmarshal(doc, &identity); err != nil {
+		return builder, err
+	}
+	name, err := builder.String(identity.Spec.Chart.Name)
+	if err != nil {
+		return builder, err
+	}
+	version, err := builder.String(identity.Spec.Chart.Version)
+	if err != nil {
+		return builder, err
+	}
+	chart := &kotsv1beta2.HelmChart{}
+	chart.Spec.Chart.Name = name
+	chart.Spec.Chart.ChartVersion = version
+	archive, err := FindHelmChartArchiveInRelease(files, chart)
+	if err != nil {
+		return builder, err
+	}
+	return builder.WithHelmChart(archive)
 }

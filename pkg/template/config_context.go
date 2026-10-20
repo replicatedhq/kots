@@ -77,7 +77,7 @@ type ConfigCtx struct {
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry registrytypes.RegistrySettings, license *licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions, appSlug string, decryptValues bool) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry registrytypes.RegistrySettings, license *licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions, appSlug string, decryptValues bool, identity ...identityCtx) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
@@ -89,8 +89,14 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 		DecryptValues:     decryptValues,
 	}
 
+	identityContext := newIdentityCtx(nil, nil)
+	if len(identity) > 0 {
+		identityContext = identity[0]
+	}
 	builder := Builder{
 		Ctx: []Ctx{
+			newFunctionDefaults{},
+			identityContext,
 			configCtx,
 			StaticCtx{},
 			&licenseCtx{License: license, App: app, VersionInfo: info},
@@ -179,6 +185,8 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 // FuncMap represents the available functions in the ConfigCtx.
 func (ctx ConfigCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
+		"ReplicatedImageName":          ctx.replicatedImageName,
+		"ReplicatedImageRegistry":      ctx.replicatedImageRegistry,
 		"ConfigOption":                 ctx.configOption,
 		"ConfigOptionName":             ctx.configOptionName,
 		"ConfigOptionIndex":            ctx.configOptionIndex,
