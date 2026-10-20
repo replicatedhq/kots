@@ -26,6 +26,9 @@ builds:
 
 universal_binaries:
   - replace: true
+    hooks:
+      # runs before the release is published, so a bad universal binary fails the release
+      post: .github/scripts/verify-universal-binary.sh {{ .Path }}
 
 archives:
   - id: kots
