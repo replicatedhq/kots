@@ -173,6 +173,7 @@
     "brace-expansion": "^1.1.18",
     "websocket-driver": "^0.7.5",
     "**/moment": "2.31.0",
+    "**/postcss-selector-parser": "^7.1.6",
     "@babel/core": "^7.29.6"
   }
 }
