@@ -4,12 +4,18 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"fmt"
+	"encoding/json"
 	"io"
 	"path"
+	"sort"
 	"strings"
 
+	semver "github.com/Masterminds/semver/v3"
+
+	"github.com/pkg/errors"
+
 	"go.yaml.in/yaml/v3"
+	yamljson "sigs.k8s.io/yaml"
 )
 
 // chartDefaults reads only packaged defaults, including dependency aliases.
@@ -17,7 +23,7 @@ import (
 func chartDefaults(archive []byte) (map[string]any, error) {
 	files, err := chartDefaultFiles(archive)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "read packaged chart defaults")
 	}
 	return chartDefaultTree(files, 0)
 }
@@ -25,10 +31,12 @@ func chartDefaults(archive []byte) (map[string]any, error) {
 func chartDefaultFiles(data []byte) (map[string][]byte, error) {
 	gz, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "open chart gzip archive")
 	}
 	defer gz.Close()
 	files := map[string][]byte{}
+	commonDir := ""
+	haveFiles := false
 	tr := tar.NewReader(gz)
 	for {
 		h, err := tr.Next()
@@ -36,43 +44,68 @@ func chartDefaultFiles(data []byte) (map[string][]byte, error) {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "read chart tar header")
 		}
 		if h.Typeflag != tar.TypeReg {
 			continue
 		}
-		_, name, ok := strings.Cut(h.Name, "/")
-		if !ok {
-			continue
+		name := path.Clean(h.Name)
+		if !haveFiles {
+			commonDir = path.Dir(name)
+			if commonDir == "." {
+				commonDir = ""
+			}
+			haveFiles = true
 		}
-		if path.Base(name) != "Chart.yaml" && path.Base(name) != "values.yaml" && !(strings.HasPrefix(name, "charts/") && strings.HasSuffix(name, ".tgz")) {
+		for commonDir != "" && !strings.HasPrefix(name, commonDir+"/") {
+			commonDir = path.Dir(commonDir)
+			if commonDir == "." {
+				commonDir = ""
+			}
+		}
+		if path.Base(name) != "Chart.yaml" && path.Base(name) != "values.yaml" && !strings.HasSuffix(name, ".tgz") {
 			continue
 		}
 		files[name], err = io.ReadAll(tr)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "read chart file %s", name)
 		}
 	}
+	// Use the common directory prefix, matching KOTS's existing archive reader.
+	prefix := ""
+	if commonDir != "" {
+		prefix = commonDir + "/"
+	}
+	normalized := map[string][]byte{}
+	for name, data := range files {
+		if strings.HasPrefix(name, prefix) {
+			normalized[strings.TrimPrefix(name, prefix)] = data
+		}
+	}
+	files = normalized
 	if len(files["Chart.yaml"]) == 0 {
-		return nil, fmt.Errorf("chart archive has no Chart.yaml")
+		return nil, errors.New("chart archive has no Chart.yaml")
 	}
 	return files, nil
 }
 
 func chartDefaultTree(files map[string][]byte, depth int) (map[string]any, error) {
 	if depth > 32 {
-		return nil, fmt.Errorf("chart dependencies exceed maximum depth")
+		return nil, errors.New("chart dependencies exceed maximum depth")
 	}
 	var meta struct {
 		Name         string
-		Dependencies []struct{ Name, Alias string }
+		Dependencies []struct{ Name, Alias, Version string }
 	}
 	if err := yaml.Unmarshal(files["Chart.yaml"], &meta); err != nil {
-		return nil, fmt.Errorf("parse Chart.yaml: %w", err)
+		return nil, errors.Wrap(err, "parse Chart.yaml")
 	}
 	values := map[string]any{}
-	if err := yaml.Unmarshal(files["values.yaml"], &values); err != nil {
-		return nil, fmt.Errorf("parse %s/values.yaml: %w", meta.Name, err)
+	if err := yamljson.Unmarshal(files["values.yaml"], &values, func(decoder *json.Decoder) *json.Decoder {
+		decoder.UseNumber()
+		return decoder
+	}); err != nil {
+		return nil, errors.Wrapf(err, "parse %s/values.yaml", meta.Name)
 	}
 	if values == nil {
 		values = map[string]any{}
@@ -91,23 +124,45 @@ func chartDefaultTree(files map[string][]byte, depth int) (map[string]any, error
 		} else if strings.HasSuffix(rest, ".tgz") {
 			child, err := chartDefaultFiles(data)
 			if err != nil {
-				return nil, fmt.Errorf("read dependency %s: %w", rest, err)
+				return nil, errors.Wrapf(err, "read dependency %s", rest)
 			}
 			children[rest] = child
 		}
 	}
-	for name, child := range children {
-		var childMeta struct{ Name string }
+	childNames := make([]string, 0, len(children))
+	for name := range children {
+		childNames = append(childNames, name)
+	}
+	sort.Strings(childNames)
+	assigned := map[string]string{}
+	for _, name := range childNames {
+		child := children[name]
+		var childMeta struct{ Name, Version string }
 		if err := yaml.Unmarshal(child["Chart.yaml"], &childMeta); err != nil {
-			return nil, fmt.Errorf("parse dependency %s Chart.yaml: %w", name, err)
+			return nil, errors.Wrapf(err, "parse dependency %s Chart.yaml", name)
 		}
 		defaults, err := chartDefaultTree(child, depth+1)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "parse dependency %s defaults", name)
 		}
 		keys := []string{}
+		declared := false
 		for _, dep := range meta.Dependencies {
 			if dep.Name == childMeta.Name {
+				declared = true
+				if dep.Version != "" {
+					constraint, err := semver.NewConstraint(dep.Version)
+					if err != nil {
+						return nil, errors.Wrapf(err, "parse dependency %s version constraint %q", dep.Name, dep.Version)
+					}
+					version, err := semver.NewVersion(childMeta.Version)
+					if err != nil {
+						return nil, errors.Wrapf(err, "parse dependency %s version %q", name, childMeta.Version)
+					}
+					if !constraint.Check(version) {
+						continue
+					}
+				}
 				key := dep.Alias
 				if key == "" {
 					key = dep.Name
@@ -116,9 +171,16 @@ func chartDefaultTree(files map[string][]byte, depth int) (map[string]any, error
 			}
 		}
 		if len(keys) == 0 {
+			if declared {
+				continue
+			}
 			keys = append(keys, childMeta.Name)
 		}
 		for _, key := range keys {
+			if previous, exists := assigned[key]; exists {
+				return nil, errors.Errorf("ambiguous dependency %s: both %s and %s supply defaults", key, previous, name)
+			}
+			assigned[key] = name
 			overrides, present := values[key]
 			if present && overrides == nil {
 				continue

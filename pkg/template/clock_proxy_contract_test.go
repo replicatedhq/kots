@@ -2,9 +2,10 @@ package template
 
 import (
 	"encoding/base64"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSharedClockAndProxyContext(t *testing.T) {
@@ -15,11 +16,18 @@ func TestSharedClockAndProxyContext(t *testing.T) {
 	parsed, err := time.Parse(time.RFC3339, now)
 	require.NoError(t, err)
 	require.WithinDuration(t, time.Now(), parsed, time.Minute)
-	for name, env := range map[string]string{"HTTPProxy": "HTTP_PROXY", "HTTPSProxy": "HTTPS_PROXY", "NoProxy": "NO_PROXY"} {
-		t.Setenv(env, "contract-value")
-		actual, err := b.String("repl{{ " + name + " }}")
-		require.NoError(t, err)
-		require.Equal(t, "contract-value", actual)
+	tests := []struct{ name, function, env string }{
+		{"HTTP proxy", "HTTPProxy", "HTTP_PROXY"},
+		{"HTTPS proxy", "HTTPSProxy", "HTTPS_PROXY"},
+		{"proxy exclusions", "NoProxy", "NO_PROXY"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Setenv(test.env, "contract-value")
+			actual, err := b.String("repl{{ " + test.function + " }}")
+			require.NoError(t, err)
+			require.Equal(t, "contract-value", actual)
+		})
 	}
 	encrypted, err := b.String(`repl{{ KubeSeal (TLSCACert "contract-seal" 1) "app" "name" "secret" }}`)
 	require.NoError(t, err)

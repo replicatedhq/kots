@@ -2,190 +2,115 @@ package template
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/pkg/errors"
+
 	"github.com/distribution/reference"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
-	"strings"
-	"text/template"
 )
 
-type RegistryMode string
-
-const (
-	RegistryModeProxy  RegistryMode = "proxy"
-	RegistryModeAirgap RegistryMode = "airgap"
-	RegistryModeBYO    RegistryMode = "byo"
-)
-
-type RegistryInfo struct{ RegistryAddress, BYORegistryAddress, ProxyDomain, RegistryDomain string }
-type imageCtx struct {
-	mode     RegistryMode
-	appSlug  string
-	registry RegistryInfo
-}
-
-func (ctx ConfigCtx) replicatedImageContext() (imageCtx, error) {
+// replicatedImageRegistryInfo preserves KOTS's direct registry and upstream endpoints.
+func (ctx ConfigCtx) replicatedImageRegistryInfo() (*registry.RegistryProxyInfo, error) {
 	info, err := registry.GetRegistryProxyInfo(ctx.license, &kotsv1beta1.Installation{Spec: InstallationSpecFromVersionInfo(ctx.VersionInfo)}, ctx.app)
 	if err != nil {
-		return imageCtx{}, err
+		return nil, errors.Wrap(err, "get registry proxy info")
 	}
-	image := imageCtx{mode: RegistryModeProxy, appSlug: ctx.AppSlug, registry: RegistryInfo{ProxyDomain: info.Proxy, RegistryDomain: info.Registry}}
-	if ctx.hasLocalRegistry() {
-		image.mode = RegistryModeBYO
-		image.registry.BYORegistryAddress = ctx.localRegistryAddress()
-	}
-	return image, nil
-}
-func (ctx ConfigCtx) replicatedImageName(image string, np ...bool) (string, error) {
-	c, err := ctx.replicatedImageContext()
-	if err != nil {
-		return "", err
-	}
-	return c.replicatedImageName(image, np...)
-}
-func (ctx ConfigCtx) replicatedImageRegistry(registry string, np ...bool) (string, error) {
-	c, err := ctx.replicatedImageContext()
-	if err != nil {
-		return "", err
-	}
-	return c.replicatedImageRegistry(registry, np...)
+	return info, nil
 }
 
-// newFunctionDefaults is added before KOTS contexts, preserving their behavior.
-type newFunctionDefaults struct{}
-
-func (newFunctionDefaults) FuncMap() template.FuncMap {
-	return template.FuncMap{"HelmValue": func(string) (string, error) { return "", nil }}
-}
-
-// noProxy returns true if the first element of the variadic noProxy slice is true.
-func noProxy(noProxy []bool) bool {
-	return len(noProxy) > 0 && noProxy[0]
-}
-
-// replicatedImageName rewrites a full image reference for the current environment.
-// Use this when a chart stores the entire image in one field (e.g. "ghcr.io/org/app:v1").
-//
-// In online mode the image is routed through the Replicated proxy. If the image
-// already uses the configured proxy domain it is returned as-is. If it uses the
-// default proxy.replicated.com but a custom domain is configured, the domain is swapped.
-// Pass noProxy=true for public images that should not be proxied.
-// In airgap mode the image is always rewritten to the local registry.
-// Local registry images use KOTS's flattened upload layout. The noProxy hint
-// applies only to online proxy operation.
-func (ctx imageCtx) replicatedImageName(image string, np ...bool) (string, error) {
+// replicatedImageName returns a full image reference using the installation's upload layout.
+func (ctx ConfigCtx) replicatedImageName(image string, noProxy ...bool) (string, error) {
 	if image == "" {
 		return "", nil
 	}
-	if _, err := reference.ParseNormalizedNamed(image); err != nil {
-		return "", fmt.Errorf("parse image reference %q: %w", image, err)
-	}
-
-	if ctx.mode == RegistryModeAirgap {
-		if ctx.registry.RegistryAddress == "" {
-			return "", fmt.Errorf("registry address is required")
-		}
-		return localRegistryImageRef(image, ctx.registry.RegistryAddress)
-	}
-
-	if ctx.mode == RegistryModeBYO {
-		if ctx.registry.BYORegistryAddress == "" {
-			return "", fmt.Errorf("BYO registry address is required")
-		}
-		return localRegistryImageRef(image, ctx.registry.BYORegistryAddress)
-	}
-
-	if noProxy(np) {
-		return image, nil
-	}
-	if ctx.registry.ProxyDomain == "" || ctx.appSlug == "" {
-		return "", fmt.Errorf("proxy domain and app slug are required")
-	}
-	// If the image already uses the configured proxy domain, return unchanged.
-	if matchesDomain(image, ctx.registry.ProxyDomain) {
-		return image, nil
-	}
-	// If the image uses the default proxy domain but a custom domain is
-	// configured, swap the domain prefix.
-	if matchesDomain(image, "proxy.replicated.com") {
-		return strings.Replace(image, "proxy.replicated.com", ctx.registry.ProxyDomain, 1), nil
-	}
-	// Normalize the image reference so that Docker Hub images always include
-	// docker.io/library (e.g. "nginx" → "docker.io/library/nginx"). The proxy
-	// requires the upstream registry in the path to route correctly.
 	named, err := reference.ParseNormalizedNamed(image)
 	if err != nil {
-		return "", fmt.Errorf("parse image reference %q: %w", image, err)
+		return "", errors.Wrapf(err, "parse image reference %q", image)
 	}
-	// named.String() returns the fully qualified reference including tag/digest if present
-	return fmt.Sprintf("%s/proxy/%s/%s", ctx.registry.ProxyDomain, ctx.appSlug, named.String()), nil
+	if ctx.hasLocalRegistry() {
+		destination, err := imageutil.DestImage(registrytypes.RegistryOptions{Endpoint: ctx.localRegistryHost(), Namespace: ctx.localRegistryNamespace()}, image)
+		if err != nil {
+			return "", errors.Wrapf(err, "compute local registry destination for image %q", image)
+		}
+		return destination, nil
+	}
+	if len(noProxy) > 0 && noProxy[0] {
+		return image, nil
+	}
+	info, err := ctx.replicatedImageRegistryInfo()
+	if err != nil {
+		return "", errors.Wrapf(err, "resolve registry routing for image %q", image)
+	}
+	if matchesDomain(image, info.Registry) {
+		return image, nil
+	}
+	if info.Registry != "" && matchesDomain(image, info.Upstream) {
+		return strings.Replace(image, info.Upstream, info.Registry, 1), nil
+	}
+	proxy := info.Proxy
+	if proxy == "" {
+		return "", errors.Errorf("resolve proxy routing for image %q: replicated proxy domain is required", image)
+	}
+	if ctx.AppSlug == "" {
+		return "", errors.Errorf("resolve proxy routing for image %q: application slug is required", image)
+	}
+
+	if matchesDomain(image, proxy) {
+		return image, nil
+	}
+	if matchesDomain(image, "proxy.replicated.com") {
+		return strings.Replace(image, "proxy.replicated.com", proxy, 1), nil
+	}
+	return fmt.Sprintf("%s/proxy/%s/%s", proxy, ctx.AppSlug, named.String()), nil
 }
 
-// replicatedImageRegistry rewrites a registry host for the current environment.
-// Use this when a chart splits image references into separate registry and repository
-// fields (e.g. registry: "ghcr.io", repository: "org/app").
-//
-// In online mode the registry is rewritten to the proxy path
-// (e.g. "ghcr.io" → "proxy.myapp.com/proxy/myapp/ghcr.io"). If the input already
-// uses the configured proxy domain it is returned as-is. If it uses the default
-// proxy.replicated.com but a custom domain is configured, the domain is swapped.
-// Pass noProxy=true for public images that should not be proxied.
-// In airgap mode the local registry address is always returned.
-// In BYO mode the BYO registry address (which may include a namespace path) is
-// always returned; the original upstream registry is dropped because the
-// customer's registry is the only source charts pull from.
-func (ctx imageCtx) replicatedImageRegistry(registry string, np ...bool) (string, error) {
-	switch ctx.mode {
-	case RegistryModeAirgap:
-		if ctx.registry.RegistryAddress == "" {
-			return "", fmt.Errorf("registry address is required")
-		}
-		return ctx.registry.RegistryAddress, nil
-	case RegistryModeBYO:
-		if ctx.registry.BYORegistryAddress == "" {
-			return "", fmt.Errorf("BYO registry address is required")
-		}
-		return ctx.registry.BYORegistryAddress, nil
-	default: // RegistryModeProxy
-		if noProxy(np) {
-			return registry, nil
-		}
-		if ctx.registry.ProxyDomain == "" || ctx.appSlug == "" {
-			return "", fmt.Errorf("proxy domain and app slug are required")
-		}
-		// If the input already uses the configured proxy domain, return unchanged.
-		if matchesDomain(registry, ctx.registry.ProxyDomain) {
-			return registry, nil
-		}
-		// If the input uses the default proxy domain (proxy.replicated.com) but a
-		// custom domain is configured, swap the domain prefix.
-		if matchesDomain(registry, "proxy.replicated.com") {
-			return strings.Replace(registry, "proxy.replicated.com", ctx.registry.ProxyDomain, 1), nil
-		}
-		return fmt.Sprintf("%s/proxy/%s/%s", ctx.registry.ProxyDomain, ctx.appSlug, registry), nil
+// replicatedImageRegistry returns a registry prefix; separate repositories must match the upload layout.
+func (ctx ConfigCtx) replicatedImageRegistry(registry string, noProxy ...bool) (string, error) {
+	// Match EC: local routing replaces the supplied prefix entirely, so the
+	// unused argument is neither parsed nor validated in this mode.
+	if ctx.hasLocalRegistry() {
+		return ctx.localRegistryAddress(), nil
 	}
+	if registry == "" {
+		return "", nil
+	}
+	if _, err := reference.ParseNormalizedNamed(registry + "/image"); err != nil {
+		return "", errors.Wrapf(err, "parse registry reference %q", registry)
+	}
+	if len(noProxy) > 0 && noProxy[0] {
+		return registry, nil
+	}
+	info, err := ctx.replicatedImageRegistryInfo()
+	if err != nil {
+		return "", errors.Wrapf(err, "resolve registry routing for registry %q", registry)
+	}
+	if matchesDomain(registry, info.Registry) {
+		return registry, nil
+	}
+	if info.Registry != "" && matchesDomain(registry, info.Upstream) {
+		return strings.Replace(registry, info.Upstream, info.Registry, 1), nil
+	}
+	proxy := info.Proxy
+	if proxy == "" {
+		return "", errors.Errorf("resolve proxy routing for registry %q: replicated proxy domain is required", registry)
+	}
+	if ctx.AppSlug == "" {
+		return "", errors.Errorf("resolve proxy routing for registry %q: application slug is required", registry)
+	}
+
+	if matchesDomain(registry, proxy) {
+		return registry, nil
+	}
+	if matchesDomain(registry, "proxy.replicated.com") {
+		return strings.Replace(registry, "proxy.replicated.com", proxy, 1), nil
+	}
+	return fmt.Sprintf("%s/proxy/%s/%s", proxy, ctx.AppSlug, registry), nil
 }
 
-// matchesDomain returns true if value equals the domain or starts with domain + "/".
 func matchesDomain(value, domain string) bool {
-	return value == domain || strings.HasPrefix(value, domain+"/")
-}
-
-func (ctx imageCtx) replicatedRegistryDomain() string {
-	return ctx.registry.RegistryDomain
-}
-
-func (ctx imageCtx) replicatedProxyDomain() string {
-	return ctx.registry.ProxyDomain
-}
-
-// localRegistryImageRef uses the same destination layout as KOTS image uploads.
-func localRegistryImageRef(image, address string) (string, error) {
-	if address == "" {
-		return "", fmt.Errorf("registry address is required")
-	}
-	host, namespace, _ := strings.Cut(strings.TrimSuffix(address, "/"), "/")
-	return imageutil.DestImage(registrytypes.RegistryOptions{Endpoint: host, Namespace: namespace}, image)
+	return domain != "" && (value == domain || strings.HasPrefix(value, domain+"/"))
 }

@@ -11,7 +11,7 @@ import (
 func TestSharedNormalContext(t *testing.T) {
 	lic := &licensewrapper.LicenseWrapper{V1: &kotsv1beta1.License{Spec: kotsv1beta1.LicenseSpec{AppSlug: "app", LicenseID: "license", CustomerName: "Customer", IsAirgapSupported: true}}}
 	b, _, err := NewBuilder(BuilderOptions{
-		License: lic, ApplicationInfo: &ApplicationInfo{Slug: "app"}, Namespace: "app",
+		License: lic, ApplicationInfo: &ApplicationInfo{Slug: "app"},
 		ExistingValues: map[string]ItemValue{"value": {Value: "hello"}, "default": {Default: "fallback"}, "file": {Value: "aGVsbG8=", Filename: "/tmp/file"}},
 		VersionInfo:    &VersionInfo{Sequence: 3, Cursor: "7", VersionLabel: "1.2.3", ChannelName: "Stable", ReleaseNotes: "notes", IsRequired: true, ReplicatedProxyDomain: "proxy.replicated.com", ReplicatedRegistryDomain: "registry.replicated.com"},
 	})

@@ -69,9 +69,25 @@ func TestSharedSemanticFixtures(t *testing.T) {
 func TestKOTSFloatingPointDivisionByZero(t *testing.T) {
 	b, _, err := NewBuilder(BuilderOptions{})
 	require.NoError(t, err)
-	for expression, want := range map[string]string{"Div 1.0 0.0": "+Inf", "Div -1.0 0.0": "-Inf", "Div 0.0 0.0": "NaN"} {
-		got, err := b.String("repl{{ " + expression + " }}")
-		require.NoError(t, err)
-		require.Equal(t, want, got)
+	tests := []struct{ name, expression, want string }{
+		{"positive infinity", "Div 1.0 0.0", "+Inf"},
+		{"negative infinity", "Div -1.0 0.0", "-Inf"},
+		{"not a number", "Div 0.0 0.0", "NaN"},
 	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := b.String("repl{{ " + test.expression + " }}")
+			require.NoError(t, err)
+			require.Equal(t, test.want, got)
+		})
+	}
+}
+
+func TestExistingContextFunctionsKeepPrecedence(t *testing.T) {
+	b, _, err := NewBuilder(BuilderOptions{ExistingValues: map[string]ItemValue{"name": {Value: "from-context"}}})
+	require.NoError(t, err)
+	b.Functs = map[string]interface{}{"ConfigOption": func(string) string { return "from-explicit-map" }}
+	got, err := b.String(`repl{{ ConfigOption "name" }}`)
+	require.NoError(t, err)
+	require.Equal(t, "from-context", got)
 }

@@ -77,7 +77,7 @@ type ConfigCtx struct {
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry registrytypes.RegistrySettings, license *licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions, appSlug string, decryptValues bool, identity ...identityCtx) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry registrytypes.RegistrySettings, license *licensewrapper.LicenseWrapper, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions, appSlug string, decryptValues bool) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
@@ -89,14 +89,9 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 		DecryptValues:     decryptValues,
 	}
 
-	identityContext := newIdentityCtx(nil, nil)
-	if len(identity) > 0 {
-		identityContext = identity[0]
-	}
 	builder := Builder{
 		Ctx: []Ctx{
-			newFunctionDefaults{},
-			identityContext,
+			helmChartCtx{},
 			configCtx,
 			StaticCtx{},
 			&licenseCtx{License: license, App: app, VersionInfo: info},
@@ -141,7 +136,10 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 			configItem := configItemsByName[node]
 
 			// build "default"
-			builtDefault, _ := builder.String(configItem.Default.String())
+			builtDefault, err := builder.String(configItem.Default.String())
+			if err != nil {
+				logger.Infof("Failed to render default for config item %q: %v", configItem.Name, err)
+			}
 
 			if !isReadOnly(configItem) {
 				// if item is editable and the live state is valid, only apply the rendered default
@@ -159,8 +157,14 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 			}
 
 			// build "value"
-			builtValue, _ := builder.String(configItem.Value.String())
-			builtFilename, _ := builder.String(configItem.Filename)
+			builtValue, err := builder.String(configItem.Value.String())
+			if err != nil {
+				logger.Infof("Failed to render value for config item %q: %v", configItem.Name, err)
+			}
+			builtFilename, err := builder.String(configItem.Filename)
+			if err != nil {
+				logger.Infof("Failed to render filename for config item %q: %v", configItem.Name, err)
+			}
 			itemValue := ItemValue{
 				Value:    builtValue,
 				Default:  builtDefault,

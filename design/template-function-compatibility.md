@@ -1,26 +1,39 @@
 # KOTS and EC template-function compatibility
 
-EC and KOTS register the union of their product template functions and Sprig
-v3.3.0 functions. The checked-in inventory in
-`pkg/template/testdata/function-contract.json` records internal Go implementation signatures for automated checks.
-Shared rendering fixtures cover `repl{{ ... }}`, `{{repl ... }}`, and pipelines.
-Unknown function names and invalid arguments still fail rendering.
-Existing KOTS arithmetic is unchanged. Mixed signed/unsigned operands can fail
-rendering; convert operands to the same type first. Integer division by zero
-fails rendering. Floating-point division by zero produces signed infinity or NaN.
+Add the three template functions missing from KOTS so application releases can share templates with EC v3.
+Existing KOTS functions and registry upload layouts remain unchanged.
 
-These functions are Replicated templates. Application Preflight v1beta3 and
-native Helm chart templates continue to use Helm's own context; they are not
-reinterpreted as Replicated templates.
+## Goals
 
-## Added template functions
+- Add `HelmValue`, `ReplicatedImageName`, and `ReplicatedImageRegistry` to KOTS.
+- Match EC template inputs and packaged-default lookup semantics while using KOTS's actual image destinations.
+- Verify rendering through public template and release-rendering APIs.
 
-These signatures show the values available to template authors, following the
-Replicated template-function documentation format. If an implementation reports
-an error, template rendering stops and reports that failure; an error is not a
-value available to the template.
+## Non Goals
 
-### Added to KOTS
+- Change existing KOTS functions, arithmetic, installer contexts, or image uploads.
+- Add duplicate image uploads to make KOTS and EC paths identical.
+- Modify EC v2 or make KOTS adopt EC v2-specific behavior.
+
+## Background
+
+EC and KOTS provide overlapping Replicated template functions, but EC v3 chart templates can use three functions that KOTS did not register.
+The shared inventory in `pkg/template/testdata/function-contract.json` records Go implementation signatures, and shared rendering fixtures cover both Replicated delimiters and pipelines.
+Native Helm templates and Troubleshoot's Helm-based contexts remain separate.
+
+## High-Level Design
+
+Register the missing functions alongside existing KOTS contexts.
+Keep existing context functions ahead of explicit `Builder.Functs` entries; the new `HelmValue` chart override is the sole exception.
+Resolve and cache the matching packaged chart defaults when `HelmValue` first executes.
+Do not pre-parse documents to detect calls; normal KOTS rendering controls the delimiter sequence.
+Cache resolution with a simple per-builder check, consistent with sequential template rendering.
+Chart name and version may use other template functions but cannot use `HelmValue`, because the archive must be identified before its defaults are available.
+Use the existing local registry settings and `imageutil.DestImage` for full local image references.
+
+## Detailed Design
+
+### Template-facing signatures
 
 ```go
 func HelmValue(path string) string
@@ -28,134 +41,95 @@ func ReplicatedImageName(image string, noProxy ...bool) string
 func ReplicatedImageRegistry(registry string, noProxy ...bool) string
 ```
 
-### Added to EC
+These signatures describe template values rather than internal Go error returns.
+Implementation errors stop rendering and include operation and manifest context.
+Existing KOTS function behavior is preserved, including its existing error and default-value contracts.
 
-```go
-func HasLocalRegistry() bool
-func LocalImageName(remoteImageName string) string
-func LocalRegistryAddress() string
-func LocalRegistryHost() string
-func LocalRegistryNamespace() string
-func LocalRegistryImagePullSecret() string
-func IdentityServiceEnabled() bool
-func IdentityServiceClientID() string
-func IdentityServiceClientSecret() string
-func IdentityServiceName() string
-func IdentityServicePort() string
-func IdentityServiceRoles() map[string]interface{}
-func KotsVersion() string
-func KurlAll() string
-func KurlString(yamlPath string) string
-func KurlOption(yamlPath string) string
-func KurlBool(yamlPath string) bool
-func KurlInt(yamlPath string) int
-func NodeCount() int
+### Packaged chart defaults
+
+`HelmValue` reads packaged defaults for the matching chart, including bundled dependencies and dependency aliases, with parent defaults taking precedence.
+This is a packaged-default lookup, matching EC, rather than native Helm's final coalesced values.
+It does not propagate parent `global` values into dependency subtrees or evaluate dependency conditions and tags.
+Defaults remain available for disabled dependencies and library charts; library charts are not excluded from Helm's values solely because of their type.
+Native Helm applies its own dependency processing and global propagation later, when rendering the chart.
+It does not read customer overrides or execute native Helm templates.
+Dependencies are matched by name and version constraint, and multiple bundled sources for the same alias fail deterministically.
+Chart context applies to the `kots.io` HelmChart manifest, matching EC's HelmChart manifest rendering, not to native Helm templates or their rendered output.
+Native chart templates use Helm's `.Values`; Replicated `HelmValue` calls in the later base pass receive the ordinary empty fallback.
+Outside a chart context or for a missing value path, it returns an empty string, matching Helm’s direct missing-value behavior.
+Path lookup retains EC’s GJSON semantics rather than introducing a new path validator; characters such as `[` can occur in literal YAML keys.
+An actual call inside a HelmChart requires a matching packaged archive; missing, unreadable, or malformed archives fail with chart name, version, and upstream manifest context.
+A plain mention in a comment or string does not trigger archive lookup.
+A call in an inactive branch also does not trigger archive lookup.
+Each chart gets an independent builder so defaults do not leak into subsequent renders.
+KOTS’s existing sequential Replicated delimiter passes remain unchanged, followed by native Helm rendering where applicable.
+Legacy HelmChart discovery retains its existing whole-file eligibility check; this change does not discover additional charts hidden inside multi-document files.
+Root-level chart files and files under a common chart directory are supported.
+
+Paths use the existing EC GJSON syntax, optionally prefixed with `.Values` or a leading dot.
+Dots separate nested keys; escape literal dots and query metacharacters with a backslash.
+For a literal `log.level` key, a template can use a raw string argument:
+
+```yaml
+logLevel: 'repl{{ HelmValue `.Values.log\.level` }}'
 ```
 
-## Installation context and defaults
+An unescaped `.Values.log.level` addresses the nested `log` → `level` value instead.
+Retaining this distinction preserves existing EC template behavior rather than guessing between literal and nested keys.
 
-| Function or context | EC behavior | KOTS behavior |
-| --- | --- | --- |
-| `KotsVersion` | Empty string; EC does not install KOTS | Installed KOTS version |
-| `IsKurl` | Always false | Actual installation type |
-| `KurlAll`, `KurlString`, `KurlOption` | Empty string | Installer data, or empty string without kURL |
-| `KurlBool`, `KurlInt` | False, integer 0 | Installer data, or typed defaults without kURL |
-| Identity service functions | False, empty strings, empty roles map | Existing configured identity service |
-| `Distribution` | `embedded-cluster` | Discovered cluster provider |
-| `NodeCount` | Live node count when cluster access is available; otherwise 0 | Live node count, otherwise 0 |
-| `KubernetesVersion` | Release Kubernetes version; `0.0.0+unknown` without context | Live version; `0.0.0+unknown` without context |
-| `KubernetesMajorVersion`, `KubernetesMinorVersion` | Release version components, or empty strings | Live version components, or empty strings |
-| `Lookup` | Empty map before cluster availability or when an object is absent; live errors propagate | Existing KOTS lookup behavior |
-| `PrivateCACert` | ConfigMap name when a private CA is configured; otherwise empty | Existing KOTS CA ConfigMap context |
-| `HelmValue` | Packaged chart defaults in the matching chart context; empty string outside chart context | Same |
+### Image routing and credentials
 
-`HelmValue` includes defaults from bundled dependencies and their aliases, with
-parent defaults taking precedence. It does not read customer overrides or execute
-Helm templates. Missing value paths produce empty strings; unreadable or malformed
-chart archives produce errors. Chart context does not leak into later rendering.
+`ReplicatedImageName` rewrites a full image reference through the configured Replicated proxy online.
+`noProxy=true` preserves the original online reference.
+Local registry installations, including airgap installations, use `imageutil.DestImage`, the same destination calculation as the existing `LocalImageName` function and KOTS uploads.
+The full configured registry namespace is preserved, including multiple path segments.
 
-Configuration defaults and generated-value persistence are a separate contract.
-Registering `ConfigOptionIndex` does not add repeatable configuration support.
+KOTS flattens the upstream repository path while EC preserves it.
+For example, `docker.io/library/nginx:1` becomes `registry:5000/customer/nginx:1` in KOTS and `registry:5000/customer/library/nginx:1` in EC.
+Neither product uploads duplicate aliases to force identical output.
 
-## Images and credentials
+`ReplicatedImageRegistry` returns the configured registry prefix in local mode and a proxy prefix online.
+Local mode ignores the supplied registry argument entirely, including malformed prefixes, because the configured local prefix replaces it; this matches EC.
+An empty online registry argument returns an empty string; locally it returns the configured registry prefix, matching EC v3.
+A separate repository field must already match KOTS's flattened upload layout.
+A registry-only function cannot rewrite a separate repository field, so use `ReplicatedImageName` when a complete portable reference is needed.
+The new functions resolve registry configuration through the same existing KOTS registry policy used by `LocalImageName`.
+References already served by the configured Replicated registry stay direct; upstream registry references are mapped to the custom registry domain before considering the proxy.
+They do not create credentials or upload images.
 
-`LocalImageName` retains KOTS's routing decisions: use the local/customer registry
-when configured; otherwise leave public references unchanged unless
-`Application.spec.proxyPublicImages` is true, and route private images through
-the configured Replicated domains. Access checks and malformed image references
-can fail rendering; they are not converted to empty output.
+### Existing function compatibility
 
-The returned path must match the product's actual registry uploads. KOTS uses
-its flattened layout (`<registry>/<namespace>/<image>`); EC preserves repository
-paths (`<registry>/<namespace>/<repository>/<image>`). For example,
-`docker.io/library/nginx:1` in a customer registry becomes
-`registry:5000/customer/nginx:1` in KOTS and
-`registry:5000/customer/library/nginx:1` in EC. Neither upload path publishes
-duplicate images to force identical function output.
+Existing KOTS arithmetic is unchanged.
+Mixed signed/unsigned operands can fail rendering; convert operands to the same numeric type first.
+Integer division by zero fails rendering, while floating-point division follows Go's infinity and NaN behavior.
+Existing installer, identity, license, Kubernetes, and private-CA contexts retain their implementations.
+The EC side supplies product-specific defaults for unsupported capabilities; this KOTS change does not replace existing KOTS contexts with those defaults.
 
-`ReplicatedImageName` uses that same product-specific local destination.
-`ReplicatedImageRegistry` returns the configured registry address and repository
-namespace in local mode; a split repository field must match the product's
-upload layout. A registry-only function cannot flatten a separate repository
-field, so use `ReplicatedImageName` for a complete portable image reference.
-Both functions proxy online images by default and accept the optional `noProxy`
-boolean. `noProxy` applies only to online operation. `LocalImageName` instead
-uses the public/private routing decision described above.
+## Testing
 
-`HasLocalRegistry` is false for proxy-only online operation.
-`LocalRegistryHost` includes the port; `LocalRegistryNamespace` is a repository
-path, not a Kubernetes namespace. `LocalRegistryAddress` joins those values.
+Use `NewBuilder`, `Builder.WithHelmChart`, and `Builder.String` to verify the new functions through the public template surface.
+Use `RenderKotsKinds` to verify matching archive selection, separate chart contexts, real function calls versus literal mentions, and contextual failures.
+Cover bundled dependencies and aliases, root-level and prefixed archives, malformed archives, missing paths, escaped literal keys, nested local registry namespaces, online bypass, and existing local-image parity.
+Unit tests avoid live Kubernetes credential lookup by leaving the builder namespace empty when no cluster-dependent behavior is under test.
+Run `go test ./pkg/template ./pkg/base` from the KOTS checkout.
+Check shared inventories and fixtures against EC before release.
+Numeric release floors must identify the first published KOTS and EC artifacts containing these changes rather than an assumed source-checkout version.
 
-`LocalRegistryImagePullSecret` returns **base64-encoded dockerconfigjson**, not a
-Secret name. Online credentials authenticate to the configured Replicated domains;
-local/customer credentials authenticate to the registry authority without its
-repository path. `ImagePullSecretName` returns `<app-slug>-registry`. EC ensures
-this Secret in the application, additional, and chart namespaces alongside private
-CA ConfigMaps. Containerd authentication continues to work independently. Pods,
-Jobs, and operator-created workloads can reference this Secret in those namespaces.
-Workloads in other namespaces must arrange credentials there as well.
+## Alternatives Considered
 
-## Recovery bootstrap
+Changing KOTS upload paths or adding duplicate image aliases was rejected because image references must match each product's actual uploads.
+Treating dotted keys as literal without escaping was rejected because it would change EC's existing GJSON path contract and make nested paths ambiguous.
+Finding `HelmValue` by raw substring was rejected because comments and plain strings would spuriously require a packaged chart.
+Changing existing KOTS functions to match EC defaults was rejected because the story adds missing functions and does not redefine existing KOTS behavior.
 
-Recovery registers the common surface using bootstrap context. Saved config and
-license/version metadata are unavailable before metadata restore. Executed
-saved-state lookups return typed defaults and are recorded. Recovery chart
-validation rejects those lookups before provisioning. An inactive branch can
-contain a saved-state function without blocking recovery. Recovery charts should
-use bootstrap inputs and packaged chart defaults for their infrastructure.
-Backup/Restore policy uses the ordinary builder after saved metadata is available,
-including the actual `LocalImageName` behavior.
+## Security Considerations
 
-## Release requirements and version floor
+Packaged defaults originate in the vendor's release archive and remain untrusted input to parsing.
+The reader does not extract files to the host filesystem or execute native chart templates.
+Malformed archives and metadata fail with contextual errors, and excessive dependency recursion is rejected.
+Archive size is not artificially limited per dependency because existing valid releases can contain large dependency assets.
+Only defaults required for this context are retained; lookup does not access customer overrides, cluster Secrets, or network registries.
 
-This contract targets the first future KOTS and EC releases containing these
-changes. No already shipped binary gains new functions. A numeric version floor
-must be assigned to the actual published artifacts; it cannot be inferred from a
-source checkout or a planned release number.
-
-The local EC v2 source reference at `c2071e2462e29611b1726576d58d8eb9df127097`
-(latest reachable tag `2.19.13+k8s-1.34`) pins Admin Console
-`1.132.0-ec.3` in `pkg/addons/adminconsole/static/metadata.yaml`. That reference
-predates this contract and must not be advertised as supporting the new functions.
-It is not an inventory of all supported EC v2 releases.
-
-Before releasing an application that uses the new functions:
-
-1. Record the first released KOTS and EC versions containing the contract.
-2. For each supported EC v2 installer, inspect its embedded release metadata and
-   check the actual bundled KOTS binary against the inventory and fixtures. Require
-   an intermediate KOTS/EC v2 update when that binary lacks the new functions.
-3. Verify real workload pulls, including Jobs and operator-created Pods, online,
-   airgap and with customer registries. The local registry tests verify authenticated
-   upload/download and digest preservation; they do not certify Kubernetes admission
-   behavior or every customer registry.
-4. Exercise recovery bootstrap and a post-migration backup/restore with the actual
-   release artifacts. Keep application Preflight v1beta2/v1beta3 packaging distinct.
-
-## Maintaining the contract
-
-Run the existing `make agent/test-unit` entry point from EC. When checking
-both repositories, also compare the function inventory, shared rendering and
-license fixtures, packaged-default handling, and image tests in `pkg/template`.
-A future function or Sprig change must update both repositories and the contract
-before release.
+Image routing uses existing KOTS registry configuration and produces references consistent with actual uploads.
+The new image functions do not return credentials or log credential values.
+The split registry/repository limitation must remain documented so templates do not accidentally reference a repository that KOTS never uploaded.
