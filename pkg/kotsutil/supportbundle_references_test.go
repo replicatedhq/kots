@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,9 +99,14 @@ func TestMalformedBundleReferenceDoesNotBlockSiblingSpecs(t *testing.T) {
 		require.Equal(t, "references", kinds.SupportBundle.Name)
 		require.Len(t, kinds.SupportBundle.Spec.Collectors, 2)
 	}
-	// Runtime resolution must still report malformed references as errors.
-	_, err := prepareBundleReferences(context.Background(), []byte(malformed), fake.NewSimpleClientset(), "app")
-	require.ErrorContains(t, err, "invalid postgres.uri")
+	// Runtime failures leave other collectors intact and record what was skipped.
+	data, err := prepareBundleReferences(context.Background(), []byte(malformed), fake.NewSimpleClientset(), "app")
+	require.NoError(t, err)
+	resolved, err := LoadSupportBundleFromContents(data)
+	require.NoError(t, err)
+	require.Equal(t, "retained", resolved.Spec.Collectors[0].Data.Data)
+	require.Nil(t, resolved.Spec.Collectors[1].Postgres)
+	require.Contains(t, resolved.Spec.Collectors[1].Data.Data, "could not resolve uri")
 }
 
 func TestSupportBundleReferencesAreDeferredAndPreservePolicy(t *testing.T) {
@@ -136,10 +142,21 @@ func TestSupportBundleReferencesAreDeferredAndPreservePolicy(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, credentialSentinel, resolved.Spec.Collectors[1].Postgres.URI)
 	// Resolve the credential successfully, then fail on the following TLS reference.
+	bundle.Annotations[bundleReferencesAnnotation] = strings.Replace(referenceBundle, "\n  analyzers:", "\n    - data: {name: after-database, data: continued}\n  analyzers:", 1)
 	require.NoError(t, client.CoreV1().ConfigMaps("shared").Delete(context.Background(), "certificates", metav1.DeleteOptions{}))
-	_, err = ResolveSupportBundleReferences(context.Background(), bundle, client, "app")
-	require.ErrorContains(t, err, "support bundle: postgres.cacert")
-	require.NotContains(t, err.Error(), credentialSentinel)
+	resolved, err = ResolveSupportBundleReferences(context.Background(), bundle, client, "app")
+	require.NoError(t, err)
+	require.Equal(t, bundle.Spec.Collectors[0], resolved.Spec.Collectors[0])
+	require.Nil(t, resolved.Spec.Collectors[1].Postgres)
+	require.Contains(t, resolved.Spec.Collectors[1].Data.Data, "could not resolve cacert")
+	require.NotContains(t, resolved.Spec.Collectors[1].Data.Data, credentialSentinel)
+	require.Equal(t, "continued", resolved.Spec.Collectors[2].Data.Data)
+	for _, collector := range resolved.Spec.Collectors {
+		output, err := (&collect.CollectData{Collector: collector.Data}).Collect(nil)
+		require.NoError(t, err)
+		require.Equal(t, collector.Data.Data, string(output[collector.Data.Name]))
+		require.NotContains(t, string(output[collector.Data.Name]), credentialSentinel)
+	}
 }
 
 func TestChartBundleReferencesLoadWithoutClusterAccess(t *testing.T) {
@@ -173,8 +190,10 @@ func TestSupportBundleReferenceMissingValues(t *testing.T) {
 			require.NoError(t, err)
 			client := fake.NewSimpleClientset(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "database", Namespace: "app"}})
 			resolved, err := ResolveSupportBundleReferences(context.Background(), bundle, client, "app")
+			require.NoError(t, err)
 			if tc.failure != "" {
-				require.ErrorContains(t, err, tc.failure)
+				require.Nil(t, resolved.Spec.Collectors[0].Postgres)
+				require.Contains(t, resolved.Spec.Collectors[0].Data.Data, "could not resolve uri")
 				return
 			}
 			require.NoError(t, err)

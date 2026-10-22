@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	v2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
@@ -78,7 +77,16 @@ func prepareBundleReferences(ctx context.Context, content []byte, client kuberne
 	deferred := false
 	spec, _ := doc["spec"].(map[string]interface{})
 	collectors, _ := spec["collectors"].([]interface{})
-	for _, value := range collectors {
+	skipCollector := func(index int, name, field string) {
+		message := fmt.Sprintf("Skipped %s collector %d: could not resolve %s. Other collectors continue.", name, index, field)
+		logger.Warnf("%s", message)
+		bundleName := (&unstructured.Unstructured{Object: doc}).GetName()
+		collectors[index] = map[string]interface{}{"data": map[string]interface{}{
+			"name": fmt.Sprintf("kots-reference-errors/%s/%s-%d.txt", bundleName, name, index), "data": message,
+		}}
+	}
+collectorsLoop:
+	for i, value := range collectors {
 		collector, _ := value.(map[string]interface{})
 		for _, name := range []string{"postgres", "mysql", "mssql", "redis", "clickhouse"} {
 			db, _ := collector[name].(map[string]interface{})
@@ -100,7 +108,8 @@ func prepareBundleReferences(ctx context.Context, content []byte, client kuberne
 						logger.Warnf("Skipping v1beta3 %s: invalid %s.%s reference", doc["kind"], name, key)
 						return UnsupportedTroubleshootWarning(), nil
 					}
-					return nil, errors.Wrapf(err, "invalid %s.%s", name, key)
+					skipCollector(i, name, key)
+					continue collectorsLoop
 				}
 				if ref.Value != nil {
 					parent[key] = *ref.Value
@@ -114,7 +123,8 @@ func prepareBundleReferences(ctx context.Context, content []byte, client kuberne
 				if client != nil && !excluded {
 					resolved, err := v3.ResolveStringOrValueFrom(ctx, ref, client, namespace)
 					if err != nil {
-						return nil, errors.Wrapf(err, "support bundle: %s.%s", name, key)
+						skipCollector(i, name, key)
+						continue collectorsLoop
 					}
 					parent[key] = resolved
 				}

@@ -205,7 +205,8 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 				// specs are loaded directly and never inspected for expressions.
 				rendered, err := renderSpec(BaseFile{Path: upstreamFile.Path, Content: doc}, true)
 				if err != nil {
-					return nil, err
+					renderOptions.Log.Error(errors.Wrapf(err, "skipping %s: cannot render KOTS templates", upstreamFile.Path))
+					rendered = kotsutil.UnsupportedTroubleshootWarning()
 				}
 				doc = rendered
 				if bytes.Contains(doc, []byte("{{")) && bytes.Contains(doc, []byte("}}")) {
@@ -292,10 +293,10 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 		for _, file := range chartPreflights {
 			ref := file.ref
 			rendered, err := renderSpec(file.BaseFile, true)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to render KOTS templates in %s", file.Path)
+			var doc []byte
+			if err == nil {
+				doc, err = renderTroubleshootWithChart(rendered, ref, charts, u.Files, renderOptions.Namespace)
 			}
-			doc, err := renderTroubleshootWithChart(rendered, ref, charts, u.Files, renderOptions.Namespace)
 			if err != nil {
 				renderOptions.Log.Error(errors.Wrapf(err, "skipping %s: cannot render with values from HelmChart %q", file.Path, ref))
 				doc = kotsutil.UnsupportedTroubleshootWarning()

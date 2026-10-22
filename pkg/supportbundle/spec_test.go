@@ -37,8 +37,16 @@ func TestDiscoveredBundleFailuresAreIsolated(t *testing.T) {
 				Collectors: []*troubleshootv1beta2.Collect{{Data: &troubleshootv1beta2.Data{Name: "app", Data: "app-proof"}}},
 			}}
 			got := addDiscoveredSpecs(bundle, &apptypes.App{}, testclient.NewSimpleClientset(objects...))
-			require.Len(t, got.Spec.Collectors, 2)
-			require.ElementsMatch(t, []string{"app-proof", "discovered-proof"}, []string{got.Spec.Collectors[0].Data.Data, got.Spec.Collectors[1].Data.Data})
+			expected := []string{"app-proof", "discovered-proof"}
+			if name == "missing secret" {
+				expected = append(expected, "Skipped postgres collector 0: could not resolve uri. Other collectors continue.")
+			}
+			var data []string
+			for _, collector := range got.Spec.Collectors {
+				require.NotNil(t, collector.Data)
+				data = append(data, collector.Data.Data)
+			}
+			require.ElementsMatch(t, expected, data)
 		})
 	}
 }
