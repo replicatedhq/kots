@@ -1,0 +1,71 @@
+go.mod
+  s_0ffc525aa32689::t_bed4c06f11338d 75,400-401
+go.sum
+  s_0ffc525aa32689::t_c9da00e825f6bf 1299-1300,1304
+pkg/base/helm_value_test.go
+  s_0ffc525aa32689::t_e84369d6e4299c 1-42
+pkg/base/replicated.go
+  s_0ffc525aa32689::t_a03501a3a7f5fe 196-200,403-407,647-680
+pkg/image/airgap.go
+  s_0ffc525aa32689::t_0b0a42877ee2a4 400,502-503,505,662-663,665,734-737
+pkg/image/online.go
+  s_0ffc525aa32689::t_5c5a295906f37b 9,261-264
+pkg/image/template_aliases.go
+  s_0ffc525aa32689::t_ed230adeb4527e 1-55
+pkg/image/template_aliases_test.go
+  s_0ffc525aa32689::t_754fc05b480666 1-68
+pkg/image/types/types.go
+  s_0ffc525aa32689::t_fcae3921b71782 80-87
+pkg/imageutil/replicated_image.go
+  s_0ffc525aa32689::t_f5790b03c86648 1-44
+pkg/template/builder.go
+  s_0ffc525aa32689::t_66621bee82e207 63,69,197,203-205
+pkg/template/chart_defaults.go
+  s_0ffc525aa32689::t_9da38501997e30 1-158
+pkg/template/chart_defaults_test.go
+  s_0ffc525aa32689::t_d1319d89f21cbe 1-45
+pkg/template/clock_proxy_contract_test.go
+  s_0ffc525aa32689::t_a06aa22d465371 1-29
+pkg/template/compatibility_test.go
+  s_0ffc525aa32689::t_de0e7c1bda6591 1-63
+pkg/template/config_compatibility_test.go
+  s_0ffc525aa32689::t_8aecc5b7c7cc07 1-25
+pkg/template/config_context.go
+  s_0ffc525aa32689::t_9abd9bb57ac6e2 80,92-95,98-99,188-189
+pkg/template/helm_value.go
+  s_0ffc525aa32689::t_b5e9dc0ed9f299 1-35
+pkg/template/helm_value_test.go
+  s_0ffc525aa32689::t_1f390180ededa0 1-20
+pkg/template/image_context.go
+  s_0ffc525aa32689::t_eb27bb5c236a2b 1-193
+pkg/template/image_context_test.go
+  s_0ffc525aa32689::t_30315d732ec282 1-518
+pkg/template/license_contract_test.go
+  s_0ffc525aa32689::t_794fec841af664 1-29
+pkg/template/normal_contract_test.go
+  s_0ffc525aa32689::t_a0ca80e1741c5a 1-61
+pkg/template/static_context.go
+  s_0ffc525aa32689::t_a7320e703920c0 204-208,211-215,218-222,279,282-284,293-296
+pkg/template/testdata/function-contract.json
+  s_0ffc525aa32689::t_65dd88e4db873a 1-293
+pkg/template/testdata/function-fixtures.json
+  s_0ffc525aa32689::t_5399708a881bfb 1-230
+pkg/template/testdata/license-fields.json
+  s_0ffc525aa32689::t_8453f9946f1153 1-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "56969f4e831accedb288adf75a6e8a707efb3909",
+  "prompts": {},
+  "sessions": {
+    "s_0ffc525aa32689": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15afe-a5d1-7ec2-a26b-4e37bca76159",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "divolgin <dmitriy@replicated.com>"
+    }
+  }
+}
