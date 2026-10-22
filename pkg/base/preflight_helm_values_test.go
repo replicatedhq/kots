@@ -105,6 +105,7 @@ spec:
 			{"missing chart", strings.ReplaceAll(chartValuesPreflight, "helm-chart: selected", "helm-chart: absent"), "no HelmChart"},
 			{"missing value", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.missing | required "missing memory"`), "missing memory"},
 			{"broken template", chartValuesPreflight + "{{ if }}", "missing value for if"},
+			{"invalid rendered YAML", strings.ReplaceAll(chartValuesPreflight, "'{{ .Values.memory }}'", `{{ printf "[" }}`), "invalid rendered YAML"},
 			{"configuration pending", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.memory | required "memory is required"`), ""},
 			{"configuration supplied", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.memory | required "memory is required"`), ""},
 			{"default for missing value", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.optional | default "64Mi"`), ""},

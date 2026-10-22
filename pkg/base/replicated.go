@@ -214,12 +214,17 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 			}
 			gvk := OverlySimpleGVK{}
 			if err := yaml.Unmarshal(doc, &gvk); err != nil {
-				if !hasHelmChart {
+				if isBeta3 {
+					renderOptions.Log.Errorf("Skipping %s: invalid v1beta3 Troubleshoot YAML", upstreamFile.Path)
+					doc = kotsutil.UnsupportedTroubleshootWarning()
+					gvk = OverlySimpleGVK{APIVersion: "troubleshoot.sh/v1beta2", Kind: "Preflight"}
+				} else if !hasHelmChart {
 					continue
+				} else {
+					// Whole-file HelmChart rendering retained these bytes too. A
+					// sibling may only become valid YAML after textual rendering.
+					gvk = OverlySimpleGVK{}
 				}
-				// Whole-file HelmChart rendering retained these bytes too. A
-				// sibling may only become valid YAML after textual rendering.
-				gvk = OverlySimpleGVK{}
 			}
 
 			isKotsKind := kotsutil.IsKotsKind(gvk.APIVersion, gvk.Kind)
@@ -299,7 +304,9 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 				for _, part := range util.ConvertToSingleDocs(doc) {
 					var parsed OverlySimpleGVK
 					if err := yaml.Unmarshal(part, &parsed); err != nil {
-						return nil, errors.Wrapf(err, "invalid rendered YAML in %s", file.Path)
+						renderOptions.Log.Errorf("Skipping %s: invalid rendered YAML from HelmChart %q", file.Path, ref)
+						nonempty = append(nonempty, kotsutil.UnsupportedTroubleshootWarning())
+						continue
 					}
 					if troubleshootHelmChart(part) != "" {
 						nonempty = append(nonempty, part)
