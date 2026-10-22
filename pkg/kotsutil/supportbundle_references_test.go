@@ -2,6 +2,7 @@ package kotsutil
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
+	k8stesting "k8s.io/client-go/testing"
 )
 
 const referenceBundle = `apiVersion: troubleshoot.sh/v1beta3
@@ -44,6 +47,37 @@ spec:
   afterCollection:
     - uploadResultsTo: {uri: 'https://example.com/upload'}
 `
+
+func TestBundleReferenceCancellation(t *testing.T) {
+	for _, cause := range []error{context.Canceled, context.DeadlineExceeded} {
+		client := fake.NewSimpleClientset()
+		client.PrependReactor("get", "secrets", func(k8stesting.Action) (bool, runtime.Object, error) {
+			return true, nil, fmt.Errorf("lookup interrupted: %w", cause)
+		})
+		_, err := prepareBundleReferences(context.Background(), []byte(referenceBundle), client, "app")
+		require.ErrorIs(t, err, cause)
+		require.Len(t, client.Actions(), 1)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	client := fake.NewSimpleClientset()
+	_, err := prepareBundleReferences(ctx, []byte(referenceBundle), client, "app")
+	require.ErrorIs(t, err, context.Canceled)
+	require.Empty(t, client.Actions())
+}
+
+func TestInvalidBundleBase64DoesNotBlockOtherSpecs(t *testing.T) {
+	invalid := "apiVersion: v1\nkind: Secret\nmetadata: {name: invalid-bundle}\ndata:\n  support-bundle-spec: 'not-base64!'\n"
+	prepared, err := PrepareSupportBundleReferences([]byte(invalid))
+	require.NoError(t, err)
+	require.Contains(t, string(prepared), "not-base64!")
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bundles.yaml"), []byte(invalid+"\n---\n"+referenceBundle), 0600))
+	kinds, err := LoadTSKindsFromPath(dir)
+	require.NoError(t, err)
+	require.Len(t, kinds.SupportBundlesV1Beta2, 1)
+	require.Equal(t, "references", kinds.SupportBundlesV1Beta2[0].Name)
+}
 
 func TestPreflightDatabaseFields(t *testing.T) {
 	for _, tc := range []struct {

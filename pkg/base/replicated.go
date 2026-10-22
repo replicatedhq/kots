@@ -210,6 +210,7 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 				}
 				doc = rendered
 				if bytes.Contains(doc, []byte("{{")) && bytes.Contains(doc, []byte("}}")) {
+					logger.Warnf("Skipping %s: v1beta3 template expressions remain without a Helm chart values source", upstreamFile.Path)
 					doc = kotsutil.UnsupportedTroubleshootWarning()
 				}
 			}

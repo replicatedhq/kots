@@ -19,21 +19,11 @@ async function getPreflightResult(url: string): Promise<PreflightResponse> {
 
     // unmarshall these nested JSON strings
     if (typeof response?.preflightResult?.result === "string") {
-      if (response?.preflightResult?.result.length > 0) {
-        response.preflightResult.result = JSON.parse(
-          response.preflightResult.result
-        );
-      } else {
-        response.preflightResult.result = {};
-      }
+      response.preflightResult.result = JSON.parse(response.preflightResult.result || "{}");
     }
 
     if (typeof response?.preflightProgress === "string") {
-      if (response?.preflightProgress.length > 0) {
-        response.preflightProgress = JSON.parse(response.preflightProgress);
-      } else {
-        response.preflightProgress = {};
-      }
+      response.preflightProgress = JSON.parse(response.preflightProgress || "{}");
     }
 
     return response;
@@ -43,40 +33,6 @@ async function getPreflightResult(url: string): Promise<PreflightResponse> {
       "Encountered an error while unmarshalling preflight results"
     );
   }
-}
-
-function hasPreflightErrors(response: PreflightResponse): boolean {
-  if (typeof response?.preflightResult?.result === "string")
-    throw new Error("Preflight response is not properly unmarshalled");
-
-  return Boolean(response?.preflightResult?.result?.errors?.length);
-}
-
-// result.results which is an array
-function hasPreflightResults(response: PreflightResponse): boolean {
-  if (typeof response?.preflightResult?.result === "string")
-    throw new Error("Preflight response is not properly unmarshalled");
-
-  return Boolean(getPreflightDisplayResults(response).length);
-}
-
-// just results which is an object
-function hasRunningPreflightChecks(response: PreflightResponse): boolean {
-  if (typeof response?.preflightResult?.result === "string")
-    throw new Error("Preflight response is not properly unmarshalled");
-
-  return Object.keys(response?.preflightResult?.result || {}).length === 0;
-}
-
-function hasFailureOrWarning(response: PreflightResponse): boolean {
-  if (typeof response?.preflightResult?.result === "string")
-    throw new Error("Preflight response is not properly unmarshalled");
-
-  return Boolean(
-    getPreflightDisplayResults(response).find(
-      (result) => result?.isFail || result?.isWarn
-    )
-  );
 }
 
 function flattenPreflightResponse({
@@ -92,18 +48,25 @@ function flattenPreflightResponse({
   )
     throw new Error("Preflight response is not properly unmarshalled");
 
+  const result = response?.preflightResult?.result;
+  const skipped = response?.preflightResult?.skipped;
+  const blocked = response?.preflightResult?.hasFailingStrictPreflights;
+  const errors = result?.errors || [];
+  const displayResults = getPreflightDisplayResults(response);
+  const running = Object.keys(result || {}).length === 0;
+  const needsAcknowledgement = !skipped && (
+    errors.length > 0 || displayResults.some(result => result?.isFail || result?.isWarn)
+  );
+
   return {
-    // flatten the error strings out into an array
-    errors:
-      response?.preflightResult?.result?.errors?.map((error) => error.error) ||
-      [],
+    errors: errors.map(error => error.error),
     pendingPreflightCheckName: response?.preflightProgress?.currentName || "",
     // TODO: see if we can calculate a real %
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
     pollForUpdates: shouldPollPreflightResults(response),
     preflightResults:
-      getPreflightDisplayResults(response).map((responseResult) => ({
+      displayResults.map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
         message: responseResult.message || "",
         title: responseResult.title || "",
@@ -112,44 +75,18 @@ function flattenPreflightResponse({
         showFail: responseResult?.isFail || false,
         showPass: responseResult?.isPass || false,
         showWarn: responseResult?.isWarn || false,
-      })) || [],
-    showCancelPreflight:
-      !response?.preflightResult?.skipped &&
-      (hasPreflightErrors(response) || hasFailureOrWarning(response)),
-    shouldShowConfirmContinueWithFailedPreflights:
-      !response?.preflightResult?.skipped && // not skipped
-      (hasFailureOrWarning(response) || hasPreflightErrors(response)), // or it has errors
-    shouldShowRerunPreflight:
-      Boolean(response?.preflightResult?.result) || // not running
-      response?.preflightResult?.skipped, // not skipped
-    showDeploymentBlocked:
-      response?.preflightResult?.hasFailingStrictPreflights,
-    showIgnorePreflight:
-      (!response?.preflightResult?.hasFailingStrictPreflights &&
-        response?.preflightResult?.skipped) ||
-      hasRunningPreflightChecks(response),
-    showPreflightCheckPending:
-      response?.preflightResult?.skipped || hasRunningPreflightChecks(response),
-    showPreflightResultErrors:
-      hasPreflightErrors(response) && // has errors
-      !response?.preflightResult?.skipped, // not skipped
-    showPreflightResults:
-      !response?.preflightResult?.skipped &&
-      hasPreflightResults(response) &&
-      !hasPreflightErrors(response),
-    showPreflightSkipped: response?.preflightResult?.skipped,
-    showRbacError: response?.preflightResult?.result?.errors?.find(
-      (error) => error?.isRbac
-    )
-      ? true
-      : false,
+      })),
+    showCancelPreflight: needsAcknowledgement,
+    shouldShowConfirmContinueWithFailedPreflights: needsAcknowledgement,
+    shouldShowRerunPreflight: Boolean(result) || skipped,
+    showDeploymentBlocked: blocked,
+    showIgnorePreflight: (!blocked && skipped) || running,
+    showPreflightCheckPending: skipped || running,
+    showPreflightResultErrors: errors.length > 0 && !skipped,
+    showPreflightResults: !skipped && displayResults.length > 0 && errors.length === 0,
+    showPreflightSkipped: skipped,
+    showRbacError: errors.some(error => error?.isRbac),
   };
-}
-
-function makeRefetchInterval(preflightCheck: PreflightCheck): number | false {
-  if (preflightCheck.pollForUpdates) return 1000;
-
-  return false;
 }
 
 export function usePreflightResults({
@@ -182,7 +119,7 @@ export function usePreflightResults({
     refetchInterval: (preflightCheck: PreflightCheck | undefined) => {
       if (!preflightCheck) return null;
 
-      const refetchInterval = makeRefetchInterval(preflightCheck);
+      const refetchInterval = preflightCheck.pollForUpdates ? 1000 : false;
 
       if (!refetchInterval) setRefetchCount(0);
 

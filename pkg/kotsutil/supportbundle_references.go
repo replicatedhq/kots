@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -27,6 +28,9 @@ func PrepareSupportBundleReferences(content []byte) ([]byte, error) {
 }
 
 func prepareBundleReferences(ctx context.Context, content []byte, client kubernetes.Interface, namespace string) ([]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if docs := util.ConvertToSingleDocs(content); len(docs) > 1 {
 		for i, doc := range docs {
 			var err error
@@ -55,7 +59,8 @@ func prepareBundleReferences(ctx context.Context, content []byte, client kuberne
 					var err error
 					data, err = base64.StdEncoding.DecodeString(value)
 					if err != nil {
-						return nil, err
+						logger.Warnf("Skipping invalid base64 in Secret %s, data key %s", (&unstructured.Unstructured{Object: doc}).GetName(), key)
+						continue
 					}
 				}
 				prepared, err := prepareBundleReferences(ctx, data, client, namespace)
@@ -123,6 +128,12 @@ collectorsLoop:
 				if client != nil && !excluded {
 					resolved, err := v3.ResolveStringOrValueFrom(ctx, ref, client, namespace)
 					if err != nil {
+						if ctx.Err() != nil {
+							return nil, ctx.Err()
+						}
+						if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+							return nil, err
+						}
 						skipCollector(i, name, key)
 						continue collectorsLoop
 					}
