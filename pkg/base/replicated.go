@@ -292,19 +292,21 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 			}
 			doc, err := renderTroubleshootWithChart(rendered, ref, charts, u.Files, renderOptions.Namespace)
 			if err != nil {
-				return nil, errors.Wrapf(err, "cannot render %s with values from HelmChart %q", file.Path, ref)
-			}
-			var nonempty [][]byte
-			for _, part := range util.ConvertToSingleDocs(doc) {
-				var parsed OverlySimpleGVK
-				if err := yaml.Unmarshal(part, &parsed); err != nil {
-					return nil, errors.Wrapf(err, "invalid rendered YAML in %s", file.Path)
+				renderOptions.Log.Error(errors.Wrapf(err, "skipping %s: cannot render with values from HelmChart %q", file.Path, ref))
+				doc = kotsutil.UnsupportedTroubleshootWarning()
+			} else {
+				var nonempty [][]byte
+				for _, part := range util.ConvertToSingleDocs(doc) {
+					var parsed OverlySimpleGVK
+					if err := yaml.Unmarshal(part, &parsed); err != nil {
+						return nil, errors.Wrapf(err, "invalid rendered YAML in %s", file.Path)
+					}
+					if troubleshootHelmChart(part) != "" {
+						nonempty = append(nonempty, part)
+					}
 				}
-				if troubleshootHelmChart(part) != "" {
-					nonempty = append(nonempty, part)
-				}
+				doc = bytes.Join(nonempty, []byte("\n---\n"))
 			}
-			doc = bytes.Join(nonempty, []byte("\n---\n"))
 			if len(doc) == 0 {
 				continue
 			}

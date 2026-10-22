@@ -1,6 +1,7 @@
 package base
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -103,6 +104,7 @@ spec:
 			{"cross-document variable", "{{ $memory := .Values.memory }}\n" + chartValuesPreflight + "\n---\n" + strings.ReplaceAll(chartValuesPreflight, ".Values.memory", "$memory"), ""},
 			{"missing chart", strings.ReplaceAll(chartValuesPreflight, "helm-chart: selected", "helm-chart: absent"), "no HelmChart"},
 			{"missing value", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.missing | required "missing memory"`), "missing memory"},
+			{"broken template", chartValuesPreflight + "{{ if }}", "missing value for if"},
 			{"configuration pending", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.memory | required "memory is required"`), ""},
 			{"configuration supplied", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.memory | required "memory is required"`), ""},
 			{"default for missing value", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.optional | default "64Mi"`), ""},
@@ -119,6 +121,9 @@ spec:
 				if tc.name == "chart in same file" {
 					u.Files[1].Content = nil
 				}
+				if tc.err != "" {
+					u.Files = append(u.Files, upstreamtypes.UpstreamFile{Path: "supported.yaml", Content: []byte("apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nspec:\n  analyzers:\n    - clusterVersion:\n        checkName: retained\n        strict: true\n")})
+				}
 				if strings.HasPrefix(tc.name, "configuration") {
 					u.Files[1].Content = []byte(strings.ReplaceAll(string(u.Files[1].Content), `printf "64Mi"`, `ConfigOption "memory"`))
 					u.Files = append(u.Files, upstreamtypes.UpstreamFile{Path: "config.yaml", Content: []byte("apiVersion: kots.io/v1beta1\nkind: Config\nmetadata: {name: required}\nspec:\n  groups:\n    - name: settings\n      items:\n        - {name: memory, type: text, required: true}\n")})
@@ -126,11 +131,21 @@ spec:
 						u.Files = append(u.Files, upstreamtypes.UpstreamFile{Path: "configvalues.yaml", Content: []byte("apiVersion: kots.io/v1beta1\nkind: ConfigValues\nmetadata: {name: required}\nspec:\n  values:\n    memory: {value: 64Mi}\n")})
 					}
 				}
-				opts := &RenderOptions{Namespace: "customer-app", Log: logger.NewCLILogger(nil)}
+				var logs bytes.Buffer
+				opts := &RenderOptions{Namespace: "customer-app", Log: logger.NewCLILogger(&logs)}
 				files, err := RenderKotsKinds(u, opts)
+				require.NoError(t, err)
 				if tc.err != "" {
-					require.ErrorContains(t, err, tc.err)
-					require.ErrorContains(t, err, "preflight.yaml")
+					require.Contains(t, logs.String(), tc.err)
+					require.Contains(t, logs.String(), "preflight.yaml")
+					dir := t.TempDir()
+					require.NoError(t, kotsutil.WriteKotsKinds(files, dir))
+					kinds, err := kotsutil.LoadKotsKinds(dir)
+					require.NoError(t, err)
+					require.True(t, kinds.HasUnsupportedTroubleshoot)
+					require.Len(t, kinds.Preflight.Spec.Analyzers, 1)
+					require.Equal(t, "retained", kinds.Preflight.Spec.Analyzers[0].ClusterVersion.CheckName)
+					require.True(t, kinds.Preflight.Spec.Analyzers[0].ClusterVersion.Strict.BoolOrDefaultFalse())
 					return
 				}
 				require.NoError(t, err)

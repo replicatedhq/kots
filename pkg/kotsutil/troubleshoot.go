@@ -13,7 +13,7 @@ import (
 )
 
 const unsupportedTroubleshootAnnotation = "kots.io/unsupported-troubleshoot"
-const UnsupportedTroubleshootMessage = "Some v1beta3 Troubleshoot specs use unsupported Helm templates or preflight database references. Those specs will not run; other checks run normally."
+const UnsupportedTroubleshootMessage = "Some v1beta3 Troubleshoot specs could not be rendered or use unsupported templates or preflight database references. Those specs will not run; other checks run normally. Check the release rendering logs for rendering errors."
 
 var beta3TroubleshootVersion = regexp.MustCompile(`(?m)^apiVersion:[ \t]*['"]?troubleshoot\.sh/v1beta3['"]?[ \t]*(?:#.*)?$`)
 
