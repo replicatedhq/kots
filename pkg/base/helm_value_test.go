@@ -16,12 +16,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func releaseChart(t *testing.T, name string) upstreamtypes.UpstreamFile {
+func releaseChart(t *testing.T, name string, overrides ...map[string]string) upstreamtypes.UpstreamFile {
 	t.Helper()
+	files := map[string]string{"Chart.yaml": "apiVersion: v2\nname: " + name + "\nversion: 1.0.0\n", "values.yaml": "image: " + name + "\n"}
+	for _, override := range overrides {
+		for path, content := range override {
+			files[path] = content
+		}
+	}
 	var buffer bytes.Buffer
 	gz := gzip.NewWriter(&buffer)
 	tr := tar.NewWriter(gz)
-	for file, content := range map[string]string{"Chart.yaml": "apiVersion: v2\nname: " + name + "\nversion: 1.0.0\n", "values.yaml": "image: " + name + "\n"} {
+	for file, content := range files {
 		require.NoError(t, tr.WriteHeader(&tar.Header{Name: name + "/" + file, Size: int64(len(content)), Mode: 0644}))
 		_, err := tr.Write([]byte(content))
 		require.NoError(t, err)

@@ -9,10 +9,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
+	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -137,7 +139,11 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions, r
 
 func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (map[string][]byte, error) {
 	renderedKotsKindsMap := make(map[string][]byte)
-	var chartPreflights []BaseFile
+	type chartPreflight struct {
+		BaseFile
+		ref string
+	}
+	var chartPreflights []chartPreflight
 
 	builder, itemValues, err := NewConfigContextTemplateBuilder(u, renderOptions)
 	if err != nil {
@@ -156,28 +162,55 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to template config objects")
 	}
+	renderSpec := func(file BaseFile, expandConfig bool) ([]byte, error) {
+		if expandConfig {
+			var err error
+			file.Content, err = processVariadicConfig(&upstreamtypes.UpstreamFile{Content: file.Content, Path: file.Path}, renderedConfig, renderOptions.Log)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to process variadic config in %s", file.Path)
+			}
+		}
+		rendered, err := builder.RenderTemplate(file.Path, string(file.Content))
+		return []byte(rendered), errors.Wrapf(err, "failed to render file %s", file.Path)
+	}
 
 	for _, upstreamFile := range u.Files {
 		docs := util.ConvertToSingleDocs(upstreamFile.Content)
 		// HelmChart rendering historically retained ordinary sibling documents.
 		// Render each document once while preserving that mixed-file output.
 		hasHelmChart := false
+		chartRef := ""
 		for _, doc := range docs {
+			if ref := troubleshootHelmChart(doc); ref != "" {
+				if chartRef != "" && chartRef != ref {
+					return nil, errors.Errorf("%s: preflights in one template file must reference the same HelmChart", upstreamFile.Path)
+				}
+				chartRef = ref
+			}
 			var gvk OverlySimpleGVK
 			if err := yaml.Unmarshal(doc, &gvk); err == nil && gvk.Kind == "HelmChart" && (gvk.APIVersion == "kots.io/v1beta1" || gvk.APIVersion == "kots.io/v1beta2") {
 				hasHelmChart = true
-				break
 			}
 		}
+		var chartDocs [][]byte
 		for _, doc := range docs {
-			if troubleshootHelmChart(doc) != "" {
-				chartPreflights = append(chartPreflights, BaseFile{Path: upstreamFile.Path, Content: doc})
+			if troubleshootHelmChart(doc) != "" || (chartRef != "" && isHelmScopeFragment(doc)) {
+				chartDocs = append(chartDocs, doc)
 				continue
 			}
-			if kotsutil.IsUnsupportedTroubleshootDoc(doc) {
-				// Only the executable KOTS spec is replaced; upstream keeps the
-				// original document for other installers and future rendering.
-				doc = kotsutil.UnsupportedTroubleshootWarning()
+			isBeta3 := kotsutil.IsV1Beta3TroubleshootDoc(doc)
+			if isBeta3 {
+				// Render KOTS expressions first. Like the Troubleshoot CLI, raw
+				// beta3 templates need an explicit values source. Already-rendered
+				// specs are loaded directly and never inspected for expressions.
+				rendered, err := renderSpec(BaseFile{Path: upstreamFile.Path, Content: doc}, true)
+				if err != nil {
+					return nil, err
+				}
+				doc = rendered
+				if bytes.Contains(doc, []byte("{{")) && bytes.Contains(doc, []byte("}}")) {
+					doc = kotsutil.UnsupportedTroubleshootWarning()
+				}
 			}
 			gvk := OverlySimpleGVK{}
 			if err := yaml.Unmarshal(doc, &gvk); err != nil {
@@ -197,17 +230,9 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 			gvkString := fmt.Sprintf("%s, Kind=%s", gvk.APIVersion, gvk.Kind)
 
 			switch gvkString {
-			case "kots.io/v1beta1, Kind=Installation":
-				// Installation manifest does not need rendering.
-
-			case "kots.io/v1beta1, Kind=License":
-				// License manifest does not need rendering.
-
-			case "kots.io/v1beta1, Kind=IdentityConfig":
-				// IdentityConfig manifest does not need rendering.
-
-			case "kots.io/v1beta1, Kind=ConfigValues":
-				// ConfigValues manifest does not need rendering.
+			case "kots.io/v1beta1, Kind=Installation", "kots.io/v1beta1, Kind=License",
+				"kots.io/v1beta1, Kind=IdentityConfig", "kots.io/v1beta1, Kind=ConfigValues":
+				// These manifests do not need rendering.
 
 			case "kots.io/v1beta1, Kind=Config":
 				// Use the rendered Config instead of the upstream.
@@ -227,19 +252,12 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 				doc = []byte(helmchart)
 
 			default:
-				vConfig := doc
-				if isKotsKind {
-					vConfig, err = processVariadicConfig(&upstreamtypes.UpstreamFile{Content: doc, Path: upstreamFile.Path}, renderedConfig, renderOptions.Log)
+				if !isBeta3 {
+					doc, err = renderSpec(BaseFile{Path: upstreamFile.Path, Content: doc}, isKotsKind)
 					if err != nil {
-						return nil, errors.Wrapf(err, "failed to process variadic config in kots kind file %s", upstreamFile.Path)
+						return nil, err
 					}
 				}
-
-				bytes, err := builder.RenderTemplate(upstreamFile.Path, string(vConfig))
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
-				}
-				doc = []byte(bytes)
 			}
 
 			if existing, exists := renderedKotsKindsMap[upstreamFile.Path]; exists {
@@ -248,6 +266,10 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 
 			renderedKotsKindsMap[upstreamFile.Path] = doc
 		}
+		if len(chartDocs) > 0 {
+			// Render annotated fragments together so Helm scopes can span documents.
+			chartPreflights = append(chartPreflights, chartPreflight{BaseFile{Path: upstreamFile.Path, Content: bytes.Join(chartDocs, []byte("\n---\n"))}, chartRef})
+		}
 	}
 
 	if len(chartPreflights) > 0 {
@@ -255,21 +277,35 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 		if err != nil {
 			return nil, err
 		}
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(renderOptions.AppSlug, renderOptions.Sequence, renderOptions.IsAirgap, charts, renderOptions.RegistrySettings)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check configuration before rendering preflights")
+		}
+		if needsConfig {
+			return renderedKotsKindsMap, nil
+		}
 		for _, file := range chartPreflights {
-			ref := troubleshootHelmChart(file.Content)
-			rendered, err := builder.RenderTemplate(file.Path, string(file.Content))
+			ref := file.ref
+			rendered, err := renderSpec(file.BaseFile, true)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to render KOTS templates in %s", file.Path)
 			}
-			doc, err := renderTroubleshootWithChart([]byte(rendered), ref, charts, u.Files, renderOptions.Namespace)
+			doc, err := renderTroubleshootWithChart(rendered, ref, charts, u.Files, renderOptions.Namespace)
 			if err != nil {
 				return nil, errors.Wrapf(err, "cannot render %s with values from HelmChart %q", file.Path, ref)
 			}
-			var parsed interface{}
-			if err := yaml.Unmarshal(doc, &parsed); err != nil {
-				return nil, errors.Wrapf(err, "invalid rendered YAML in %s", file.Path)
+			var nonempty [][]byte
+			for _, part := range util.ConvertToSingleDocs(doc) {
+				var parsed OverlySimpleGVK
+				if err := yaml.Unmarshal(part, &parsed); err != nil {
+					return nil, errors.Wrapf(err, "invalid rendered YAML in %s", file.Path)
+				}
+				if troubleshootHelmChart(part) != "" {
+					nonempty = append(nonempty, part)
+				}
 			}
-			if parsed == nil { // A conditional may disable the entire document.
+			doc = bytes.Join(nonempty, []byte("\n---\n"))
+			if len(doc) == 0 {
 				continue
 			}
 			if existing := renderedKotsKindsMap[file.Path]; len(existing) > 0 {

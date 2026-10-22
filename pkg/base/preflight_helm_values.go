@@ -2,6 +2,7 @@ package base
 
 import (
 	"bytes"
+	"path"
 	"regexp"
 	"strings"
 
@@ -11,12 +12,21 @@ import (
 	"github.com/replicatedhq/kotskinds/pkg/helmchart"
 	"helm.sh/helm/v4/pkg/chart/common"
 	chartutil "helm.sh/helm/v4/pkg/chart/common/util"
+	v2chart "helm.sh/helm/v4/pkg/chart/v2"
 	"helm.sh/helm/v4/pkg/chart/v2/loader"
+	v2util "helm.sh/helm/v4/pkg/chart/v2/util"
 	"helm.sh/helm/v4/pkg/engine"
 	"sigs.k8s.io/yaml"
 )
 
 var headerTemplateAction = regexp.MustCompile(`(?s)\{\{.*?\}\}`)
+
+// Keep template-only documents (including surrounding YAML comments) in scope.
+func isHelmScopeFragment(content []byte) bool {
+	stripped := headerTemplateAction.ReplaceAll(content, nil)
+	var doc interface{}
+	return !bytes.Equal(content, stripped) && yaml.Unmarshal(stripped, &doc) == nil && doc == nil
+}
 
 // Only parse the root header: the spec may not be valid YAML until Helm renders
 // it. Ignore conditional wrappers when reading the literal chart reference.
@@ -67,17 +77,29 @@ func renderTroubleshootWithChart(content []byte, ref string, kinds *kotsutil.Kot
 	if selected.GetNamespace() != "" {
 		namespace = selected.GetNamespace()
 	}
+	if err := v2util.ProcessDependencies(chart, overrides); err != nil {
+		return nil, err
+	}
 	// Coalesce defaults and overrides once. Full chart validation belongs to the
 	// existing installation path, not rendering this standalone document.
-	renderValues, err := chartutil.ToRenderValuesWithSchemaValidation(chart, overrides, common.ReleaseOptions{Name: selected.GetReleaseName(), Namespace: namespace, IsInstall: true, Revision: 1}, nil, true)
+	renderValues, err := chartutil.ToRenderValuesWithSchemaValidation(chart, overrides, common.ReleaseOptions{Name: selected.GetDirName(), Namespace: namespace, IsInstall: true, Revision: 1}, nil, true)
 	if err != nil {
 		return nil, err
 	}
-	// Keep dependency values, but execute only the standalone spec's template.
-	chart.Templates = []*common.File{{Name: "templates/preflight.yaml", Data: content}}
-	chart.SetDependencies()
-	renderer := engine.Engine{Strict: true}
-	rendered, err := renderer.Render(chart, renderValues)
+	// Helm parses underscore-prefixed files for definitions without executing
+	// them. Retain helpers from the entire chart tree, including library charts.
+	var keepDefinitions func(*v2chart.Chart)
+	keepDefinitions = func(c *v2chart.Chart) {
+		for _, file := range c.Templates {
+			file.Name = path.Join(path.Dir(file.Name), "_"+path.Base(file.Name))
+		}
+		for _, dependency := range c.Dependencies() {
+			keepDefinitions(dependency)
+		}
+	}
+	keepDefinitions(chart)
+	chart.Templates = append(chart.Templates, &common.File{Name: "templates/preflight.yaml", Data: content})
+	rendered, err := engine.Render(chart, renderValues)
 	if err != nil {
 		return nil, err
 	}

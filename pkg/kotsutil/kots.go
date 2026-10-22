@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -30,6 +31,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kotskinds/pkg/helmchart"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	kurlscheme "github.com/replicatedhq/kurlkinds/client/kurlclientset/scheme"
 	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
@@ -451,15 +453,8 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 				if o.Preflight == nil {
 					return "", nil
 				}
-				preflight := o.Preflight.DeepCopy()
-				if o.HasUnsupportedTroubleshoot {
-					if preflight.Annotations == nil {
-						preflight.Annotations = map[string]string{}
-					}
-					preflight.Annotations[unsupportedTroubleshootAnnotation] = "true"
-				}
 				var b bytes.Buffer
-				if err := s.Encode(preflight, &b); err != nil {
+				if err := s.Encode(o.Preflight, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode preflight")
 				}
 				return string(b.Bytes()), nil
@@ -570,8 +565,12 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 	// kots kinds could be part of a multi-yaml doc
 	docs := util.ConvertToSingleDocs(content)
 	for _, doc := range docs {
-		if IsUnsupportedTroubleshootDoc(doc) {
-			doc = UnsupportedTroubleshootWarning()
+		if IsV1Beta3TroubleshootDoc(doc) {
+			prepared, err := PrepareSupportBundleReferences(doc)
+			if err != nil {
+				return err
+			}
+			doc = prepared
 		}
 		decoded, gvk, err := decode(doc, nil, nil)
 		if IsV1Beta3TroubleshootDoc(doc) || (err == nil && strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,")) {
@@ -643,12 +642,7 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 		case "troubleshoot.sh/v1beta2, Kind=Redactor":
 			k.Redactor = decoded.(*troubleshootv1beta2.Redactor)
 		case "troubleshoot.sh/v1beta2, Kind=Preflight":
-			k.HasUnsupportedTroubleshoot = k.HasUnsupportedTroubleshoot || decoded.(*troubleshootv1beta2.Preflight).Annotations[unsupportedTroubleshootAnnotation] != ""
-			// An empty warning marker must not own a supported spec's URI or metadata.
-			if k.Preflight != nil && k.Preflight.Annotations[unsupportedTroubleshootAnnotation] != "" && reflect.DeepEqual(k.Preflight.Spec, troubleshootv1beta2.PreflightSpec{}) {
-				k.Preflight = nil
-			}
-			k.Preflight = troubleshootpreflight.ConcatPreflightSpec(k.Preflight, decoded.(*troubleshootv1beta2.Preflight))
+			k.AddPreflight(decoded.(*troubleshootv1beta2.Preflight))
 		case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
 			k.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
 		case "velero.io/v1, Kind=Backup":
@@ -665,6 +659,22 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 	}
 
 	return nil
+}
+
+// AddPreflight merges checks while retaining notices independently of order.
+func (k *KotsKinds) AddPreflight(preflight *troubleshootv1beta2.Preflight) {
+	k.HasUnsupportedTroubleshoot = k.HasUnsupportedTroubleshoot || preflight.Annotations[unsupportedTroubleshootAnnotation] != ""
+	// An empty warning marker must not own a supported spec's URI or metadata.
+	if k.Preflight != nil && k.Preflight.Annotations[unsupportedTroubleshootAnnotation] != "" && reflect.DeepEqual(k.Preflight.Spec, troubleshootv1beta2.PreflightSpec{}) {
+		k.Preflight = nil
+	}
+	k.Preflight = troubleshootpreflight.ConcatPreflightSpec(k.Preflight, preflight)
+	if k.HasUnsupportedTroubleshoot {
+		if k.Preflight.Annotations == nil {
+			k.Preflight.Annotations = map[string]string{}
+		}
+		k.Preflight.Annotations[unsupportedTroubleshootAnnotation] = "true"
+	}
 }
 
 func GetImagesFromKotsKinds(kotsKinds *KotsKinds, destRegistry *registrytypes.RegistryOptions) ([]string, error) {
@@ -940,11 +950,8 @@ func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Install
 }
 
 func LoadSupportBundleFromContents(data []byte) (*troubleshootv1beta2.SupportBundle, error) {
-	if IsUnsupportedTroubleshootDoc(data) {
-		return nil, errors.New("KOTS does not support Helm templates in v1beta3 support bundles")
-	}
 	if IsV1Beta3TroubleshootDoc(data) {
-		converted, err := docrewrite.ConvertToV1Beta2(data)
+		converted, err := PrepareSupportBundleReferences(data)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to prepare v1beta3 support bundle")
 		}
@@ -1155,10 +1162,11 @@ func LoadConfigValuesFromBytes(data []byte) (*kotsv1beta1.ConfigValues, error) {
 }
 
 func LoadPreflightFromContents(content []byte) (*troubleshootv1beta2.Preflight, error) {
-	if IsUnsupportedTroubleshootDoc(content) {
-		return nil, errors.New("KOTS does not support Helm templates in v1beta3 preflights")
+	content, err := PrepareSupportBundleReferences(content)
+	if err != nil {
+		return nil, err
 	}
-	content, err := docrewrite.ConvertToV1Beta2(content)
+	content, err = docrewrite.ConvertToV1Beta2(content)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert to v1beta2")
 	}
@@ -1716,6 +1724,37 @@ func FilterV1Beta1ChartsWithV1Beta2Charts(v1Beta1Charts []kotsv1beta1.HelmChart,
 	}
 
 	return filteredCharts
+}
+
+// HelmChartValues applies values and optionalValues without mutating the chart.
+func HelmChartValues(chart helmchart.HelmChartInterface) (map[string]interface{}, error) {
+	data, err := json.Marshal(chart)
+	if err != nil {
+		return nil, err
+	}
+	var normalized kotsv1beta2.HelmChart
+	if err := json.Unmarshal(data, &normalized); err != nil {
+		return nil, err
+	}
+	merged := normalized.Spec.Values
+	if merged == nil {
+		merged = map[string]kotsv1beta2.MappedChartValue{}
+	}
+	for _, optional := range normalized.Spec.OptionalValues {
+		enabled, err := strconv.ParseBool(optional.When)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse when conditional on optional values")
+		}
+		if !enabled {
+			continue
+		}
+		if optional.RecursiveMerge {
+			merged = kotsv1beta2.MergeHelmChartValues(merged, optional.Values)
+		} else {
+			maps.Copy(merged, optional.Values)
+		}
+	}
+	return normalized.Spec.GetHelmValues(merged)
 }
 
 func MustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {

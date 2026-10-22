@@ -287,12 +287,10 @@ func GetPreflightCommand(appSlug string, unsupported bool) []string {
 	if unsupported {
 		command = append(command, fmt.Sprintf("printf '%%s\\n' '%s'", kotsutil.UnsupportedTroubleshootMessage))
 	}
-	command = append(command,
+	return append(command,
 		"curl https://krew.sh/preflight | bash",
 		fmt.Sprintf("kubectl preflight %s\n", GetSpecURI(appSlug)),
 	)
-
-	return command
 }
 
 func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds, archiveDir string) error {

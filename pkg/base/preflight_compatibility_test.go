@@ -10,36 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTemplatedBeta3IsRetainedButNotExecuted(t *testing.T) {
-	content := "apiVersion: troubleshoot.sh/v1beta3\r\nkind: SupportBundle\r\nspec:\r\n{{ if .Values.enabled }}\r\n  collectors: []\r\n{{ end }}\r\n"
-	legacy := "apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nspec:\n  analyzers:\n    - clusterVersion:\n        checkName: 'repl{{ printf \"KOTS check\" }}'\n"
-	u := &upstreamtypes.Upstream{Type: "replicated", Files: []upstreamtypes.UpstreamFile{
-		{Path: "legacy.yaml", Content: []byte(legacy)}, {Path: "beta3.yaml", Content: []byte(content)},
-	}}
-	opts := &RenderOptions{Namespace: "customer-app", ExcludeKotsKinds: true, Log: logger.NewCLILogger(nil)}
-	files, err := RenderKotsKinds(u, opts)
-	require.NoError(t, err)
-	kinds, err := kotsutil.KotsKindsFromMap(files)
-	require.NoError(t, err)
-	require.Nil(t, kinds.HostPreflight)
-	require.Nil(t, kinds.SupportBundle)
-	require.Len(t, kinds.Preflight.Spec.Analyzers, 1)
-	require.Equal(t, "KOTS check", kinds.Preflight.Spec.Analyzers[0].ClusterVersion.CheckName)
-	require.True(t, kinds.HasUnsupportedTroubleshoot)
-	b, _, err := RenderUpstream(u, opts, kinds)
-	require.NoError(t, err)
-	require.Empty(t, b.ListErrorFiles())
-	require.Equal(t, content, string(u.Files[1].Content))
-	_, err = kotsutil.LoadPreflightFromContents([]byte(content))
-	require.ErrorContains(t, err, "KOTS does not support")
-	_, err = kotsutil.LoadSupportBundleFromContents([]byte(content))
-	require.ErrorContains(t, err, "KOTS does not support")
-}
-
 func TestPreflightReleaseDetection(t *testing.T) {
-	legacy := "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: supported-checks\n  labels:\n    vendor: retained\nspec:\n  uri: https://example.com/checks.yaml\n  analyzers:\n    - clusterVersion: {}\n"
+	legacy := "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: supported-checks\n  labels:\n    vendor: retained\nspec:\n  uri: https://example.com/checks.yaml\n  analyzers:\n    - clusterVersion:\n        checkName: 'repl{{ printf \"KOTS check\" }}'\n"
 	beta3 := "apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nspec:\n  collectors:\n    - runPod:\n        podSpec:\n          containers:\n            - resources:\n                requests:\n                  memory: '{{ .Values.memory }}'\n"
+	bundle := "apiVersion: troubleshoot.sh/v1beta3\r\nkind: SupportBundle\r\nspec:\r\n{{ if .Values.enabled }}\r\n  collectors: []\r\n{{ end }}\r\n"
 	excluded := "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nspec:\n  analyzers:\n    - clusterVersion:\n        exclude: true\n"
+	embedded := "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: embedded-checks\ndata:\n  preflight.yaml: |\n    apiVersion: troubleshoot.sh/v1beta3\n    kind: Preflight\nrepl{{ if true }}\n  enabled: 'true'\nrepl{{ end }}\n"
 	for _, tc := range []struct {
 		name             string
 		docs             []string
@@ -55,10 +31,13 @@ func TestPreflightReleaseDetection(t *testing.T) {
 		{"excluded beta2 only", []string{excluded}, false, false},
 		{"excluded beta2 and beta3", []string{excluded, beta3}, false, true},
 		{"multiple beta3", []string{beta3, beta3}, false, true},
+		{"KOTS checks and CRLF bundle template", []string{legacy, bundle}, true, true},
+		{"embedded beta3", []string{embedded}, false, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			u := &upstreamtypes.Upstream{Type: "replicated", Files: []upstreamtypes.UpstreamFile{{Path: "preflights.yaml", Content: []byte(strings.Join(tc.docs, "\n---\n"))}}}
-			files, err := RenderKotsKinds(u, &RenderOptions{Namespace: "customer-app", Log: logger.NewCLILogger(nil)})
+			opts := &RenderOptions{Namespace: "customer-app", ExcludeKotsKinds: true, Log: logger.NewCLILogger(nil)}
+			files, err := RenderKotsKinds(u, opts)
 			require.NoError(t, err)
 			kinds, err := kotsutil.KotsKindsFromMap(files)
 			require.NoError(t, err)
@@ -69,7 +48,16 @@ func TestPreflightReleaseDetection(t *testing.T) {
 				require.Equal(t, "https://example.com/checks.yaml", kinds.Preflight.Spec.Uri)
 				require.Equal(t, "supported-checks", kinds.Preflight.Name)
 				require.Equal(t, "retained", kinds.Preflight.Labels["vendor"])
+				require.Equal(t, "KOTS check", kinds.Preflight.Spec.Analyzers[0].ClusterVersion.CheckName)
 			}
+			base, _, err := RenderUpstream(u, opts, kinds)
+			require.NoError(t, err)
+			require.Empty(t, base.ListErrorFiles())
+			if tc.name == "embedded beta3" {
+				require.Len(t, base.Files, 1)
+				require.Contains(t, string(base.Files[0].Content), "troubleshoot.sh/v1beta3")
+			}
+			require.Equal(t, strings.Join(tc.docs, "\n---\n"), string(u.Files[0].Content))
 			// GetApp reads this merged, persisted document rather than the archive.
 			stored, err := kinds.Marshal("troubleshoot.sh", "v1beta2", "Preflight")
 			require.NoError(t, err)
@@ -103,18 +91,35 @@ func TestConcreteBeta3KindsAndMalformedSpecs(t *testing.T) {
 	}
 }
 
-func TestConfigMapWithEmbeddedBeta3IsDeployed(t *testing.T) {
-	content := "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: embedded-checks\ndata:\n  preflight.yaml: |\n    apiVersion: troubleshoot.sh/v1beta3\n    kind: Preflight\nrepl{{ if true }}\n  enabled: 'true'\nrepl{{ end }}\n"
-	u := &upstreamtypes.Upstream{Type: "replicated", Files: []upstreamtypes.UpstreamFile{{Path: "configmap.yaml", Content: []byte(content)}}}
-	opts := &RenderOptions{Namespace: "customer-app", ExcludeKotsKinds: true, Log: logger.NewCLILogger(nil)}
-	files, err := RenderKotsKinds(u, opts)
-	require.NoError(t, err)
-	kinds, err := kotsutil.KotsKindsFromMap(files)
-	require.NoError(t, err)
-	require.False(t, kinds.HasUnsupportedTroubleshoot)
-	b, _, err := RenderUpstream(u, opts, kinds)
-	require.NoError(t, err)
-	require.Empty(t, b.ListErrorFiles())
-	require.Len(t, b.Files, 1)
-	require.Contains(t, string(b.Files[0].Content), "troubleshoot.sh/v1beta3")
+func TestRepeatablePreflightValuesAreExpandedBeforeRendering(t *testing.T) {
+	for _, version := range []string{"v1beta2", "v1beta3"} {
+		t.Run(version, func(t *testing.T) {
+			config := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata: {name: repeat}
+spec:
+  groups:
+    - name: labels
+      items:
+        - name: label
+          type: text
+          repeatable: true
+          templates:
+            - {apiVersion: troubleshoot.sh/VERSION, kind: Preflight, name: repeat, yamlPath: 'spec.analyzers[0]'}
+`
+			values := "apiVersion: kots.io/v1beta1\nkind: ConfigValues\nmetadata: {name: repeat}\nspec:\n  values:\n    label-1: {value: first, repeatableItem: label}\n    label-2: {value: second, repeatableItem: label}\n"
+			preflight := "apiVersion: troubleshoot.sh/" + version + "\nkind: Preflight\nmetadata: {name: repeat}\nspec:\n  analyzers:\n    - clusterVersion:\n        checkName: 'repl{{ ConfigOption \"repl[[ .label ]]\" }}'\n"
+			u := &upstreamtypes.Upstream{Type: "replicated", Files: []upstreamtypes.UpstreamFile{
+				{Path: "config.yaml", Content: []byte(strings.ReplaceAll(config, "VERSION", version))},
+				{Path: "configvalues.yaml", Content: []byte(values)},
+				{Path: "preflight.yaml", Content: []byte(preflight)},
+			}}
+			files, err := RenderKotsKinds(u, &RenderOptions{Namespace: "app", Log: logger.NewCLILogger(nil)})
+			require.NoError(t, err)
+			kinds, err := kotsutil.KotsKindsFromMap(files)
+			require.NoError(t, err)
+			require.Len(t, kinds.Preflight.Spec.Analyzers, 2)
+			require.ElementsMatch(t, []string{"first", "second"}, []string{kinds.Preflight.Spec.Analyzers[0].ClusterVersion.CheckName, kinds.Preflight.Spec.Analyzers[1].ClusterVersion.CheckName})
+		})
+	}
 }

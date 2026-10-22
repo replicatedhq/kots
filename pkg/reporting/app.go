@@ -18,10 +18,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/segmentio/ksuid"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"k8s.io/client-go/kubernetes"
@@ -274,7 +274,7 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		di.Source = currentVersion.Source
 		di.Status = string(currentVersion.Status)
 
-		var preflightResults *troubleshootpreflight.UploadPreflightResults
+		var preflightResults *preflighttypes.PreflightResults
 		if currentVersion.PreflightResult != "" {
 			if err := json.Unmarshal([]byte(currentVersion.PreflightResult), &preflightResults); err != nil {
 				logger.Warnf("failed to unmarshal preflight results: %v", err.Error())

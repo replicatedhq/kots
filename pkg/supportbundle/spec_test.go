@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,31 @@ import (
 	"k8s.io/client-go/kubernetes"
 	testclient "k8s.io/client-go/kubernetes/fake"
 )
+
+func TestDiscoveredBundleFailuresAreIsolated(t *testing.T) {
+	for name, uri := range map[string]string{
+		"invalid reference": "{value: {invalid: object}}",
+		"missing secret":    "{valueFrom: {secretKeyRef: {name: missing, key: uri}}}",
+	} {
+		t.Run(name, func(t *testing.T) {
+			invalid := "apiVersion: troubleshoot.sh/v1beta3\nkind: SupportBundle\nspec:\n  collectors:\n    - postgres:\n        uri: " + uri + "\n"
+			valid := "apiVersion: troubleshoot.sh/v1beta2\nkind: SupportBundle\nspec:\n  collectors:\n    - data: {name: discovered, data: discovered-proof}\n"
+			var objects []runtime.Object
+			for name, spec := range map[string]string{"invalid": invalid, "valid": valid} {
+				objects = append(objects, &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: util.PodNamespace, Labels: map[string]string{"troubleshoot.sh/kind": "support-bundle"}},
+					Data:       map[string]string{SpecDataKey: spec},
+				})
+			}
+			bundle := &troubleshootv1beta2.SupportBundle{Spec: troubleshootv1beta2.SupportBundleSpec{
+				Collectors: []*troubleshootv1beta2.Collect{{Data: &troubleshootv1beta2.Data{Name: "app", Data: "app-proof"}}},
+			}}
+			got := addDiscoveredSpecs(bundle, &apptypes.App{}, testclient.NewSimpleClientset(objects...))
+			require.Len(t, got.Spec.Collectors, 2)
+			require.ElementsMatch(t, []string{"app-proof", "discovered-proof"}, []string{got.Spec.Collectors[0].Data.Data, got.Spec.Collectors[1].Data.Data})
+		})
+	}
+}
 
 func TestBuilder_populateNamespaces(t *testing.T) {
 	origPodNamespace := util.PodNamespace
