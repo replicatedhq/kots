@@ -1,0 +1,29 @@
+pkg/kotsutil/supportbundle_references_test.go
+  s_9e7a9808e41422::t_348b9eac942b36 56-57,91-105
+pkg/kotsutil/supportbundle_references.go
+  s_1026f69ab2a9bd::t_5a834882f6b8c6 11,98-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3c31134b4493ab4a5e92914beb2676edc85dbff0",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    },
+    "s_9e7a9808e41422": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13160-010b-73a1-bf47-8ed8f70fd8ce",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}
