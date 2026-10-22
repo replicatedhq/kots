@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	v2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	v3 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta3"
@@ -94,6 +95,11 @@ func prepareBundleReferences(ctx context.Context, content []byte, client kuberne
 				}
 				var ref v3.StringOrValueFrom
 				if err := runtime.DefaultUnstructuredConverter.FromUnstructured(object, &ref); err != nil {
+					if client == nil {
+						// Do not log the conversion error: it can contain credential values.
+						logger.Warnf("Skipping v1beta3 %s: invalid %s.%s reference", doc["kind"], name, key)
+						return UnsupportedTroubleshootWarning(), nil
+					}
 					return nil, errors.Wrapf(err, "invalid %s.%s", name, key)
 				}
 				if ref.Value != nil {

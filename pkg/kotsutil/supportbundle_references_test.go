@@ -53,6 +53,8 @@ func TestPreflightDatabaseFields(t *testing.T) {
 		{"secret", "{valueFrom: {secretKeyRef: {name: database, key: uri}}}", "false", "", true},
 		{"configmap", "{valueFrom: {configMapKeyRef: {name: database, key: uri}}}", "false", "", true},
 		{"excluded", "{valueFrom: {secretKeyRef: {name: missing, key: uri}}}", "true", "", false},
+		{"malformed literal", "{value: [invalid]}", "false", "", true},
+		{"malformed reference", "{valueFrom: {secretKeyRef: {name: [invalid], key: uri}}}", "false", "", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			doc := []byte("apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nspec:\n  collectors:\n    - postgres:\n        uri: " + tc.uri + "\n        exclude: " + tc.exclude + "\n  analyzers:\n    - clusterVersion: {strict: true}\n")
@@ -84,6 +86,21 @@ func TestPreflightDatabaseFields(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMalformedBundleReferenceDoesNotBlockSiblingSpecs(t *testing.T) {
+	malformed := strings.Replace(referenceBundle, "secretKeyRef: {name: database, key: uri}", "secretKeyRef: {name: [invalid], key: uri}", 1)
+	for _, content := range []string{malformed + "\n---\n" + referenceBundle, referenceBundle + "\n---\n" + malformed} {
+		kinds, err := KotsKindsFromMap(map[string][]byte{"bundles.yaml": []byte(content)})
+		require.NoError(t, err)
+		require.True(t, kinds.HasUnsupportedTroubleshoot)
+		require.NotNil(t, kinds.SupportBundle)
+		require.Equal(t, "references", kinds.SupportBundle.Name)
+		require.Len(t, kinds.SupportBundle.Spec.Collectors, 2)
+	}
+	// Runtime resolution must still report malformed references as errors.
+	_, err := prepareBundleReferences(context.Background(), []byte(malformed), fake.NewSimpleClientset(), "app")
+	require.ErrorContains(t, err, "invalid postgres.uri")
 }
 
 func TestSupportBundleReferencesAreDeferredAndPreservePolicy(t *testing.T) {
