@@ -111,15 +111,18 @@ func TestSupportBundleReferencesAreDeferredAndPreservePolicy(t *testing.T) {
 	require.Empty(t, bundle.Spec.Collectors[1].Postgres.URI, "do not persist credentials in the release")
 	secret, err := client.CoreV1().Secrets("app").Get(context.Background(), "database", metav1.GetOptions{})
 	require.NoError(t, err)
-	secret.Data["uri"] = []byte("postgres://changed")
+	const credentialSentinel = "postgres://user:must-not-leak-9c2f@database/app"
+	secret.Data["uri"] = []byte(credentialSentinel)
 	_, err = client.CoreV1().Secrets("app").Update(context.Background(), secret, metav1.UpdateOptions{})
 	require.NoError(t, err)
 	resolved, err = ResolveSupportBundleReferences(context.Background(), bundle, client, "app")
 	require.NoError(t, err)
-	require.Equal(t, "postgres://changed", resolved.Spec.Collectors[1].Postgres.URI)
-	_, err = ResolveSupportBundleReferences(context.Background(), bundle, fake.NewSimpleClientset(), "app")
-	require.ErrorContains(t, err, "support bundle:")
-	require.NotContains(t, err.Error(), "private-key")
+	require.Equal(t, credentialSentinel, resolved.Spec.Collectors[1].Postgres.URI)
+	// Resolve the credential successfully, then fail on the following TLS reference.
+	require.NoError(t, client.CoreV1().ConfigMaps("shared").Delete(context.Background(), "certificates", metav1.DeleteOptions{}))
+	_, err = ResolveSupportBundleReferences(context.Background(), bundle, client, "app")
+	require.ErrorContains(t, err, "support bundle: postgres.cacert")
+	require.NotContains(t, err.Error(), credentialSentinel)
 }
 
 func TestChartBundleReferencesLoadWithoutClusterAccess(t *testing.T) {

@@ -3,6 +3,24 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { ReactNode } from "react";
 import { useGetPrelightResults as useInstallResults } from "./getPreflightResult";
 import { useGetPrelightResults as useUpgradeResults } from "@components/upgrade_service/hooks/getPreflightResult";
+import { PreflightResponse, shouldPollPreflightResults } from "../types";
+
+it.each([
+  ["running", false, {}, true],
+  ["skipped but still running", true, {}, true],
+  ["skipped and finished", true, { results: [] }, false],
+  ["notice only", false, { notice: "Skipped spec" }, false],
+  ["notice with collection errors", false, { notice: "Skipped spec", errors: [{ error: "Failed", isRbac: true }] }, true],
+  ["collection errors", false, { errors: [{ error: "Failed", isRbac: false }] }, true],
+  ["analyzer results", false, { results: [{ isPass: true, title: "Passed", message: "", strict: false, uri: "" }] }, false],
+] satisfies [string, boolean, PreflightResponse["preflightResult"]["result"], boolean][])(
+  "polling: %s", (_name, skipped, result, expected) => {
+    expect(shouldPollPreflightResults({ preflightResult: {
+      appSlug: "test-app", clusterSlug: "test-cluster", createdAt: "",
+      hasFailingStrictPreflights: false, skipped, result,
+    } })).toBe(expected);
+  }
+);
 
 describe.each([
   ["installation", useInstallResults],

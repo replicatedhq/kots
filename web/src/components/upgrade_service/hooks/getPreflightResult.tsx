@@ -3,6 +3,7 @@ import {
   PreflightCheck,
   PreflightResponse,
   getPreflightDisplayResults,
+  shouldPollPreflightResults,
 } from "@features/PreflightChecks/types";
 import { useState } from "react";
 
@@ -112,10 +113,7 @@ function flattenPreflightResponse({
     // TODO: see if we can calculate a real %
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
-    pollForUpdates:
-      (!response?.preflightResult?.skipped || hasRunningPreflightChecks(response)) &&
-      !response?.preflightResult?.result?.results?.length &&
-      (!response?.preflightResult?.result?.notice || hasPreflightErrors(response)),
+    pollForUpdates: shouldPollPreflightResults(response),
     preflightResults:
       getPreflightDisplayResults(response).map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
