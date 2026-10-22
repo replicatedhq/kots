@@ -60,9 +60,9 @@ async function changeChannel(channelId: string) {
                 }
             ]
         })
-    }).then(response => {
+    }).then(async response => {
         if (!response.ok) {
-            throw new Error(`Unexpected status code: ${response.status}`);
+            throw new Error(`Unexpected status code: ${response.status}: ${await response.text()}`);
         }
     });
 }
