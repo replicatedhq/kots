@@ -22,7 +22,7 @@ test('install an original-slug license using the current server alias', async ({
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 60000 });
   const apps = await page.evaluate(async () => {
     const response = await fetch('/api/v1/apps', { credentials: 'include' });
-    if (!response.ok) throw new Error(`Failed to list apps: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to list apps: ${response.status}: ${await response.text()}`);
     return response.json();
   });
   expect(apps.apps).toHaveLength(1);

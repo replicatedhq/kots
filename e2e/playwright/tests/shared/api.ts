@@ -32,7 +32,7 @@ export async function listReleases(
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to list releases: ${response.status}`);
+    throw new Error(`Failed to list releases: ${response.status}: ${await response.text()}`);
   }
 
   return (await response.json()).releases;
@@ -62,7 +62,7 @@ export async function promoteRelease(
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to promote vendor release sequence: ${response.status}`);
+    throw new Error(`Failed to promote vendor release sequence: ${response.status}: ${await response.text()}`);
   }
 }
 
