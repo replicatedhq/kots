@@ -1,0 +1,27 @@
+pkg/kotsutil/supportbundle_references.go
+  s_1026f69ab2a9bd::t_dc80239bd3eca7 62
+  s_1026f69ab2a9bd::t_f395c1be7d5e5a 7,31-33,63,131-136
+web/src/features/PreflightChecks/api/usePreflightResults.ts
+  s_1026f69ab2a9bd::t_0b7582c9e06f6f 22,26,51-60,62,69,78-88,122
+pkg/kotsutil/supportbundle_references_test.go
+  s_1026f69ab2a9bd::t_cbf6a5e0ea64d8 81
+  s_1026f69ab2a9bd::t_ab0cc53b6e3ffd 5,15,17,51-80
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_1d9d9cec7b03ef 213
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b3ed523bfff008337d27763f079900c88f53375f",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}
