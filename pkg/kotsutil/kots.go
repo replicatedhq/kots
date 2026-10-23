@@ -568,7 +568,7 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 		if IsV1Beta3TroubleshootDoc(doc) {
 			prepared, err := PrepareSupportBundleReferences(doc)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to prepare v1beta3 support bundle references")
 			}
 			doc = prepared
 		}
