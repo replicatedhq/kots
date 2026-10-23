@@ -21,6 +21,38 @@ import (
 
 var headerTemplateAction = regexp.MustCompile(`(?s)\{\{.*?\}\}`)
 
+// Unannotated specs leave analyzer outcome messages to Troubleshoot at runtime.
+// Inspect a copy without those messages; never alter the spec we execute.
+func hasUnrenderedTroubleshootTemplates(content []byte) bool {
+	if !bytes.Contains(content, []byte("{{")) || !bytes.Contains(content, []byte("}}")) {
+		return false
+	}
+	var doc map[string]interface{}
+	if yaml.Unmarshal(content, &doc) != nil {
+		return true
+	}
+	spec, _ := doc["spec"].(map[string]interface{})
+	for _, section := range []string{"analyzers", "hostAnalyzers"} {
+		analyzers, _ := spec[section].([]interface{})
+		for _, entry := range analyzers {
+			analyzer, _ := entry.(map[string]interface{})
+			for _, value := range analyzer {
+				config, _ := value.(map[string]interface{})
+				outcomes, _ := config["outcomes"].([]interface{})
+				for _, entry := range outcomes {
+					outcome, _ := entry.(map[string]interface{})
+					for _, value := range outcome {
+						fields, _ := value.(map[string]interface{})
+						delete(fields, "message")
+					}
+				}
+			}
+		}
+	}
+	remaining, err := yaml.Marshal(doc)
+	return err != nil || (bytes.Contains(remaining, []byte("{{")) && bytes.Contains(remaining, []byte("}}")))
+}
+
 // Keep template-only documents (including surrounding YAML comments) in scope.
 func isHelmScopeFragment(content []byte) bool {
 	stripped := headerTemplateAction.ReplaceAll(content, nil)
@@ -68,23 +100,23 @@ func renderTroubleshootWithChart(content []byte, ref string, kinds *kotsutil.Kot
 	}
 	chart, err := loader.LoadArchive(bytes.NewReader(archive))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to load Helm chart archive")
 	}
 	overrides, err := kotsutil.HelmChartValues(selected)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get Helm chart values")
 	}
 	if selected.GetNamespace() != "" {
 		namespace = selected.GetNamespace()
 	}
 	if err := v2util.ProcessDependencies(chart, overrides); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to process Helm chart dependencies")
 	}
 	// Coalesce defaults and overrides once. Full chart validation belongs to the
 	// existing installation path, not rendering this standalone document.
 	renderValues, err := chartutil.ToRenderValuesWithSchemaValidation(chart, overrides, common.ReleaseOptions{Name: selected.GetDirName(), Namespace: namespace, IsInstall: true, Revision: 1}, nil, true)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to build preflight render values")
 	}
 	// Helm parses underscore-prefixed files for definitions without executing
 	// them. Retain helpers from the entire chart tree, including library charts.
@@ -101,7 +133,7 @@ func renderTroubleshootWithChart(content []byte, ref string, kinds *kotsutil.Kot
 	chart.Templates = append(chart.Templates, &common.File{Name: "templates/preflight.yaml", Data: content})
 	rendered, err := engine.Render(chart, renderValues)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to render preflight template")
 	}
 	return []byte(rendered[chart.Name()+"/templates/preflight.yaml"]), nil
 }

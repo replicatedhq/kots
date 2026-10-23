@@ -1,20 +1,65 @@
 package base
 
 import (
+	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	analyzer "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"github.com/stretchr/testify/require"
 )
+
+func TestBeta3RuntimeMessagesReachAnalysis(t *testing.T) {
+	for _, kind := range []string{"Preflight", "SupportBundle", "HostPreflight"} {
+		t.Run(kind, func(t *testing.T) {
+			doc := fmt.Sprintf(`apiVersion: troubleshoot.sh/v1beta3
+kind: %s
+spec:
+  analyzers:
+    - textAnalyze:
+        strict: true
+        collectorName: proof
+        fileName: version.txt
+        regexGroups: '(?P<version>old)'
+        outcomes:
+          - fail:
+              when: 'version = old'
+              message: '{{ if eq .version "old" }}{{ printf "Unsupported %%s" .version }}{{ end }}'
+`, kind)
+			u := &upstreamtypes.Upstream{Type: "replicated", Files: []upstreamtypes.UpstreamFile{{Path: "checks.yaml", Content: []byte(doc)}}}
+			files, err := RenderKotsKinds(u, &RenderOptions{Log: logger.NewCLILogger(nil)})
+			require.NoError(t, err)
+			kinds, err := kotsutil.KotsKindsFromMap(files)
+			require.NoError(t, err)
+			require.False(t, kinds.HasUnsupportedTroubleshoot)
+			require.Contains(t, string(files["checks.yaml"]), "Unsupported %s")
+			if kind != "Preflight" {
+				return
+			}
+			require.True(t, kinds.Preflight.Spec.Analyzers[0].TextAnalyze.Strict.BoolOrDefaultFalse())
+			getFile := func(string) ([]byte, error) { return []byte("old"), nil }
+			findFiles := func(string, []string) (map[string][]byte, error) {
+				return map[string][]byte{"proof/version.txt": []byte("old")}, nil
+			}
+			results, err := analyzer.GetAnalyzer(kinds.Preflight.Spec.Analyzers[0]).Analyze(getFile, findFiles)
+			require.NoError(t, err)
+			require.Len(t, results, 1)
+			require.True(t, results[0].IsFail)
+			require.Equal(t, "Unsupported old", results[0].Message)
+		})
+	}
+}
 
 func TestPreflightReleaseDetection(t *testing.T) {
 	legacy := "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: supported-checks\n  labels:\n    vendor: retained\nspec:\n  uri: https://example.com/checks.yaml\n  analyzers:\n    - clusterVersion:\n        checkName: 'repl{{ printf \"KOTS check\" }}'\n"
 	beta3 := "apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nspec:\n  collectors:\n    - runPod:\n        podSpec:\n          containers:\n            - resources:\n                requests:\n                  memory: '{{ .Values.memory }}'\n"
 	bundle := "apiVersion: troubleshoot.sh/v1beta3\r\nkind: SupportBundle\r\nspec:\r\n{{ if .Values.enabled }}\r\n  collectors: []\r\n{{ end }}\r\n"
 	excluded := "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nspec:\n  analyzers:\n    - clusterVersion:\n        exclude: true\n"
+	brokenTemplate := strings.ReplaceAll(legacy, `printf "KOTS check"`, `fail "invalid KOTS value"`)
 	embedded := "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: embedded-checks\ndata:\n  preflight.yaml: |\n    apiVersion: troubleshoot.sh/v1beta3\n    kind: Preflight\nrepl{{ if true }}\n  enabled: 'true'\nrepl{{ end }}\n"
 	for _, tc := range []struct {
 		name             string
@@ -33,12 +78,23 @@ func TestPreflightReleaseDetection(t *testing.T) {
 		{"multiple beta3", []string{beta3, beta3}, false, true},
 		{"KOTS checks and CRLF bundle template", []string{legacy, bundle}, true, true},
 		{"embedded beta3", []string{embedded}, false, false},
+		{"malformed beta3", []string{"apiVersion: troubleshoot.sh/v1beta3\nkind: Preflight\nspec:\n  collectors: [\n"}, false, true},
+		{"beta3 template error", []string{strings.ReplaceAll(brokenTemplate, "v1beta2", "v1beta3")}, false, true},
+		{"beta2 template error", []string{brokenTemplate}, false, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			u := &upstreamtypes.Upstream{Type: "replicated", Files: []upstreamtypes.UpstreamFile{{Path: "preflights.yaml", Content: []byte(strings.Join(tc.docs, "\n---\n"))}}}
-			opts := &RenderOptions{Namespace: "customer-app", ExcludeKotsKinds: true, Log: logger.NewCLILogger(nil)}
+			var logs bytes.Buffer
+			opts := &RenderOptions{Namespace: "customer-app", ExcludeKotsKinds: true, Log: logger.NewCLILogger(&logs)}
 			files, err := RenderKotsKinds(u, opts)
+			if tc.name == "beta2 template error" {
+				require.ErrorContains(t, err, "invalid KOTS value")
+				return
+			}
 			require.NoError(t, err)
+			if tc.name == "malformed beta3" || tc.name == "beta3 template error" {
+				require.Contains(t, logs.String(), "preflights.yaml")
+			}
 			kinds, err := kotsutil.KotsKindsFromMap(files)
 			require.NoError(t, err)
 			require.Equal(t, tc.runnable, kotsutil.HasRunnablePreflights(kinds.Preflight))
@@ -56,6 +112,8 @@ func TestPreflightReleaseDetection(t *testing.T) {
 			if tc.name == "embedded beta3" {
 				require.Len(t, base.Files, 1)
 				require.Contains(t, string(base.Files[0].Content), "troubleshoot.sh/v1beta3")
+			} else {
+				require.Empty(t, base.Files)
 			}
 			require.Equal(t, strings.Join(tc.docs, "\n---\n"), string(u.Files[0].Content))
 			// GetApp reads this merged, persisted document rather than the archive.
@@ -67,26 +125,6 @@ func TestPreflightReleaseDetection(t *testing.T) {
 				require.Equal(t, tc.notice, reloaded.HasUnsupportedTroubleshoot)
 				require.Equal(t, kinds.HasPreflights(), reloaded.HasPreflights())
 			}
-		})
-	}
-}
-
-func TestConcreteBeta3KindsAndMalformedSpecs(t *testing.T) {
-	for _, version := range []string{"v1beta2", "v1beta3"} {
-		t.Run(version, func(t *testing.T) {
-			bundle := []byte("apiVersion: troubleshoot.sh/" + version + "\nkind: SupportBundle\nspec:\n  collectors:\n    - clusterInfo: {}\n")
-			loaded, err := kotsutil.LoadSupportBundleFromContents(bundle)
-			require.NoError(t, err)
-			require.Len(t, loaded.Spec.Collectors, 1)
-			kinds, err := kotsutil.KotsKindsFromMap(map[string][]byte{"bundle.yaml": bundle,
-				"host.yaml": []byte("apiVersion: troubleshoot.sh/" + version + "\nkind: HostPreflight\nspec:\n  collectors:\n    - cpu: {}\n"),
-			})
-			require.NoError(t, err)
-			require.NotNil(t, kinds.SupportBundle)
-			require.NotNil(t, kinds.HostPreflight)
-			require.False(t, kinds.HasUnsupportedTroubleshoot)
-			_, err = kotsutil.LoadPreflightFromContents([]byte("apiVersion: troubleshoot.sh/" + version + "\nkind: Preflight\nspec:\n  collectors:\n    - runPod:\n        podSpec:\n          containers:\n            - resources:\n                requests:\n                  memory: not-a-quantity\n"))
-			require.ErrorContains(t, err, "quantities must match")
 		})
 	}
 }

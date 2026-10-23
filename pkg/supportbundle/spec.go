@@ -75,7 +75,7 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 	}
 	builtBundle, err = kotsutil.ResolveSupportBundleReferences(context.TODO(), builtBundle, clientset, util.PodNamespace)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to resolve support bundle references")
 	}
 
 	namespacesToCollect := []string{}

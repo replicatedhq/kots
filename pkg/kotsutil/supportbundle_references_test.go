@@ -71,12 +71,21 @@ func TestInvalidBundleBase64DoesNotBlockOtherSpecs(t *testing.T) {
 	prepared, err := PrepareSupportBundleReferences([]byte(invalid))
 	require.NoError(t, err)
 	require.Contains(t, string(prepared), "not-base64!")
+	// A bad Secret must not prevent loading a valid chart Secret beside it.
 	dir := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "bundles.yaml"), []byte(invalid+"\n---\n"+referenceBundle), 0600))
+	specs := referenceBundle + "\n---\napiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nspec:\n  analyzers:\n    - clusterVersion: {}\n"
+	content := invalid + "\n---\napiVersion: v1\nkind: Secret\nstringData:\n  support-bundle-spec: |\n    " + strings.ReplaceAll(strings.TrimSpace(specs), "\n", "\n    ") + "\n"
+	file := filepath.Join(dir, "secret.yaml")
+	require.NoError(t, os.WriteFile(file, []byte(content), 0600))
 	kinds, err := LoadTSKindsFromPath(dir)
 	require.NoError(t, err)
 	require.Len(t, kinds.SupportBundlesV1Beta2, 1)
-	require.Equal(t, "references", kinds.SupportBundlesV1Beta2[0].Name)
+	require.Len(t, kinds.PreflightsV1Beta2, 1)
+	require.NotEmpty(t, kinds.SupportBundlesV1Beta2[0].Annotations[bundleReferencesAnnotation])
+	require.Equal(t, "retained", kinds.SupportBundlesV1Beta2[0].Spec.Collectors[0].Data.Data)
+	unchanged, err := os.ReadFile(file)
+	require.NoError(t, err)
+	require.Equal(t, content, string(unchanged))
 }
 
 func TestPreflightDatabaseFields(t *testing.T) {
@@ -191,23 +200,6 @@ func TestSupportBundleReferencesAreDeferredAndPreservePolicy(t *testing.T) {
 		require.Equal(t, collector.Data.Data, string(output[collector.Data.Name]))
 		require.NotContains(t, string(output[collector.Data.Name]), credentialSentinel)
 	}
-}
-
-func TestChartBundleReferencesLoadWithoutClusterAccess(t *testing.T) {
-	dir := t.TempDir()
-	specs := referenceBundle + "\n---\napiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nspec:\n  analyzers:\n    - clusterVersion: {}\n"
-	content := "apiVersion: v1\nkind: Secret\nstringData:\n  support-bundle-spec: |\n    " + strings.ReplaceAll(strings.TrimSpace(specs), "\n", "\n    ") + "\n"
-	file := filepath.Join(dir, "secret.yaml")
-	require.NoError(t, os.WriteFile(file, []byte(content), 0600))
-	kinds, err := LoadTSKindsFromPath(dir)
-	require.NoError(t, err)
-	require.Len(t, kinds.SupportBundlesV1Beta2, 1)
-	require.Len(t, kinds.PreflightsV1Beta2, 1, "retain other documents in the same Secret")
-	require.NotEmpty(t, kinds.SupportBundlesV1Beta2[0].Annotations[bundleReferencesAnnotation])
-	require.Equal(t, "retained", kinds.SupportBundlesV1Beta2[0].Spec.Collectors[0].Data.Data)
-	unchanged, err := os.ReadFile(file)
-	require.NoError(t, err)
-	require.Equal(t, content, string(unchanged))
 }
 
 func TestSupportBundleReferenceMissingValues(t *testing.T) {

@@ -1164,7 +1164,7 @@ func LoadConfigValuesFromBytes(data []byte) (*kotsv1beta1.ConfigValues, error) {
 func LoadPreflightFromContents(content []byte) (*troubleshootv1beta2.Preflight, error) {
 	content, err := PrepareSupportBundleReferences(content)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to prepare preflight references")
 	}
 	content, err = docrewrite.ConvertToV1Beta2(content)
 	if err != nil {
@@ -1730,11 +1730,11 @@ func FilterV1Beta1ChartsWithV1Beta2Charts(v1Beta1Charts []kotsv1beta1.HelmChart,
 func HelmChartValues(chart helmchart.HelmChartInterface) (map[string]interface{}, error) {
 	data, err := json.Marshal(chart)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to marshal HelmChart for value normalization")
 	}
 	var normalized kotsv1beta2.HelmChart
 	if err := json.Unmarshal(data, &normalized); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to unmarshal normalized HelmChart")
 	}
 	merged := normalized.Spec.Values
 	if merged == nil {

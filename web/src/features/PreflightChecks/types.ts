@@ -53,12 +53,11 @@ export function getPreflightDisplayResults(
   if (typeof result === "string")
     throw new Error("Preflight response is not properly unmarshalled");
   const results = result?.results || [];
-  return result?.notice
-    ? [
-        { isWarn: true, title: "Helm-templated specs not run", message: result.notice, strict: false, uri: "" },
-        ...results,
-      ]
-    : results;
+  if (!result?.notice) return results;
+  return [
+    { isWarn: true, title: "Helm-templated specs not run", message: result.notice, strict: false, uri: "" },
+    ...results,
+  ];
 }
 
 export function shouldPollPreflightResults(response: PreflightResponse): boolean {
