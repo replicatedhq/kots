@@ -249,6 +249,11 @@ func isExcludedByAnnotation(annotations map[string]interface{}) (bool, error) {
 }
 
 func (f BaseFile) IsKotsKind() (bool, error) {
+	// Helm conditionals may not be valid YAML until rendered elsewhere.
+	// Recognize these Troubleshoot documents so they are not submitted to Kubernetes.
+	if kotsutil.IsV1Beta3TroubleshootDoc(f.Content) {
+		return true, nil
+	}
 	var m interface{}
 
 	if err := yaml.Unmarshal(f.Content, &m); err != nil {

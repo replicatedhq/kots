@@ -288,7 +288,7 @@ func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := GetPreflightCommandResponse{
-		Command: preflight.GetPreflightCommand(foundApp.Slug),
+		Command: preflight.GetPreflightCommand(foundApp.Slug, kotsKinds.HasUnsupportedTroubleshoot),
 	}
 
 	JSON(w, http.StatusOK, response)
@@ -322,6 +322,19 @@ func (h *Handler) PostPreflightStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Query().Get("unsupported") == "true" {
+		var results preflighttypes.PreflightResults
+		if err := json.Unmarshal(b, &results); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		results.Notice = kotsutil.UnsupportedTroubleshootMessage
+		b, err = json.Marshal(results)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
 	if err := store.GetStore().SetPreflightResults(foundApp.ID, sequence, b); err != nil {
 		err = errors.Wrap(err, "failed to set preflight results")
 		logger.Error(err)

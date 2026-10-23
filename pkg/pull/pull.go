@@ -34,8 +34,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -635,12 +633,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", u.GetRenderedDir(writeUpstreamOptions)))
 	}
 	if tsKinds.PreflightsV1Beta2 != nil {
-		var renderedPreflight *troubleshootv1beta2.Preflight
-		for _, v := range tsKinds.PreflightsV1Beta2 {
-			renderedPreflight = troubleshootpreflight.ConcatPreflightSpec(renderedPreflight, &v)
+		chartKinds := &kotsutil.KotsKinds{}
+		for i := range tsKinds.PreflightsV1Beta2 {
+			chartKinds.AddPreflight(&tsKinds.PreflightsV1Beta2[i])
 		}
-		if renderedPreflight != nil {
-			renderedPreflightBytes, err := kotsutil.MarshalRuntimeObject(renderedPreflight)
+		if chartKinds.Preflight != nil {
+			renderedPreflightBytes, err := kotsutil.MarshalRuntimeObject(chartKinds.Preflight)
 			if err != nil {
 				return "", errors.Wrap(err, "failed to marshal rendered preflight")
 			}

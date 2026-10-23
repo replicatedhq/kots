@@ -1,4 +1,14 @@
-import { Utilities } from "./utilities";
+import { Utilities, getPreflightResultState } from "./utilities";
+
+it.each([
+  [{ notice: "Beta3 specs will not run" }, "warn"],
+  [{ notice: "Beta3 specs will not run", results: [{ isPass: true }] }, "warn"],
+  [{ notice: "Beta3 specs will not run", results: [{ isFail: true }] }, "fail"],
+  [{ notice: "Beta3 specs will not run", errors: [{ error: "Collection failed" }] }, "fail"],
+  [{ results: [{ isPass: true }] }, "pass"],
+])("preflight summary %#", (results, expected) => {
+  expect(getPreflightResultState(results)).toBe(expected);
+});
 
 describe("Utilities", () => {
   describe("checkIsDateExpired", () => {

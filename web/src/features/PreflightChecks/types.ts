@@ -22,6 +22,7 @@ interface PreflightResponseResult {
   skipped: boolean;
   result:
     | {
+        notice?: string;
         errors?: PreflightResponseError[];
         results?: PreflightResponseResultItem[];
       }
@@ -42,6 +43,35 @@ interface PreflightResponseResultItem {
   strict: boolean;
   title: string;
   uri: string;
+}
+
+// Add the notice only for display; it is never a saved analyzer result.
+export function getPreflightDisplayResults(
+  response: PreflightResponse
+): PreflightResponseResultItem[] {
+  const result = response?.preflightResult?.result;
+  if (typeof result === "string")
+    throw new Error("Preflight response is not properly unmarshalled");
+  const results = result?.results || [];
+  if (!result?.notice) return results;
+  return [
+    { isWarn: true, title: "Helm-templated specs not run", message: result.notice, strict: false, uri: "" },
+    ...results,
+  ];
+}
+
+export function shouldPollPreflightResults(response: PreflightResponse): boolean {
+  const result = response?.preflightResult?.result;
+  if (typeof result === "string")
+    throw new Error("Preflight response is not properly unmarshalled");
+
+  const isRunning = Object.keys(result || {}).length === 0;
+  const isSkipped = Boolean(response?.preflightResult?.skipped);
+  const hasAnalyzerResults = Boolean(result?.results?.length);
+  const hasCollectionErrors = Boolean(result?.errors?.length);
+  const isNoticeOnlyCompletion = Boolean(result?.notice) && !hasCollectionErrors;
+
+  return (!isSkipped || isRunning) && !hasAnalyzerResults && !isNoticeOnlyCompletion;
 }
 
 /* UI TYPES */

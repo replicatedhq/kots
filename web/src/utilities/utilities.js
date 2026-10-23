@@ -431,11 +431,11 @@ export function getPreflightResultState(preflightResults) {
     return "fail";
   }
   if (size(preflightResults.results) === 0) {
-    return "pass";
+    return preflightResults.notice ? "warn" : "pass";
   }
 
   const { results } = preflightResults;
-  let resultState = "pass";
+  let resultState = preflightResults.notice ? "warn" : "pass";
   for (const check of results) {
     if (check.isWarn) {
       resultState = "warn";
