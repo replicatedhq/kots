@@ -139,11 +139,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions, r
 
 func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (map[string][]byte, error) {
 	renderedKotsKindsMap := make(map[string][]byte)
-	type chartPreflight struct {
-		BaseFile
-		ref string
-	}
-	var chartPreflights []chartPreflight
+	var chartPreflights []BaseFile
 
 	builder, itemValues, err := NewConfigContextTemplateBuilder(u, renderOptions)
 	if err != nil {
@@ -179,14 +175,9 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 		// HelmChart rendering historically retained ordinary sibling documents.
 		// Render each document once while preserving that mixed-file output.
 		hasHelmChart := false
-		chartRef := ""
+		hasPreflight := false
 		for _, doc := range docs {
-			if ref := troubleshootHelmChart(doc); ref != "" {
-				if chartRef != "" && chartRef != ref {
-					return nil, errors.Errorf("%s: preflights in one template file must reference the same HelmChart", upstreamFile.Path)
-				}
-				chartRef = ref
-			}
+			hasPreflight = hasPreflight || isBeta3Preflight(doc)
 			var gvk OverlySimpleGVK
 			if err := yaml.Unmarshal(doc, &gvk); err == nil && gvk.Kind == "HelmChart" && (gvk.APIVersion == "kots.io/v1beta1" || gvk.APIVersion == "kots.io/v1beta2") {
 				hasHelmChart = true
@@ -194,15 +185,14 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 		}
 		var chartDocs [][]byte
 		for _, doc := range docs {
-			if troubleshootHelmChart(doc) != "" || (chartRef != "" && isHelmScopeFragment(doc)) {
+			if isBeta3Preflight(doc) || (hasPreflight && isHelmScopeFragment(doc)) {
 				chartDocs = append(chartDocs, doc)
 				continue
 			}
 			isBeta3 := kotsutil.IsV1Beta3TroubleshootDoc(doc)
 			if isBeta3 {
-				// Render KOTS expressions first. Like the Troubleshoot CLI, raw
-				// beta3 templates need an explicit values source. Already-rendered
-				// specs are loaded directly and never inspected for expressions.
+				// Host preflights and support bundles retain their existing path;
+				// only application Preflights render in each chart's context.
 				rendered, err := renderSpec(BaseFile{Path: upstreamFile.Path, Content: doc}, true)
 				if err != nil {
 					renderOptions.Log.Error(errors.Wrapf(err, "skipping %s: cannot render KOTS templates", upstreamFile.Path))
@@ -274,8 +264,8 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 			renderedKotsKindsMap[upstreamFile.Path] = doc
 		}
 		if len(chartDocs) > 0 {
-			// Render annotated fragments together so Helm scopes can span documents.
-			chartPreflights = append(chartPreflights, chartPreflight{BaseFile{Path: upstreamFile.Path, Content: bytes.Join(chartDocs, []byte("\n---\n"))}, chartRef})
+			// Keep Helm scopes intact across the standalone preflight documents.
+			chartPreflights = append(chartPreflights, BaseFile{Path: upstreamFile.Path, Content: bytes.Join(chartDocs, []byte("\n---\n"))})
 		}
 	}
 
@@ -292,25 +282,24 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 			return renderedKotsKindsMap, nil
 		}
 		for _, file := range chartPreflights {
-			ref := file.ref
-			rendered, err := renderSpec(file.BaseFile, true)
+			rendered, err := renderSpec(file, true)
 			var doc []byte
 			if err == nil {
-				doc, err = renderTroubleshootWithChart(rendered, ref, charts, u.Files, renderOptions.Namespace)
+				doc, err = renderTroubleshootWithCharts(rendered, charts, u.Files, renderOptions.Namespace)
 			}
 			if err != nil {
-				renderOptions.Log.Error(errors.Wrapf(err, "skipping %s: cannot render with values from HelmChart %q", file.Path, ref))
+				renderOptions.Log.Error(errors.Wrapf(err, "skipping %s: cannot render preflight with chart values", file.Path))
 				doc = kotsutil.UnsupportedTroubleshootWarning()
 			} else {
 				var nonempty [][]byte
 				for _, part := range util.ConvertToSingleDocs(doc) {
 					var parsed OverlySimpleGVK
 					if err := yaml.Unmarshal(part, &parsed); err != nil {
-						renderOptions.Log.Errorf("Skipping %s: invalid rendered YAML from HelmChart %q", file.Path, ref)
+						renderOptions.Log.Errorf("Skipping %s: invalid rendered preflight YAML", file.Path)
 						nonempty = append(nonempty, kotsutil.UnsupportedTroubleshootWarning())
 						continue
 					}
-					if troubleshootHelmChart(part) != "" {
+					if kotsutil.IsKotsKind(parsed.APIVersion, parsed.Kind) {
 						nonempty = append(nonempty, part)
 					}
 				}

@@ -16,11 +16,9 @@ import (
 )
 
 // Both standalone specs and chart Secrets exercise the same templated policy.
-const chartValuesPreflight = `apiVersion: troubleshoot.sh/v1beta3
+const chartValuesPreflight = `{{ if eq .Chart.Name "values-chart" }}
+apiVersion: troubleshoot.sh/v1beta3
 kind: Preflight
-metadata:
-  annotations:
-    kots.io/helm-chart: selected
 spec:
   collectors:
     - runPod:
@@ -45,6 +43,7 @@ spec:
           - fail:
               when: 'version = old'
               message: '{{ "{{" }} if eq .version "old" {{ "}}" }}Unsupported version {{ "{{" }} printf "%s" (.version | upper) {{ "}}" }}{{ "{{" }} end {{ "}}" }}'
+{{ end }}
 `
 
 func requireRuntimeMessagePreserved(t *testing.T, kinds *kotsutil.KotsKinds) {
@@ -55,8 +54,8 @@ func requireRuntimeMessagePreserved(t *testing.T, kinds *kotsutil.KotsKinds) {
 	require.Equal(t, `{{ if eq .version "old" }}Unsupported version {{ printf "%s" (.version | upper) }}{{ end }}`, analyzer.Outcomes[0].Fail.Message)
 }
 
-func TestPreflightUsesReferencedChartValues(t *testing.T) {
-	archive := releaseChart(t, "values-chart", map[string]string{
+func TestPreflightUsesEachChartValues(t *testing.T) {
+	chartFiles := map[string]string{
 		"Chart.yaml":                            "apiVersion: v2\nname: values-chart\nversion: 1.0.0\ndependencies:\n  - name: child\n    version: 1.0.0\n    repository: file://charts/child\n    import-values: [settings]\n",
 		"values.yaml":                           "enabled: false\nmemory: 32Mi\nnested:\n  default: from-default\n",
 		"templates/workload.yaml":               `{{ fail "standalone rendering must not execute workload templates" }}`,
@@ -67,7 +66,10 @@ func TestPreflightUsesReferencedChartValues(t *testing.T) {
 		"charts/child/templates/_helpers.tpl":   `{{ define "child.memory" }}{{ .Values.memory }}{{ end }}`,
 		"charts/library/Chart.yaml":             "apiVersion: v2\nname: library\nversion: 1.0.0\ntype: library\n",
 		"charts/library/templates/_helpers.tpl": `{{ define "library.memory" }}{{ .Values.memory }}{{ end }}`,
-	})
+	}
+	archive := releaseChart(t, "values-chart", chartFiles)
+	chartFiles["Chart.yaml"] = strings.ReplaceAll(chartFiles["Chart.yaml"], "name: values-chart", "name: other-chart")
+	otherArchive := releaseChart(t, "other-chart", chartFiles)
 	chart := `apiVersion: kots.io/%s
 kind: HelmChart
 metadata:
@@ -88,7 +90,9 @@ spec:
 `
 	for _, version := range []string{"v1beta1", "v1beta2"} {
 		for _, tc := range []struct{ name, doc, err string }{
-			{"selected chart", chartValuesPreflight, ""},
+			{"chart name condition", chartValuesPreflight, ""},
+			{"every chart", strings.Replace(chartValuesPreflight, `eq .Chart.Name "values-chart"`, "true", 1), ""},
+			{"no matching chart", strings.Replace(chartValuesPreflight, `eq .Chart.Name "values-chart"`, `eq .Chart.Name "absent"`, 1), ""},
 			{"root helper", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `include "values.memory" .`), ""},
 			{"dependency helper", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `include "child.memory" .`), ""},
 			{"library helper", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `template "library.memory" .`), ""},
@@ -102,11 +106,10 @@ spec:
 			{"configmap in same file", "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: retained-config\ndata: {proof: retained}\n---\n" + chartValuesPreflight, ""},
 			{"beta2 in same file", chartValuesPreflight + "\n---\napiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nspec:\n  analyzers:\n    - textAnalyze:\n        checkName: Beta2 runtime\n        strict: true\n        outcomes:\n          - fail: {message: 'Unsupported version {{ .version }}'}\n", ""},
 			{"cross-document variable", "{{ $memory := .Values.memory }}\n" + chartValuesPreflight + "\n---\n" + strings.ReplaceAll(chartValuesPreflight, ".Values.memory", "$memory"), ""},
-			{"missing chart", strings.ReplaceAll(chartValuesPreflight, "helm-chart: selected", "helm-chart: absent"), "no HelmChart"},
 			{"missing value", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.missing | required "missing memory"`), "missing memory"},
 			{"broken template", chartValuesPreflight + "{{ if }}", "missing value for if"},
 			{"broken KOTS template", strings.ReplaceAll(chartValuesPreflight, "'{{ .Values.memory }}'", `'repl{{ fail "invalid KOTS value" }}'`), "invalid KOTS value"},
-			{"invalid rendered YAML", strings.ReplaceAll(chartValuesPreflight, "'{{ .Values.memory }}'", `{{ printf "[" }}`), "invalid rendered YAML"},
+			{"invalid rendered YAML", strings.ReplaceAll(chartValuesPreflight, "'{{ .Values.memory }}'", `{{ printf "[" }}`), "invalid rendered preflight YAML"},
 			{"configuration pending", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.memory | required "memory is required"`), ""},
 			{"configuration supplied", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.memory | required "memory is required"`), ""},
 			{"default for missing value", strings.ReplaceAll(chartValuesPreflight, ".Values.memory", `.Values.optional | default "64Mi"`), ""},
@@ -117,8 +120,9 @@ spec:
 				u := &upstreamtypes.Upstream{Type: "replicated", Files: []upstreamtypes.UpstreamFile{
 					{Path: "preflight.yaml", Content: []byte(tc.doc)},
 					{Path: "selected.yaml", Content: []byte(fmt.Sprintf(chart, version))},
-					{Path: "other.yaml", Content: []byte(strings.ReplaceAll(strings.ReplaceAll(fmt.Sprintf(chart, version), "name: selected", "name: other"), "64Mi", "256Mi"))},
+					{Path: "other.yaml", Content: []byte(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(fmt.Sprintf(chart, version), "name: selected", "name: other"), "name: values-chart", "name: other-chart"), "64Mi", "256Mi"))},
 					{Path: "values-chart-1.0.0.tgz", Content: archive.Content},
+					{Path: "other-chart-1.0.0.tgz", Content: otherArchive.Content},
 				}}
 				if tc.name == "chart in same file" {
 					u.Files[1].Content = nil
@@ -162,7 +166,7 @@ spec:
 					require.False(t, kinds.HasPreflights(), "checks must wait for required configuration")
 					return
 				}
-				if strings.HasPrefix(tc.name, "disabled") {
+				if strings.HasPrefix(tc.name, "disabled") || tc.name == "no matching chart" {
 					require.False(t, kinds.HasPreflights())
 					return
 				}
@@ -172,6 +176,11 @@ spec:
 				require.NoError(t, err)
 				for _, kinds := range []*kotsutil.KotsKinds{kinds, reloaded} {
 					p := kinds.Preflight
+					if tc.name == "every chart" {
+						require.Len(t, p.Spec.Collectors, 2)
+						require.ElementsMatch(t, []string{"64Mi", "256Mi"}, []string{p.Spec.Collectors[0].RunPod.PodSpec.Containers[0].Resources.Requests.Memory().String(), p.Spec.Collectors[1].RunPod.PodSpec.Containers[0].Resources.Requests.Memory().String()})
+						continue
+					}
 					if tc.name == "beta2 in same file" {
 						require.Equal(t, "Unsupported version {{ .version }}", p.Spec.Analyzers[0].TextAnalyze.Outcomes[0].Fail.Message)
 						require.True(t, p.Spec.Analyzers[0].TextAnalyze.Strict.BoolOrDefaultFalse())
@@ -205,7 +214,7 @@ spec:
 }
 
 func TestBeta3ChartSecretUsesExistingHelmValues(t *testing.T) {
-	secret := "apiVersion: v1\nkind: Secret\nmetadata:\n  name: chart-preflight\n  labels:\n    troubleshoot.sh/kind: preflight\nstringData:\n  preflight.yaml: |\n    " + strings.ReplaceAll(strings.TrimSpace(chartValuesPreflight), "\n", "\n    ") + "\n"
+	secret := "apiVersion: v1\nkind: Secret\nmetadata:\n  name: chart-preflight\n  labels:\n    troubleshoot.sh/kind: preflight\nstringData:\n  preflight.yaml: |\n    " + strings.ReplaceAll(strings.TrimSpace(strings.Replace(chartValuesPreflight, `eq .Chart.Name "values-chart"`, `eq .Chart.Name "preflight-chart"`, 1)), "\n", "\n    ") + "\n"
 	u := &upstreamtypes.Upstream{Name: "preflight-chart", Files: []upstreamtypes.UpstreamFile{
 		{Path: "Chart.yaml", Content: []byte("apiVersion: v2\nname: preflight-chart\nversion: 1.0.0\n")},
 		{Path: "values.yaml", Content: []byte("memory: 64Mi\nnested: {default: from-default, override: from-optional}\n")},

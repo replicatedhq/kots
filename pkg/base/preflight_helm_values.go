@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"github.com/replicatedhq/kotskinds/pkg/helmchart"
 	"helm.sh/helm/v4/pkg/chart/common"
 	chartutil "helm.sh/helm/v4/pkg/chart/common/util"
@@ -21,7 +23,7 @@ import (
 
 var headerTemplateAction = regexp.MustCompile(`(?s)\{\{.*?\}\}`)
 
-// Unannotated specs leave analyzer outcome messages to Troubleshoot at runtime.
+// Specs rendered without a chart leave outcome messages to Troubleshoot at runtime.
 // Inspect a copy without those messages; never alter the spec we execute.
 func hasUnrenderedTroubleshootTemplates(content []byte) bool {
 	if !bytes.Contains(content, []byte("{{")) || !bytes.Contains(content, []byte("}}")) {
@@ -60,40 +62,56 @@ func isHelmScopeFragment(content []byte) bool {
 	return !bytes.Equal(content, stripped) && yaml.Unmarshal(stripped, &doc) == nil && doc == nil
 }
 
-// Only parse the root header: the spec may not be valid YAML until Helm renders
-// it. Ignore conditional wrappers when reading the literal chart reference.
-func troubleshootHelmChart(content []byte) string {
+// Read the header without evaluating Helm conditionals around the spec.
+func isBeta3Preflight(content []byte) bool {
 	if !kotsutil.IsV1Beta3TroubleshootDoc(content) {
-		return ""
+		return false
 	}
 	header := strings.SplitN(strings.ReplaceAll(string(content), "\r\n", "\n"), "\nspec:", 2)[0]
 	var meta OverlySimpleGVK
-	if yaml.Unmarshal(headerTemplateAction.ReplaceAll([]byte(header), nil), &meta) != nil || meta.Kind != "Preflight" {
-		return ""
-	}
-	ref, _ := meta.Metadata.Annotations["kots.io/helm-chart"].(string)
-	return ref
+	return yaml.Unmarshal(headerTemplateAction.ReplaceAll([]byte(header), nil), &meta) == nil && meta.Kind == "Preflight"
 }
 
-func renderTroubleshootWithChart(content []byte, ref string, kinds *kotsutil.KotsKinds, files []upstreamtypes.UpstreamFile, namespace string) ([]byte, error) {
-	var selected helmchart.HelmChartInterface
+// Render once per installed chart, as EC does. The spec can select charts with
+// .Chart.Name conditions; chart values are never combined across charts.
+func renderTroubleshootWithCharts(content []byte, kinds *kotsutil.KotsKinds, files []upstreamtypes.UpstreamFile, namespace string) ([]byte, error) {
+	var beta1 []kotsv1beta1.HelmChart
+	var beta2 []kotsv1beta2.HelmChart
 	if kinds.V1Beta1HelmCharts != nil {
-		for i := range kinds.V1Beta1HelmCharts.Items {
-			if h := &kinds.V1Beta1HelmCharts.Items[i]; h.Name == ref {
-				selected = h
-			}
-		}
+		beta1 = kinds.V1Beta1HelmCharts.Items
 	}
 	if kinds.V1Beta2HelmCharts != nil {
-		for i := range kinds.V1Beta2HelmCharts.Items {
-			if h := &kinds.V1Beta2HelmCharts.Items[i]; h.Name == ref {
-				selected = h // As elsewhere, beta2 supersedes beta1 with the same name.
-			}
+		beta2 = kinds.V1Beta2HelmCharts.Items
+	}
+	var charts []helmchart.HelmChartInterface
+	for _, h := range kotsutil.FilterV1Beta1ChartsWithV1Beta2Charts(beta1, beta2) {
+		if !h.Spec.Exclude.BoolOrDefaultFalse() {
+			charts = append(charts, &h)
 		}
 	}
-	if selected == nil {
-		return nil, errors.New("no HelmChart with that metadata.name exists in this release")
+	for _, h := range beta2 {
+		if !h.Spec.Exclude.BoolOrDefaultFalse() {
+			charts = append(charts, &h)
+		}
 	}
+	if len(charts) == 0 {
+		if hasUnrenderedTroubleshootTemplates(content) {
+			return nil, errors.New("preflight uses Helm templates but no enabled Helm charts are available")
+		}
+		return content, nil
+	}
+	var rendered [][]byte
+	for _, chart := range charts {
+		doc, err := renderTroubleshootWithChart(content, chart, files, namespace)
+		if err != nil {
+			return nil, errors.Wrapf(err, "render preflight for chart %s", chart.GetChartName())
+		}
+		rendered = append(rendered, doc)
+	}
+	return bytes.Join(rendered, []byte("\n---\n")), nil
+}
+
+func renderTroubleshootWithChart(content []byte, selected helmchart.HelmChartInterface, files []upstreamtypes.UpstreamFile, namespace string) ([]byte, error) {
 	archive, err := FindHelmChartArchiveInRelease(files, selected)
 	if err != nil {
 		return nil, err
