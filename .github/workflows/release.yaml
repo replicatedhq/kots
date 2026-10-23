@@ -274,6 +274,8 @@ jobs:
         make sbom
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+    - name: Prepare Go temporary directory
+      run: mkdir -p "$GITHUB_WORKSPACE/.go-tmp"
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v7
       with:
@@ -282,6 +284,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GORELEASER_CURRENT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        GOTMPDIR: ${{ github.workspace }}/.go-tmp
 
   publish-pact-contracts:
     runs-on: ubuntu-latest
