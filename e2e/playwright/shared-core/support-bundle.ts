@@ -212,7 +212,7 @@ export async function setRedactSpec(page: Page, expect: Expect) {
   const grepForTokenCmd = `grep -oE 'Bearer ([^"]+)' headers.txt`
   const apiAuthToken = execSync(grepForTokenCmd).toString()
 
-  const response = await page.evaluate(async ([endpoint, token, spec]) => {
+  await page.evaluate(async ([endpoint, token, spec]) => {
     const resp = await fetch(`${endpoint}/api/v1/redact/set`, {
       method: 'PUT',
       headers: {
@@ -223,12 +223,10 @@ export async function setRedactSpec(page: Page, expect: Expect) {
         redactSpec: spec,
       }),
     });
-    return resp.ok;
+    if (!resp.ok) {
+      throw new Error(`Failed to set redact spec: ${resp.status}: ${await resp.text()}`);
+    }
   }, [apiEndpoint, apiAuthToken, REDACT_SPEC]);
-
-  if (!response) {
-    throw new Error('Failed to set redact spec');
-  }
 }
 
 export async function runSupportBundleCommand(command: string) {

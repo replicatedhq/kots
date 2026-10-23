@@ -1,0 +1,83 @@
+{
+  "License": {
+    "apiVersion": "kots.io/v1beta1",
+    "kind": "License",
+    "spec": {
+      "appSlug": "app",
+      "licenseID": "license",
+      "channelID": "channel",
+      "channelName": "Stable",
+      "customerEmail": "customer@example.com",
+      "customerName": "Customer",
+      "endpoint": "https://replicated.example.com",
+      "licenseSequence": 7,
+      "licenseType": "dev",
+      "replicatedProxyDomain": "proxy.example.com",
+      "signature": "ZmFrZS1zaWduYXR1cmU=",
+      "isEmbeddedClusterDownloadEnabled": true,
+      "isAirgapSupported": true,
+      "isEmbeddedClusterMultiNodeEnabled": true,
+      "isDisasterRecoverySupported": true,
+      "isGeoaxisSupported": true,
+      "isGitOpsSupported": true,
+      "isIdentityServiceSupported": true,
+      "isSemverRequired": true,
+      "isSnapshotSupported": true,
+      "isSupportBundleUploadSupported": true,
+      "entitlements": {
+        "text": {
+          "value": "value"
+        },
+        "integer": {
+          "value": 9223372036854775807
+        },
+        "boolean": {
+          "value": true
+        },
+        "falseValue": {
+          "value": false
+        },
+        "zeroValue": {
+          "value": 0
+        },
+        "emptyValue": {
+          "value": ""
+        },
+        "unset": {}
+      }
+    }
+  },
+  "Expected": {
+    "appSlug": "app",
+    "licenseID": "license",
+    "channelID": "channel",
+    "channelName": "Stable",
+    "customerEmail": "customer@example.com",
+    "customerName": "Customer",
+    "endpoint": "https://replicated.example.com",
+    "licenseSequence": "7",
+    "licenseType": "dev",
+    "replicatedProxyDomain": "proxy.example.com",
+    "signature": "fake-signature",
+    "isEmbeddedClusterDownloadEnabled": "true",
+    "isAirgapSupported": "true",
+    "isEmbeddedClusterMultiNodeEnabled": "true",
+    "isDisasterRecoverySupported": "true",
+    "isGeoaxisSupported": "true",
+    "isGitOpsSupported": "true",
+    "isIdentityServiceSupported": "true",
+    "isSemverRequired": "true",
+    "isSnapshotSupported": "true",
+    "isSupportBundleUploadSupported": "true",
+    "licenseId": "license",
+    "IsDisasterRecoverySupported": "true",
+    "absent": "",
+    "text": "value",
+    "integer": "9223372036854775807",
+    "boolean": "true",
+    "falseValue": "false",
+    "zeroValue": "0",
+    "emptyValue": "",
+    "unset": "<nil>"
+  }
+}
