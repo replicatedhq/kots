@@ -34,7 +34,7 @@ jobs:
       matrix:
         runner:
           [
-            { name: ubuntu-latest, arch: amd64 },
+            { name: ubuntu-24.04, arch: amd64 },
             { name: arm64-runner-set, arch: arm64 },
           ]
     runs-on: ${{ matrix.runner.name }}
