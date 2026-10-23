@@ -1,0 +1,39 @@
+pkg/supportbundle/spec.go
+  s_1026f69ab2a9bd::t_d05dc32daf964c 78
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_cfe79f23156257 212
+pkg/base/preflight_helm_values.go
+  s_1026f69ab2a9bd::t_e7068e34c8c463 24-55
+  s_1026f69ab2a9bd::t_a75c732e8b6255 103,107,119,136
+  s_33281c77b0f47c::t_9fee324b2b36f6 113
+pkg/kotsutil/kots.go
+  s_1026f69ab2a9bd::t_6d49edc9f6e742 1167,1733,1737
+pkg/kotsutil/supportbundle_references_test.go
+  s_1026f69ab2a9bd::t_5acc17a64dad56 74,76-79,83-88
+web/src/features/PreflightChecks/types.ts
+  s_1026f69ab2a9bd::t_d3e70097bc1359 56-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "286824a955e63e7dd6d9b0e309811dbbb6d180c9",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    },
+    "s_33281c77b0f47c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a09150-6dca-73b2-b6f6-3f9ac32c804e",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}
