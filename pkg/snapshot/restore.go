@@ -68,33 +68,9 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 		return errors.Wrap(err, "failed to find backup")
 	}
 
-	// make sure this is an instance backup
-	if !snapshottypes.IsInstanceBackup(backup) {
-		return errors.Wrap(err, "backup provided is not an instance backup")
-	}
-
-	if snapshottypes.GetInstanceBackupType(backup) != snapshottypes.InstanceBackupTypeLegacy {
-		return errors.New("only legacy type instance backups are restorable")
-	}
-
-	kotsadmImage, ok := backup.Annotations["kots.io/kotsadm-image"]
-	if !ok {
-		return errors.Wrap(err, "failed to find kotsadm image annotation")
-	}
-
-	kotsadmNamespace, _ := backup.Annotations["kots.io/kotsadm-deploy-namespace"]
-	if kotsadmNamespace == "" {
-		return errors.Wrap(err, "failed to find kotsadm deploy namespace annotation")
-	}
-
-	// make sure backup is restorable/complete
-	switch backup.Status.Phase {
-	case velerov1.BackupPhaseCompleted:
-		break
-	case velerov1.BackupPhaseFailedValidation, velerov1.BackupPhaseFailed, velerov1.BackupPhasePartiallyFailed:
-		return errors.Wrap(err, "cannot restore a failed backup")
-	default:
-		return errors.Wrap(err, "backup is still in progress")
+	kotsadmImage, kotsadmNamespace, err := validateInstanceBackupForRestore(backup)
+	if err != nil {
+		return err
 	}
 
 	log := logger.NewCLILogger(os.Stdout)
@@ -250,6 +226,41 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	}
 
 	return nil
+}
+
+// validateInstanceBackupForRestore checks that the backup is a complete legacy instance backup
+// and returns the kotsadm image and namespace recorded in its annotations.
+func validateInstanceBackupForRestore(backup velerov1.Backup) (string, string, error) {
+	// make sure this is an instance backup
+	if !snapshottypes.IsInstanceBackup(backup) {
+		return "", "", errors.New("backup provided is not an instance backup")
+	}
+
+	if snapshottypes.GetInstanceBackupType(backup) != snapshottypes.InstanceBackupTypeLegacy {
+		return "", "", errors.New("only legacy type instance backups are restorable")
+	}
+
+	kotsadmImage, ok := backup.Annotations["kots.io/kotsadm-image"]
+	if !ok {
+		return "", "", errors.New("failed to find kotsadm image annotation")
+	}
+
+	kotsadmNamespace, _ := backup.Annotations["kots.io/kotsadm-deploy-namespace"]
+	if kotsadmNamespace == "" {
+		return "", "", errors.New("failed to find kotsadm deploy namespace annotation")
+	}
+
+	// make sure backup is restorable/complete
+	switch backup.Status.Phase {
+	case velerov1.BackupPhaseCompleted:
+		break
+	case velerov1.BackupPhaseFailedValidation, velerov1.BackupPhaseFailed, velerov1.BackupPhasePartiallyFailed:
+		return "", "", errors.New("cannot restore a failed backup")
+	default:
+		return "", "", errors.New("backup is still in progress")
+	}
+
+	return kotsadmImage, kotsadmNamespace, nil
 }
 
 func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptions) ([]velerov1.Restore, error) {
