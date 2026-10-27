@@ -163,7 +163,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 					UpstreamReleasedAt: &testTime,
 					ReleaseNotes:       "release notes",
 					IsDeployable:       false,
-					NonDeployableCause: "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update.",
+					NonDeployableCause: "This application version cannot be installed on this cluster yet.\n\nThe cluster is running Kubernetes 1.30, and this version includes Kubernetes 1.32. Kubernetes can only be upgraded one minor version at a time, so this cluster needs at least 2 updates to reach this version.\n\nContact your software vendor for the earlier application versions to install first.",
 				},
 				{
 					VersionLabel:       "0.0.1",
@@ -744,7 +744,7 @@ func Test_getAvailableUpdates(t *testing.T) {
 					UpstreamReleasedAt: &testTime,
 					ReleaseNotes:       "release notes",
 					IsDeployable:       false,
-					NonDeployableCause: "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update.",
+					NonDeployableCause: "This application version cannot be installed on this cluster yet.\n\nThe cluster is running Kubernetes 1.30, and this version includes Kubernetes 1.32. Kubernetes can only be upgraded one minor version at a time, so this cluster needs at least 2 updates to reach this version.\n\nContact your software vendor for the earlier application versions to install first.",
 				},
 			},
 		},
@@ -870,7 +870,7 @@ func Test_getAvailableUpdates(t *testing.T) {
 					UpstreamReleasedAt: &testTime,
 					ReleaseNotes:       "release notes 4",
 					IsDeployable:       false,
-					NonDeployableCause: "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update.",
+					NonDeployableCause: "This application version cannot be installed on this cluster yet.\n\nThe cluster is running Kubernetes 1.30, and this version includes Kubernetes 1.32. Kubernetes can only be upgraded one minor version at a time, so this cluster needs at least 2 updates to reach this version.\n\nContact your software vendor for the earlier application versions to install first.",
 				},
 				{
 					VersionLabel:       "1.0.3",
@@ -1080,7 +1080,7 @@ func Test_getAvailableUpdates(t *testing.T) {
 					UpstreamReleasedAt: &testTime,
 					ReleaseNotes:       "release notes 4",
 					IsDeployable:       false,
-					NonDeployableCause: "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update.",
+					NonDeployableCause: "This application version cannot be installed on this cluster yet.\n\nThe cluster is running Kubernetes 1.30, and this version includes Kubernetes 1.32. Kubernetes can only be upgraded one minor version at a time, so this cluster needs at least 2 updates to reach this version.\n\nContact your software vendor for the earlier application versions to install first.",
 				},
 				{
 					VersionLabel:       "1.0.3",
@@ -1163,7 +1163,7 @@ func Test_getAvailableUpdates(t *testing.T) {
 					UpstreamReleasedAt: &testTime,
 					ReleaseNotes:       "release notes 4",
 					IsDeployable:       false,
-					NonDeployableCause: "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update.",
+					NonDeployableCause: "This application version cannot be installed on this cluster yet.\n\nThe cluster is running Kubernetes 1.30, and this version includes Kubernetes 1.32. Kubernetes can only be upgraded one minor version at a time, so this cluster needs at least 2 updates to reach this version.\n\nContact your software vendor for the earlier application versions to install first.",
 				},
 				{
 					VersionLabel:       "1.0.3",

@@ -159,6 +159,10 @@ func getRequiredNonDeployableCause(requiredUpdates []string) string {
 
 // getKubeVersionNonDeployableCause constructs a non-deployable cause message based on the kube range validation error message
 func getKubeVersionNonDeployableCause(err error) string {
+	var skip *util.KubeMinorRangeError
+	if errors.As(err, &skip) {
+		return skip.Error()
+	}
 	switch {
 	case errors.Is(err, util.ErrKubeMinorRangeMismatch):
 		return "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update."
