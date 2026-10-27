@@ -27,7 +27,7 @@ export async function promoteRelease(
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to promote vendor release sequence: ${response.status}`);
+    throw new Error(`Failed to promote vendor release sequence: ${response.status}: ${await response.text()}`);
   }
 }
 
@@ -74,7 +74,7 @@ export async function updateCustomer(
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to update license: ${response.status}`);
+    throw new Error(`Failed to update license: ${response.status}: ${await response.text()}`);
   }
 }
 
@@ -112,7 +112,7 @@ export async function updateIdentityServiceOktaApp(oktaDomain: string, oktaAppId
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to get okta app: ${response.status}`);
+    throw new Error(`Failed to get okta app: ${response.status}: ${await response.text()}`);
   }
 
   const app = await response.json();
@@ -134,6 +134,6 @@ export async function updateIdentityServiceOktaApp(oktaDomain: string, oktaAppId
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to update okta app: ${response.status}`);
+    throw new Error(`Failed to update okta app: ${response.status}: ${await response.text()}`);
   }
 }

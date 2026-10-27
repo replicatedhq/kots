@@ -73,6 +73,10 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
+	builtBundle, err = kotsutil.ResolveSupportBundleReferences(context.TODO(), builtBundle, clientset, util.PodNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to resolve support bundle references")
+	}
 
 	namespacesToCollect := []string{}
 	namespacesToAnalyze := []string{}
@@ -330,8 +334,7 @@ func createClusterSpecificSpec(app *apptypes.App, clientset kubernetes.Interface
 		return nil, err
 	}
 
-	supportBundle = addDiscoveredSpecs(supportBundle, app, clientset)
-	return supportBundle, nil
+	return addDiscoveredSpecs(supportBundle, app, clientset), nil
 }
 
 // createDefaultSpec creates a default support bundle spec that includes the default collectors and analyzers and add kurl specific collectors and analyzers if the cluster is a kurl cluster
@@ -390,9 +393,16 @@ func addDiscoveredSpecs(
 	}
 
 	for _, specData := range specs {
-		sbObject, err := sb.ParseSupportBundle([]byte(specData), shouldFollowURI(app))
+		prepared, err := kotsutil.PrepareSupportBundleReferences([]byte(specData))
+		var sbObject *troubleshootv1beta2.SupportBundle
+		if err == nil {
+			sbObject, err = sb.ParseSupportBundle(prepared, shouldFollowURI(app))
+		}
+		if err == nil {
+			sbObject, err = kotsutil.ResolveSupportBundleReferences(context.TODO(), sbObject, clientset, util.PodNamespace)
+		}
 		if err != nil {
-			logger.Errorf("Failed to unmarshal support bundle spec: %v", err)
+			logger.Errorf("Failed to load discovered support bundle spec: %v", err)
 			continue
 		}
 

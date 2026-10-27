@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
+	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -138,6 +139,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions, r
 
 func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (map[string][]byte, error) {
 	renderedKotsKindsMap := make(map[string][]byte)
+	var chartPreflights []BaseFile
 
 	builder, itemValues, err := NewConfigContextTemplateBuilder(u, renderOptions)
 	if err != nil {
@@ -156,32 +158,78 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to template config objects")
 	}
+	renderSpec := func(file BaseFile, expandConfig bool) ([]byte, error) {
+		if expandConfig {
+			var err error
+			file.Content, err = processVariadicConfig(&upstreamtypes.UpstreamFile{Content: file.Content, Path: file.Path}, renderedConfig, renderOptions.Log)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to process variadic config in %s", file.Path)
+			}
+		}
+		rendered, err := builder.RenderTemplate(file.Path, string(file.Content))
+		return []byte(rendered), errors.Wrapf(err, "failed to render file %s", file.Path)
+	}
 
 	for _, upstreamFile := range u.Files {
-		for _, doc := range util.ConvertToSingleDocs(upstreamFile.Content) {
-			gvk := OverlySimpleGVK{}
-			if err := yaml.Unmarshal(doc, &gvk); err != nil {
+		docs := util.ConvertToSingleDocs(upstreamFile.Content)
+		// HelmChart rendering historically retained ordinary sibling documents.
+		// Render each document once while preserving that mixed-file output.
+		hasHelmChart := false
+		hasPreflight := false
+		for _, doc := range docs {
+			hasPreflight = hasPreflight || isBeta3Preflight(doc)
+			var gvk OverlySimpleGVK
+			if err := yaml.Unmarshal(doc, &gvk); err == nil && gvk.Kind == "HelmChart" && (gvk.APIVersion == "kots.io/v1beta1" || gvk.APIVersion == "kots.io/v1beta2") {
+				hasHelmChart = true
+			}
+		}
+		var chartDocs [][]byte
+		for _, doc := range docs {
+			if isBeta3Preflight(doc) || (hasPreflight && isHelmScopeFragment(doc)) {
+				chartDocs = append(chartDocs, doc)
 				continue
 			}
+			isBeta3 := kotsutil.IsV1Beta3TroubleshootDoc(doc)
+			if isBeta3 {
+				// Host preflights and support bundles retain their existing path;
+				// only application Preflights render in each chart's context.
+				rendered, err := renderSpec(BaseFile{Path: upstreamFile.Path, Content: doc}, true)
+				if err != nil {
+					renderOptions.Log.Error(errors.Wrapf(err, "skipping %s: cannot render KOTS templates", upstreamFile.Path))
+					rendered = kotsutil.UnsupportedTroubleshootWarning()
+				}
+				doc = rendered
+				if hasUnrenderedTroubleshootTemplates(doc) {
+					logger.Warnf("Skipping %s: v1beta3 template expressions remain without a Helm chart values source", upstreamFile.Path)
+					doc = kotsutil.UnsupportedTroubleshootWarning()
+				}
+			}
+			gvk := OverlySimpleGVK{}
+			if err := yaml.Unmarshal(doc, &gvk); err != nil {
+				if isBeta3 {
+					renderOptions.Log.Errorf("Skipping %s: invalid v1beta3 Troubleshoot YAML", upstreamFile.Path)
+					doc = kotsutil.UnsupportedTroubleshootWarning()
+					gvk = OverlySimpleGVK{APIVersion: "troubleshoot.sh/v1beta2", Kind: "Preflight"}
+				} else if !hasHelmChart {
+					continue
+				} else {
+					// Whole-file HelmChart rendering retained these bytes too. A
+					// sibling may only become valid YAML after textual rendering.
+					gvk = OverlySimpleGVK{}
+				}
+			}
 
-			if !kotsutil.IsKotsKind(gvk.APIVersion, gvk.Kind) {
+			isKotsKind := kotsutil.IsKotsKind(gvk.APIVersion, gvk.Kind)
+			if !isKotsKind && !hasHelmChart {
 				continue
 			}
 
 			gvkString := fmt.Sprintf("%s, Kind=%s", gvk.APIVersion, gvk.Kind)
 
 			switch gvkString {
-			case "kots.io/v1beta1, Kind=Installation":
-				// Installation manifest does not need rendering.
-
-			case "kots.io/v1beta1, Kind=License":
-				// License manifest does not need rendering.
-
-			case "kots.io/v1beta1, Kind=IdentityConfig":
-				// IdentityConfig manifest does not need rendering.
-
-			case "kots.io/v1beta1, Kind=ConfigValues":
-				// ConfigValues manifest does not need rendering.
+			case "kots.io/v1beta1, Kind=Installation", "kots.io/v1beta1, Kind=License",
+				"kots.io/v1beta1, Kind=IdentityConfig", "kots.io/v1beta1, Kind=ConfigValues":
+				// These manifests do not need rendering.
 
 			case "kots.io/v1beta1, Kind=Config":
 				// Use the rendered Config instead of the upstream.
@@ -193,23 +241,20 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 				doc = []byte(config)
 
 			case "kots.io/v1beta1, Kind=HelmChart", "kots.io/v1beta2, Kind=HelmChart":
-				helmchart, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
+				chartBuilder := helmChartTemplateBuilder(doc, u.Files, *builder)
+				helmchart, err := chartBuilder.RenderTemplate(upstreamFile.Path, string(doc))
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
 				doc = []byte(helmchart)
 
 			default:
-				vConfig, err := processVariadicConfig(&upstreamtypes.UpstreamFile{Content: doc, Path: upstreamFile.Path}, renderedConfig, renderOptions.Log)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to process variadic config in kots kind file %s", upstreamFile.Path)
+				if !isBeta3 {
+					doc, err = renderSpec(BaseFile{Path: upstreamFile.Path, Content: doc}, isKotsKind)
+					if err != nil {
+						return nil, err
+					}
 				}
-
-				bytes, err := builder.RenderTemplate(upstreamFile.Path, string(vConfig))
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
-				}
-				doc = []byte(bytes)
 			}
 
 			if existing, exists := renderedKotsKindsMap[upstreamFile.Path]; exists {
@@ -218,8 +263,57 @@ func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (m
 
 			renderedKotsKindsMap[upstreamFile.Path] = doc
 		}
+		if len(chartDocs) > 0 {
+			// Keep Helm scopes intact across the standalone preflight documents.
+			chartPreflights = append(chartPreflights, BaseFile{Path: upstreamFile.Path, Content: bytes.Join(chartDocs, []byte("\n---\n"))})
+		}
 	}
 
+	if len(chartPreflights) > 0 {
+		charts, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
+		if err != nil {
+			return nil, err
+		}
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(renderOptions.AppSlug, renderOptions.Sequence, renderOptions.IsAirgap, charts, renderOptions.RegistrySettings)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check configuration before rendering preflights")
+		}
+		if needsConfig {
+			return renderedKotsKindsMap, nil
+		}
+		for _, file := range chartPreflights {
+			rendered, err := renderSpec(file, true)
+			var doc []byte
+			if err == nil {
+				doc, err = renderTroubleshootWithCharts(rendered, charts, u.Files, renderOptions.Namespace)
+			}
+			if err != nil {
+				renderOptions.Log.Error(errors.Wrapf(err, "skipping %s: cannot render preflight with chart values", file.Path))
+				doc = kotsutil.UnsupportedTroubleshootWarning()
+			} else {
+				var nonempty [][]byte
+				for _, part := range util.ConvertToSingleDocs(doc) {
+					var parsed OverlySimpleGVK
+					if err := yaml.Unmarshal(part, &parsed); err != nil {
+						renderOptions.Log.Errorf("Skipping %s: invalid rendered preflight YAML", file.Path)
+						nonempty = append(nonempty, kotsutil.UnsupportedTroubleshootWarning())
+						continue
+					}
+					if kotsutil.IsKotsKind(parsed.APIVersion, parsed.Kind) {
+						nonempty = append(nonempty, part)
+					}
+				}
+				doc = bytes.Join(nonempty, []byte("\n---\n"))
+			}
+			if len(doc) == 0 {
+				continue
+			}
+			if existing := renderedKotsKindsMap[file.Path]; len(existing) > 0 {
+				doc = bytes.Join([][]byte{existing, doc}, []byte("\n---\n"))
+			}
+			renderedKotsKindsMap[file.Path] = doc
+		}
+	}
 	return renderedKotsKindsMap, nil
 }
 
@@ -270,31 +364,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 	}
 	helmUpstream.Name = kotsHelmChart.GetDirName()
 
-	mergedValues := kotsHelmChart.Spec.Values
-	if mergedValues == nil {
-		mergedValues = map[string]kotsv1beta1.MappedChartValue{}
-	}
-
-	for _, optionalValue := range kotsHelmChart.Spec.OptionalValues {
-		parsedBool, err := strconv.ParseBool(optionalValue.When)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse when conditional on optional value")
-		}
-
-		if !parsedBool {
-			continue
-		}
-
-		if optionalValue.RecursiveMerge {
-			mergedValues = kotsv1beta1.MergeHelmChartValues(mergedValues, optionalValue.Values)
-		} else {
-			for k, v := range optionalValue.Values {
-				mergedValues[k] = v
-			}
-		}
-	}
-
-	helmValues, err := kotsHelmChart.Spec.GetHelmValues(mergedValues)
+	helmValues, err := kotsutil.HelmChartValues(kotsHelmChart)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render local values for chart")
 	}
@@ -316,6 +386,9 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 	return helmBase, nil
 }
 
+// HelmValue chart context belongs to the kots.io HelmChart manifest, matching EC.
+// This pass processes native Helm output, outside that context, so HelmValue
+// retains its empty fallback; chart templates should use native Helm .Values.
 func renderReplicatedHelmBase(u *upstreamtypes.Upstream, renderOptions *RenderOptions, helmBase Base, builder template.Builder) (*Base, error) {
 	helmBaseFiles, helmBaseYAMLErrorFiles := []BaseFile{}, []BaseFile{}
 	for _, helmBaseFile := range helmBase.Files {
@@ -386,6 +459,7 @@ func findAllKotsV1Beta1HelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, bu
 	kotsV1Beta1HelmCharts := []kotsv1beta1.HelmChart{}
 	kotsV1Beta2HelmCharts := []kotsv1beta2.HelmChart{}
 
+	// Preserve the existing whole-file eligibility check for chart discovery.
 	for _, upstreamFile := range upstreamFiles {
 		var helmChartVersion string
 		if kotsutil.IsApiVersionKind(upstreamFile.Content, "kots.io/v1beta1", "HelmChart") {
@@ -396,7 +470,8 @@ func findAllKotsV1Beta1HelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, bu
 			continue
 		}
 
-		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, log)
+		chartBuilder := helmChartTemplateBuilder(upstreamFile.Content, upstreamFiles, builder)
+		baseFile, err := upstreamFileToBaseFile(upstreamFile, chartBuilder, log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
@@ -495,24 +570,24 @@ func FindHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, k
 		// We treat all .tar.gz archives as helm charts
 		chartArchivePath, err := ioutil.TempFile("", "chart")
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create temp file for chart archive path")
+			return nil, errors.Wrapf(err, "failed to create temporary file for archive %s", upstreamFile.Path)
 		}
 		defer os.Remove(chartArchivePath.Name())
 		_, err = io.Copy(chartArchivePath, bytes.NewReader(upstreamFile.Content))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to copy maybe chart to tmp file")
+			return nil, errors.Wrapf(err, "failed to copy archive %s to temporary file", upstreamFile.Path)
 		}
 
 		files, err := readTarGz(chartArchivePath.Name())
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read chart archive")
+			return nil, errors.Wrapf(err, "failed to read chart archive %s", upstreamFile.Path)
 		}
 
 		for _, chartFile := range files {
 			if chartFile.Path == "Chart.yaml" {
 				chartManifest := new(v2chart.Metadata)
 				if err := yaml.Unmarshal(chartFile.Content, chartManifest); err != nil {
-					return nil, errors.Wrap(err, "failed to unmarshal chart yaml")
+					return nil, errors.Wrapf(err, "failed to parse Chart.yaml in archive %s", upstreamFile.Path)
 				}
 
 				if chartManifest.Name == kotsHelmChart.GetChartName() {
@@ -635,4 +710,76 @@ func removeFileFromUpstream(files []upstreamtypes.UpstreamFile, path string) []u
 		}
 	}
 	return files
+}
+
+// helmChartTemplateBuilder resolves defaults only when HelmValue executes.
+// Normal rendering remains responsible for parsing and sequencing delimiters.
+func helmChartTemplateBuilder(doc []byte, files []upstreamtypes.UpstreamFile, builder template.Builder) template.Builder {
+	functions := map[string]interface{}{}
+	for name, fn := range builder.Functs {
+		functions[name] = fn
+	}
+	// Chart identity cannot depend on defaults from the chart being identified.
+	sourceBuilder := builder
+	identityFunctions := map[string]interface{}{}
+	for name, fn := range builder.Functs {
+		identityFunctions[name] = fn
+	}
+	identityFunctions["HelmValue"] = func(path string) (string, error) {
+		return "", errors.Errorf("HelmValue %q cannot resolve chart name or version before the chart archive is known", path)
+	}
+	sourceBuilder.Functs = identityFunctions
+	resolved := false
+	var chartBuilder template.Builder
+	var resolveErr error
+	functions["HelmValue"] = func(path string) (string, error) {
+		if !resolved {
+			chartBuilder, resolveErr = resolveHelmChartDefaults(doc, files, sourceBuilder)
+			resolved = true
+		}
+		if resolveErr != nil {
+			return "", errors.Wrap(resolveErr, "resolve HelmValue chart defaults")
+		}
+		value, err := chartBuilder.String(`repl{{ HelmValue ` + strconv.Quote(path) + ` }}`)
+		if err != nil {
+			return "", errors.Wrapf(err, "read packaged HelmValue %q", path)
+		}
+		return value, nil
+	}
+	builder.Functs = functions
+	return builder
+}
+
+func resolveHelmChartDefaults(doc []byte, files []upstreamtypes.UpstreamFile, builder template.Builder) (template.Builder, error) {
+	var identity struct {
+		Spec struct {
+			Chart struct {
+				Name    string `json:"name"`
+				Version string `json:"chartVersion"`
+			} `json:"chart"`
+		} `json:"spec"`
+	}
+	if err := yaml.Unmarshal(doc, &identity); err != nil {
+		return builder, errors.Wrap(err, "failed to parse chart identity")
+	}
+	name, err := builder.String(identity.Spec.Chart.Name)
+	if err != nil {
+		return builder, errors.Wrap(err, "failed to render chart name")
+	}
+	version, err := builder.String(identity.Spec.Chart.Version)
+	if err != nil {
+		return builder, errors.Wrap(err, "failed to render chart version")
+	}
+	chart := &kotsv1beta2.HelmChart{}
+	chart.Spec.Chart.Name = name
+	chart.Spec.Chart.ChartVersion = version
+	archive, err := FindHelmChartArchiveInRelease(files, chart)
+	if err != nil {
+		return builder, errors.Wrapf(err, "failed to resolve archive for chart %s %s", name, version)
+	}
+	chartBuilder, err := builder.WithHelmChart(archive)
+	if err != nil {
+		return builder, errors.Wrapf(err, "failed to load defaults for chart %s %s", name, version)
+	}
+	return chartBuilder, nil
 }

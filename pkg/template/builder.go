@@ -66,6 +66,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	}
 
 	b.Ctx = []Ctx{
+		helmChartCtx{},
 		StaticCtx{},
 		licenseCtx{License: opts.License, App: opts.Application, VersionInfo: opts.VersionInfo},
 		newKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
@@ -193,12 +194,21 @@ func (b *Builder) BuildFuncMap() template.FuncMap {
 		b.Functs = template.FuncMap{}
 	}
 
-	funcMap := b.Functs
+	funcMap := template.FuncMap{}
+	for name, fn := range b.Functs {
+		funcMap[name] = fn
+	}
+	// Preserve KOTS's existing precedence: context functions win collisions.
 	for _, ctx := range b.Ctx {
 		for name, fn := range ctx.FuncMap() {
 			funcMap[name] = fn
 		}
 	}
+	// HelmValue is new; its per-chart override replaces only its empty fallback.
+	if helmValue, ok := b.Functs["HelmValue"]; ok {
+		funcMap["HelmValue"] = helmValue
+	}
+
 	return funcMap
 }
 

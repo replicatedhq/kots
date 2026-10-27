@@ -100,11 +100,27 @@ runs:
         instance-type: ${{ inputs.k8s-instance-type }}
         export-kubeconfig: true
 
+    - name: load MinIO image tag
+      uses: falti/dotenv-action@v1
+      id: minio-image
+      with:
+        path: .image.env
+
+    - name: set default storage class for eks
+      if: ${{ inputs.k8s-distribution == 'eks' }}
+      run: |
+        kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+      shell: bash
+
     - name: execute suite "${{ inputs.test-id }}"
       env:
         REPLICATED_API_TOKEN: ${{ inputs.replicated-api-token }}
         GITOPS_GITHUB_TOKEN: ${{ inputs.gitops-github-token }}
         KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
+        MINIO_IMAGE_REPOSITORY: ttl.sh/automated-${{ github.run_id }}/minio
+        MINIO_IMAGE_TAG: ${{ steps.minio-image.outputs.MINIO_TAG }}
+        MINIO_MC_IMAGE_REPOSITORY: ttl.sh/automated-${{ github.run_id }}/minio-mc
+        MINIO_MC_IMAGE_TAG: 2025.7.21-debian-12-r3
       run: |
         make -C e2e test \
           FOCUS="${{ inputs.test-id }}" \
@@ -116,6 +132,10 @@ runs:
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
           KOTS_DOCKERHUB_USERNAME=${{ inputs.kots-dockerhub-username }} \
           KOTS_DOCKERHUB_PASSWORD=${{ inputs.kots-dockerhub-password }} \
+          MINIO_IMAGE_REPOSITORY="$MINIO_IMAGE_REPOSITORY" \
+          MINIO_IMAGE_TAG="$MINIO_IMAGE_TAG" \
+          MINIO_MC_IMAGE_REPOSITORY="$MINIO_MC_IMAGE_REPOSITORY" \
+          MINIO_MC_IMAGE_TAG="$MINIO_MC_IMAGE_TAG" \
           AWS_ACCESS_KEY_ID=${{ inputs.aws-access-key-id }} \
           AWS_SECRET_ACCESS_KEY=${{ inputs.aws-secret-access-key }} \
           AIRGAP=${{ inputs.kots-airgap }} \

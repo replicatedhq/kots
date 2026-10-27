@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/store"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
 func WaitAndReportPreflightChecks(appID string, sequence int64, isSkipPreflights bool, isCLI bool) error {
@@ -62,7 +62,7 @@ func WaitAndReportPreflightChecks(appID string, sequence int64, isSkipPreflights
 		}
 
 		preflightState := ""
-		var preflightResults *troubleshootpreflight.UploadPreflightResults
+		var preflightResults *preflighttypes.PreflightResults
 		for start := time.Now(); time.Since(start) < 5*time.Minute; {
 			p, err := store.GetStore().GetPreflightResults(appID, sequence)
 			if err != nil {
@@ -95,17 +95,17 @@ func WaitAndReportPreflightChecks(appID string, sequence int64, isSkipPreflights
 	return nil
 }
 
-func getPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
+func getPreflightState(preflightResults *preflighttypes.PreflightResults) string {
 	if preflightResults == nil {
 		return ""
 	}
 	if len(preflightResults.Errors) > 0 {
 		return "fail"
 	}
-	if len(preflightResults.Results) == 0 {
-		return "pass"
-	}
 	state := "pass"
+	if preflightResults.Notice != "" {
+		state = "warn"
+	}
 	for _, result := range preflightResults.Results {
 		if result.IsFail {
 			return "fail"

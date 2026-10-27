@@ -91,6 +91,7 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 
 	builder := Builder{
 		Ctx: []Ctx{
+			helmChartCtx{},
 			configCtx,
 			StaticCtx{},
 			&licenseCtx{License: license, App: app, VersionInfo: info},
@@ -135,7 +136,10 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 			configItem := configItemsByName[node]
 
 			// build "default"
-			builtDefault, _ := builder.String(configItem.Default.String())
+			builtDefault, err := builder.String(configItem.Default.String())
+			if err != nil {
+				logger.Infof("Failed to render default for config item %q: %v", configItem.Name, err)
+			}
 
 			if !isReadOnly(configItem) {
 				// if item is editable and the live state is valid, only apply the rendered default
@@ -153,8 +157,14 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 			}
 
 			// build "value"
-			builtValue, _ := builder.String(configItem.Value.String())
-			builtFilename, _ := builder.String(configItem.Filename)
+			builtValue, err := builder.String(configItem.Value.String())
+			if err != nil {
+				logger.Infof("Failed to render value for config item %q: %v", configItem.Name, err)
+			}
+			builtFilename, err := builder.String(configItem.Filename)
+			if err != nil {
+				logger.Infof("Failed to render filename for config item %q: %v", configItem.Name, err)
+			}
 			itemValue := ItemValue{
 				Value:    builtValue,
 				Default:  builtDefault,
@@ -179,6 +189,8 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 // FuncMap represents the available functions in the ConfigCtx.
 func (ctx ConfigCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
+		"ReplicatedImageName":          ctx.replicatedImageName,
+		"ReplicatedImageRegistry":      ctx.replicatedImageRegistry,
 		"ConfigOption":                 ctx.configOption,
 		"ConfigOptionName":             ctx.configOptionName,
 		"ConfigOptionIndex":            ctx.configOptionIndex,

@@ -50,7 +50,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-latest, arch: amd64},
+          {name: ubuntu-24.04, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -274,14 +274,17 @@ jobs:
         make sbom
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+    - name: Prepare Go temporary directory
+      run: mkdir -p "$GITHUB_WORKSPACE/.go-tmp"
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v7
       with:
-        version: "v1.2.5"
-        args: release --rm-dist --config deploy/.goreleaser.yaml
+        version: "v1.26.2"
+        args: release --clean --config deploy/.goreleaser.yaml
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GORELEASER_CURRENT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        GOTMPDIR: ${{ github.workspace }}/.go-tmp
 
   publish-pact-contracts:
     runs-on: ubuntu-latest

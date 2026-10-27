@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -113,28 +112,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to write helm chart archive")
 		}
 
-		mergedValues := helmChart.Spec.Values
-		if mergedValues == nil {
-			mergedValues = map[string]kotsv1beta2.MappedChartValue{}
-		}
-		for _, optionalValues := range helmChart.Spec.OptionalValues {
-			parsedBool, err := strconv.ParseBool(optionalValues.When)
-			if err != nil {
-				return errors.Wrap(err, "failed to parse when conditional on optional values")
-			}
-			if !parsedBool {
-				continue
-			}
-			if optionalValues.RecursiveMerge {
-				mergedValues = kotsv1beta2.MergeHelmChartValues(mergedValues, optionalValues.Values)
-			} else {
-				for k, v := range optionalValues.Values {
-					mergedValues[k] = v
-				}
-			}
-		}
-
-		helmValues, err := helmChart.Spec.GetHelmValues(mergedValues)
+		helmValues, err := kotsutil.HelmChartValues(&helmChart)
 		if err != nil {
 			return errors.Wrap(err, "failed to get local values for chart")
 		}
