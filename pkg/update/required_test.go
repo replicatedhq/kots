@@ -10,10 +10,22 @@ import (
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	"github.com/stretchr/testify/require"
 )
+
+func TestKubeVersionSkipGuidance(t *testing.T) {
+	err := util.UpdateWithinKubeRange("2.0.0+k8s-1.32", "2.1.0+k8s-1.36")
+	require.ErrorIs(t, err, util.ErrKubeMinorRangeMismatch)
+	message := getKubeVersionNonDeployableCause(err)
+	require.Contains(t, message, "Kubernetes 1.32")
+	require.Contains(t, message, "Kubernetes 1.36")
+	require.Contains(t, message, "at least 4 updates")
+	require.Contains(t, message, "Contact your software vendor")
+	require.NoError(t, util.UpdateWithinKubeRange("2.0.0+k8s-1.32", "2.1.0+k8s-1.33"))
+}
 
 func Test_getRequiredAirgapUpdates(t *testing.T) {
 	channelID := "channel-id"
@@ -373,7 +385,7 @@ func TestIsAirgapUpdateDeployable(t *testing.T) {
 			},
 			currentECVersion: "2.7.4+k8s-1.29",
 			wantDeployable:   false,
-			wantCause:        "Before you can update to this version, you need to update to an earlier version that includes the required infrastructure update.",
+			wantCause:        "This application version cannot be installed on this cluster yet.\n\nThe cluster is running Kubernetes 1.29, and this version includes Kubernetes 1.31. Kubernetes can only be upgraded one minor version at a time, so this cluster needs at least 2 updates to reach this version.\n\nContact your software vendor for the earlier application versions to install first.",
 			setupStore: func(mockStore *mock_store.MockStore) {
 				mockStore.EXPECT().FindDownstreamVersions("test-app", true).Return(&downstreamtypes.DownstreamVersions{
 					AllVersions: []*downstreamtypes.DownstreamVersion{},

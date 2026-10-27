@@ -25,7 +25,7 @@ func TestBootstrapUpdateWithinKubeRange(t *testing.T) {
 				UpdateECVersion:  "2.6.0+k8s-1.32-rc0",
 			},
 			expectError:    true,
-			expectedErrMsg: "cannot update by more than one kubernetes minor version",
+			expectedErrMsg: "The cluster is running Kubernetes 1.30, and this version includes Kubernetes 1.32. Kubernetes can only be upgraded one minor version at a time",
 		},
 		{
 			name: "one minor version downgrade",
