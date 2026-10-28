@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots
 
-go 1.27.3
+go 1.26.10
 
 require (
 	cloud.google.com/go/storage v1.70.0
@@ -12,7 +12,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.55.8
-	github.com/bitnami/sealed-secrets v0.41.2
+	github.com/bitnami/sealed-secrets v0.40.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/coreos/go-oidc v2.5.0+incompatible
 	github.com/distribution/distribution/v3 v3.1.2
