@@ -63,7 +63,10 @@ const validateAirgapUpdateRestrictive = async (page: Page, expect: Expect) => {
   await airgapUpdate(page, expect, '/tmp/app.airgap');
 
   const errorMessage = airgapUpdateErrorMessage(page);
-  await expect(errorMessage).toContainText("requires");
+  // The bundle is transmitted and parsed server-side before the rejection
+  // renders; the default 5s assertion timeout is too tight for that round
+  // trip (flaked in run 40829898509 while passing run 1 on an identical tree).
+  await expect(errorMessage).toContainText("requires", { timeout: 30000 });
   await expect(errorMessage).toContainText("Upgrade KOTS");
   await expect(errorMessage).toContainText(constants.RESTRICTIVE_MIN_KOTS_VERSION);
 };
