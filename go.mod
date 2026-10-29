@@ -32,7 +32,7 @@ require (
 	github.com/gosimple/slug v1.15.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/go-retryablehttp v0.7.8
-	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
+	github.com/heroku/docker-registry-client v0.0.0-20211012143308-9463674c8930
 	github.com/klauspost/pgzip v1.3.0
 	github.com/lib/pq v1.12.3
 	github.com/manifoldco/promptui v0.9.0
@@ -61,10 +61,10 @@ require (
 	github.com/replicatedhq/troubleshoot v0.134.3
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rqlite/gorqlite v0.0.0-20260504155303-50d445fd0ab9
+	github.com/rqlite/gorqlite v0.0.0-20261020015727-7224ce2bd419
 	github.com/schemahero/schemahero v0.26.2
-	github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260917201005-3b4a91c0d466
-	github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20260917201005-3b4a91c0d466
+	github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260917234519-8fca22cee166
+	github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20260917234519-8fca22cee166
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.4.0
 	github.com/sirupsen/logrus v1.10.2
@@ -97,7 +97,7 @@ require (
 	k8s.io/kubectl v0.37.2
 	k8s.io/kubelet v0.37.2
 	k8s.io/metrics v0.37.2
-	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
+	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab
 	oras.land/oras-go/v2 v2.7.0
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.25.2
