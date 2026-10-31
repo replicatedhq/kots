@@ -1345,7 +1345,10 @@ class AppVersionHistory extends Component<Props, State> {
           <p className="u-fontSize--normal u-marginBottom--5 u-textColor--error u-fontWeight--medium">
             Error updating version:
           </p>
-          <p className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium">
+          <p
+            className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium"
+            data-testid="airgap-bundle-upload-error"
+          >
             {this.state.checkingUpdateMessage}
           </p>
         </div>
