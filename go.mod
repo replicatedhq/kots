@@ -62,9 +62,9 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rqlite/gorqlite v0.0.0-20260504155303-50d445fd0ab9
-	github.com/schemahero/schemahero v0.26.2
-	github.com/schemahero/schemahero/plugins/postgres v0.0.0-20260917201005-3b4a91c0d466
-	github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20260917201005-3b4a91c0d466
+	github.com/schemahero/schemahero v0.26.3
+	github.com/schemahero/schemahero/plugins/postgres v0.0.0-20261106220110-da9f939f1148
+	github.com/schemahero/schemahero/plugins/rqlite v0.0.0-20261106220110-da9f939f1148
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.4.0
 	github.com/sirupsen/logrus v1.10.2
@@ -450,7 +450,7 @@ require (
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e // indirect
 	golang.org/x/mod v0.42.0 // indirect
-	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
