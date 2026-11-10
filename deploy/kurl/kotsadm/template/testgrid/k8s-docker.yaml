@@ -124,7 +124,7 @@
     kubernetes:
       version: "1.24.x"
     containerd:
-      version: "latest"
+      version: "1.7.29"
     flannel:
       version: "latest"
     longhorn: # openebs does not support velero internal backups
@@ -132,7 +132,7 @@
     minio:
       version: "latest"
     velero: 
-      version: "latest"
+      version: "1.15.2"
     registry:
       version: "latest"
     kotsadm:
@@ -141,13 +141,13 @@
     kubernetes:
       version: "1.24.x"
     containerd:
-      version: "latest"
+      version: "1.7.29"
     flannel:
       version: "latest"
     longhorn: # openebs does not support velero internal backups
       version: "latest"
     velero: 
-      version: "latest"
+      version: "1.15.2"
     registry:
       version: "latest"
     kotsadm:
