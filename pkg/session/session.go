@@ -21,6 +21,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// LookupError means a session could not be checked because its backing service failed.
+// It must not be treated as evidence that the supplied credentials are invalid.
+type LookupError struct {
+	Err error
+}
+
+func (e *LookupError) Error() string { return e.Err.Error() }
+func (e *LookupError) Unwrap() error { return e.Err }
+
 func Parse(kotsStore store.Store, signedToken string) (*types.Session, error) {
 	if signedToken == "" {
 		return nil, errors.New("missing token")
@@ -42,12 +51,12 @@ func Parse(kotsStore store.Store, signedToken string) (*types.Session, error) {
 		// TODO make real userid/sessionid
 		clientset, err := k8sutil.GetClientset()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get k8s clientset")
+			return nil, &LookupError{Err: errors.Wrap(err, "failed to get k8s clientset")}
 		}
 
 		secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
-			return nil, errors.New("failed to read auth string")
+			return nil, &LookupError{Err: errors.Wrap(err, "failed to read auth string")}
 		}
 
 		if kuberneteserrors.IsNotFound(err) {
@@ -84,7 +93,11 @@ func Parse(kotsStore store.Store, signedToken string) (*types.Session, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return kotsStore.GetSession(claims["sessionId"].(string))
+		sess, err := kotsStore.GetSession(claims["sessionId"].(string))
+		if err != nil && !kotsStore.IsNotFound(err) {
+			return nil, &LookupError{Err: err}
+		}
+		return sess, err
 	}
 
 	return nil, errors.New("not a valid jwt token")
