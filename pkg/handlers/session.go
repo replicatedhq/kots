@@ -69,6 +69,12 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 
 	sess, err := session.Parse(kotsStore, auth)
 	if err != nil {
+		var lookupErr *session.LookupError
+		if errors.As(err, &lookupErr) {
+			response := types.ErrorResponse{Error: util.StrPointer("failed to validate session")}
+			JSON(w, http.StatusInternalServerError, response)
+			return nil, errors.Wrap(err, "session lookup failed")
+		}
 		response := types.ErrorResponse{Error: util.StrPointer("failed to parse authorization header")}
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, errors.Wrap(err, "invalid session")

@@ -478,3 +478,42 @@ func Test_requireValidSession_PasswordUpdated_AfterSessionIssuedErr_logDeleteSes
 	req.Equal(want, got)
 	req.Equal(401, w.Code)
 }
+
+// Both ping and upgrade-status polling must distinguish unavailable session
+// storage from invalid credentials, otherwise the browser logs out mid-upgrade.
+func TestSessionMiddleware_BackendFailure(t *testing.T) {
+	for _, quiet := range []bool{false, true} {
+		for _, backendFailure := range []bool{false, true} {
+			t.Run(fmt.Sprintf("quiet=%t/backendFailure=%t", quiet, backendFailure), func(t *testing.T) {
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+				mockStore := mock_store.NewMockStore(ctrl)
+				backendErr := fmt.Errorf("kubernetes API unavailable")
+				mockStore.EXPECT().IsNotFound(gomock.Any()).Return(false).AnyTimes()
+				r := httptest.NewRequest(http.MethodGet, "/api/v1/ping", nil)
+				if backendFailure {
+					token := signJWT(t, &types.Session{ID: "session-id"})
+					r.AddCookie(&http.Cookie{Name: "signed-token", Value: "Bearer " + token})
+					mockStore.EXPECT().GetSession("session-id").Return(nil, backendErr)
+				} else {
+					r.AddCookie(&http.Cookie{Name: "signed-token", Value: "Bearer invalid"})
+				}
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					t.Error("request must not reach the handler when session validation fails")
+				})
+				middleware := RequireValidSessionMiddleware(mockStore)
+				if quiet {
+					middleware = RequireValidSessionQuietMiddleware(mockStore)
+				}
+				w := httptest.NewRecorder()
+				middleware(handler).ServeHTTP(w, r)
+				if backendFailure {
+					require.Equal(t, http.StatusInternalServerError, w.Code)
+					require.NotContains(t, w.Body.String(), backendErr.Error())
+				} else {
+					require.Equal(t, http.StatusUnauthorized, w.Code)
+				}
+			})
+		}
+	}
+}
