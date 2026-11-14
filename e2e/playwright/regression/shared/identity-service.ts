@@ -3,10 +3,10 @@ import { Page, Expect } from '@playwright/test';
 import { runCommand, waitForDex } from './cli';
 import { updateIdentityServiceOktaApp } from './api';
 import { validateDashboardInfo } from './dashboard';
+import { loginWithOkta } from './okta-login';
 import {
   IDENTITY_SERVICE_OKTA_DOMAIN,
   IDENTITY_SERVICE_OKTA_CLIENT_ID,
-  IDENTITY_SERVICE_OKTA_USERNAME,
   IDENTITY_SERVICE_OKTA_APP_ID
 } from './constants';
 
@@ -43,15 +43,7 @@ export const validateIdentityService = async (page: Page, expect: Expect, namesp
   await navbarDropdownContainer.getByTestId("log-out").click();
   await expect(navbarDropdownContainer).not.toBeVisible({ timeout: 30000 });
 
-  // these attributes come from inspecting the okta login page
-  await page.getByText('Log in with Okta').click();
-  await page.locator('input[name="identifier"]').click();
-  await page.locator('input[name="identifier"]').fill(IDENTITY_SERVICE_OKTA_USERNAME);
-  await page.locator('input[type="submit"]').click(); // Next button
-
-  await page.locator('input[name="credentials.passcode"]').click();
-  await page.locator('input[name="credentials.passcode"]').fill(process.env.IDENTITY_SERVICE_OKTA_PASSWORD!);
-  await page.locator('input[type="submit"]').click(); // Verify button
+  await loginWithOkta(page);
 
   await validateDashboardInfo(page, expect, isAirgapped);
 
