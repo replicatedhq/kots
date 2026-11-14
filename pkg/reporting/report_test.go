@@ -165,11 +165,11 @@ func Test_AppendReport(t *testing.T) {
 				},
 			},
 			wantReport: &InstanceReport{
-				Events: append(instanceReportWithMaxSize.Events[3:], []InstanceReportEvent{
+				Events: wantInstanceEventsAfterAppend(instanceReportWithMaxSize, []InstanceReportEvent{
 					createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events))),
 					createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events) + 1)),
 					createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events) + 2)),
-				}...),
+				}),
 			},
 		},
 		{
@@ -271,11 +271,11 @@ func Test_AppendReport(t *testing.T) {
 				},
 			},
 			wantReport: &PreflightReport{
-				Events: append(preflightReportWithMaxSize.Events[3:], []PreflightReportEvent{
+				Events: wantPreflightEventsAfterAppend(preflightReportWithMaxSize, []PreflightReportEvent{
 					createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events))),
 					createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events) + 1)),
 					createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events) + 2)),
-				}...),
+				}),
 			},
 		},
 	}
@@ -399,6 +399,56 @@ func getTestInstanceReportWithMaxEvents() *InstanceReport {
 		report.Events = append(report.Events, createTestInstanceEvent(int64(i)))
 	}
 	return report
+}
+
+// wantInstanceEventsAfterAppend returns the events expected to remain after
+// AppendEvents appends newEvents to existing. AppendEvents trims to the event
+// limit, then drops the oldest events one at a time until the encoded report
+// fits the size limit. The number of dropped events depends on gzip output,
+// which varies across Go toolchains (the Go 1.27 migration on this branch
+// shifts this boundary), so the expectation is derived, not hardcoded.
+func wantInstanceEventsAfterAppend(existing *InstanceReport, newEvents []InstanceReportEvent) []InstanceReportEvent {
+	combined := &InstanceReport{
+		Events: append(append([]InstanceReportEvent{}, existing.Events...), newEvents...),
+	}
+	if len(combined.Events) > combined.GetEventLimit() {
+		combined.Events = combined.Events[len(combined.Events)-combined.GetEventLimit():]
+	}
+	for {
+		encoded, err := EncodeReport(combined)
+		if err != nil {
+			panic(err)
+		}
+		if len(encoded) <= combined.GetSizeLimit() {
+			return combined.Events
+		}
+		combined.Events = combined.Events[1:]
+		if len(combined.Events) == 0 {
+			panic("size of latest event exceeds report size limit")
+		}
+	}
+}
+
+func wantPreflightEventsAfterAppend(existing *PreflightReport, newEvents []PreflightReportEvent) []PreflightReportEvent {
+	combined := &PreflightReport{
+		Events: append(append([]PreflightReportEvent{}, existing.Events...), newEvents...),
+	}
+	if len(combined.Events) > combined.GetEventLimit() {
+		combined.Events = combined.Events[len(combined.Events)-combined.GetEventLimit():]
+	}
+	for {
+		encoded, err := EncodeReport(combined)
+		if err != nil {
+			panic(err)
+		}
+		if len(encoded) <= combined.GetSizeLimit() {
+			return combined.Events
+		}
+		combined.Events = combined.Events[1:]
+		if len(combined.Events) == 0 {
+			panic("size of latest event exceeds report size limit")
+		}
+	}
 }
 
 func getTestInstanceReportWithMaxSize() (*InstanceReport, error) {
