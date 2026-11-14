@@ -31,7 +31,7 @@ runs:
         pattern: securebuild-melange-rsa-pub-*
         merge-multiple: true
 
-    - uses: chainguard-images/actions/apko-publish@v1.0.37
+    - uses: chainguard-images/actions/apko-publish@v1.0.39
       with:
         config: ${{ inputs.config }}
         archs: amd64,arm64
