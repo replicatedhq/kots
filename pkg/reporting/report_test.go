@@ -51,11 +51,11 @@ func Test_EncodeDecodeReport(t *testing.T) {
 func Test_AppendReport(t *testing.T) {
 	req := require.New(t)
 
-	instanceReportWithMaxEvents := getTestInstanceReportWithMaxEvents()
+	instanceReportWith4000Events := getTestInstanceReportWith4000Events()
 	instanceReportWithMaxSize, err := getTestInstanceReportWithMaxSize()
 	req.NoError(err)
 
-	preflightReportWithMaxEvents := getTestPreflightReportWithMaxEvents()
+	preflightReportWith4000Events := getTestPreflightReportWith4000Events()
 	preflightReportWithMaxSize, err := getTestPreflightReportWithMaxSize()
 	req.NoError(err)
 
@@ -135,21 +135,21 @@ func Test_AppendReport(t *testing.T) {
 			},
 		},
 		{
-			name:           "instance report - report exists with max number of events",
+			name:           "instance report - retains more than 4000 events",
 			appSlug:        "test-app-slug",
-			existingReport: instanceReportWithMaxEvents,
+			existingReport: instanceReportWith4000Events,
 			newReport: &InstanceReport{
 				Events: []InstanceReportEvent{
-					createTestInstanceEvent(int64(instanceReportWithMaxEvents.GetEventLimit())),
-					createTestInstanceEvent(int64(instanceReportWithMaxEvents.GetEventLimit() + 1)),
-					createTestInstanceEvent(int64(instanceReportWithMaxEvents.GetEventLimit() + 2)),
+					createTestInstanceEvent(4000),
+					createTestInstanceEvent(4001),
+					createTestInstanceEvent(4002),
 				},
 			},
 			wantReport: &InstanceReport{
-				Events: append(instanceReportWithMaxEvents.Events[3:], []InstanceReportEvent{
-					createTestInstanceEvent(int64(instanceReportWithMaxEvents.GetEventLimit())),
-					createTestInstanceEvent(int64(instanceReportWithMaxEvents.GetEventLimit() + 1)),
-					createTestInstanceEvent(int64(instanceReportWithMaxEvents.GetEventLimit() + 2)),
+				Events: append(instanceReportWith4000Events.Events, []InstanceReportEvent{
+					createTestInstanceEvent(4000),
+					createTestInstanceEvent(4001),
+					createTestInstanceEvent(4002),
 				}...),
 			},
 		},
@@ -241,21 +241,21 @@ func Test_AppendReport(t *testing.T) {
 			},
 		},
 		{
-			name:           "preflight report - report exists with max number of events",
+			name:           "preflight report - retains more than 4000 events",
 			appSlug:        "test-app-slug",
-			existingReport: preflightReportWithMaxEvents,
+			existingReport: preflightReportWith4000Events,
 			newReport: &PreflightReport{
 				Events: []PreflightReportEvent{
-					createTestPreflightEvent(int64(preflightReportWithMaxEvents.GetEventLimit())),
-					createTestPreflightEvent(int64(preflightReportWithMaxEvents.GetEventLimit() + 1)),
-					createTestPreflightEvent(int64(preflightReportWithMaxEvents.GetEventLimit() + 2)),
+					createTestPreflightEvent(4000),
+					createTestPreflightEvent(4001),
+					createTestPreflightEvent(4002),
 				},
 			},
 			wantReport: &PreflightReport{
-				Events: append(preflightReportWithMaxEvents.Events[3:], []PreflightReportEvent{
-					createTestPreflightEvent(int64(preflightReportWithMaxEvents.GetEventLimit())),
-					createTestPreflightEvent(int64(preflightReportWithMaxEvents.GetEventLimit() + 1)),
-					createTestPreflightEvent(int64(preflightReportWithMaxEvents.GetEventLimit() + 2)),
+				Events: append(preflightReportWith4000Events.Events, []PreflightReportEvent{
+					createTestPreflightEvent(4000),
+					createTestPreflightEvent(4001),
+					createTestPreflightEvent(4002),
 				}...),
 			},
 		},
@@ -391,11 +391,11 @@ func createLargeTestInstanceEvent(seed int64) InstanceReportEvent {
 	}
 }
 
-func getTestInstanceReportWithMaxEvents() *InstanceReport {
+func getTestInstanceReportWith4000Events() *InstanceReport {
 	report := &InstanceReport{
 		Events: []InstanceReportEvent{},
 	}
-	for i := 0; i < report.GetEventLimit(); i++ {
+	for i := 0; i < 4000; i++ {
 		report.Events = append(report.Events, createTestInstanceEvent(int64(i)))
 	}
 	return report
@@ -464,11 +464,11 @@ func createLargeTestPreflightEvent(seed int64) PreflightReportEvent {
 	}
 }
 
-func getTestPreflightReportWithMaxEvents() *PreflightReport {
+func getTestPreflightReportWith4000Events() *PreflightReport {
 	report := &PreflightReport{
 		Events: []PreflightReportEvent{},
 	}
-	for i := 0; i < report.GetEventLimit(); i++ {
+	for i := 0; i < 4000; i++ {
 		report.Events = append(report.Events, createTestPreflightEvent(int64(i)))
 	}
 	return report
