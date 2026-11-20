@@ -11,6 +11,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/appstate"
@@ -31,6 +33,51 @@ import (
 )
 
 var imagePullSecretsMtx sync.Mutex
+
+// helmShutdownTimeout bounds how long shutdown waits for running helm commands to exit after
+// SIGTERM is forwarded to them. It must stay below the pod's terminationGracePeriodSeconds (30s).
+const helmShutdownTimeout = 25 * time.Second
+
+var (
+	helmBinary = "helm"
+
+	// helmCtx is cancelled when kotsadm shuts down, which sends SIGTERM to running helm commands.
+	helmCtx, cancelHelmCtx = context.WithCancel(context.Background())
+	// helmRunning is read-locked while a helm command runs so shutdown can wait for it to exit.
+	helmRunning sync.RWMutex
+)
+
+// runHelm runs helm with the given args. On shutdown, helm gets SIGTERM instead of being killed.
+// helm upgrade/install handles SIGTERM by marking the release as failed rather than leaving it pending.
+func runHelm(args ...string) ([]byte, []byte, error) {
+	helmRunning.RLock()
+	defer helmRunning.RUnlock()
+
+	cmd := exec.CommandContext(helmCtx, helmBinary, args...)
+	cmd.Cancel = func() error {
+		return cmd.Process.Signal(syscall.SIGTERM)
+	}
+	return applier.Run(cmd)
+}
+
+// stopHelm sends SIGTERM to running helm commands and waits up to timeout for them to exit.
+// It returns false if they did not exit in time. The write lock is held until the process exits.
+func stopHelm(timeout time.Duration) bool {
+	cancelHelmCtx()
+
+	done := make(chan struct{})
+	go func() {
+		helmRunning.Lock()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return true
+	case <-time.After(timeout):
+		return false
+	}
+}
 
 type commandResult struct {
 	hasErr      bool
@@ -356,8 +403,7 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 		}
 
 		logger.Infof("running helm with arguments %v", args)
-		cmd := exec.Command("helm", args...)
-		stdout, stderr, err := applier.Run(cmd)
+		stdout, stderr, err := runHelm(args...)
 		if err != nil {
 			logger.Infof("stdout (helm install) = %s", stdout)
 			logger.Infof("stderr (helm install) = %s", stderr)
@@ -589,8 +635,7 @@ func (c *Client) uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir string, ko
 		}
 
 		logger.Infof("running helm with arguments %v", args)
-		cmd := exec.Command("helm", args...)
-		stdout, stderr, err := applier.Run(cmd)
+		stdout, stderr, err := runHelm(args...)
 		logger.Infof("stdout (helm uninstall) = %s", stdout)
 		logger.Infof("stderr (helm uninstall) = %s", stderr)
 		if err != nil {

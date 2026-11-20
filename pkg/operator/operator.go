@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -70,6 +71,7 @@ type Operator struct {
 	mtx          sync.Mutex
 	deployMtxs   map[string]*sync.Mutex // key is app id
 	k8sClientset kubernetes.Interface
+	shuttingDown atomic.Bool
 }
 
 func Init(client client.ClientInterface, store store.Store, clusterToken string, k8sClientset kubernetes.Interface) *Operator {
@@ -112,6 +114,7 @@ func (o *Operator) Start() error {
 }
 
 func (o *Operator) Shutdown() {
+	o.shuttingDown.Store(true)
 	if o.client == nil {
 		return
 	}
@@ -238,6 +241,12 @@ func (o *Operator) deployApp(appID string, sequence int64) (deployed bool, deplo
 	}
 
 	defer func() {
+		if (deployError != nil || !deployed) && o.shuttingDown.Load() {
+			// the deploy was interrupted by kotsadm shutting down. leave the version in the deploying state
+			// so that it is redeployed when kotsadm restarts.
+			logger.Infof("not marking app %s sequence %d as failed because kotsadm is shutting down", appID, sequence)
+			return
+		}
 		if deployError != nil {
 			err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, deployError.Error())
 			if err != nil {
