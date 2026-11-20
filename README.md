@@ -12,7 +12,7 @@ Supports OSX (including Apple Silicon arm64) and Linux platforms.
 
 # Community
 
-For questions about using KOTS, there's a [Replicated Community](https://help.replicated.com/community) forum, and a [#kots channel in Kubernetes Slack](https://kubernetes.slack.com/channels/kots).
+For questions about using KOTS, please [open an issue](https://github.com/replicatedhq/kots/issues) in the GitHub repo.
 
 # Notifications
 
