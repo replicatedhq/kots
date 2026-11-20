@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots
 
-go 1.26.10
+go 1.27.3
 
 require (
 	cloud.google.com/go/storage v1.70.0
