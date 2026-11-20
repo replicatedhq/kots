@@ -288,9 +288,7 @@ spec:
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("successfully deploys the app and does not return an error ", func() {
-				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-
+			expectDeploy := func(deployed bool) {
 				app := &apptypes.App{
 					ID:                    appID,
 					Slug:                  "some-app-slug",
@@ -326,11 +324,76 @@ spec:
 
 				mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(1)
 
-				mockClient.EXPECT().DeployApp(gomock.Any()).Return(true, nil)
+				mockClient.EXPECT().DeployApp(gomock.Any()).Return(deployed, nil)
+			}
+
+			It("successfully deploys the app and does not return an error ", func() {
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+				expectDeploy(true)
 
 				deployed, err := testOperator.DeployApp(appID, sequence)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(deployed).To(BeTrue())
+			})
+
+			It("marks the version as failed when the deploy is unsuccessful", func() {
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, "").Return(nil)
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, "").Times(1).Return(nil)
+				expectDeploy(false)
+
+				deployed, err := testOperator.DeployApp(appID, sequence)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(deployed).To(BeFalse())
+			})
+
+			It("does not mark the version as failed when the deploy is unsuccessful while shutting down", func() {
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, "").Times(1).Return(nil)
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, gomock.Any()).Times(0)
+				expectDeploy(false)
+
+				// the deploy finishes while the client is shutting down, as it does when helm gets SIGTERM
+				mockClient.EXPECT().Shutdown().Times(1).Do(func() {
+					deployed, err := testOperator.DeployApp(appID, sequence)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(deployed).To(BeFalse())
+				})
+				testOperator.Shutdown()
+			})
+
+			It("marks the version as deployed when the deploy succeeds while shutting down", func() {
+				mockClient.EXPECT().Shutdown().Times(1)
+				testOperator.Shutdown()
+
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, "").Return(nil)
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "").Times(1).Return(nil)
+				expectDeploy(true)
+
+				deployed, err := testOperator.DeployApp(appID, sequence)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(deployed).To(BeTrue())
+			})
+
+			It("marks the version as failed when the deploy fails", func() {
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, "").Return(nil)
+				mockStore.EXPECT().GetApp(appID).Return(nil, fmt.Errorf("some error"))
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, gomock.Any()).Times(1).Return(nil)
+
+				deployed, err := testOperator.DeployApp(appID, sequence)
+				Expect(err).To(HaveOccurred())
+				Expect(deployed).To(BeFalse())
+			})
+
+			It("does not mark the version as failed when the deploy fails while shutting down", func() {
+				mockClient.EXPECT().Shutdown().Times(1)
+				testOperator.Shutdown()
+
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, "").Return(nil)
+				mockStore.EXPECT().GetApp(appID).Return(nil, fmt.Errorf("some error"))
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, gomock.Any()).Times(0)
+
+				deployed, err := testOperator.DeployApp(appID, sequence)
+				Expect(err).To(HaveOccurred())
+				Expect(deployed).To(BeFalse())
 			})
 
 			When("a previously deployed application has an error", func() {
