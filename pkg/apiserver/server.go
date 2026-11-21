@@ -8,6 +8,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -106,6 +108,19 @@ func Start(params *APIServerParams) {
 	}
 
 	op := operator.Init(operatorClient, kotsStore, params.AutocreateClusterToken, k8sClientset)
+
+	// forward termination signals to running helm commands and wait for them to exit before exiting,
+	// otherwise helm is killed with the container and leaves releases in a pending state
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGTERM, os.Interrupt)
+	go func() {
+		sig := <-sigCh
+		signal.Stop(sigCh)
+		log.Printf("Received %s, shutting down", sig)
+		op.Shutdown()
+		os.Exit(0)
+	}()
+
 	if err := op.Start(); err != nil {
 		log.Println("error starting the operator")
 		panic(err)
