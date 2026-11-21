@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"path"
 	"regexp"
@@ -11,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/google/go-github/v39/github"
+	"github.com/google/go-github/v93/github"
 	"github.com/heroku/docker-registry-client/registry"
 	"golang.org/x/oauth2"
 )
@@ -255,9 +254,9 @@ func getLatestTagFromGithub(getReleases getReleaseFn, owner, repo string, match 
 
 	var matches []*github.RepositoryRelease
 	for _, release := range releases {
-		if release.TagName != nil && match(*release.TagName) {
+		if release.TagName != "" && match(release.TagName) {
 			// exclude pre-releases
-			if release.Prerelease != nil && *release.Prerelease {
+			if release.Prerelease {
 				continue
 			}
 			matches = append(matches, release)
@@ -266,19 +265,22 @@ func getLatestTagFromGithub(getReleases getReleaseFn, owner, repo string, match 
 
 	s := GithubReleaseSorter(matches)
 	sort.Sort(s)
-	return *s[len(s)-1].TagName, nil
+	return s[len(s)-1].TagName, nil
 }
 
 func getReleases(owner, repo string) ([]*github.RepositoryRelease, error) {
-	var httpClient *http.Client
+	var options []github.ClientOptionsFunc
 	if token, ok := os.LookupEnv(githubAuthTokenEnvironmentVarName); ok {
 		ts := oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: token},
 		)
-		httpClient = oauth2.NewClient(context.Background(), ts)
+		options = append(options, github.WithHTTPClient(oauth2.NewClient(context.Background(), ts)))
 	}
 
-	client := github.NewClient(httpClient)
+	client, err := github.NewClient(options...)
+	if err != nil {
+		return nil, err
+	}
 	var releases []*github.RepositoryRelease
 	listOptions := github.ListOptions{
 		Page:    0,
