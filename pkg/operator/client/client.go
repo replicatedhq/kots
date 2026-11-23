@@ -84,6 +84,10 @@ func (c *Client) Init() error {
 func (c *Client) Shutdown() {
 	log.Println("Shutting down the operator client")
 
+	if !stopHelm(helmShutdownTimeout) {
+		log.Println("Timed out waiting for helm commands to exit")
+	}
+
 	c.shutdownHooksInformer()
 	c.shutdownNamespacesInformer()
 
