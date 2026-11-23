@@ -46,9 +46,6 @@ func (r *PreflightReport) AppendEvents(report Report) error {
 	}
 
 	r.Events = append(r.Events, reportToAppend.Events...)
-	if len(r.Events) > r.GetEventLimit() {
-		r.Events = r.Events[len(r.Events)-r.GetEventLimit():]
-	}
 
 	// remove one event at a time until the report is under the size limit
 	encoded, err := EncodeReport(r)
@@ -67,10 +64,6 @@ func (r *PreflightReport) AppendEvents(report Report) error {
 	}
 
 	return nil
-}
-
-func (r *PreflightReport) GetEventLimit() int {
-	return ReportEventLimit
 }
 
 func (r *PreflightReport) GetSizeLimit() int {
