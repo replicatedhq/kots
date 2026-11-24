@@ -88,9 +88,8 @@ def selected(rows, version):
 
 
 def marker(plan, version):
-    tail = re.fullmatch(r"1\.(\d+)\.(\d+)", version)
-    if not tail or not (1, 108, 4) <= tuple(map(int, version.split("."))) <= (1, 134, 4):
-        raise ValueError("Version is outside the historical backfill")
+    if version != "1.134.5":
+        raise ValueError("Use the verified KOTS v1.134.5 release")
     if plan["version"] != version:
         raise ValueError("Candidate receipt version does not match")
     return f"kotsadm-{version}.tar.gz"
@@ -147,6 +146,8 @@ def create_plan(args):
 def validate_plan(plan):
     filename = marker(plan, plan["version"])
     sha = plan["candidate"]["sha256"]
+    if sha != "8659b91a08b99604e2745ada5d7d828124c4a8ff863c051a977bc1cd2b36d4f3":
+        raise ValueError("Candidate digest differs from the verified KOTS v1.134.5 archive")
     original = plan["original"]
     if not all(re.fullmatch("[a-f0-9]{64}", data["sha256"]) and 0 < data["size"] < 5 * 1024**3
                for data in (plan["candidate"], plan["original"])):
