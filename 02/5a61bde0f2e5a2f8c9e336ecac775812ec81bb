@@ -1,0 +1,14 @@
+scripts/publish-legacy-kurl.py
+  h_9c4428928069f1 32-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "025a61bde0f2e5a2f8c9e336ecac775812ec81bb",
+  "prompts": {},
+  "humans": {
+    "h_9c4428928069f1": {
+      "author": "Mikhail Swift <mikhail@replicated.com>"
+    }
+  }
+}
