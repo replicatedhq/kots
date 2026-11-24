@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v39/github"
+	"github.com/google/go-github/v93/github"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
@@ -54,9 +54,8 @@ func makeReleases(tags []string) []*github.RepositoryRelease {
 	var releases []*github.RepositoryRelease
 	tm := time.Now()
 	for _, t := range tags {
-		s := t
 		r := github.RepositoryRelease{
-			TagName:     &s,
+			TagName:     t,
 			PublishedAt: &github.Timestamp{Time: tm},
 		}
 		releases = append(releases, &r)
