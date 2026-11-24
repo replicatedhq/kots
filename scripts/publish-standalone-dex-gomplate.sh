@@ -12,22 +12,12 @@ original_amd64=sha256:ebdbf7a04fc354d68676b617aa7c5069f7151f8afae3aa806b48e55941
 candidate=sha256:7870f204372ff6d32e9b9b29807454c5b7dc035f0899985f4d89feae54c8ac88
 candidate_amd64=sha256:60fd3d4fdd2afe6b1530b4223cda5146ae8a6db57ed1c2847056e69ec2bfe009
 archive_sha=sha256:f93c6373dde0d671710e7fb9d1cf3d890ffc826d8caf2a410e108d00666f8d69
-archive_size=111618904
-release_id=457394462
-asset_id=789046583
-asset=dex-2.44.0-baseline-carrier.tar.gz
+asset="${DEX_BASELINE_CARRIER:?}"
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
 
-gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" |
-    jq -e --argjson asset_id "$asset_id" --argjson size "$archive_size" --arg sha "$archive_sha" --arg asset "$asset" '
-      .draft and .tag_name == "kots-dex-baseline-carrier-20261124" and (.assets | length == 1) and
-      any(.assets[]; .id == $asset_id and .name == $asset and .state == "uploaded" and .size == $size and .digest == $sha)
-    ' >/dev/null
-gh api --header 'Accept: application/octet-stream' \
-    "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id" > "$work/$asset"
-printf '%s  %s\n' "${archive_sha#sha256:}" "$work/$asset" | sha256sum -c -
-python3 - "$work/$asset" "$work" <<'PY'
+printf '%s  %s\n' "${archive_sha#sha256:}" "$asset" | sha256sum -c -
+python3 - "$asset" "$work" <<'PY'
 from pathlib import Path
 import sys
 import tarfile

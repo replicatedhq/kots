@@ -26,9 +26,32 @@ on:
         type: boolean
         default: false
 jobs:
+  stage-standalone-dex-carrier:
+    if: github.event_name == 'workflow_dispatch' && inputs.legacy_companion == 'standalone-dex-gomplate'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Verify and copy the private carrier
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/fetch-standalone-dex-carrier.sh "${{ runner.temp }}/dex-2.44.0-baseline-carrier.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: standalone-dex-carrier
+          path: ${{ runner.temp }}/dex-2.44.0-baseline-carrier.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
   publish-legacy-kotsadm:
+    needs: stage-standalone-dex-carrier
     if: >-
-      github.event_name == 'workflow_dispatch' &&
+      always() && !cancelled() && github.event_name == 'workflow_dispatch' &&
+      (inputs.legacy_companion != 'standalone-dex-gomplate' || needs.stage-standalone-dex-carrier.result == 'success') &&
       (inputs.legacy_kots_version != '' || inputs.legacy_archive_digest != '' ||
        inputs.legacy_companion != '' || inputs.legacy_overlay_receipt != '' || inputs.legacy_publish)
     concurrency: >-
@@ -47,6 +70,11 @@ jobs:
         uses: anchore/sbom-action/download-syft@a930d0ac434e3182448fe678398ba5713717112a
         with:
           syft-version: v1.57.2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        if: inputs.legacy_companion == 'standalone-dex-gomplate'
+        with:
+          name: standalone-dex-carrier
+          path: ${{ runner.temp }}/standalone-dex-carrier
       - name: Verify and publish the legacy image
         env:
           GH_TOKEN: ${{ github.token }}
@@ -56,6 +84,7 @@ jobs:
           LEGACY_COMPANION: ${{ inputs.legacy_companion }}
           LEGACY_OVERLAY_RECEIPT: ${{ inputs.legacy_overlay_receipt }}
           LEGACY_PUBLISH: ${{ inputs.legacy_publish }}
+          DEX_BASELINE_CARRIER: ${{ runner.temp }}/standalone-dex-carrier/dex-2.44.0-baseline-carrier.tar.gz
           DOCKERHUB_USER: ${{ inputs.legacy_publish && secrets.DOCKERHUB_USER || '' }}
           DOCKERHUB_PASSWORD: ${{ inputs.legacy_publish && secrets.DOCKERHUB_PASSWORD || '' }}
         run: |
