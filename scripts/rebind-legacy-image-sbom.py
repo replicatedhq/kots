@@ -157,6 +157,60 @@ def verify_companion_overlay(layout, original_layout, receipt):
     return arm64["digest"], overlay["digest"]
 
 
+def verify_companion_rebase(layout, original_layout, receipt):
+    candidate = json.loads(verified_blob(layout, receipt["candidate_index"]))
+    amd64 = single((d for d in candidate["manifests"] if is_linux_architecture(d, "amd64")), "linux/amd64 image")
+    arm64 = single((d for d in candidate["manifests"] if is_linux_architecture(d, "arm64")), "linux/arm64 image")
+    must(amd64["digest"] == receipt["candidate_amd64"], "Candidate index points at the wrong amd64 digest")
+    must([d for d in candidate["manifests"] if d is not amd64] == receipt["unchanged_platforms"],
+         "Candidate changed other platforms")
+    manifest = json.loads(verified_descriptor(layout, amd64))
+    config = json.loads(verified_descriptor(layout, manifest["config"]))
+    original = json.loads(verified_blob(original_layout, receipt["original_amd64"]))
+    original_config = json.loads(verified_descriptor(original_layout, original["config"]))
+    must(config["config"] == original_config["config"] == receipt["unchanged_runtime_config"],
+         "Companion configuration differs from the original")
+    layers = manifest["layers"]
+    expected_layers = [receipt["new_layer"], *receipt.get("additional_layers", [])]
+    must([layer["digest"] for layer in layers] == expected_layers, "Unexpected companion layers")
+
+    binaries = receipt.get("application_binaries", receipt.get("preserved_binaries"))
+    rebuilt = receipt.get("rebuilt_binaries", {})
+    must(binaries and rebuilt.keys() <= binaries.keys(), "Missing companion executable records")
+    expected_original = {
+        path: rebuilt.get(path, {}).get("original_binary_sha256", record["sha256"])
+        for path, record in binaries.items()
+    }
+    must(original_file_hashes(original_layout, original, binaries) == expected_original,
+         "Companion executable differs from the historical image")
+    resolved = {}
+    diff_ids = []
+    for layer in layers:
+        must(layer["mediaType"] == OCI_LAYER, "Unexpected companion layer format")
+        data = gzip.decompress(verified_descriptor(layout, layer))
+        diff_ids.append(digest(data))
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:") as archive:
+            seen = set()
+            for member in archive:
+                path = member.name.removeprefix("./")
+                must(not path.rsplit("/", 1)[-1].startswith(".wh."), "Unexpected companion whiteout")
+                if path not in binaries:
+                    continue
+                must(path not in seen and member.isfile() and member.mode & 0o111,
+                     f"Invalid companion executable {path}")
+                seen.add(path)
+                resolved[path] = archive.extractfile(member).read()
+    must(config["rootfs"]["diff_ids"] == diff_ids, "Companion diff IDs do not match")
+    must(resolved.keys() == binaries.keys(), "Companion executable missing from candidate")
+    for path, executable in resolved.items():
+        info = go_build_info(executable)
+        expected = binaries[path]
+        must(digest(executable) == expected["sha256"] and info["toolchain"] == expected["go"],
+             f"Unexpected executable digest or Go version for {path}")
+        must("\tbuild\tGOAMD64=v1" in info["settings"], f"{path} does not target baseline amd64")
+    return arm64["digest"], layers[-1]["digest"]
+
+
 def verify_rebase(layout, receipt):
     candidate = json.loads(verified_blob(layout, receipt["candidate_index"]))
     amd64 = single((d for d in candidate["manifests"] if is_linux_architecture(d, "amd64")), "linux/amd64 image")
@@ -295,9 +349,9 @@ def generate(args):
     is_rebase = "baseline_userland_index" in receipt
     if args.companion:
         must(args.original_oci_layout, "A companion overlay needs the pinned original amd64 OCI layout")
-        must(args.original_index_spdx and not args.original_amd64_spdx,
-             "Companions need the historical index SBOM and a fresh amd64 SBOM")
-        unchanged_arm64, overlay_digest = verify_companion_overlay(
+        must(not args.original_amd64_spdx, "A rebuilt companion needs a fresh amd64 SBOM")
+        verify_companion = verify_companion_rebase if is_rebase else verify_companion_overlay
+        unchanged_arm64, overlay_digest = verify_companion(
             args.candidate_oci_layout, args.original_oci_layout, receipt)
     elif is_rebase:
         must(not args.original_amd64_spdx, "A rebased filesystem needs a fresh amd64 SBOM")

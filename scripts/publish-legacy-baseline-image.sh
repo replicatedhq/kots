@@ -26,45 +26,26 @@ source=127.0.0.1:5077/kotsadm
 image_tag="$LEGACY_KOTS_VERSION"
 asset=kotsadm-nominio.tar.gz
 if [[ -n "$companion" ]]; then
-  if [[ "$LEGACY_KOTS_VERSION" != v1.108.4 ]]; then
-    echo "Companion publication currently covers v1.108.4."
+  if ! pin="$(jq -cer --arg version "$LEGACY_KOTS_VERSION" --arg component "$companion" '
+    .[$version][$component] // empty
+  ' scripts/legacy-companion-releases.json)"; then
+    echo "No tested companion rebuild is registered for $LEGACY_KOTS_VERSION $companion."
     exit 1
   fi
   repo="index.docker.io/kotsadm/$companion"
+  if [[ "$companion" == local-volume-provider ]]; then
+    repo="index.docker.io/replicated/$companion"
+  elif [[ "$companion" == minio ]]; then
+    asset=kotsadm.tar.gz
+  fi
   source="127.0.0.1:5077/$companion"
-  archive_pin=sha256:1dd98ee58b35f501a480916f6d3bfe7af865edb494f479c726f3fc7c3fc2cfe4
-  case "$companion" in
-    dex)
-      image_tag=2.39.0-r0
-      original_pin=sha256:bdce436cd795c560abe3e2722eaff6e12617eb36eff6018a1963a45e7192c077
-      candidate_pin=sha256:f1f61ba8a8e95d43963b4808d91d7616d4c1f0fd88d707edfd1c0cf026e1a9db
-      ;;
-    rqlite)
-      image_tag=8.23.0-r0
-      original_pin=sha256:bf87ad111537d8489097e6fcd849afb3617d792a70de1018b8fda57b272753ae
-      candidate_pin=sha256:9b25cdfbf58603d009bc3e9c4fb40a438d1cfd503000b518bd964aa1bd3bf2c0
-      ;;
-    minio)
-      image_tag=0.20231220.010002-r4
-      asset=kotsadm.tar.gz
-      archive_pin=sha256:4bd26307ce4db5708c6c6931c7601833dbfda5b28bd0062c44c1dbcb94621179
-      original_pin=sha256:188cb0331320fe417024f9ec63f95e75e3b33b8e7f680370ef7dd3bbbc97e514
-      candidate_pin=sha256:0a937784801bf7d51aef0b7d1f507c39aff9a6fa531592b46e9483f7a6cab147
-      ;;
-    local-volume-provider)
-      repo=index.docker.io/replicated/local-volume-provider
-      image_tag=v0.6.1
-      original_pin=sha256:a4241a6cf3d50e1f3529f3af16c7b1af295c0d26f82bc41475906b021f39ada7
-      candidate_pin=sha256:6ee35c7a77d8731bfee416a40e6c09e897affc0e350da01e85688232c318e7b2
-      ;;
-    *)
-      echo "Use dex, rqlite, minio, or local-volume-provider for the v1.108.4 companion."
-      exit 1
-      ;;
-  esac
+  image_tag="$(jq -er '.tag' <<<"$pin")"
+  archive_pin="$(jq -er '.archive_sha' <<<"$pin")"
+  original_pin="$(jq -er '.original' <<<"$pin")"
+  candidate_pin="$(jq -er '.candidate' <<<"$pin")"
   LEGACY_OVERLAY_RECEIPT="$(jq -ce '
-    select(type == "object" and (has("baseline_userland_index") | not)) |
-    . + {candidate_index: .index, candidate_amd64: .amd64}
+    select(type == "object") |
+    . + {candidate_index: (.candidate_index // .index), candidate_amd64: (.candidate_amd64 // .amd64)}
   ' <<<"$LEGACY_OVERLAY_RECEIPT")"
 fi
 LEGACY_ORIGINAL_INDEX="$(jq -er '.original_index' <<<"$LEGACY_OVERLAY_RECEIPT")"
@@ -73,7 +54,7 @@ LEGACY_CANDIDATE_AMD64="$(jq -er '.candidate_amd64' <<<"$LEGACY_OVERLAY_RECEIPT"
 baseline_parent="$(jq -r '.baseline_userland_index // empty' <<<"$LEGACY_OVERLAY_RECEIPT")"
 if [[ -n "$companion" ]] && [[ "$LEGACY_ARCHIVE_DIGEST" != "$archive_pin" ||
     "$LEGACY_ORIGINAL_INDEX" != "$original_pin" || "$LEGACY_CANDIDATE_INDEX" != "$candidate_pin" ]]; then
-  echo "The companion receipt and archive must match the tested v1.108.4 digests."
+  echo "The companion receipt and archive must match the verified release digests."
   exit 1
 fi
 for digest in "$LEGACY_ARCHIVE_DIGEST" "$LEGACY_ORIGINAL_INDEX" "$LEGACY_CANDIDATE_INDEX" "$LEGACY_CANDIDATE_AMD64"; do
@@ -133,7 +114,9 @@ skopeo inspect --raw --config "docker://$repo@$old_amd64" > "$work/original-conf
 check_digest "$work/candidate-config.json" "$(jq -er '.config.digest' "$work/candidate-amd64.json")"
 check_digest "$work/original-config.json" "$(jq -er '.config.digest' "$work/original-amd64.json")"
 if [[ -n "$baseline_parent" ]]; then
-  test "$baseline_parent" = sha256:81323e5d194abc9bb3c9b7b50a1449bda1315eaa1021f3015218b62982d7813a
+  if [[ -z "$companion" ]]; then
+    test "$baseline_parent" = sha256:81323e5d194abc9bb3c9b7b50a1449bda1315eaa1021f3015218b62982d7813a
+  fi
   jq -eS 'del(.rootfs, .history)' "$work/original-config.json" > "$work/original-runtime.json"
   jq -eS 'del(.rootfs, .history)' "$work/candidate-config.json" > "$work/candidate-runtime.json"
 else

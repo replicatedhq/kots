@@ -16,7 +16,7 @@ on:
         description: 'Verified release archive SHA-256 (full archive for MinIO)'
         type: string
       legacy_companion:
-        description: 'v1.108.4 companion image (dex, rqlite, minio, local-volume-provider)'
+        description: 'Previously tested companion listed in scripts/legacy-companion-releases.json'
         type: string
       legacy_overlay_receipt:
         description: 'Verified OCI image rebuild receipt in JSON'
@@ -31,7 +31,9 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       (inputs.legacy_kots_version != '' || inputs.legacy_archive_digest != '' ||
        inputs.legacy_companion != '' || inputs.legacy_overlay_receipt != '' || inputs.legacy_publish)
-    concurrency: kots-legacy-baseline-backfill
+    concurrency: >-
+      ${{ inputs.legacy_companion != '' && format('kots-legacy-companion-{0}-{1}',
+      inputs.legacy_kots_version, inputs.legacy_companion) || 'kots-legacy-baseline-backfill' }}
     permissions:
       contents: read
     timeout-minutes: 25
