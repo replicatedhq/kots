@@ -9,8 +9,51 @@ on:
         description: 'Overwrite the existing image tags'
         required: false
         default: 'true'
+      legacy_kots_version:
+        description: 'Legacy KOTS version to verify or publish'
+        type: string
+      legacy_archive_digest:
+        description: 'Verified no-MinIO release archive SHA-256'
+        type: string
+      legacy_overlay_receipt:
+        description: 'Verified OCI image rebuild receipt in JSON'
+        type: string
+      legacy_publish:
+        description: 'Move the Docker Hub release tag after verification'
+        type: boolean
+        default: false
 jobs:
+  publish-legacy-kotsadm:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.legacy_kots_version != '' || inputs.legacy_archive_digest != '' ||
+       inputs.legacy_overlay_receipt != '' || inputs.legacy_publish)
+    concurrency: kots-legacy-baseline-backfill
+    permissions:
+      contents: read
+    timeout-minutes: 25
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22
+      - name: Verify and publish the legacy KOTS image
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEGACY_KOTS_VERSION: ${{ inputs.legacy_kots_version }}
+          LEGACY_ARCHIVE_DIGEST: ${{ inputs.legacy_archive_digest }}
+          LEGACY_OVERLAY_RECEIPT: ${{ inputs.legacy_overlay_receipt }}
+          LEGACY_PUBLISH: ${{ inputs.legacy_publish }}
+          DOCKERHUB_USER: ${{ inputs.legacy_publish && secrets.DOCKERHUB_USER || '' }}
+          DOCKERHUB_PASSWORD: ${{ inputs.legacy_publish && secrets.DOCKERHUB_PASSWORD || '' }}
+        run: bash scripts/publish-legacy-baseline-image.sh
+
   build-3rd-party-images:
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      (inputs.legacy_kots_version == '' && inputs.legacy_archive_digest == '' &&
+       inputs.legacy_overlay_receipt == '' && !inputs.legacy_publish)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
