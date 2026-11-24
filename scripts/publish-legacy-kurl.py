@@ -29,7 +29,8 @@ def public_url(bucket, key):
 
 
 def public_open(url, method="GET"):
-    return urlopen(Request(url, method=method, headers={"Cache-Control": "no-cache"}), timeout=45)
+    headers = {"Cache-Control": "no-cache", "User-Agent": "Replicated-kURL-Release-Publisher/1.0"}
+    return urlopen(Request(url, method=method, headers=headers), timeout=45)
 
 
 def sha_file(path):
