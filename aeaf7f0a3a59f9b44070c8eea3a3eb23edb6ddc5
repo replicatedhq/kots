@@ -1,0 +1,29 @@
+pkg/util/kube_version_test.go
+  s_33281c77b0f47c::t_b977f405d4e516 85
+pkg/upgradeservice/bootstrap_test.go
+  s_33281c77b0f47c::t_b977f405d4e516 28
+pkg/update/required.go
+  s_33281c77b0f47c::t_300f5acc5b129b 162-165
+pkg/update/required_test.go
+  s_33281c77b0f47c::t_48015be78ea9a5 13,19-29,388
+pkg/update/update_test.go
+  s_33281c77b0f47c::t_17285af0652747 166,747,873,1083,1166
+pkg/util/kube_version.go
+  s_33281c77b0f47c::t_231ca265817e64 20-34,67-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aeaf7f0a3a59f9b44070c8eea3a3eb23edb6ddc5",
+  "prompts": {},
+  "sessions": {
+    "s_33281c77b0f47c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a09150-6dca-73b2-b6f6-3f9ac32c804e",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}

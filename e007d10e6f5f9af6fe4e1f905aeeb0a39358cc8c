@@ -1,0 +1,24 @@
+pkg/base/preflight_compatibility_test.go
+  s_1026f69ab2a9bd::t_340a49b501b4eb 17,22,28-45
+  s_1026f69ab2a9bd::t_2aded85a890611 16,47-61
+pkg/base/base.go
+  s_1026f69ab2a9bd::t_0592d22f9f2825 174,262
+pkg/kotsutil/kots.go
+  s_1026f69ab2a9bd::t_0592d22f9f2825 834
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e007d10e6f5f9af6fe4e1f905aeeb0a39358cc8c",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}

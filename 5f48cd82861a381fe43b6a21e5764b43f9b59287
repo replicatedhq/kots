@@ -1,0 +1,16 @@
+.github/workflows/legacy-airgap-qa-export.yml
+  h_9c4428928069f1 1-144
+.github/workflows/regression.yaml
+  h_9c4428928069f1 46-50,81-87,89,103,114,179,421,651
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5f48cd82861a381fe43b6a21e5764b43f9b59287",
+  "prompts": {},
+  "humans": {
+    "h_9c4428928069f1": {
+      "author": "Mikhail Swift <mikhail@replicated.com>"
+    }
+  }
+}

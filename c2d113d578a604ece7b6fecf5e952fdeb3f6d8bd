@@ -1,0 +1,23 @@
+pkg/base/preflight_helm_values.go
+  s_1026f69ab2a9bd::t_85c4219e971424 12-13,26,65-66,68,72,75-79,81,84-89,92-95,97-114
+pkg/base/preflight_helm_values_test.go
+  s_1026f69ab2a9bd::t_0845cf73765ca9 19-20,46,57-58,69-72,93-95,112,123,125,169,179-183,217
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_121d73c372bf34 142,178,180,188,194-195,267-268,285,288,291,298,302
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c2d113d578a604ece7b6fecf5e952fdeb3f6d8bd",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}

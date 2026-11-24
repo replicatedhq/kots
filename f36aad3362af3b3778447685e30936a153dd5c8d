@@ -1,0 +1,29 @@
+pkg/base/malformed_beta3_test.go
+  s_1026f69ab2a9bd::t_cff1eff3d74233 5,29-50
+pkg/base/preflight_helm_values_test.go
+  s_1026f69ab2a9bd::t_da7b6df517bc04 108
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_ca4cd35fdaaff6 208-209,296-298
+pkg/kotsutil/supportbundle_references.go
+  s_1026f69ab2a9bd::t_d5dd0eb606e2c7 80-89,111-112,126-127
+pkg/kotsutil/supportbundle_references_test.go
+  s_1026f69ab2a9bd::t_ccea09d5f01238 10,102-109,145,147-159,193,195-196
+pkg/supportbundle/spec_test.go
+  s_1026f69ab2a9bd::t_377cb79436bca1 40-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f36aad3362af3b3778447685e30936a153dd5c8d",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}
