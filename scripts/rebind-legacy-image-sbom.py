@@ -401,7 +401,8 @@ if __name__ == "__main__":
     parser.add_argument("--original-index-spdx", type=Path)
     parser.add_argument("--original-amd64-spdx", type=Path)
     parser.add_argument("--original-oci-layout", type=Path)
-    parser.add_argument("--companion", choices=("dex", "rqlite", "minio", "local-volume-provider"))
+    parser.add_argument(
+        "--companion", choices=("dex", "rqlite", "minio", "local-volume-provider", "kotsadm-migrations"))
     parser.add_argument("overlay_receipt", type=Path)
     parser.add_argument("candidate_oci_layout", type=Path)
     parser.add_argument("output", type=Path)
