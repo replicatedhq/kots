@@ -2,17 +2,17 @@
 set -euo pipefail
 
 [[ "$GITHUB_REPOSITORY" == replicatedhq/kots && "$GITHUB_EVENT_NAME" == workflow_dispatch ]]
-[[ "$LEGACY_COMPANION" == standalone-dex-gomplate ]]
+[[ "$LEGACY_COMPANION" == standalone-minio-r0 ]]
 [[ -z "$LEGACY_KOTS_VERSION" && -z "$LEGACY_ARCHIVE_DIGEST" && -z "$LEGACY_OVERLAY_RECEIPT" ]]
 
-repo=index.docker.io/kotsadm/dex
-tag=2.44.0
-original=sha256:a0b04348b0ca5d7abc686705ef034a1491edb7427e51d88d7a042b67be2144e0
-original_amd64=sha256:ebdbf7a04fc354d68676b617aa7c5069f7151f8afae3aa806b48e559410edc96
-candidate=sha256:7870f204372ff6d32e9b9b29807454c5b7dc035f0899985f4d89feae54c8ac88
-candidate_amd64=sha256:60fd3d4fdd2afe6b1530b4223cda5146ae8a6db57ed1c2847056e69ec2bfe009
-archive_sha=sha256:f93c6373dde0d671710e7fb9d1cf3d890ffc826d8caf2a410e108d00666f8d69
-asset="${DEX_BASELINE_CARRIER:?}"
+repo=index.docker.io/kotsadm/minio
+tag=0.20251015.172955-r0
+original=sha256:1abcfa92c385eec382dc66974ff780006a33ac14af81b2cfb1204fe549fdeab8
+original_amd64=sha256:d63b91c5185062fe6e1c2ea60e1465a7ce07b0a17424c087d793c3b84c36a2eb
+candidate=sha256:95e9317df05abce5c06646774bd9f4d732f42baddcaaed8940673aeb2af664ac
+candidate_amd64=sha256:609181f3a0e7fd407aeba3a32b530c940258ec393ba6d28aa30af052f5857a78
+archive_sha=sha256:c9d628eacb1efb05ea3d57978b32926c41d8fc5733b4461d48c2719a929974af
+asset="${MINIO_BASELINE_CARRIER:?}"
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
 
@@ -25,11 +25,12 @@ import tarfile
 with tarfile.open(Path(sys.argv[1]), "r:gz") as archive:
     archive.extractall(Path(sys.argv[2]), filter="data")
 PY
-grep -Fq 'passed native entrypoint, templating, SQLite and OIDC discovery on baseline x86-64.' \
-    "$work/baseline-overlay-runtime.log"
+grep -Fq 'its unchanged mc passed a byte-matched S3 object round trip.' \
+    "$work/baseline-minio-runtime.log"
+grep -Fq 'The original MinIO shell path runs on baseline x86-64.' "$work/baseline-minio-runtime.log"
 
 skopeo inspect --raw "docker://$repo@$original" > "$work/original-index.json"
-skopeo inspect --raw "oci:$work/baseline-overlay:candidate" > "$work/candidate-index.json"
+skopeo inspect --raw "oci:$work/baseline-rebase:candidate" > "$work/candidate-index.json"
 printf '%s  %s\n' "${original#sha256:}" "$work/original-index.json" | sha256sum -c -
 printf '%s  %s\n' "${candidate#sha256:}" "$work/candidate-index.json" | sha256sum -c -
 non_amd64='.manifests | map(select(.platform.os != "linux" or .platform.architecture != "amd64"))'
@@ -37,14 +38,14 @@ diff -u <(jq -S "$non_amd64" "$work/original-index.json") <(jq -S "$non_amd64" "
 skopeo copy --preserve-digests "docker://$repo@$original_amd64" "oci:$work/original-amd64:original"
 jq -ce --arg original "$original" --arg original_amd64 "$original_amd64" \
     --arg index "$candidate" --arg amd64 "$candidate_amd64" '
-    select(.original_index == $original and .original_amd64 == $original_amd64 and .index == $index and .amd64 == $amd64) |
-    select(.files == {"usr/bin/gomplate":{
-        "old":"sha256:ff07bff911624b74f752abf1cb9fd92286c23c0277e306d956c67a32148559ec",
-        "new":"sha256:ca559988c6a5a0f5a2ecb8fd97ec22bd059902b7fd20b6847f1ed2a13889e586"}}) |
-    . + {candidate_index: .index, candidate_amd64: .amd64}
-' "$work/baseline-overlay-receipt.json" > "$work/receipt.json"
+    select(.original_index == $original and .original_amd64 == $original_amd64 and
+           .candidate_index == $index and .candidate_amd64 == $amd64) |
+    select(.unchanged_runtime_config.User == "1001" and .unchanged_runtime_config.Entrypoint == ["minio"] and
+        .application_binaries["usr/bin/minio"].sha256 == "sha256:127ea2fc4c396cc0595152759fc4af3705573f5247797560a2c85802f75f9004" and
+        .application_binaries["usr/bin/mc"].sha256 == "sha256:24b08883e916efbd4b5fdf81eaae3d659ae9709e267af5d78af4827d268fd1c7")
+' "$work/baseline-rebase-receipt.json" > "$work/receipt.json"
 
-sbom=(--companion dex --original-oci-layout "$work/original-amd64")
+sbom=(--companion minio --original-oci-layout "$work/original-amd64")
 if cosign download sbom "$repo@$original" > "$work/original-index.spdx.json" 2> "$work/cosign.log"; then
     sbom+=(--original-index-spdx "$work/original-index.spdx.json")
 elif ! grep -Fqx -e 'Error: no SBOM found attached to image index' \
@@ -52,8 +53,8 @@ elif ! grep -Fqx -e 'Error: no SBOM found attached to image index' \
     cat "$work/cosign.log" >&2
     exit 1
 fi
-python3 scripts/rebind-legacy-image-sbom.py "$work/receipt.json" "$work/baseline-overlay" "$work/sbom" "${sbom[@]}"
-SYFT_CHECK_FOR_APP_UPDATE=false "$SYFT_BIN" scan "oci-dir:$work/baseline-overlay" \
+python3 scripts/rebind-legacy-image-sbom.py "$work/receipt.json" "$work/baseline-rebase" "$work/sbom" "${sbom[@]}"
+SYFT_CHECK_FOR_APP_UPDATE=false "$SYFT_BIN" scan "oci-dir:$work/baseline-rebase" \
     --platform linux/amd64 -o spdx-json > "$work/sbom/amd64.spdx.json"
 jq -e '.spdxVersion == "SPDX-2.3" and (.packages | length > 0)' "$work/sbom/amd64.spdx.json" >/dev/null
 
@@ -76,7 +77,7 @@ printf '%s' "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USER" --
 unset DOCKERHUB_PASSWORD
 auth="$DOCKER_CONFIG/config.json"
 skopeo copy --all --preserve-digests --dest-authfile "$auth" \
-    "oci:$work/baseline-overlay:candidate" "docker://$repo@$candidate"
+    "oci:$work/baseline-rebase:candidate" "docker://$repo@$candidate"
 for binding in "$candidate_amd64:amd64" "$candidate:index"; do
     subject="${binding%:*}"
     document="$work/sbom/${binding##*:}.spdx.json"
