@@ -1,0 +1,137 @@
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_02fb144d61999b 174-175,177
+  s_1026f69ab2a9bd::t_08f16d75be41b1 173,176
+web/src/utilities/utilities.js
+  s_84c928d021a21b::t_52eb709d382ed0 434,438
+pkg/preflight/types/types.go
+  s_1026f69ab2a9bd::t_5c7fbbeef182a7 24
+pkg/preflight/preflight_test.go
+  s_1026f69ab2a9bd::t_57e5e652a80eed 22-23
+pkg/kotsutil/kots.go
+  s_49c73e75e4ce86::t_ee40ec9ab1fdbe 575
+  s_1026f69ab2a9bd::t_227e0f0b547db8 102-103,275,278,454-460,462
+  s_1026f69ab2a9bd::t_e9795abe429ff2 272-274
+  s_1026f69ab2a9bd::t_33228e562376f5 14,574,651-654,1156
+  s_49c73e75e4ce86::t_8a66e985e323db 151,948
+  s_1026f69ab2a9bd::t_08f16d75be41b1 573
+  s_1026f69ab2a9bd::t_5c5f9003a9181e 650
+  s_1026f69ab2a9bd::t_5e7ba846a77837 1157
+  s_49c73e75e4ce86::t_131c13390e6ecd 949
+  s_1026f69ab2a9bd::t_d30dbc518ce321 271,947
+  s_1026f69ab2a9bd::t_b76a6b1a7931a6 1155
+pkg/base/preflight_compatibility_test.go
+  s_49c73e75e4ce86::t_5efa50fc3a2e22 1-3,5-12
+  s_1026f69ab2a9bd::t_0069b104253b38 47-57,59-65,71-81,98
+  s_1026f69ab2a9bd::t_340a49b501b4eb 19-23,37
+  s_1026f69ab2a9bd::t_161c0d88598360 4,58
+  s_1026f69ab2a9bd::t_f73c4746628b33 44-46
+  s_1026f69ab2a9bd::t_4cfb9b863dd6c6 13-14
+  s_1026f69ab2a9bd::t_f4c327447029a5 40,66-70,82-97
+  s_1026f69ab2a9bd::t_6faf308a4677bc 15-18,24-36,38-39,41-43
+pkg/print/preflight_test.go
+  s_1026f69ab2a9bd::t_16045fe37b116e 1-23
+cmd/kots/cli/install.go
+  s_1026f69ab2a9bd::t_48c4aaf1362e1d 1121-1122
+pkg/store/kotsstore/app_store.go
+  s_1026f69ab2a9bd::t_b8110f75e26354 240,245
+pkg/base/base.go
+  s_1026f69ab2a9bd::t_08f16d75be41b1 254
+  s_1026f69ab2a9bd::t_02fb144d61999b 252,255-256
+  s_1026f69ab2a9bd::t_0b0d12e5623288 253
+pkg/preflight/warning_collectors_test.go
+  s_1026f69ab2a9bd::t_4cfb9b863dd6c6 4,8,13-15,17-22,24-27,29-38
+  s_1026f69ab2a9bd::t_7841822fb20bfc 39
+  s_1026f69ab2a9bd::t_ca4c4aa73f52d7 1-3,5-7,9-12,16,23,28
+pkg/preflight/preflight.go
+  s_1026f69ab2a9bd::t_8470ef7951022b 289-290
+  s_1026f69ab2a9bd::t_c257d4dee26553 32,293,295,325-326
+  s_1026f69ab2a9bd::t_4cfb9b863dd6c6 124
+  s_1026f69ab2a9bd::t_2ab507a4b9f60b 285-287
+  s_1026f69ab2a9bd::t_efd545d0c9da0a 322-324
+  s_1026f69ab2a9bd::t_eab2db2ff99923 288,321,343
+  s_1026f69ab2a9bd::t_387c2fe309ffd8 341-342
+  s_1026f69ab2a9bd::t_48c4aaf1362e1d 260-262
+pkg/store/kotsstore/preflight_store_test.go
+  s_1026f69ab2a9bd::t_0748400b7a9570 89-94
+cmd/kots/cli/install_inpackage_test.go
+  s_1026f69ab2a9bd::t_57e5e652a80eed 5-6,14-15,17-27
+  s_1026f69ab2a9bd::t_db4945edfced89 28
+  s_1026f69ab2a9bd::t_514170ce0a3c18 16
+pkg/upstream/replicated_test.go
+  s_49c73e75e4ce86::t_40283470210f5b 775
+  s_49c73e75e4ce86::t_0d17a104eea9e8 739
+  s_49c73e75e4ce86::t_50e7318d2cb468 743-744,774
+  s_49c73e75e4ce86::t_c4039a93cdd8bb 741-742
+  s_49c73e75e4ce86::t_996b8be0a2db84 773
+pkg/kotsutil/kots_test.go
+  s_1026f69ab2a9bd::t_1394289cc23ced 733,775
+web/src/features/PreflightChecks/api/getPreflightResult.tsx
+  s_1026f69ab2a9bd::t_d192ed4c01e3c4 2,71,87,120,149
+  s_1026f69ab2a9bd::t_48c4aaf1362e1d 116-118
+pkg/preflight/execute.go
+  s_1026f69ab2a9bd::t_ad9306a8800b2f 35
+  s_1026f69ab2a9bd::t_eab2db2ff99923 15
+  s_1026f69ab2a9bd::t_4cfb9b863dd6c6 31-34,36-38
+web/src/features/PreflightChecks/api/getPreflightResult.test.tsx
+  s_1026f69ab2a9bd::t_48c4aaf1362e1d 46,52
+  s_1026f69ab2a9bd::t_b5a94374b66316 26,47,53
+  s_1026f69ab2a9bd::t_3ad626e5e76384 1-19,21-25,27,29,31-45,55-60
+  s_1026f69ab2a9bd::t_514170ce0a3c18 20,48-51,54
+  s_1026f69ab2a9bd::t_57e5e652a80eed 28,30
+web/src/utilities/utilities.test.js
+  s_84c928d021a21b::t_451a8d84af5e58 1-11
+pkg/kotsutil/troubleshoot_template_error.go
+  s_1026f69ab2a9bd::t_928e7a79a04528 16,19-20
+  s_1026f69ab2a9bd::t_ed2a28cedc5462 1-4,6,8-9
+  s_1026f69ab2a9bd::t_33228e562376f5 10,12-15,27-29,32-34
+  s_1026f69ab2a9bd::t_73d3406a50322d 11
+  s_1026f69ab2a9bd::t_02fb144d61999b 5
+  s_1026f69ab2a9bd::t_d30dbc518ce321 7
+  s_1026f69ab2a9bd::t_870f4905b4e47b 17-18,21-26,30-31,35
+pkg/upgradeservice/preflight/preflight.go
+  s_1026f69ab2a9bd::t_32b1fa1678febc 56-59,72,92,105,118
+  s_1026f69ab2a9bd::t_4cfb9b863dd6c6 95
+pkg/handlers/preflight.go
+  s_1026f69ab2a9bd::t_95890b0d1646e4 291,325-337
+web/src/components/upgrade_service/hooks/getPreflightResult.tsx
+  s_1026f69ab2a9bd::t_fb48d98069dca9 5,71,87,120,149
+  s_1026f69ab2a9bd::t_48c4aaf1362e1d 116-118
+pkg/upstream/replicated.go
+  s_1026f69ab2a9bd::t_6f1483cfc8ac6e 357,472
+web/src/features/PreflightChecks/types.ts
+  s_1026f69ab2a9bd::t_ec97ca719db3fb 25,48-63
+pkg/print/preflight.go
+  s_1026f69ab2a9bd::t_93b20e29649ff0 14-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b32894a879f3e7991fbcf1ad9c2b4f7e4f7309ca",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": null
+    },
+    "s_49c73e75e4ce86": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a116c0-ca51-7111-a924-b5bdac2146db",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    },
+    "s_84c928d021a21b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a130c2-e782-73a1-bd66-bd3c909bf8d6",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}

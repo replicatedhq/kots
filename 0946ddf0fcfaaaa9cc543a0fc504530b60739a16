@@ -1,0 +1,25 @@
+pkg/kotsutil/supportbundle_references_test.go
+  s_1026f69ab2a9bd::t_05e0dae3f8314f 114-115,120-125
+web/src/components/upgrade_service/hooks/getPreflightResult.tsx
+  s_1026f69ab2a9bd::t_e55354549b79c3 6,116
+web/src/features/PreflightChecks/api/getPreflightResult.tsx
+  s_1026f69ab2a9bd::t_1aa67a7b7d2d15 2,115
+web/src/features/PreflightChecks/types.ts
+  s_1026f69ab2a9bd::t_d40f065bca7862 64-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0946ddf0fcfaaaa9cc543a0fc504530b60739a16",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}

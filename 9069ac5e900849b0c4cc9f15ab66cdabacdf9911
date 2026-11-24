@@ -1,0 +1,20 @@
+.github/scripts/verify-universal-binary.sh
+  s_db7446c9d70994::t_b2e5c1986ef35e 4,10-15,17-19,25,28
+  s_db7446c9d70994::t_daf94f7797226d 21-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9069ac5e900849b0c4cc9f15ab66cdabacdf9911",
+  "prompts": {},
+  "sessions": {
+    "s_db7446c9d70994": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f164e8e1-c127-4afd-82e4-577a225a2288",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Xav Paice <xav@replicated.com>"
+    }
+  }
+}

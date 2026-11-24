@@ -1,0 +1,46 @@
+pkg/base/preflight_compatibility_test.go
+  s_49c73e75e4ce86::t_5efa50fc3a2e22 1-11,13,15-39,42-48
+  s_49c73e75e4ce86::t_821147b91af2da 12,14,40-41
+pkg/kotsutil/kots.go
+  s_49c73e75e4ce86::t_c65c8ee13206b5 564,566-567
+  s_49c73e75e4ce86::t_8a66e985e323db 148,559-561,565,934-937
+  s_49c73e75e4ce86::t_84ca3565760c58 562-563
+pkg/upstream/replicated_test.go
+  s_49c73e75e4ce86::t_40283470210f5b 870
+  s_49c73e75e4ce86::t_996b8be0a2db84 133,141,868
+  s_49c73e75e4ce86::t_50e7318d2cb468 148-149,153,838-839,869
+  s_49c73e75e4ce86::t_0d17a104eea9e8 834
+  s_49c73e75e4ce86::t_c4039a93cdd8bb 836-837
+  s_49c73e75e4ce86::t_9aaeca50161aa5 201-203
+  s_49c73e75e4ce86::t_821147b91af2da 110,144-147,150,159-165,176,183-200
+  s_49c73e75e4ce86::t_f5457d8905ff14 13
+  s_49c73e75e4ce86::t_fbc42c6a3f0988 126,129-130
+pkg/kotsutil/preflight_sources_test.go
+  s_49c73e75e4ce86::t_2282562565d732 41
+  s_49c73e75e4ce86::t_c120da9d99ac85 32
+  s_49c73e75e4ce86::t_f5457d8905ff14 72-107
+  s_49c73e75e4ce86::t_526af6e30a8f84 1-5,7-31,33,37,71
+  s_49c73e75e4ce86::t_50e7318d2cb468 38-40,42-70
+  s_49c73e75e4ce86::t_c041ef8fb18d90 34-36
+  s_49c73e75e4ce86::t_5e1818f1ca93b0 6
+pkg/upstream/replicated.go
+  s_49c73e75e4ce86::t_8a66e985e323db 16,358,477,873-878,883-893,895-896
+  s_49c73e75e4ce86::t_c56e1daa605542 897
+  s_49c73e75e4ce86::t_0d17a104eea9e8 898-899,901
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ebd2ac8e20f7ebc375beba4657ed4fd5ed643513",
+  "prompts": {},
+  "sessions": {
+    "s_49c73e75e4ce86": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a116c0-ca51-7111-a924-b5bdac2146db",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+pkg/kotsutil/kots.go
+  s_1026f69ab2a9bd::t_2d94455bfd833a 834
+pkg/preflight/execute.go
+  s_1026f69ab2a9bd::t_eab2db2ff99923 15,32
+pkg/kotsutil/troubleshoot_template_error.go
+  s_1026f69ab2a9bd::t_9fa2768e51c3f5 19,32,34-35,39,42
+  s_1026f69ab2a9bd::t_eab2db2ff99923 11-12,76-101
+  s_1026f69ab2a9bd::t_02fb144d61999b 6
+  s_1026f69ab2a9bd::t_2d94455bfd833a 4,17,20,106,112-115
+  s_1026f69ab2a9bd::t_73d3406a50322d 7,27-31,36-38,40-41,43-47
+  s_1026f69ab2a9bd::t_870f4905b4e47b 18,22-26,48-75,102
+  s_1026f69ab2a9bd::t_ed2a28cedc5462 1-3,5,8-10,13-16,21,103-105,107-111,116-119
+  s_1026f69ab2a9bd::t_dd2a5a94c70050 33
+pkg/upstream/replicated.go
+  s_1026f69ab2a9bd::t_6f1483cfc8ac6e 357,472
+pkg/base/base.go
+  s_1026f69ab2a9bd::t_2d94455bfd833a 14,164-166,178,266
+  s_1026f69ab2a9bd::t_02fb144d61999b 256-260
+pkg/preflight/preflight.go
+  s_1026f69ab2a9bd::t_eab2db2ff99923 317
+pkg/preflight/warning_collectors_test.go
+  s_1026f69ab2a9bd::t_ca4c4aa73f52d7 1-3,5-15,18-38,40-50,55,57-68,70-84
+  s_1026f69ab2a9bd::t_207ff375249795 4,16-17,51-54,56
+  s_1026f69ab2a9bd::t_54c1edf11a1fa4 39,69
+pkg/base/preflight_compatibility_test.go
+  s_1026f69ab2a9bd::t_6ca27b576c1a79 14,16,22-24,37,40-44,46-60
+  s_1026f69ab2a9bd::t_f73c4746628b33 4,15,18-19,27-36,38-39,45,61-64
+  s_1026f69ab2a9bd::t_465406fb0402b9 17
+  s_1026f69ab2a9bd::t_73d3406a50322d 25
+  s_1026f69ab2a9bd::t_dd2a5a94c70050 20-21
+  s_1026f69ab2a9bd::t_1c5f0d7a94e74e 10
+  s_1026f69ab2a9bd::t_9fa2768e51c3f5 26
+  s_1026f69ab2a9bd::t_d9fdb5d7c29d96 65
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_02fb144d61999b 162-166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ce8dc594799dcd364f9c40c591cd9c41090d40de",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}

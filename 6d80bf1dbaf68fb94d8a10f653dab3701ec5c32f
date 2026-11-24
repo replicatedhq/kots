@@ -1,0 +1,69 @@
+pkg/base/preflight_helm_values.go
+  s_33281c77b0f47c::t_9fee324b2b36f6 15,71-73
+  s_1026f69ab2a9bd::t_a75c732e8b6255 76,83
+pkg/reporting/preflight.go
+  s_33281c77b0f47c::t_43250a0e825c02 10,65,98,106-108
+pkg/base/base.go
+  s_1026f69ab2a9bd::t_08f16d75be41b1 254
+pkg/kotsutil/troubleshoot.go
+  s_1026f69ab2a9bd::t_815ce2030da087 36-39
+pkg/kotsutil/kots.go
+  s_1026f69ab2a9bd::t_227e0f0b547db8 455
+  s_1026f69ab2a9bd::t_0961d7ae59b6a1 566,568,570
+  s_1026f69ab2a9bd::t_31482151767244 567,569,571,649-654,947
+pkg/preflight/preflight.go
+  s_1026f69ab2a9bd::t_8470ef7951022b 290
+pkg/base/preflight_compatibility_test.go
+  s_1026f69ab2a9bd::t_0069b104253b38 37-38
+  s_1026f69ab2a9bd::t_90a6a4efacbb81 52,103-135
+  s_1026f69ab2a9bd::t_f4c327447029a5 14
+  s_1026f69ab2a9bd::t_d201b4231241e6 16,33,49,51,53-54
+pkg/base/replicated.go
+  s_1026f69ab2a9bd::t_08f16d75be41b1 190-191,201
+  s_1026f69ab2a9bd::t_567f2c791fb2fa 245-249
+  s_1026f69ab2a9bd::t_a15170d7d461ae 268,272
+  s_1026f69ab2a9bd::t_725a4baecfab2b 140-144,163-170,173-187,202,267,276-284,286-287
+  s_1026f69ab2a9bd::t_dae74e6e3d9ed6 238
+  s_1026f69ab2a9bd::t_02fb144d61999b 192-200
+pkg/supportbundle/spec.go
+  s_1026f69ab2a9bd::t_d05dc32daf964c 76-79,337,388,392,396-400,405-408,418
+pkg/reporting/preflight_test.go
+  s_1026f69ab2a9bd::t_b8a94cedbbb916 1-28
+pkg/kotsutil/supportbundle_references_test.go
+  s_1026f69ab2a9bd::t_cbf6a5e0ea64d8 1-127,134,136-137,141-143
+  s_1026f69ab2a9bd::t_eec9ef72b512f5 128-133,135,138-140
+pkg/kotsutil/supportbundle_references.go
+  s_1026f69ab2a9bd::t_dc80239bd3eca7 1-142
+pkg/reporting/app.go
+  s_33281c77b0f47c::t_62b8a26ea28a94 21,277
+pkg/base/preflight_helm_values_test.go
+  s_1026f69ab2a9bd::t_f6131c35033776 139
+  s_1026f69ab2a9bd::t_85e5de83e3c32b 72,76,107-111,125-127,147,155-161
+  s_1026f69ab2a9bd::t_e39a32c5d6bd99 7,17,43-50,53-65,164-172,195,200-208
+  s_1026f69ab2a9bd::t_9841b8bcab3594 30,66,113-114
+  s_1026f69ab2a9bd::t_11abd9aed3c4ef 116,144-146,148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6d80bf1dbaf68fb94d8a10f653dab3701ec5c32f",
+  "prompts": {},
+  "sessions": {
+    "s_1026f69ab2a9bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13695-f959-70b1-8118-c78c5e14ab4f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    },
+    "s_33281c77b0f47c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a09150-6dca-73b2-b6f6-3f9ac32c804e",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Noah Campbell <noah.edward.campbell@gmail.com>"
+    }
+  }
+}

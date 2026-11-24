@@ -1,0 +1,19 @@
+.github/workflows/release.yaml
+  s_db7446c9d70994::t_12ce01fe3fb349 280-281,285-290
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0030015efac2a2eff3a0899e61075eff270981cc",
+  "prompts": {},
+  "sessions": {
+    "s_db7446c9d70994": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f164e8e1-c127-4afd-82e4-577a225a2288",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Xav Paice <xav@replicated.com>"
+    }
+  }
+}
