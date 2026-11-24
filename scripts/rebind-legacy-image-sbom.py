@@ -82,7 +82,9 @@ def verify_overlay(layout, receipt):
     with tarfile.open(fileobj=io.BytesIO(layer), mode="r:") as archive:
         member = single(archive.getmembers(), "overlay file")
         must(member.isfile() and member.mode & 0o111, "Overlay file is not executable")
-        must("/" + member.name.lstrip("/") == receipt["overlay_path"], "Unexpected overlay path")
+        path = "/" + member.name.lstrip("/")
+        must(path in ("/usr/bin/kustomize", "/usr/local/bin/kustomize"), "Overlay must replace Kustomize")
+        must(path == receipt["overlay_path"], "Unexpected overlay path")
         executable = archive.extractfile(member).read()
     must(digest(executable) == receipt["source"]["binary_sha256"], "Overlay executable digest does not match")
     info = go_build_info(executable)
@@ -90,6 +92,66 @@ def verify_overlay(layout, receipt):
     must("\tbuild\tGOAMD64=v1" in info["settings"], "Overlay file does not target baseline amd64")
     must("\tbuild\tGOAMD64=v2" in receipt["original_go"]["settings"], "Original Go target was not v2")
     return arm64["digest"], overlay["digest"]
+
+
+def compare_original_binaries(layout, receipt):
+    original = json.loads(verified_blob(layout, receipt["original_amd64"]))
+    expected = {path: record["sha256"] for path, record in receipt["verified_legacy_binary_sha256"].items()}
+    expected["usr/bin/kustomize"] = receipt["kustomize_standalone_source"]["original_binary_sha256"]
+    actual = {}
+    for layer in original["layers"]:
+        with tarfile.open(fileobj=io.BytesIO(verified_descriptor(layout, layer)), mode="r:*") as archive:
+            for member in archive:
+                path = member.name.removeprefix("./")
+                if "/.wh." in "/" + path:
+                    parent = path.rpartition("/")[0]
+                    if any(name.startswith(parent + "/") or not parent for name in expected):
+                        raise ValueError(f"Historical executable lookup needs whiteout handling for {path}")
+                if path in expected:
+                    must(member.isfile(), f"Expected a historical executable file at {path}")
+                    with archive.extractfile(member) as file:
+                        actual[path] = "sha256:" + hashlib.file_digest(file, "sha256").hexdigest()
+    must(actual == expected, "Compared executable differs from the pinned historical image")
+
+
+def verify_rebase(layout, receipt):
+    candidate = json.loads(verified_blob(layout, receipt["candidate_index"]))
+    amd64 = single((d for d in candidate["manifests"] if is_linux_architecture(d, "amd64")), "linux/amd64 image")
+    arm64 = single((d for d in candidate["manifests"] if is_linux_architecture(d, "arm64")), "linux/arm64 image")
+    must(amd64["digest"] == receipt["candidate_amd64"], "Candidate index points at the wrong amd64 digest")
+    must([d for d in candidate["manifests"] if d is not amd64] == receipt["unchanged_platforms"],
+         "Candidate changed other platforms")
+    manifest = json.loads(verified_descriptor(layout, amd64))
+    config = json.loads(verified_descriptor(layout, manifest["config"]))
+    must(config["config"] == receipt["runtime_config"], "Candidate runtime config differs from the verified receipt")
+    layer = single(manifest["layers"], "rebased filesystem layer")
+    must(layer["digest"] == receipt["new_layer"] and layer["mediaType"] == OCI_LAYER,
+         "Candidate has an unexpected filesystem layer")
+    data = gzip.decompress(verified_descriptor(layout, layer))
+    must(config["rootfs"]["diff_ids"] == [digest(data)] == [receipt["new_diff_id"]],
+         "Candidate filesystem diff ID does not match")
+    expected = receipt["verified_legacy_binary_sha256"]
+    required = {"kots", "kotsadm", "usr/bin/kustomize"}
+    must(required <= expected.keys(), "Missing KOTS executable evidence")
+    must(any(Path(name).name.startswith("helm") for name in expected), "Missing Helm executable evidence")
+    must(any(Path(name).name.startswith("kubectl") for name in expected), "Missing kubectl executable evidence")
+    seen = set()
+    with tarfile.open(fileobj=io.BytesIO(data), mode="r:") as archive:
+        for member in archive:
+            path = member.name.removeprefix("./")
+            if path not in expected:
+                continue
+            must(path not in seen and member.isfile() and member.mode & 0o111, f"Invalid executable entry {path}")
+            payload = archive.extractfile(member).read()
+            must(digest(payload) == expected[path]["sha256"], f"Rebased executable digest changed for {path}")
+            build_info = go_build_info(payload)
+            must(build_info["toolchain"] == expected[path]["go"], f"Wrong Go toolchain for {path}")
+            must("\tbuild\tGOAMD64=v1" in build_info["settings"], f"{path} does not target baseline amd64")
+            seen.add(path)
+    must(seen == set(expected), "Rebased filesystem is missing a verified executable")
+    must(expected["usr/bin/kustomize"]["sha256"] == receipt["kustomize_standalone_source"]["binary_sha256"],
+         "Kustomize differs from its verified source build")
+    return arm64["digest"], layer["digest"]
 
 
 def read_spdx(path):
@@ -187,7 +249,14 @@ def generate(args):
     old_index, new_index = receipt["original_index"], receipt["candidate_index"]
     old_amd64, new_amd64 = receipt["original_amd64"], receipt["candidate_amd64"]
     must(old_index != new_index and old_amd64 != new_amd64, "Expected distinct original and candidate OCI digests")
-    unchanged_arm64, overlay_digest = verify_overlay(args.candidate_oci_layout, receipt)
+    is_rebase = "baseline_userland_index" in receipt
+    if is_rebase:
+        must(not args.original_amd64_spdx, "A rebased filesystem needs a fresh amd64 SBOM")
+        must(args.original_oci_layout, "A rebased filesystem needs the pinned original amd64 OCI layout")
+        compare_original_binaries(args.original_oci_layout, receipt)
+        unchanged_arm64, overlay_digest = verify_rebase(args.candidate_oci_layout, receipt)
+    else:
+        unchanged_arm64, overlay_digest = verify_overlay(args.candidate_oci_layout, receipt)
 
     created = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
     replacements = {old_index: new_index, old_amd64: new_amd64}
@@ -228,6 +297,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--original-index-spdx", type=Path)
     parser.add_argument("--original-amd64-spdx", type=Path)
+    parser.add_argument("--original-oci-layout", type=Path)
     parser.add_argument("overlay_receipt", type=Path)
     parser.add_argument("candidate_oci_layout", type=Path)
     parser.add_argument("output", type=Path)

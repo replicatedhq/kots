@@ -7,6 +7,7 @@ set -euo pipefail
 LEGACY_ORIGINAL_INDEX="$(jq -er '.original_index' <<<"$LEGACY_OVERLAY_RECEIPT")"
 LEGACY_CANDIDATE_INDEX="$(jq -er '.candidate_index' <<<"$LEGACY_OVERLAY_RECEIPT")"
 LEGACY_CANDIDATE_AMD64="$(jq -er '.candidate_amd64' <<<"$LEGACY_OVERLAY_RECEIPT")"
+baseline_parent="$(jq -r '.baseline_userland_index // empty' <<<"$LEGACY_OVERLAY_RECEIPT")"
 
 if [[ "$GITHUB_REPOSITORY" != replicatedhq/kots || "$GITHUB_EVENT_NAME" != workflow_dispatch ]]; then
   echo "Run this job through the KOTS repository's manual workflow."
@@ -74,25 +75,20 @@ skopeo inspect --raw --tls-verify=false "docker://$source@$new_amd64" > "$work/c
 skopeo inspect --raw "docker://$repo@$old_amd64" > "$work/original-amd64.json"
 check_digest "$work/candidate-amd64.json" "$new_amd64"
 check_digest "$work/original-amd64.json" "$old_amd64"
-diff -u <(jq -S '.layers' "$work/original-amd64.json") <(jq -S '.layers[:-1]' "$work/candidate-amd64.json")
 skopeo inspect --raw --config --tls-verify=false "docker://$source@$new_amd64" > "$work/candidate-config.json"
 skopeo inspect --raw --config "docker://$repo@$old_amd64" > "$work/original-config.json"
 check_digest "$work/candidate-config.json" "$(jq -er '.config.digest' "$work/candidate-amd64.json")"
 check_digest "$work/original-config.json" "$(jq -er '.config.digest' "$work/original-amd64.json")"
-jq -eS '.history |= (. // [])' "$work/original-config.json" > "$work/original-runtime.json"
-jq -eS '.history |= .[:-1] | .rootfs.diff_ids |= .[:-1]' "$work/candidate-config.json" > "$work/candidate-runtime.json"
+if [[ -n "$baseline_parent" ]]; then
+  test "$baseline_parent" = sha256:81323e5d194abc9bb3c9b7b50a1449bda1315eaa1021f3015218b62982d7813a
+  jq -eS 'del(.rootfs, .history)' "$work/original-config.json" > "$work/original-runtime.json"
+  jq -eS 'del(.rootfs, .history)' "$work/candidate-config.json" > "$work/candidate-runtime.json"
+else
+  diff -u <(jq -S '.layers' "$work/original-amd64.json") <(jq -S '.layers[:-1]' "$work/candidate-amd64.json")
+  jq -eS '.history |= (. // [])' "$work/original-config.json" > "$work/original-runtime.json"
+  jq -eS '.history |= .[:-1] | .rootfs.diff_ids |= .[:-1]' "$work/candidate-config.json" > "$work/candidate-runtime.json"
+fi
 diff -u "$work/original-runtime.json" "$work/candidate-runtime.json"
-layer="$(jq -er '.layers[-1].digest' "$work/candidate-amd64.json")"
-curl -fsS "http://127.0.0.1:5077/v2/kotsadm/blobs/$layer" > "$work/overlay.tar.gz"
-check_digest "$work/overlay.tar.gz" "$layer"
-member="$(tar -tzf "$work/overlay.tar.gz")"
-case "$member" in
-  usr/bin/kustomize|usr/local/bin/kustomize) ;;
-  *) echo "Unexpected files in the Kustomize overlay"; exit 1 ;;
-esac
-tar -xOzf "$work/overlay.tar.gz" "$member" > "$work/kustomize"
-go version -m "$work/kustomize" > "$work/kustomize-build.txt"
-grep -Eq '^[[:space:]]+build[[:space:]]+GOAMD64=v1$' "$work/kustomize-build.txt"
 
 current_digest() {
   skopeo inspect --raw "$@" "docker://$repo:$LEGACY_KOTS_VERSION" | sha256sum | awk '{print "sha256:"$1}'
@@ -122,10 +118,20 @@ fetch_sbom() {
 }
 sbom_args=()
 fetch_sbom "$LEGACY_ORIGINAL_INDEX" index
-fetch_sbom "$old_amd64" amd64
+if [[ -n "$baseline_parent" ]]; then
+  skopeo copy --preserve-digests "docker://$repo@$old_amd64" "oci:$work/original-amd64:original"
+  sbom_args+=(--original-oci-layout "$work/original-amd64")
+else
+  fetch_sbom "$old_amd64" amd64
+fi
 skopeo copy --all --preserve-digests --src-tls-verify=false \
   "docker://$source@$LEGACY_CANDIDATE_INDEX" "oci:$work/oci:candidate"
 python3 scripts/rebind-legacy-image-sbom.py "$work/overlay-receipt.json" "$work/oci" "$work/sbom" "${sbom_args[@]}"
+if [[ -n "$baseline_parent" ]]; then
+  : "${SYFT_BIN:?}"
+  SYFT_CHECK_FOR_APP_UPDATE=false "$SYFT_BIN" scan "oci-dir:$work/oci" --platform linux/amd64 -o spdx-json > "$work/sbom/amd64.spdx.json"
+  jq -e '.spdxVersion == "SPDX-2.3" and (.packages | length > 0)' "$work/sbom/amd64.spdx.json" >/dev/null
+fi
 echo "Verified $LEGACY_KOTS_VERSION, its original arm64 descriptor, and any historical SBOM attachments."
 if [[ "${LEGACY_PUBLISH:-false}" != true ]]; then exit 0; fi
 

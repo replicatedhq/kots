@@ -38,9 +38,14 @@ jobs:
         with:
           persist-credentials: false
       - uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22
+      - id: legacy-syft
+        uses: anchore/sbom-action/download-syft@a930d0ac434e3182448fe678398ba5713717112a
+        with:
+          syft-version: v1.57.2
       - name: Verify and publish the legacy KOTS image
         env:
           GH_TOKEN: ${{ github.token }}
+          SYFT_BIN: ${{ steps.legacy-syft.outputs.cmd }}
           LEGACY_KOTS_VERSION: ${{ inputs.legacy_kots_version }}
           LEGACY_ARCHIVE_DIGEST: ${{ inputs.legacy_archive_digest }}
           LEGACY_OVERLAY_RECEIPT: ${{ inputs.legacy_overlay_receipt }}
