@@ -20,6 +20,8 @@ VERSIONS = "versions.json"
 REGISTRY = "external/addon-registry.json"
 MEDIA = "application/x-tar"
 STAGE_PREFIX = "test/"
+OBJECT_METADATA = ("Content-Type", "Cache-Control", "Content-Encoding",
+                   "Content-Disposition", "Content-Language", "Expires")
 
 
 def public_url(bucket, key):
@@ -49,8 +51,7 @@ def object_head(url):
             "size": int(reply.headers["Content-Length"]),
             "metadata": {},
         }
-        for header in ("Content-Type", "Cache-Control", "Content-Encoding",
-                       "Content-Disposition", "Content-Language", "Expires"):
+        for header in OBJECT_METADATA:
             value = reply.headers.get(header)
             if value:
                 result["metadata"][header.lower()] = value
@@ -145,9 +146,15 @@ def create_plan(args):
 def validate_plan(plan):
     filename = marker(plan, plan["version"])
     sha = plan["candidate"]["sha256"]
+    original = plan["original"]
     if not all(re.fullmatch("[a-f0-9]{64}", data["sha256"]) and 0 < data["size"] < 5 * 1024**3
                for data in (plan["candidate"], plan["original"])):
         raise ValueError("Invalid package seal")
+    if (not re.fullmatch(r'"[a-f0-9]{32}(?:-[0-9]+)?"', original["etag"])
+            or not isinstance(original["version_id"], str)
+            or original["version_id"] in ("", "null")
+            or not original["metadata"].keys() <= {header.lower() for header in OBJECT_METADATA}):
+        raise ValueError("Invalid original object metadata")
     origin_key = f"{STAGE_PREFIX}kotsadm-{plan['version']}-baseline-{sha}.tar.gz"
     origin_url = public_url(ORIGIN, origin_key)
     if plan["mirror_key"] != "external/" + filename or plan["origin_key"] != origin_key or plan["origin_url"] != origin_url:

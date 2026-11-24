@@ -3,13 +3,13 @@ set -euo pipefail
 
 [[ "${GITHUB_REPOSITORY,,}" == replicatedhq/kots && "$GITHUB_EVENT_NAME" == workflow_dispatch ]]
 case "${BACKFILL_PHASE:-}" in
-  stage|finalize|restore-origin-pointer) ;;
-  *) echo 'Specify stage, finalize, or restore-origin-pointer.' >&2; exit 1 ;;
+  validate-stage|stage|finalize|restore-origin-pointer) ;;
+  *) echo 'Specify validate-stage, stage, finalize, or restore-origin-pointer.' >&2; exit 1 ;;
 esac
 [[ "${BACKFILL_DRAFT_ID:-}" =~ ^[1-9][0-9]*$ ]]
 [[ "${BACKFILL_PLAN_ASSET_ID:-}" =~ ^[1-9][0-9]*$ ]]
 [[ "${BACKFILL_PLAN_SHA256:-}" =~ ^[a-f0-9]{64}$ ]]
-if [[ "$BACKFILL_PHASE" == stage ]]; then
+if [[ "$BACKFILL_PHASE" == stage || "$BACKFILL_PHASE" == validate-stage ]]; then
   [[ "${BACKFILL_ASSET_ID:-}" =~ ^[1-9][0-9]*$ ]]
   [[ "$BACKFILL_ASSET_ID" != "$BACKFILL_PLAN_ASSET_ID" ]]
 else
@@ -47,7 +47,7 @@ case "${1:-}" in
     gh api -H 'Accept: application/octet-stream' "repos/replicatedhq/kots/releases/assets/$BACKFILL_PLAN_ASSET_ID" > "$plan"
     [[ "$(wc -c < "$plan")" -eq "$(jq -er '.size' "$work/plan-asset.json")" ]]
     check_plan
-    if [[ "$BACKFILL_PHASE" == stage ]]; then
+    if [[ "$BACKFILL_PHASE" == stage || "$BACKFILL_PHASE" == validate-stage ]]; then
       candidate="$work/candidate.tar.gz"
       candidate_sha="$(jq -er '.candidate.sha256' "$plan")"
       candidate_size="$(jq -er '.candidate.size' "$plan")"
@@ -59,6 +59,7 @@ case "${1:-}" in
     fi
     ;;
   apply)
+    [[ "$BACKFILL_PHASE" != validate-stage ]]
     check_plan
     if [[ "$BACKFILL_PHASE" == stage ]]; then
       python3 "$publisher" stage --plan "$plan" --candidate "$work/candidate.tar.gz"

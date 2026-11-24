@@ -143,6 +143,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/publish-legacy-kurl-origin.sh verify
       - name: Apply the KOTS origin operation
+        if: inputs.backfill_phase != 'validate-stage'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
