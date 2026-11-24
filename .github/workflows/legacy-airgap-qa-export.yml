@@ -1,0 +1,144 @@
+name: Export signed legacy KOTS QA fixture
+
+on:
+  workflow_call:
+    secrets:
+      QA_VENDOR_TOKEN:
+        required: true
+
+permissions: {}
+
+jobs:
+  export:
+    if: github.repository == 'replicatedhq/kots' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/mikhail/legacy-kots-airgap-qa-export'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install encryption and YAML tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends age python3-yaml
+
+      - name: Encrypt the existing signed QA application bundle
+        shell: bash
+        env:
+          QA_VENDOR_TOKEN: ${{ secrets.QA_VENDOR_TOKEN }}
+          AGE_RECIPIENT: age1msyqk24v9fpmg0us6040meu4zxf2c20cslqncjkqkusdlqt249dsmhjv9m
+        run: |
+          umask 077
+          work=$(mktemp -d)
+          trap 'rm -rf "$work"' EXIT
+          /usr/bin/python3 - "$work" <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import sys
+          import tarfile
+          from urllib.error import HTTPError
+          from urllib.parse import quote, urlsplit
+          from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+          import yaml
+
+          ORIGIN = 'https://api.replicated.com/vendor/v3'
+          FIXTURES = (
+              ('qakotsregression', '1riP4oQC5ZOaqciRwLf14I6yn2l', 17),
+              ('airgap-smoke-test', '2J0enLCE1asZNkTJW18nOJbNMQG', 22),
+          )
+
+          class NoRedirect(HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          opener = build_opener(NoRedirect)
+          token = os.environ.pop('QA_VENDOR_TOKEN', '')
+          if not token:
+              sys.exit('The existing KOTS QA Vendor API credential is unavailable')
+
+          def vendor_get(path):
+              request = Request(ORIGIN + path, headers={
+                  'Authorization': token, 'Accept': 'application/json',
+              })
+              with opener.open(request, timeout=45) as response:
+                  return json.load(response)
+
+          def download_bundle(url, path, channel, sequence):
+              parsed = urlsplit(url)
+              expected_object = f'/{channel}/{sequence}.airgap'
+              if (parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password
+                      or parsed.port not in (None, 443) or not parsed.path.endswith(expected_object)):
+                  raise ValueError('invalid bundle URL')
+              digest = hashlib.sha256()
+              size = 0
+              with opener.open(url, timeout=120) as response, path.open('wb') as output:
+                  for chunk in iter(lambda: response.read(1024 * 1024), b''):
+                      size += len(chunk)
+                      if size > 1024 * 1024 * 1024:
+                          raise ValueError('bundle exceeds 1 GiB')
+                      digest.update(chunk)
+                      output.write(chunk)
+              return digest.hexdigest(), size
+
+          def read_bundle_metadata(path):
+              with tarfile.open(path, 'r:*') as archive:
+                  for member in archive:
+                      if member.name.removeprefix('./') == 'airgap.yaml':
+                          if not member.isfile() or member.size > 1024 * 1024:
+                              break
+                          result = yaml.safe_load(archive.extractfile(member))
+                          if result.get('kind') == 'Airgap' and result.get('spec', {}).get('signature'):
+                              return result['spec']
+                          break
+              raise ValueError('signed airgap metadata is missing')
+
+          try:
+              apps = vendor_get('/apps?excludeChannels=true')['apps']
+          except HTTPError as exc:
+              sys.exit(f'QA Vendor API app list returned HTTP {exc.code}')
+          except Exception:
+              sys.exit('QA Vendor API app listing failed')
+
+          work = Path(sys.argv[1])
+          bundle_path = work / 'bundle.airgap'
+          for slug, channel, sequence in FIXTURES:
+              matches = [app for app in apps if app.get('slug') == slug and not app.get('isArchived')]
+              if len(matches) != 1:
+                  print(f'The scoped QA credential cannot see exactly one {slug} app')
+                  continue
+              app_id = quote(matches[0]['id'], safe='')
+              route = f'/app/{app_id}/channel/{channel}/airgap/download-url?channelSequence={sequence}'
+              try:
+                  url = vendor_get(route)['url']
+                  digest, size = download_bundle(url, bundle_path, channel, sequence)
+                  spec = read_bundle_metadata(bundle_path)
+                  if (spec.get('appSlug') or slug) != slug:
+                      raise ValueError('bundle metadata does not match the QA app')
+              except HTTPError as exc:
+                  print(f'{slug} sequence {sequence} download returned HTTP {exc.code}')
+                  continue
+              except Exception:
+                  print(f'{slug} sequence {sequence} did not yield a signed QA bundle')
+                  continue
+
+              receipt = {'app_slug': slug, 'channel_sequence': sequence,
+                         'release_version': spec.get('versionLabel'),
+                         'bundle_sha256': digest, 'bundle_size': size}
+              (work / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+              print(f'Found signed {slug} QA bundle metadata for channel sequence {sequence}')
+              break
+          else:
+              sys.exit('No existing allowlisted QA release yielded an exportable signed bundle')
+          PY
+          unset QA_VENDOR_TOKEN
+          tar -C "$work" -cf - bundle.airgap receipt.json \
+            | age -r "$AGE_RECIPIENT" -o "$RUNNER_TEMP/signed-qa-fixture.age"
+
+      - name: Upload the encrypted fixture
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: signed-qa-fixture
+          path: ${{ runner.temp }}/signed-qa-fixture.age
+          retention-days: 1
+          if-no-files-found: error
+          compression-level: 0

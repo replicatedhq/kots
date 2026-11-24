@@ -43,6 +43,11 @@ on:
 
   workflow_dispatch:
     inputs:
+      legacy_airgap_fixture_export:
+        description: 'Export the encrypted signed legacy QA fixture'
+        required: false
+        type: boolean
+        default: false
       version_tag_old:
         description: 'The initial install version to use for upgrade scenarios'
         required: true
@@ -73,7 +78,15 @@ env:
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
 
 jobs:
+  export-legacy-airgap-fixture:
+    if: github.event_name == 'workflow_dispatch' && inputs.legacy_airgap_fixture_export && github.ref == 'refs/heads/mikhail/legacy-kots-airgap-qa-export'
+    permissions: {}
+    uses: ./.github/workflows/legacy-airgap-qa-export.yml
+    secrets:
+      QA_VENDOR_TOKEN: ${{ secrets.REPLICATED_QA_API_TOKEN }}
+
   get-workspace-name:
+    if: ${{ !inputs.legacy_airgap_fixture_export }}
     runs-on: ubuntu-latest
     outputs:
       name: ${{ steps.workspace.outputs.name }}
@@ -87,6 +100,7 @@ jobs:
         echo "name=${{ env.WORKSPACE_PREFIX }}-${CURRENT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
 
   get-workspace-expiration:
+    if: ${{ !inputs.legacy_airgap_fixture_export }}
     runs-on: ubuntu-latest
     outputs:
       expiration: ${{ steps.workspace.outputs.expiration }}
@@ -97,6 +111,7 @@ jobs:
         echo "expiration=$(date -d '+2 days' '+%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
   jumpbox:
+    if: ${{ !inputs.legacy_airgap_fixture_export }}
     needs: [get-workspace-name, get-workspace-expiration]
     runs-on: ubuntu-latest
     container:
@@ -161,6 +176,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
   tests:
+    if: ${{ !inputs.legacy_airgap_fixture_export }}
     needs: [get-workspace-name, get-workspace-expiration, jumpbox]
     runs-on: ubuntu-latest
     container:
@@ -402,6 +418,7 @@ jobs:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
 
   existing-tests:
+    if: ${{ !inputs.legacy_airgap_fixture_export }}
     name: existing-tests (${{ matrix.test.id }})
     runs-on: ubuntu-latest
     strategy:
@@ -631,6 +648,7 @@ jobs:
         run: replicated vm rm '${{ steps.vm.outputs.id }}'
 
   cleanup:
+    if: ${{ !inputs.legacy_airgap_fixture_export }}
     needs: [get-workspace-name, tests, existing-tests]
     runs-on: ubuntu-latest
     env:
