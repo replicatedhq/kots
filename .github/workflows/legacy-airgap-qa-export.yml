@@ -36,15 +36,16 @@ jobs:
           import sys
           import tarfile
           from urllib.error import HTTPError
-          from urllib.parse import quote, urlsplit
+          from urllib.parse import urlsplit
           from urllib.request import HTTPRedirectHandler, Request, build_opener
 
           import yaml
 
           ORIGIN = 'https://api.replicated.com/vendor/v3'
+          # App and channel identifiers come from the existing Playwright fixtures.
           FIXTURES = (
-              ('qakotsregression', '1riP4oQC5ZOaqciRwLf14I6yn2l', 17),
-              ('airgap-smoke-test', '2J0enLCE1asZNkTJW18nOJbNMQG', 22),
+              ('qakotsregression', '1qlR7WFWhwNh2cxkPzx540ku63q', '1riP4oQC5ZOaqciRwLf14I6yn2l', 17),
+              ('airgap-smoke-test', '2J0enLZ3hRHnU6ZrjJLIiRHatCV', '2J0enLCE1asZNkTJW18nOJbNMQG', 22),
           )
 
           class NoRedirect(HTTPRedirectHandler):
@@ -92,24 +93,19 @@ jobs:
                           break
               raise ValueError('signed airgap metadata is missing')
 
-          try:
-              apps = vendor_get('/apps?excludeChannels=true')['apps']
-          except HTTPError as exc:
-              sys.exit(f'QA Vendor API app list returned HTTP {exc.code}')
-          except Exception:
-              sys.exit('QA Vendor API app listing failed')
-
           work = Path(sys.argv[1])
           bundle_path = work / 'bundle.airgap'
-          for slug, channel, sequence in FIXTURES:
-              matches = [app for app in apps if app.get('slug') == slug and not app.get('isArchived')]
-              if len(matches) != 1:
-                  print(f'The scoped QA credential cannot see exactly one {slug} app')
-                  continue
-              app_id = quote(matches[0]['id'], safe='')
+          for slug, app_id, channel, sequence in FIXTURES:
               route = f'/app/{app_id}/channel/{channel}/airgap/download-url?channelSequence={sequence}'
               try:
                   url = vendor_get(route)['url']
+              except HTTPError as exc:
+                  print(f'{slug} sequence {sequence} QA channel returned HTTP {exc.code}')
+                  continue
+              except Exception:
+                  print(f'{slug} sequence {sequence} QA channel did not return a download URL')
+                  continue
+              try:
                   digest, size = download_bundle(url, bundle_path, channel, sequence)
                   spec = read_bundle_metadata(bundle_path)
                   if (spec.get('appSlug') or slug) != slug:
