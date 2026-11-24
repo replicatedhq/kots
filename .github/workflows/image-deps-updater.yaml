@@ -28,7 +28,7 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       (inputs.legacy_kots_version != '' || inputs.legacy_archive_digest != '' ||
        inputs.legacy_overlay_receipt != '' || inputs.legacy_publish)
-    concurrency: kots-legacy-baseline-backfill
+    concurrency: kots-legacy-baseline-backfill-${{ inputs.legacy_kots_version }}
     permissions:
       contents: read
     timeout-minutes: 25
