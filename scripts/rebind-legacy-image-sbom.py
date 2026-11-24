@@ -94,24 +94,67 @@ def verify_overlay(layout, receipt):
     return arm64["digest"], overlay["digest"]
 
 
-def compare_original_binaries(layout, receipt):
-    original = json.loads(verified_blob(layout, receipt["original_amd64"]))
-    expected = {path: record["sha256"] for path, record in receipt["verified_legacy_binary_sha256"].items()}
-    expected["usr/bin/kustomize"] = receipt["kustomize_standalone_source"]["original_binary_sha256"]
+def original_file_hashes(layout, manifest, paths):
     actual = {}
-    for layer in original["layers"]:
+    for layer in manifest["layers"]:
         with tarfile.open(fileobj=io.BytesIO(verified_descriptor(layout, layer)), mode="r:*") as archive:
             for member in archive:
                 path = member.name.removeprefix("./")
                 if "/.wh." in "/" + path:
                     parent = path.rpartition("/")[0]
-                    if any(name.startswith(parent + "/") or not parent for name in expected):
+                    if any(name.startswith(parent + "/") or not parent for name in paths):
                         raise ValueError(f"Historical executable lookup needs whiteout handling for {path}")
-                if path in expected:
+                if path in paths:
                     must(member.isfile(), f"Expected a historical executable file at {path}")
                     with archive.extractfile(member) as file:
                         actual[path] = "sha256:" + hashlib.file_digest(file, "sha256").hexdigest()
-    must(actual == expected, "Compared executable differs from the pinned historical image")
+    return actual
+
+
+def compare_original_binaries(layout, receipt):
+    original = json.loads(verified_blob(layout, receipt["original_amd64"]))
+    expected = {path: record["sha256"] for path, record in receipt["verified_legacy_binary_sha256"].items()}
+    expected["usr/bin/kustomize"] = receipt["kustomize_standalone_source"]["original_binary_sha256"]
+    must(original_file_hashes(layout, original, expected) == expected,
+         "Compared executable differs from the pinned historical image")
+
+
+def verify_companion_overlay(layout, original_layout, receipt):
+    candidate = json.loads(verified_blob(layout, receipt["candidate_index"]))
+    amd64 = single((d for d in candidate["manifests"] if is_linux_architecture(d, "amd64")), "linux/amd64 image")
+    arm64 = single((d for d in candidate["manifests"] if is_linux_architecture(d, "arm64")), "linux/arm64 image")
+    must(amd64["digest"] == receipt["candidate_amd64"], "Candidate index points at the wrong amd64 digest")
+    must([arm64["digest"]] == receipt["arm64"], "Companion arm64 digest differs from its receipt")
+
+    original = json.loads(verified_blob(original_layout, receipt["original_amd64"]))
+    manifest = json.loads(verified_descriptor(layout, amd64))
+    must(manifest["layers"][:-1] == original["layers"], "Companion overlay changed historical layers")
+    overlay = manifest["layers"][-1]
+    must(overlay["digest"] == receipt["compressed_layer"] and overlay["mediaType"] == OCI_LAYER,
+         "Candidate ended with an unexpected companion layer")
+    original_config = json.loads(verified_descriptor(original_layout, original["config"]))
+    config = json.loads(verified_descriptor(layout, manifest["config"]))
+    layer = gzip.decompress(verified_descriptor(layout, overlay))
+    must(config["config"] == original_config["config"], "Companion runtime config changed")
+    must(config["rootfs"]["diff_ids"] == [*original_config["rootfs"]["diff_ids"], digest(layer)],
+         "Candidate companion diff ID does not match")
+
+    files = receipt["files"]
+    must(isinstance(files, dict) and bool(files), "Companion receipt must identify the replaced files")
+    expected = {path: "sha256:" + hex_digest(record["old"]) for path, record in files.items()}
+    must(original_file_hashes(original_layout, original, files) == expected,
+         "Compared companion file differs from the pinned historical image")
+    seen = set()
+    with tarfile.open(fileobj=io.BytesIO(layer), mode="r:") as archive:
+        for member in archive:
+            path = member.name.removeprefix("./")
+            must(path in files and path not in seen and member.isfile(), f"Unexpected companion overlay file {path}")
+            with archive.extractfile(member) as file:
+                actual = "sha256:" + hashlib.file_digest(file, "sha256").hexdigest()
+            must(actual == files[path]["new"], f"Companion overlay digest differs for {path}")
+            seen.add(path)
+    must(seen == set(files), "The companion overlay is missing a verified file")
+    return arm64["digest"], overlay["digest"]
 
 
 def verify_rebase(layout, receipt):
@@ -192,9 +235,9 @@ def rewrite_digests(value, replacements):
     return value
 
 
-def revise_document(doc, subject, created):
+def revise_document(doc, subject, created, component="kotsadm"):
     doc["name"] = f"sbom-{subject}"
-    doc["documentNamespace"] = f"https://github.com/replicatedhq/kots/spdxdocs/kotsadm-{hex_digest(subject)}"
+    doc["documentNamespace"] = f"https://github.com/replicatedhq/kots/spdxdocs/{component}-{hex_digest(subject)}"
     doc["creationInfo"]["created"] = created
     doc["creationInfo"]["creators"].append(TOOL)
 
@@ -250,7 +293,13 @@ def generate(args):
     old_amd64, new_amd64 = receipt["original_amd64"], receipt["candidate_amd64"]
     must(old_index != new_index and old_amd64 != new_amd64, "Expected distinct original and candidate OCI digests")
     is_rebase = "baseline_userland_index" in receipt
-    if is_rebase:
+    if args.companion:
+        must(args.original_oci_layout, "A companion overlay needs the pinned original amd64 OCI layout")
+        must(args.original_index_spdx and not args.original_amd64_spdx,
+             "Companions need the historical index SBOM and a fresh amd64 SBOM")
+        unchanged_arm64, overlay_digest = verify_companion_overlay(
+            args.candidate_oci_layout, args.original_oci_layout, receipt)
+    elif is_rebase:
         must(not args.original_amd64_spdx, "A rebased filesystem needs a fresh amd64 SBOM")
         must(args.original_oci_layout, "A rebased filesystem needs the pinned original amd64 OCI layout")
         compare_original_binaries(args.original_oci_layout, receipt)
@@ -272,7 +321,7 @@ def generate(args):
         verify_subject(candidate, new_index)
         must(image_package(candidate, unchanged_arm64) == image_package(index, unchanged_arm64),
              "arm64 inventory changed")
-        revise_document(candidate, new_index, created)
+        revise_document(candidate, new_index, created, args.companion or "kotsadm")
         documents["index"] = candidate
 
     if args.original_amd64_spdx:
@@ -298,6 +347,7 @@ if __name__ == "__main__":
     parser.add_argument("--original-index-spdx", type=Path)
     parser.add_argument("--original-amd64-spdx", type=Path)
     parser.add_argument("--original-oci-layout", type=Path)
+    parser.add_argument("--companion", choices=("dex", "rqlite", "minio", "local-volume-provider"))
     parser.add_argument("overlay_receipt", type=Path)
     parser.add_argument("candidate_oci_layout", type=Path)
     parser.add_argument("output", type=Path)

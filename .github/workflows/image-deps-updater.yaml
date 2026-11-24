@@ -13,7 +13,10 @@ on:
         description: 'Legacy KOTS version to verify or publish'
         type: string
       legacy_archive_digest:
-        description: 'Verified no-MinIO release archive SHA-256'
+        description: 'Verified release archive SHA-256 (full archive for MinIO)'
+        type: string
+      legacy_companion:
+        description: 'v1.108.4 companion image (dex, rqlite, minio, local-volume-provider)'
         type: string
       legacy_overlay_receipt:
         description: 'Verified OCI image rebuild receipt in JSON'
@@ -27,7 +30,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' &&
       (inputs.legacy_kots_version != '' || inputs.legacy_archive_digest != '' ||
-       inputs.legacy_overlay_receipt != '' || inputs.legacy_publish)
+       inputs.legacy_companion != '' || inputs.legacy_overlay_receipt != '' || inputs.legacy_publish)
     concurrency: kots-legacy-baseline-backfill
     permissions:
       contents: read
@@ -42,12 +45,13 @@ jobs:
         uses: anchore/sbom-action/download-syft@a930d0ac434e3182448fe678398ba5713717112a
         with:
           syft-version: v1.57.2
-      - name: Verify and publish the legacy KOTS image
+      - name: Verify and publish the legacy image
         env:
           GH_TOKEN: ${{ github.token }}
           SYFT_BIN: ${{ steps.legacy-syft.outputs.cmd }}
           LEGACY_KOTS_VERSION: ${{ inputs.legacy_kots_version }}
           LEGACY_ARCHIVE_DIGEST: ${{ inputs.legacy_archive_digest }}
+          LEGACY_COMPANION: ${{ inputs.legacy_companion }}
           LEGACY_OVERLAY_RECEIPT: ${{ inputs.legacy_overlay_receipt }}
           LEGACY_PUBLISH: ${{ inputs.legacy_publish }}
           DOCKERHUB_USER: ${{ inputs.legacy_publish && secrets.DOCKERHUB_USER || '' }}
@@ -58,7 +62,7 @@ jobs:
     if: >-
       github.event_name != 'workflow_dispatch' ||
       (inputs.legacy_kots_version == '' && inputs.legacy_archive_digest == '' &&
-       inputs.legacy_overlay_receipt == '' && !inputs.legacy_publish)
+       inputs.legacy_companion == '' && inputs.legacy_overlay_receipt == '' && !inputs.legacy_publish)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
