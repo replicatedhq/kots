@@ -16,7 +16,7 @@ on:
         description: 'Verified release archive SHA-256 (full archive for MinIO)'
         type: string
       legacy_companion:
-        description: 'Previously tested companion listed in scripts/legacy-companion-releases.json'
+        description: 'Previously tested companion or standalone-dex-gomplate'
         type: string
       legacy_overlay_receipt:
         description: 'Verified OCI image rebuild receipt in JSON'
@@ -58,7 +58,12 @@ jobs:
           LEGACY_PUBLISH: ${{ inputs.legacy_publish }}
           DOCKERHUB_USER: ${{ inputs.legacy_publish && secrets.DOCKERHUB_USER || '' }}
           DOCKERHUB_PASSWORD: ${{ inputs.legacy_publish && secrets.DOCKERHUB_PASSWORD || '' }}
-        run: bash scripts/publish-legacy-baseline-image.sh
+        run: |
+          if [[ "$LEGACY_COMPANION" == standalone-dex-gomplate ]]; then
+            bash scripts/publish-standalone-dex-gomplate.sh
+          else
+            bash scripts/publish-legacy-baseline-image.sh
+          fi
 
   build-3rd-party-images:
     if: >-
