@@ -17,6 +17,21 @@ on:
         required: false
         type: boolean
         default: false
+      backfill_phase:
+        description: 'Stage an add-on or finalize its origin record'
+        type: string
+      backfill_draft_id:
+        description: 'Draft GitHub release ID'
+        type: string
+      backfill_plan_asset_id:
+        description: 'Draft asset ID for the publication plan'
+        type: string
+      backfill_asset_id:
+        description: 'Draft asset ID for the tested add-on archive'
+        type: string
+      backfill_plan_sha256:
+        description: 'SHA-256 of the exact publication plan'
+        type: string
   release:
     types: [released]
 
@@ -25,6 +40,11 @@ permissions:
 
 jobs:
   publish-kurl-addon:
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      (inputs.backfill_phase == '' && inputs.backfill_draft_id == '' &&
+       inputs.backfill_plan_asset_id == '' && inputs.backfill_asset_id == '' &&
+       inputs.backfill_plan_sha256 == '')
     runs-on: ubuntu-latest
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
@@ -96,3 +116,36 @@ jobs:
 
           echo "Uploading versions.json to S3..."
           aws s3 cp "$VERSIONS_FILE" s3://kots-kurl-addons-production-1658439274/versions.json
+
+  backfill-kurl-addon:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.backfill_phase != '' || inputs.backfill_draft_id != '' ||
+       inputs.backfill_plan_asset_id != '' || inputs.backfill_asset_id != '' ||
+       inputs.backfill_plan_sha256 != '')
+    concurrency: kots-kurl-legacy-backfill
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    env:
+      BACKFILL_PHASE: ${{ inputs.backfill_phase }}
+      BACKFILL_DRAFT_ID: ${{ inputs.backfill_draft_id }}
+      BACKFILL_PLAN_ASSET_ID: ${{ inputs.backfill_plan_asset_id }}
+      BACKFILL_ASSET_ID: ${{ inputs.backfill_asset_id }}
+      BACKFILL_PLAN_SHA256: ${{ inputs.backfill_plan_sha256 }}
+      ADDON_VERSION: ${{ inputs.addon_version }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Verify the draft assets and plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/publish-legacy-kurl-origin.sh verify
+      - name: Apply the KOTS origin operation
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_PAGER: ''
+        run: bash scripts/publish-legacy-kurl-origin.sh apply
