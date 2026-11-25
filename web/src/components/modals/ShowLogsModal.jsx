@@ -2,7 +2,7 @@ import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import { Link } from "react-router-dom";
 import MonacoEditor, { loader } from "@monaco-editor/react";
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
+import * as monaco from "monaco-editor/editor/editor.api.js";
 
 // configures MonacoEditor to load files from node_modules rather than from CDN
 loader.config({ monaco });
