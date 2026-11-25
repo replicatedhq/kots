@@ -431,6 +431,20 @@
       "tag": "8.36.15-r0"
     }
   },
+  "v1.124.13": {
+    "minio": {
+      "archive_sha": "sha256:36b8a71f81f869437f552b530939ccd32d273e6b3e5dbc90870b239890a72440",
+      "candidate": "sha256:64b356db7ac08d14d63a5dd1b88118918a789cda6c9657cc372abac561cf2ad4",
+      "original": "sha256:247d1c799403fe3e76f3424ecafc2127ab0116b0148905597f6099937bd663ea",
+      "tag": "0.20250403.145628-r0"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:46affd03b604239f29bd4772c402f258c572dcef80b2b7ce9ce5f97d9dfb81d5",
+      "candidate": "sha256:9935ddeb8c9204e03b33bade06151ce56058a67e6495f5838fd7c49498dafac3",
+      "original": "sha256:65ecf3691853f85d31e72f600befd4b162fa43ba27949da53ca0ae88cfa1b0eb",
+      "tag": "8.36.16-r0"
+    }
+  },
   "v1.124.3": {
     "local-volume-provider": {
       "archive_sha": "sha256:e08fd3be0b6d7c96d22063f06da0cbd9087a4f795dd1dea82655dab2a287a8cc",
