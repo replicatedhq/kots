@@ -335,6 +335,20 @@
       "tag": "8.29.5-r0"
     }
   },
+  "v1.116.0": {
+    "minio": {
+      "archive_sha": "sha256:09ecaba3a535ef6e8e8447a76230989ccaa3325e9dd0416725353c13013fd9b0",
+      "candidate": "sha256:5c51920ccb8037daefe017bb1b3351900df0b2a2fac507beb95e5a533efcb183",
+      "original": "sha256:743d72fc8510e40a5d86338249bc4deae67bcd3e217ddb961ad40f108d98836c",
+      "tag": "0.20240829.014052-r0"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:8e4e2486d85bceb7b4c68b9de05746c58f29db17e10dfc051c1003cfb5ba2d46",
+      "candidate": "sha256:8c326b13841248e26bfb581fd8464595042f71ce4d53bd387382e1b0163b86c1",
+      "original": "sha256:46a0162811fabc8fa50455fbd9dee945cc4d6bf8edd6ff2bda5dde9d1a71fd8f",
+      "tag": "8.30.0-r0"
+    }
+  },
   "v1.117.0": {
     "dex": {
       "archive_sha": "sha256:4772278521df618272de6e17935b214903c4f10aaacfa5d23f24dc15cdc80ab3",
