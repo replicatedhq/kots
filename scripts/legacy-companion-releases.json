@@ -345,6 +345,20 @@
       "tag": "8.31.2-r0"
     }
   },
+  "v1.118.0": {
+    "minio": {
+      "archive_sha": "sha256:cbd32e5a0ba2f99d8e0e85d0135a5db61d98de370ad020e729ee6dbb85837b5b",
+      "candidate": "sha256:244522e420ffe86417bf038056b4c8ad85bff28b421173f1804094c366617efd",
+      "original": "sha256:ae0defd7b930e221665f01340b56156546d3aebb0eac142a70495bb5bedc3330",
+      "tag": "0.20241013.133411-r0"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:977a5c8553e5a34b36c141da1087348080d34d051670fad7ddccc8e12759e008",
+      "candidate": "sha256:83df3caf31047adce78cb0f55f5580de40621426c426e9d8716314991910ee47",
+      "original": "sha256:706913eb6ffe440f9b4e8107481a4d360a1a3755637b1260372a656f9845f13b",
+      "tag": "8.31.3-r0"
+    }
+  },
   "v1.124.0": {
     "dex": {
       "archive_sha": "sha256:dd0d250eb298d94aa714e85d155c3c15619f638f722b5763d324e0eb3149bc60",
