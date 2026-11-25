@@ -442,5 +442,13 @@
       "original": "sha256:28cd85d8681796f12e5d481a4615436f25f85ab43c139c7e0ddf4b77a76375d3",
       "tag": "0.20251015.172955-r2"
     }
+  },
+  "v1.118.0": {
+    "kotsadm-migrations": {
+      "archive_sha": "sha256:977a5c8553e5a34b36c141da1087348080d34d051670fad7ddccc8e12759e008",
+      "candidate": "sha256:2270b031811f14e67c375d3c8f930038d183dbec7435595fb3dcf0f99b6004d7",
+      "original": "sha256:773dc5b3611f988a635270aea2c89785f84ff2e7a145dcd837545ff38de1b16c",
+      "tag": "v1.118.0"
+    }
   }
 }
