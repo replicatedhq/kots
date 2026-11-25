@@ -235,6 +235,34 @@
       "tag": "8.26.6-r0"
     }
   },
+  "v1.112.0": {
+    "minio": {
+      "archive_sha": "sha256:b2292cc75f8057f31dbe14b5296fbf104b830dcfe4af9bde21e38dd143337bbf",
+      "candidate": "sha256:630a87e4946e82b53614998df6413be66d65ac921d0a69460dedb9aa4df1205e",
+      "original": "sha256:ab1375ba20d1933b9395afedff3cceabb2a61b76d20f5a7f73c636866663dd40",
+      "tag": "0.20240713.014615-r0"
+    }
+  },
+  "v1.112.2": {
+    "dex": {
+      "archive_sha": "sha256:54e28f7877996d3577cddca2a773c4962f1fb50177c2f23a62fea9d6b7ce6282",
+      "candidate": "sha256:12d568bb8ffa339d3f30a6d264ea7fc7aeb75a3c6f8c013ddc0cd05604c8f3a5",
+      "original": "sha256:636ea0c18f2400d3f4dce3fa8c35ddd28055bde3715a8cd8d24847c3390d31ec",
+      "tag": "2.40.0-r3"
+    },
+    "minio": {
+      "archive_sha": "sha256:e14623c25de68b0f82a0971b7c625b9e20e81d769aefa4b808676f79508c9b49",
+      "candidate": "sha256:20572fe1c8170e36587811834dbddcf22a6444b430878491740758771f2e13da",
+      "original": "sha256:1949d1b2d9faf2599526fa88ed7268d9e26dfdec6b255d1c3952692610b0c759",
+      "tag": "0.20240716.234641-r0"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:54e28f7877996d3577cddca2a773c4962f1fb50177c2f23a62fea9d6b7ce6282",
+      "candidate": "sha256:b0f326be3a5ce3ef77a56257b55b639121e9c5d393266315499cba7c32b84e43",
+      "original": "sha256:e077363e721707569b81b2c091bf5f34a5a22bb0fad6f59303f10f0dfdfa7726",
+      "tag": "8.26.7-r0"
+    }
+  },
   "v1.117.0": {
     "dex": {
       "archive_sha": "sha256:4772278521df618272de6e17935b214903c4f10aaacfa5d23f24dc15cdc80ab3",
@@ -267,6 +295,20 @@
       "candidate": "sha256:e8b8ced00809ab8fba3f178cfb548863e1364fd1fd5afd730ec5b76efbffd539",
       "original": "sha256:c0d62b6885cea71b64689eef5d6506eec32431bad1eb656f3bfcd98d73426368",
       "tag": "8.30.3-r0"
+    }
+  },
+  "v1.117.4": {
+    "minio": {
+      "archive_sha": "sha256:ea1729789b1db4a3e525ebd3cf3e3f9b0a4d4e1493c34d3caf9acb26cdd9b904",
+      "candidate": "sha256:34a7ea3a14fea9ea249bb213331a18a1d6597ed5ef6748d57d8532c32ba9bdd1",
+      "original": "sha256:9005d91c3a111c125b023efbf2c69bc26e5dc5aa7c69dc1dd1a42ea367266e9b",
+      "tag": "0.20241002.175041-r0"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:fe74d9ded6707660b0a41b68c001017863c6962d2cefeeb5f40009ec5f9027bc",
+      "candidate": "sha256:096af4683ea667b992dcf4465380e2275d868455d7f86ed0587290fdd3b5d381",
+      "original": "sha256:dba3fd2512a5099e851cccd4fd8e30bae9df475f4a993af7ed1107aaede4c66a",
+      "tag": "8.31.2-r0"
     }
   },
   "v1.124.0": {
