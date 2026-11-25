@@ -397,6 +397,28 @@
       "tag": "8.31.3-r0"
     }
   },
+  "v1.120.0": {
+    "rqlite": {
+      "archive_sha": "sha256:46d2d6f6e25b68c98d64aefd7f5103bfbc468d043bdda46d6f32c019688c5977",
+      "candidate": "sha256:9f1d3f88f82fc3055c32fbf82753788e6ee102a993da405484e69c1d4c14e8d9",
+      "original": "sha256:6b32fe4f4828d973049443860ea1327dc3d3b9753ced07add75d77c7794b5a51",
+      "tag": "8.32.4-r0"
+    }
+  },
+  "v1.120.1": {
+    "minio": {
+      "archive_sha": "sha256:cda67533878d0c3784b43d9dc2c2d196336e32789a8607f43776bd2ddcd1e7a8",
+      "candidate": "sha256:9abee4c293667695675334b1cf1a9a85093542293572a57ebc219b2fd934071c",
+      "original": "sha256:230f71eef48cfd3e5abf80fd04b901ff50a590080a1ef3e21fbac0ba448c6d99",
+      "tag": "0.20241029.160148-r0"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:8713e457b91f4c50754505bc2922e452a1d32711d6aca034d2f8f0985c7b435d",
+      "candidate": "sha256:c5da4035fa7c63ca667866e1dc66c51d08d8047464c953cbe74427952f96599e",
+      "original": "sha256:b9bef11c7dbcd1355d01e3fd53f3aced44a95dad34ae0477a81b896c3cd9590a",
+      "tag": "8.32.5-r0"
+    }
+  },
   "v1.124.0": {
     "dex": {
       "archive_sha": "sha256:dd0d250eb298d94aa714e85d155c3c15619f638f722b5763d324e0eb3149bc60",
