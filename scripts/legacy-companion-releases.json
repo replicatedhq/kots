@@ -659,6 +659,46 @@
       "tag": "8.36.14-r0"
     }
   },
+  "v1.125.0": {
+    "dex": {
+      "archive_sha": "sha256:bb1fcbc9be085ea7cae1587f448e35ce9ddd0eb7525a4132ce0fa3a6873d1576",
+      "candidate": "sha256:089d1903cdb6733eab34ef0039a82b7c4c7a7e8968474d182bbb2d3dcf1f27c7",
+      "original": "sha256:e082691568e8a7461fa367cafbc091488bfca3da7635b6e2c0fd3f278b1f05aa",
+      "tag": "2.43.1-r2"
+    },
+    "minio": {
+      "archive_sha": "sha256:085b862dc235bf28a931de6bda07ca715753f6e49f28225642127a22c3892241",
+      "candidate": "sha256:4a30a67dca725b586b6cec502feda920b6591806e56dcc42abf4c7bfef146910",
+      "original": "sha256:1fadd0cbf6b9582792e597e25b948217d1d32859da9ef52378f61ec582e1edd1",
+      "tag": "0.20250613.113347-r0"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:bb1fcbc9be085ea7cae1587f448e35ce9ddd0eb7525a4132ce0fa3a6873d1576",
+      "candidate": "sha256:389ac151c5edc1f844e58dbba3d18441036e364f288d82b9c5d872a00df36143",
+      "original": "sha256:e2ea9e7a6fd6cf1f70f680f832e8763067bf744ae2f0f3122c51ca2e15972660",
+      "tag": "8.39.1-r0"
+    }
+  },
+  "v1.125.1": {
+    "dex": {
+      "archive_sha": "sha256:1b10b006484df3b55415f1522f929963c4436864d3d09593beb607c5e81dbe16",
+      "candidate": "sha256:552334bd0e588e5467333584d212a05cc1fac8204bd7458f5f2d93077eb2e3dc",
+      "original": "sha256:32b20955fabfeda7fc34a444be22004de97cd38566986b420d3bfd50582beae0",
+      "tag": "2.43.1-r3"
+    },
+    "minio": {
+      "archive_sha": "sha256:4a34d864bf611595968a66da68d85a3898e669dcf208b8cd9d031cbeffa326b1",
+      "candidate": "sha256:d4e405e9e57a66663274f8095f969b4fecdc5951a226ca49ede87ec1ed049310",
+      "original": "sha256:05b92430594abc49860dbf5e10498a8fef0853fb244235e3179198338e26b465",
+      "tag": "0.20250723.155402-r0"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:1b10b006484df3b55415f1522f929963c4436864d3d09593beb607c5e81dbe16",
+      "candidate": "sha256:f052831888f8f9442ae0490a6346eb7802490c9d0cf1b21de194289cb57d3611",
+      "original": "sha256:02bb6ff57aa1e54351834a58c142f5e17776905ad266d4e22126dc0867bc4ecb",
+      "tag": "8.42.0-r0"
+    }
+  },
   "v1.126.1": {
     "dex": {
       "archive_sha": "sha256:fc50a18d9b643dfca88d816b97981d0db83d4cbd45eb9cf7e76809b013efb01a",
