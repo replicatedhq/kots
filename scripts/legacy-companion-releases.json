@@ -297,6 +297,14 @@
       "tag": "8.26.9-r0"
     }
   },
+  "v1.114.0": {
+    "rqlite": {
+      "archive_sha": "sha256:b32e71f4c762726da9903d2a6d7d03b5ba88ebbd128657ecf99863303bb1bb7c",
+      "candidate": "sha256:988b99e43d3e2d75cf9a33d5c8114f6a23f5ff227575c5198aa43c19a1f5c065",
+      "original": "sha256:9620f66d48b562eef3d7d3268f4e899fe62fe71d5ed02ed3fc1bf76e382bee04",
+      "tag": "8.28.0-r0"
+    }
+  },
   "v1.117.0": {
     "dex": {
       "archive_sha": "sha256:4772278521df618272de6e17935b214903c4f10aaacfa5d23f24dc15cdc80ab3",
