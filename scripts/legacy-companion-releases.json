@@ -361,6 +361,14 @@
       "tag": "v1.122.0"
     }
   },
+  "v1.122.1": {
+    "kotsadm-migrations": {
+      "archive_sha": "sha256:141b5158526b113c0d05f1a2b3b45595fa1bbf5b7ad20f2bee4e6b7635bc7790",
+      "candidate": "sha256:039121463908f86789d3404d525913872290967cebdd986d30049bb38da56e5e",
+      "original": "sha256:c5f5a3122c9dc89318ee9c8ae461006cf6ff9c6de8f2d17f7fdc2b19adc5fc8e",
+      "tag": "v1.122.1"
+    }
+  },
   "v1.123.0": {
     "kotsadm-migrations": {
       "archive_sha": "sha256:7836b4af5d371dec62c984eb1c5d511c1610cdcdfa5ce12a9e40e089e42e77a6",
