@@ -699,6 +699,22 @@
       "tag": "8.42.0-r0"
     }
   },
+  "v1.125.2": {
+    "rqlite": {
+      "archive_sha": "sha256:a7cd9b73e70c8c10abbb79cdf8ab78f3da69d4825ec0228e038e25e297d79e43",
+      "candidate": "sha256:f4f088d3c8ac823f55e7a9ea0ecf039c65f6daf9c8bb9b61a32a60d5e0aef1f2",
+      "original": "sha256:ff385b5827ff62abf8028f2bdc665a267b980e682f478e162bd42d06d91f2427",
+      "tag": "8.43.0-r0"
+    }
+  },
+  "v1.126.0": {
+    "rqlite": {
+      "archive_sha": "sha256:cfd63d416f8db6051185e6e67279cf368993ac7686e45e48c92aa42020cc3dad",
+      "candidate": "sha256:a2652f6deec11a331a18cbf8750b771989dd43d304cf10c1b349879c2f6d3e09",
+      "original": "sha256:6d242b51540d1f8475f6dfc7bde1722f517f3c308517b8aef61d2045a3016c06",
+      "tag": "8.43.2-r0"
+    }
+  },
   "v1.126.1": {
     "dex": {
       "archive_sha": "sha256:fc50a18d9b643dfca88d816b97981d0db83d4cbd45eb9cf7e76809b013efb01a",
