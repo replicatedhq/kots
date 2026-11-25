@@ -313,6 +313,14 @@
       "tag": "8.28.1-r0"
     }
   },
+  "v1.115.1": {
+    "minio": {
+      "archive_sha": "sha256:d6e521bb44f7f286bfdc0ab4f7e63c31177d794b467081c118eed444b3efb71e",
+      "candidate": "sha256:5cea483af0ee147248ca790b6a43b552006e9f4fa19cc6891a9026194a73d7b7",
+      "original": "sha256:720b067b1d5806f410732d0303fff866fc7097faa621714d7d0934bfe41ef4ef",
+      "tag": "0.20240817.012454-r0"
+    }
+  },
   "v1.117.0": {
     "dex": {
       "archive_sha": "sha256:4772278521df618272de6e17935b214903c4f10aaacfa5d23f24dc15cdc80ab3",
