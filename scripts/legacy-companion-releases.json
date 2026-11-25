@@ -433,6 +433,14 @@
       "tag": "8.32.5-r0"
     }
   },
+  "v1.120.2": {
+    "rqlite": {
+      "archive_sha": "sha256:75d79832fb162b2af233f46d866d23758361fcdb379414ed65827598e44d4ca4",
+      "candidate": "sha256:b395d28f858963a9cde99bbea77f49463f72e5b2eeb2f1cc8c3411c9f424ac5c",
+      "original": "sha256:cbf1aac244d1d54c840f5b1e0b943cfcb395b1b6379f2c86422769a5d2e4ea23",
+      "tag": "8.32.6-r0"
+    }
+  },
   "v1.124.0": {
     "dex": {
       "archive_sha": "sha256:dd0d250eb298d94aa714e85d155c3c15619f638f722b5763d324e0eb3149bc60",
@@ -517,6 +525,34 @@
       "candidate": "sha256:e9248e7c0ed3fbfdb98aeb7f7be9cbdb4148046e5426dd5a256b8922d5b4713d",
       "original": "sha256:7024d4eae0e03af16c4cd709bc81996bfcdddd725e3583296d1982ddb10e236f",
       "tag": "2.42.0-r5"
+    }
+  },
+  "v1.124.16": {
+    "dex": {
+      "archive_sha": "sha256:98199c9b2d704503a224d4b971ea696ee3a25ac09e141215b877c1c3b02226c0",
+      "candidate": "sha256:4f407e44a262d1d3aa64b0c84bb3c41b6386b61767596be27459713783e7b17d",
+      "original": "sha256:149e4b17668cc8ffb5de28816412b6143839c3f65b3e7c0c671533723fd9e49f",
+      "tag": "2.42.1-r0"
+    }
+  },
+  "v1.124.17": {
+    "dex": {
+      "archive_sha": "sha256:e7f2ebdb0553b2a630edce6dc0863f7cbced8cbd1fd7ea7ec86624abd0286417",
+      "candidate": "sha256:533d3380d3064a8eeaa18e691da6c313dffab21323bc47a98a8587c78a47a39f",
+      "original": "sha256:8ea5ee45acb0abfa493911a61ec3e11b355fb1c7046911e1fea0e9479db2ac74",
+      "tag": "2.43.1-r1"
+    },
+    "minio": {
+      "archive_sha": "sha256:0da0febb0027082cfacd3902ac37ee218d853ed538a3314c2e2896ede246e5e5",
+      "candidate": "sha256:14a1217a0cafbce5f8328867130384223f7aa9bbc01c1d88f3cce97bcbfd2b13",
+      "original": "sha256:a79a8aea46071e810489fbf5110b67c72ce5a838d3ad923b80277129d2a9c8f0",
+      "tag": "0.20250524.170830-r0"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:e7f2ebdb0553b2a630edce6dc0863f7cbced8cbd1fd7ea7ec86624abd0286417",
+      "candidate": "sha256:a743671754f6fd543a7f8d1b98afac51c957fcd7b62c5ff508873c07db94e329",
+      "original": "sha256:8ddb5cff9682706bd1f3bcf493f42fda480e604e466e3333523c27a16a334990",
+      "tag": "8.37.2-r0"
     }
   },
   "v1.124.3": {
