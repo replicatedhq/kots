@@ -277,6 +277,26 @@
       "tag": "8.26.8-r0"
     }
   },
+  "v1.113.0": {
+    "dex": {
+      "archive_sha": "sha256:dc903955ca27c522de9659b388e167b4377e847c48814a8bac77e30273348ac4",
+      "candidate": "sha256:5af15d2726c366005f6ed5f83a3e559cc0ba85afaf550a76e9996639ce56a369",
+      "original": "sha256:37bb4cacec9fc042463117c07b6c3b5e5db49d5b787e31b8c4b842f2806ac032",
+      "tag": "2.41.1-r0"
+    },
+    "minio": {
+      "archive_sha": "sha256:fce296a32e8972ae116fb5bb42403ffc25247f3d99a2d2590dfd8206d1fe82f6",
+      "candidate": "sha256:cf30e85364274f4b6ca751e5ecc191b16f08b05285d140e5e908c21f91e6394c",
+      "original": "sha256:8d99c076bf5b8beefe28de103e7c7d610d5e6a287183ac1cddf536b84aa1c689",
+      "tag": "0.20240803.043323-r1"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:dc903955ca27c522de9659b388e167b4377e847c48814a8bac77e30273348ac4",
+      "candidate": "sha256:a4314140cb8e97e9deb4cd99331cc804df829f24f635df6134543cd221c275ed",
+      "original": "sha256:8e6659af05b8e3649bc6b96480520414f5342999fc8057c8e855c70b743c2116",
+      "tag": "8.26.9-r0"
+    }
+  },
   "v1.117.0": {
     "dex": {
       "archive_sha": "sha256:4772278521df618272de6e17935b214903c4f10aaacfa5d23f24dc15cdc80ab3",
