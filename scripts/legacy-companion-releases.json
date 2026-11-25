@@ -305,6 +305,14 @@
       "tag": "v1.120.0"
     }
   },
+  "v1.120.1": {
+    "kotsadm-migrations": {
+      "archive_sha": "sha256:8713e457b91f4c50754505bc2922e452a1d32711d6aca034d2f8f0985c7b435d",
+      "candidate": "sha256:b2caac17926ca7e176cf137ed82afac7e05f8764427fa4a5124f3ab6598201d3",
+      "original": "sha256:a172ec4b5ba0a41d84add4d1b5e5bbd05b0f92c0b262570c74386631a5c8057f",
+      "tag": "v1.120.1"
+    }
+  },
   "v1.124.0": {
     "dex": {
       "archive_sha": "sha256:dd0d250eb298d94aa714e85d155c3c15619f638f722b5763d324e0eb3149bc60",
@@ -385,6 +393,14 @@
       "candidate": "sha256:0361d489766682e8797139be89d54769d5e71aadb45889ad3a33c5168d7bbd1d",
       "original": "sha256:c75431f0c98637fff20a46f6b1b29ff37369bf2807a15dc2b8cb9dd0c5ef57f4",
       "tag": "v1.124.15"
+    }
+  },
+  "v1.124.16": {
+    "kotsadm-migrations": {
+      "archive_sha": "sha256:98199c9b2d704503a224d4b971ea696ee3a25ac09e141215b877c1c3b02226c0",
+      "candidate": "sha256:0f8ac3ff623f6b2026d96c0a91bb5e08acc7473458956ef98a49e8e2f42ba7ba",
+      "original": "sha256:2cb9a982f10648ad713c170e6a117838995957442ad7aee34c3e0041915aeaca",
+      "tag": "v1.124.16"
     }
   },
   "v1.124.3": {
