@@ -359,6 +359,14 @@
       "tag": "8.36.10-r0"
     }
   },
+  "v1.124.10": {
+    "minio": {
+      "archive_sha": "sha256:c66b0a9b2bb854dc2dbd81ac48fc68ee551c205c2a31fb645f76cad50e1fbddd",
+      "candidate": "sha256:f520d8ace4047f8782d56c2baea5efcdfd25aff5ad03f8333705dcad2956d1db",
+      "original": "sha256:aa5684057991bab46de42d85f91cd17544a05535ede6539c163cebeae5ddf436",
+      "tag": "0.20250312.180418-r3"
+    }
+  },
   "v1.124.3": {
     "local-volume-provider": {
       "archive_sha": "sha256:e08fd3be0b6d7c96d22063f06da0cbd9087a4f795dd1dea82655dab2a287a8cc",
