@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
 )
 
 func Backups(backups []velerov1.Backup, format string) {

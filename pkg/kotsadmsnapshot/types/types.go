@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
 )
 
 const (

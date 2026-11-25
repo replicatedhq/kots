@@ -6,7 +6,7 @@ import (
 
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/stretchr/testify/require"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

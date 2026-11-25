@@ -41,7 +41,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
 	dockerref "go.podman.io/image/v5/docker/reference"
 	"go.yaml.in/yaml/v2"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
