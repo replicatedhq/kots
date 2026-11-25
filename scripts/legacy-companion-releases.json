@@ -441,6 +441,20 @@
       "tag": "8.32.6-r0"
     }
   },
+  "v1.120.3": {
+    "minio": {
+      "archive_sha": "sha256:83e2f9440f6432e2643bc66c33d223aab9d60a82732b6bd528bb1d331cd7fb05",
+      "candidate": "sha256:120684f4f1a7016a586fb7d88251649c32b620554c99daae51dcff3d5af01576",
+      "original": "sha256:0d950d48fec58e340afacf5d49c18224bb0f5ba458de2aa25d6ee6916cf22f9d",
+      "tag": "0.20241029.160148-r1"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:0fee436f06161dfec80940bb7cc4765de6f441236741d173e2793ab8c31d5976",
+      "candidate": "sha256:d61ff36cdb640f9abc454de254730ad29895e554b64984ddb518ef1be4bb0553",
+      "original": "sha256:040b1b2f59652fe0d8030afd69f9de4afd177ebd6cf9425b9b60ad173d7ae0e7",
+      "tag": "8.32.7-r0"
+    }
+  },
   "v1.124.0": {
     "dex": {
       "archive_sha": "sha256:dd0d250eb298d94aa714e85d155c3c15619f638f722b5763d324e0eb3149bc60",
