@@ -6,14 +6,21 @@ case "${BACKFILL_PHASE:-}" in
   validate-stage|stage|finalize|restore-origin-pointer) ;;
   *) echo 'Specify validate-stage, stage, finalize, or restore-origin-pointer.' >&2; exit 1 ;;
 esac
-[[ "${BACKFILL_DRAFT_ID:-}" =~ ^[1-9][0-9]*$ ]]
-[[ "${BACKFILL_PLAN_ASSET_ID:-}" =~ ^[1-9][0-9]*$ ]]
 [[ "${BACKFILL_PLAN_SHA256:-}" =~ ^[a-f0-9]{64}$ ]]
-if [[ "$BACKFILL_PHASE" == stage || "$BACKFILL_PHASE" == validate-stage ]]; then
-  [[ "${BACKFILL_ASSET_ID:-}" =~ ^[1-9][0-9]*$ ]]
-  [[ "$BACKFILL_ASSET_ID" != "$BACKFILL_PLAN_ASSET_ID" ]]
+if [[ -n "${BACKFILL_PLAN_B64:-}" ]]; then
+  [[ "$BACKFILL_PHASE" == finalize ]]
+  [[ -z "${BACKFILL_DRAFT_ID:-}${BACKFILL_PLAN_ASSET_ID:-}${BACKFILL_ASSET_ID:-}" ]]
+  [[ "$BACKFILL_PLAN_B64" =~ ^[A-Za-z0-9+/]+={0,2}$ ]]
+  [[ "${#BACKFILL_PLAN_B64}" -le 32000 ]]
 else
-  [[ -z "${BACKFILL_ASSET_ID:-}" ]]
+  [[ "${BACKFILL_DRAFT_ID:-}" =~ ^[1-9][0-9]*$ ]]
+  [[ "${BACKFILL_PLAN_ASSET_ID:-}" =~ ^[1-9][0-9]*$ ]]
+  if [[ "$BACKFILL_PHASE" == stage || "$BACKFILL_PHASE" == validate-stage ]]; then
+    [[ "${BACKFILL_ASSET_ID:-}" =~ ^[1-9][0-9]*$ ]]
+    [[ "$BACKFILL_ASSET_ID" != "$BACKFILL_PLAN_ASSET_ID" ]]
+  else
+    [[ -z "${BACKFILL_ASSET_ID:-}" ]]
+  fi
 fi
 
 work="$RUNNER_TEMP/legacy-kurl-origin"
@@ -41,6 +48,11 @@ check_plan() {
 case "${1:-}" in
   verify)
     mkdir -m 700 "$work"
+    if [[ -n "${BACKFILL_PLAN_B64:-}" ]]; then
+      printf '%s' "$BACKFILL_PLAN_B64" | base64 --decode > "$plan"
+      check_plan
+      exit 0
+    fi
     gh api "repos/replicatedhq/kots/releases/$BACKFILL_DRAFT_ID" > "$work/draft.json"
     jq -e --arg id "$BACKFILL_DRAFT_ID" '.draft and (.id|tostring) == $id' "$work/draft.json" >/dev/null
     asset_meta "$BACKFILL_PLAN_ASSET_ID" "$BACKFILL_PLAN_SHA256" > "$work/plan-asset.json"
