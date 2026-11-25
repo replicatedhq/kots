@@ -20,6 +20,7 @@
     "@babel/core": "^7.29.13",
     "@babel/plugin-transform-class-properties": "^7.27.1",
     "@babel/plugin-transform-optional-chaining": "^7.27.1",
+    "@babel/plugin-transform-private-methods": "^7.29.7",
     "@babel/preset-env": "^7.29.14",
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
