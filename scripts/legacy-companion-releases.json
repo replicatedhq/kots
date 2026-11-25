@@ -569,6 +569,20 @@
       "tag": "8.37.2-r0"
     }
   },
+  "v1.124.18": {
+    "minio": {
+      "archive_sha": "sha256:4ee8c044cbfcf9bf28497f3f5c878d4a561c3362238e38493d6bc4f0c88e64ea",
+      "candidate": "sha256:014d6e11f48070ba2a68b5cf9937bb354578dc38bc210ccd63aaa6cfcb68a4ba",
+      "original": "sha256:f35f4378f31ef6b2374fc74be1ff2dff79f60eeb693ebecead44e5d75551ff74",
+      "tag": "0.20250524.170830-r1"
+    },
+    "rqlite": {
+      "archive_sha": "sha256:888441c841c9cbb6dcbfc38a5bb18016f9f0a14abb099af52378c441e8c1c322",
+      "candidate": "sha256:f52a7c58e883986ec5b75c5a39fbf2f487782a2ebe952f77eacfc18493c1da3b",
+      "original": "sha256:120380ccf124a826a89a8f03e10065bb9778a5d5debfbbfd2949ee0c646bf5d2",
+      "tag": "8.37.3-r0"
+    }
+  },
   "v1.124.3": {
     "local-volume-provider": {
       "archive_sha": "sha256:e08fd3be0b6d7c96d22063f06da0cbd9087a4f795dd1dea82655dab2a287a8cc",
