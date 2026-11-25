@@ -321,6 +321,14 @@
       "tag": "v1.120.2"
     }
   },
+  "v1.120.3": {
+    "kotsadm-migrations": {
+      "archive_sha": "sha256:0fee436f06161dfec80940bb7cc4765de6f441236741d173e2793ab8c31d5976",
+      "candidate": "sha256:54bd4146175f3bda21ab279034671569073ee19d411d93c7c991b9b1caa44d3e",
+      "original": "sha256:abc34110debe9c53881079965c51d370e7fa1c1f95fbc189b7b172f354a0ea4c",
+      "tag": "v1.120.3"
+    }
+  },
   "v1.124.0": {
     "dex": {
       "archive_sha": "sha256:dd0d250eb298d94aa714e85d155c3c15619f638f722b5763d324e0eb3149bc60",
