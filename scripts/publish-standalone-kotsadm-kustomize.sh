@@ -2,17 +2,17 @@
 set -euo pipefail
 
 [[ "$GITHUB_REPOSITORY" == replicatedhq/kots && "$GITHUB_EVENT_NAME" == workflow_dispatch ]]
-[[ "$LEGACY_COMPANION" == standalone-dex-gomplate ]]
+[[ "$LEGACY_COMPANION" == standalone-kotsadm-kustomize ]]
 [[ -z "$LEGACY_KOTS_VERSION" && -z "$LEGACY_ARCHIVE_DIGEST" && -z "$LEGACY_OVERLAY_RECEIPT" ]]
 
-repo=index.docker.io/kotsadm/dex
-tag=2.44.0
-original=sha256:a0b04348b0ca5d7abc686705ef034a1491edb7427e51d88d7a042b67be2144e0
-original_amd64=sha256:ebdbf7a04fc354d68676b617aa7c5069f7151f8afae3aa806b48e559410edc96
-candidate=sha256:7870f204372ff6d32e9b9b29807454c5b7dc035f0899985f4d89feae54c8ac88
-candidate_amd64=sha256:60fd3d4fdd2afe6b1530b4223cda5146ae8a6db57ed1c2847056e69ec2bfe009
-archive_sha=sha256:f93c6373dde0d671710e7fb9d1cf3d890ffc826d8caf2a410e108d00666f8d69
-asset="${DEX_BASELINE_CARRIER:?}"
+repo=index.docker.io/kotsadm/kotsadm
+tag=latest
+original=sha256:05ad673d98015c29f04abb16234af7e3e8d88917353026dcb2363377cb3b682d
+original_amd64=sha256:19955f76ff142b75da500530f7ea2914aff353716a7f4ec9cea078a7aa576c87
+candidate=sha256:fbbd56d17e39f462f21dab76b2f7da2fd8cac1d147e6be89fe08a9590e736b5d
+candidate_amd64=sha256:9a91993a2e41085313925f93336bfd8c2368c7e1078d6074b6eab4b1af101fa8
+archive_sha=sha256:19ace3d27b99c37485478161d274787ea037589b8e4ea8f781a09948294bb0a7
+asset="${KOTSADM_BASELINE_CARRIER:?}"
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
 
@@ -25,7 +25,7 @@ import tarfile
 with tarfile.open(Path(sys.argv[1]), "r:gz") as archive:
     archive.extractall(Path(sys.argv[2]), filter="data")
 PY
-grep -Fq 'passed native entrypoint, templating, SQLite and OIDC discovery on baseline x86-64.' \
+grep -Fq 'Kustomize 5.8.1 rendered and applied the expected ConfigMap on baseline x86-64. Guest egress was blocked.' \
     "$work/baseline-overlay-runtime.log"
 
 skopeo inspect --raw "docker://$repo@$original" > "$work/original-index.json"
@@ -38,13 +38,13 @@ skopeo copy --preserve-digests "docker://$repo@$original_amd64" "oci:$work/origi
 jq -ce --arg original "$original" --arg original_amd64 "$original_amd64" \
     --arg index "$candidate" --arg amd64 "$candidate_amd64" '
     select(.original_index == $original and .original_amd64 == $original_amd64 and .index == $index and .amd64 == $amd64) |
-    select(.files == {"usr/bin/gomplate":{
-        "old":"sha256:ff07bff911624b74f752abf1cb9fd92286c23c0277e306d956c67a32148559ec",
-        "new":"sha256:ca559988c6a5a0f5a2ecb8fd97ec22bd059902b7fd20b6847f1ed2a13889e586"}}) |
+    select(.files == {"usr/bin/kustomize":{
+        "old":"sha256:80780972ee1a89f54612879927f93c14bad9f948f40a1313a065266615418ea2",
+        "new":"sha256:5bed1d28563f1525f7fa07c8d0d505f53c408a8b7b84809a8e05eba229ede4bc"}}) |
     . + {candidate_index: .index, candidate_amd64: .amd64}
 ' "$work/baseline-overlay-receipt.json" > "$work/receipt.json"
 
-sbom=(--companion dex --original-oci-layout "$work/original-amd64")
+sbom=(--companion kotsadm --original-oci-layout "$work/original-amd64")
 if cosign download sbom "$repo@$original" > "$work/original-index.spdx.json" 2> "$work/cosign.log"; then
     sbom+=(--original-index-spdx "$work/original-index.spdx.json")
 elif ! grep -Fqx -e 'Error: no SBOM found attached to image index' \

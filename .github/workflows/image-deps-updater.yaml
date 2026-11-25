@@ -16,7 +16,7 @@ on:
         description: 'Verified release archive SHA-256 (full archive for MinIO)'
         type: string
       legacy_companion:
-        description: 'Previously tested companion or standalone-dex-gomplate'
+        description: 'Previously tested companion or standalone-kotsadm-kustomize'
         type: string
       legacy_overlay_receipt:
         description: 'Verified OCI image rebuild receipt in JSON'
@@ -26,8 +26,8 @@ on:
         type: boolean
         default: false
 jobs:
-  stage-standalone-dex-carrier:
-    if: github.event_name == 'workflow_dispatch' && inputs.legacy_companion == 'standalone-dex-gomplate'
+  stage-standalone-kotsadm-carrier:
+    if: github.event_name == 'workflow_dispatch' && inputs.legacy_companion == 'standalone-kotsadm-kustomize'
     permissions:
       contents: write
     runs-on: ubuntu-24.04
@@ -38,20 +38,20 @@ jobs:
       - name: Verify and copy the private carrier
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/fetch-standalone-dex-carrier.sh "${{ runner.temp }}/dex-2.44.0-baseline-carrier.tar.gz"
+        run: bash scripts/fetch-standalone-kotsadm-carrier.sh "${{ runner.temp }}/kotsadm-latest-baseline-carrier.tar.gz"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: standalone-dex-carrier
-          path: ${{ runner.temp }}/dex-2.44.0-baseline-carrier.tar.gz
+          name: standalone-kotsadm-carrier
+          path: ${{ runner.temp }}/kotsadm-latest-baseline-carrier.tar.gz
           if-no-files-found: error
           compression-level: 0
           retention-days: 1
 
   publish-legacy-kotsadm:
-    needs: stage-standalone-dex-carrier
+    needs: stage-standalone-kotsadm-carrier
     if: >-
       always() && !cancelled() && github.event_name == 'workflow_dispatch' &&
-      (inputs.legacy_companion != 'standalone-dex-gomplate' || needs.stage-standalone-dex-carrier.result == 'success') &&
+      (inputs.legacy_companion != 'standalone-kotsadm-kustomize' || needs.stage-standalone-kotsadm-carrier.result == 'success') &&
       (inputs.legacy_kots_version != '' || inputs.legacy_archive_digest != '' ||
        inputs.legacy_companion != '' || inputs.legacy_overlay_receipt != '' || inputs.legacy_publish)
     concurrency: >-
@@ -71,10 +71,10 @@ jobs:
         with:
           syft-version: v1.57.2
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-        if: inputs.legacy_companion == 'standalone-dex-gomplate'
+        if: inputs.legacy_companion == 'standalone-kotsadm-kustomize'
         with:
-          name: standalone-dex-carrier
-          path: ${{ runner.temp }}/standalone-dex-carrier
+          name: standalone-kotsadm-carrier
+          path: ${{ runner.temp }}/standalone-kotsadm-carrier
       - name: Verify and publish the legacy image
         env:
           GH_TOKEN: ${{ github.token }}
@@ -84,12 +84,12 @@ jobs:
           LEGACY_COMPANION: ${{ inputs.legacy_companion }}
           LEGACY_OVERLAY_RECEIPT: ${{ inputs.legacy_overlay_receipt }}
           LEGACY_PUBLISH: ${{ inputs.legacy_publish }}
-          DEX_BASELINE_CARRIER: ${{ runner.temp }}/standalone-dex-carrier/dex-2.44.0-baseline-carrier.tar.gz
+          KOTSADM_BASELINE_CARRIER: ${{ runner.temp }}/standalone-kotsadm-carrier/kotsadm-latest-baseline-carrier.tar.gz
           DOCKERHUB_USER: ${{ inputs.legacy_publish && secrets.DOCKERHUB_USER || '' }}
           DOCKERHUB_PASSWORD: ${{ inputs.legacy_publish && secrets.DOCKERHUB_PASSWORD || '' }}
         run: |
-          if [[ "$LEGACY_COMPANION" == standalone-dex-gomplate ]]; then
-            bash scripts/publish-standalone-dex-gomplate.sh
+          if [[ "$LEGACY_COMPANION" == standalone-kotsadm-kustomize ]]; then
+            bash scripts/publish-standalone-kotsadm-kustomize.sh
           else
             bash scripts/publish-legacy-baseline-image.sh
           fi
