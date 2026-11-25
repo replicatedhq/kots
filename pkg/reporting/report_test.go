@@ -59,6 +59,17 @@ func Test_AppendReport(t *testing.T) {
 	preflightReportWithMaxSize, err := getTestPreflightReportWithMaxSize()
 	req.NoError(err)
 
+	instanceMaxSizeNewEvents := []InstanceReportEvent{
+		createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events))),
+		createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events) + 1)),
+		createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events) + 2)),
+	}
+	preflightMaxSizeNewEvents := []PreflightReportEvent{
+		createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events))),
+		createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events) + 1)),
+		createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events) + 2)),
+	}
+
 	tests := []struct {
 		name           string
 		appSlug        string
@@ -158,18 +169,14 @@ func Test_AppendReport(t *testing.T) {
 			appSlug:        "test-app-slug",
 			existingReport: instanceReportWithMaxSize,
 			newReport: &InstanceReport{
-				Events: []InstanceReportEvent{
-					createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events))),
-					createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events) + 1)),
-					createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events) + 2)),
-				},
+				Events: instanceMaxSizeNewEvents,
 			},
 			wantReport: &InstanceReport{
-				Events: append(instanceReportWithMaxSize.Events[3:], []InstanceReportEvent{
-					createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events))),
-					createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events) + 1)),
-					createLargeTestInstanceEvent(int64(len(instanceReportWithMaxSize.Events) + 2)),
-				}...),
+				// The number of events trimmed from the front depends on the
+				// encoded size of each event, which changes with the gzip
+				// output of the Go toolchain, so the expected events are
+				// computed the same way AppendEvents trims them.
+				Events: expectedTrimmedInstanceEvents(t, instanceReportWithMaxSize, instanceMaxSizeNewEvents),
 			},
 		},
 		{
@@ -264,18 +271,14 @@ func Test_AppendReport(t *testing.T) {
 			appSlug:        "test-app-slug",
 			existingReport: preflightReportWithMaxSize,
 			newReport: &PreflightReport{
-				Events: []PreflightReportEvent{
-					createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events))),
-					createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events) + 1)),
-					createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events) + 2)),
-				},
+				Events: preflightMaxSizeNewEvents,
 			},
 			wantReport: &PreflightReport{
-				Events: append(preflightReportWithMaxSize.Events[3:], []PreflightReportEvent{
-					createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events))),
-					createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events) + 1)),
-					createLargeTestPreflightEvent(int64(len(preflightReportWithMaxSize.Events) + 2)),
-				}...),
+				// The number of events trimmed from the front depends on the
+				// encoded size of each event, which changes with the gzip
+				// output of the Go toolchain, so the expected events are
+				// computed the same way AppendEvents trims them.
+				Events: expectedTrimmedPreflightEvents(t, preflightReportWithMaxSize, preflightMaxSizeNewEvents),
 			},
 		},
 	}
@@ -502,4 +505,51 @@ func getTestPreflightReportWithMaxSize() (*PreflightReport, error) {
 	}
 
 	return report, nil
+}
+
+// expectedTrimmedInstanceEvents returns the events expected to remain after
+// AppendEvents appends newEvents to existing and trims events from the front
+// until the encoded report fits the size limit. The number of trimmed events
+// depends on the gzip output of the Go toolchain and is not stable enough to
+// hardcode.
+func expectedTrimmedInstanceEvents(t *testing.T, existing *InstanceReport, newEvents []InstanceReportEvent) []InstanceReportEvent {
+	t.Helper()
+
+	combined := &InstanceReport{
+		Events: append(append([]InstanceReportEvent{}, existing.Events...), newEvents...),
+	}
+
+	encoded, err := EncodeReport(combined)
+	require.NoError(t, err)
+
+	for len(encoded) > combined.GetSizeLimit() {
+		combined.Events = combined.Events[1:]
+		require.NotEmpty(t, combined.Events)
+		encoded, err = EncodeReport(combined)
+		require.NoError(t, err)
+	}
+
+	return combined.Events
+}
+
+// expectedTrimmedPreflightEvents is the PreflightReport counterpart of
+// expectedTrimmedInstanceEvents.
+func expectedTrimmedPreflightEvents(t *testing.T, existing *PreflightReport, newEvents []PreflightReportEvent) []PreflightReportEvent {
+	t.Helper()
+
+	combined := &PreflightReport{
+		Events: append(append([]PreflightReportEvent{}, existing.Events...), newEvents...),
+	}
+
+	encoded, err := EncodeReport(combined)
+	require.NoError(t, err)
+
+	for len(encoded) > combined.GetSizeLimit() {
+		combined.Events = combined.Events[1:]
+		require.NotEmpty(t, combined.Events)
+		encoded, err = EncodeReport(combined)
+		require.NoError(t, err)
+	}
+
+	return combined.Events
 }

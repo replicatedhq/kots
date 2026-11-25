@@ -1887,7 +1887,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					assert.Equal(t, "2", got.Annotations[types.InstanceBackupCountAnnotation])
 				}
 				if assert.Contains(t, got.Annotations, types.InstanceBackupRestoreSpecAnnotation) {
-					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","namespace":"kotsadm-backups"},"spec":{"backupName":"test-backup","hooks":{},"itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
+					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","namespace":"kotsadm-backups"},"spec":{"backupName":"test-backup","hooks":{},"csiSnapshotTimeout":"0s","itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
 				}
 			},
 		},
