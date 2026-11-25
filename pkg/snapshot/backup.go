@@ -14,7 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"

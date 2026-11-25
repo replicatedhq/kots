@@ -26,7 +26,7 @@ import (
 	"github.com/replicatedhq/kotskinds/pkg/helmchart"
 	"github.com/replicatedhq/kotskinds/pkg/licensewrapper"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
 	v2chart "helm.sh/helm/v4/pkg/chart/v2"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"

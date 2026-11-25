@@ -14,8 +14,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
+	velerolabel "github.com/velero-io/velero/pkg/label"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -62,7 +62,7 @@ func GetRestore(ctx context.Context, kotsadmNamespace string, restoreID string) 
 }
 
 func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, backupID string, appSlug string) error {
-	// Reference https://github.com/vmware-tanzu/velero/blob/42b612645863c2b3e451b447f9bf798295dd7dba/pkg/cmd/cli/restore/create.go#L222
+	// Reference https://github.com/velero-io/velero/blob/42b612645863c2b3e451b447f9bf798295dd7dba/pkg/cmd/cli/restore/create.go#L222
 
 	logger.Debugf("Creating restore for backup %s", backupID)
 

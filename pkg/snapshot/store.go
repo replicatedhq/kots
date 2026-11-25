@@ -39,7 +39,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/snapshot/providers"
 	"github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
 	"google.golang.org/api/option"
 	"gopkg.in/ini.v1"
 	corev1 "k8s.io/api/core/v1"
@@ -561,7 +561,7 @@ func upsertGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 			}
 		}
 	} else if store.Azure != nil {
-		// https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure/blob/main/backupstoragelocation.md
+		// https://github.com/velero-io/velero-plugin-for-microsoft-azure/blob/main/backupstoragelocation.md
 		bsl.Spec.Config = map[string]string{
 			"resourceGroup":  store.Azure.ResourceGroup,
 			"storageAccount": store.Azure.StorageAccount,

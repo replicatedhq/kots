@@ -24,8 +24,8 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	velerov1shrd "github.com/vmware-tanzu/velero/pkg/apis/velero/shared"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1shrd "github.com/velero-io/velero/pkg/apis/velero/shared"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -1887,7 +1887,7 @@ func Test_getAppInstanceBackupSpec(t *testing.T) {
 					assert.Equal(t, "2", got.Annotations[types.InstanceBackupCountAnnotation])
 				}
 				if assert.Contains(t, got.Annotations, types.InstanceBackupRestoreSpecAnnotation) {
-					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","namespace":"kotsadm-backups"},"spec":{"backupName":"test-backup","hooks":{},"itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
+					assert.Equal(t, `{"kind":"Restore","apiVersion":"velero.io/v1","metadata":{"name":"test-restore","namespace":"kotsadm-backups"},"spec":{"backupName":"test-backup","hooks":{},"csiSnapshotTimeout":"0s","itemOperationTimeout":"0s"},"status":{}}`, got.Annotations[types.InstanceBackupRestoreSpecAnnotation])
 				}
 			},
 		},

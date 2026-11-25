@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1 "github.com/velero-io/velero/pkg/apis/velero/v1"
 )
 
 func TestRollupStatus(t *testing.T) {
