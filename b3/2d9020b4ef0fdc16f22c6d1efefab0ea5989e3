@@ -1,0 +1,14 @@
+scripts/legacy-companion-releases.json
+  h_9c4428928069f1 316-323,414-421
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b32d9020b4ef0fdc16f22c6d1efefab0ea5989e3",
+  "prompts": {},
+  "humans": {
+    "h_9c4428928069f1": {
+      "author": "Mikhail Swift <mikhail@replicated.com>"
+    }
+  }
+}
