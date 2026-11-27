@@ -26,6 +26,37 @@ on:
         type: boolean
         default: false
 jobs:
+  restore-kots-v1294-helm:
+    if: github.event_name == 'workflow_dispatch' && inputs.legacy_companion == 'restore-kots-v1294-helm'
+    concurrency: kots-v1294-helm-restore
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      RESTORE_WORK: ${{ runner.temp }}/kots-v1294-helm
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22
+      - id: restore-syft
+        uses: anchore/sbom-action/download-syft@a930d0ac434e3182448fe678398ba5713717112a
+        with:
+          syft-version: v1.57.2
+      - name: Reproduce the verified KOTS image and its SBOMs
+        env:
+          EXPECTED_INDEX: ${{ inputs.legacy_overlay_receipt }}
+          SYFT_BIN: ${{ steps.restore-syft.outputs.cmd }}
+        run: bash scripts/publish-kots-v1294-helm.sh verify
+      - name: Publish the verified Docker Hub tag
+        if: inputs.legacy_publish
+        env:
+          EXPECTED_INDEX: ${{ inputs.legacy_overlay_receipt }}
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: bash scripts/publish-kots-v1294-helm.sh publish
+
   stage-standalone-kotsadm-carrier:
     if: github.event_name == 'workflow_dispatch' && inputs.legacy_companion == 'standalone-kotsadm-kustomize'
     permissions:
@@ -51,6 +82,7 @@ jobs:
     needs: stage-standalone-kotsadm-carrier
     if: >-
       always() && !cancelled() && github.event_name == 'workflow_dispatch' &&
+      inputs.legacy_companion != 'restore-kots-v1294-helm' &&
       (inputs.legacy_companion != 'standalone-kotsadm-kustomize' || needs.stage-standalone-kotsadm-carrier.result == 'success') &&
       (inputs.legacy_kots_version != '' || inputs.legacy_archive_digest != '' ||
        inputs.legacy_companion != '' || inputs.legacy_overlay_receipt != '' || inputs.legacy_publish)
