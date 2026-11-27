@@ -1,0 +1,14 @@
+.github/workflows/image-deps-updater.yaml
+  h_9c4428928069f1 47,54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2158cdc1ef3141be3bbe7de8e9422586b7a73770",
+  "prompts": {},
+  "humans": {
+    "h_9c4428928069f1": {
+      "author": "Mikhail Swift <mikhail@replicated.com>"
+    }
+  }
+}
